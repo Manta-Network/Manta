@@ -153,6 +153,8 @@ impl pallet_assets::Config for Runtime {
     type AssetIdParameter = CalamariAssetId;
     type CreateOrigin = AsEnsureOriginWithArg<EnsureNever<AccountId32>>;
     type CallbackHandle = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
 }
 
 pub struct MantaAssetRegistry;
