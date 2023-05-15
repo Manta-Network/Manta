@@ -261,6 +261,12 @@ pub mod pallet {
             /// The asset location which can't be transferred out
             filtered_location: T::Location,
         },
+
+        /// An asset location has been unfiltered from outgoing transfers
+        AssetLocationUnfilteredForOutgoingTransfers {
+            /// The asset location which can be transferred out
+            filtered_location: T::Location,
+        },
     }
 
     /// Asset Manager Error
@@ -576,12 +582,20 @@ pub mod pallet {
         pub fn update_outgoing_filtered_assets(
             origin: OriginFor<T>,
             filtered_location: T::Location,
+            should_add: bool,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
-            FilteredOutgoingAssetLocations::<T>::insert(filtered_location.clone().into(), ());
-            Self::deposit_event(Event::<T>::AssetLocationFilteredForOutgoingTransfers {
-                filtered_location,
-            });
+            if should_add {
+                FilteredOutgoingAssetLocations::<T>::insert(filtered_location.clone().into(), ());
+                Self::deposit_event(Event::<T>::AssetLocationFilteredForOutgoingTransfers {
+                    filtered_location,
+                });
+            } else {
+                FilteredOutgoingAssetLocations::<T>::remove(filtered_location.clone().into());
+                Self::deposit_event(Event::<T>::AssetLocationUnfilteredForOutgoingTransfers {
+                    filtered_location,
+                });
+            }
             Ok(())
         }
     }
