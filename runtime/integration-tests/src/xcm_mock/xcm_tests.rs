@@ -23,6 +23,8 @@ use codec::Encode;
 use frame_support::{
     assert_err, assert_noop, assert_ok, traits::tokens::fungibles::Mutate, WeakBoundedVec,
 };
+use parachain::{RuntimeEvent, System};
+
 use manta_primitives::{assets::AssetLocation, constants::WEIGHT_PER_SECOND};
 use runtime_common::test_helpers::{
     self_reserve_xcm_message_receiver_side, self_reserve_xcm_message_sender_side,
@@ -94,7 +96,6 @@ fn dmp() {
     });
 
     ParaA::execute_with(|| {
-        use parachain::{RuntimeEvent, System};
         assert!(System::events().iter().any(|r| matches!(
             r.event,
             RuntimeEvent::System(frame_system::Event::Remarked { .. })
@@ -3388,7 +3389,11 @@ fn send_disabled_asset_should_fail() {
     ParaA::execute_with(|| {
         assert_ok!(parachain::AssetManager::update_outgoing_filtered_assets(
             parachain::RuntimeOrigin::root(),
-            para_b_source_location,
+            para_b_source_location.clone(),
+            true
+        ));
+        assert!(AssetManager::check_outgoing_assets_filter(
+            &para_b_source_location.clone().into()
         ));
         assert_ok!(parachain::Assets::mint_into(
             b_asset_id_on_a,
@@ -3454,5 +3459,13 @@ fn send_disabled_asset_should_fail() {
             Box::new(VersionedMultiLocation::V1(dest.clone())),
             xcm_simulator::Limited(ADVERTISED_DEST_WEIGHT),
         ));
+        assert_ok!(parachain::AssetManager::update_outgoing_filtered_assets(
+            parachain::RuntimeOrigin::root(),
+            para_b_source_location.clone(),
+            false
+        ));
+        assert!(!AssetManager::check_outgoing_assets_filter(
+            &para_b_source_location.into()
+        ),)
     });
 }
