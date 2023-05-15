@@ -80,15 +80,15 @@ jobs:
         run: sccache --stop-server || true
       - name: copy to workspace
         run: |
-          mkdir ${{GITHUB_WORKSPACE}}/export 
-          cp target/release/manta ${{GITHUB_WORKSPACE}}/export/manta-fast
+          mkdir ${{github.workspace}}/export 
+          cp target/release/manta ${{github.workspace}}/export/manta-fast
   build-genesis-files:
     needs: [start-node-builder-current, build-node-current]
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     steps:
       - name: Export genesis files
         run: |
-          cd ${{GITHUB_WORKSPACE}}/export
+          cd ${{github.workspace}}/export
           ./manta-fast build-spec --chain $CHAIN --raw > $CHAIN-genesis.json
           ./manta-fast export-genesis-state --chain $CHAIN > $CHAIN-genesis.state
           ./manta-fast export-genesis-wasm --chain $CHAIN > $CHAIN-genesis.wasm
@@ -104,7 +104,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: 'us-east-1'
-          SOURCE_DIR: ${{GITHUB_WORKSPACE}}/export
+          SOURCE_DIR: ${{github.workspace}}/export
   start-node-builder-current:
     runs-on: ubuntu-20.04
     outputs:
