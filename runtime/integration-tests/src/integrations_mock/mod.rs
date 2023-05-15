@@ -57,7 +57,7 @@ cfg_if::cfg_if! {
             xcm_config::{XcmExecutorConfig, XcmFeesAccount},
             AssetManager, Assets, AuthorInherent, Authorship, Balances, RuntimeCall, CollatorSelection,
             DefaultBlocksPerRound, RuntimeEvent, InflationInfo, LeaveDelayRounds, NativeTokenExistentialDeposit,
-            RuntimeOrigin, ParachainStaking, Period, PolkadotXcm, Range, Runtime, Session, System, Timestamp,
+            RuntimeOrigin, ParachainStaking, Period, PolkadotXcm, Range, Runtime, Session, System, Timestamp, TransactionPause,
             TransactionPayment, Treasury, Utility, TechnicalCommittee, Council, EnactmentPeriod, VotingPeriod,
             LaunchPeriod, Preimage, Democracy, Scheduler, Aura, Multisig, Sudo, ParachainSystem, ParachainInfo,
             XTokens, DmpQueue, CumulusXcm, XcmpQueue, AuraAuthorFilter
