@@ -78,56 +78,24 @@ jobs:
           RUSTC_BOOTSTRAP=1 cargo build --release --features=fast-runtime
       - name: stop sccache server
         run: sccache --stop-server || true
-      - if: always()
-        name: upload
-        uses: actions/upload-artifact@v2
-        with:
-          name: manta-fast
-          path: target/release/manta
+      - name: copy to workspace
+        run: |
+          mkdir ${{GITHUB_WORKSPACE}}/export 
+          cp target/release/manta ${{GITHUB_WORKSPACE}}/export/manta-fast
   build-genesis-files:
     needs: [start-node-builder-current, build-node-current]
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: manta-fast
       - name: Export genesis files
         run: |
+          cd ${{GITHUB_WORKSPACE}}/export
           ./manta-fast build-spec --chain $CHAIN --raw > $CHAIN-genesis.json
           ./manta-fast export-genesis-state --chain $CHAIN > $CHAIN-genesis.state
           ./manta-fast export-genesis-wasm --chain $CHAIN > $CHAIN-genesis.wasm
-      # upload artifacts
-      - name: upload genesis
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{env.CHAIN}}-genesis.json
-          path: ${{env.CHAIN}}-genesis.json
-      - name: upload state
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{env.CHAIN}}-genesis.state
-          path: ${{env.CHAIN}}-genesis.state
-      - name: upload wasm
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{env.CHAIN}}-genesis.wasm
-          path: ${{env.CHAIN}}-genesis.wasm
   push-to-s3:
     needs: [start-node-builder-current, build-node-current, build-genesis-files]
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: manta-fast
-      - uses: actions/download-artifact@v2
-        with:
-          name: ${{env.CHAIN}}-genesis.json
-      - uses: actions/download-artifact@v2
-        with:
-          name: ${{env.CHAIN}}-genesis.state
-      - uses: actions/download-artifact@v2
-        with:
-          name: ${{env.CHAIN}}-genesis.wasm
       - uses: jakejarvis/s3-sync-action@master
         with:
           args: --acl public-read --follow-symlinks --delete
@@ -136,6 +104,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: 'us-east-1'
+          SOURCE_DIR: ${{GITHUB_WORKSPACE}}/export
   start-node-builder-current:
     runs-on: ubuntu-20.04
     outputs:
