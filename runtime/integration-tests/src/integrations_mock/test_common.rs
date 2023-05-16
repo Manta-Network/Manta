@@ -23,7 +23,7 @@ use super::{mock::*, *};
 use frame_support::{
     assert_err, assert_noop, assert_ok,
     error::BadOrigin,
-    traits::{tokens::ExistenceRequirement, Get, PalletInfo},
+    traits::{tokens::ExistenceRequirement, Get, PalletInfo, PalletsInfoAccess},
 };
 use runtime_common::test_helpers::{
     self_reserve_xcm_message_receiver_side, self_reserve_xcm_message_sender_side,
@@ -846,6 +846,16 @@ fn tx_pause_works() {
         ));
         pause_transactions_storage_event_works(false, true);
     });
+}
+
+#[test]
+fn non_pausable_pallets_exist() {
+    let all_pallets = AllPalletsWithSystem::infos();
+    let all_pallet_names: Vec<&str> = all_pallets.into_iter().map(|info| info.name).collect();
+    for pallet in NonPausablePallets::get() {
+        let pallet_str = sp_std::str::from_utf8(&pallet).unwrap();
+        assert!(all_pallet_names.contains(&pallet_str), "{:?}", pallet_str);
+    }
 }
 
 #[test]
