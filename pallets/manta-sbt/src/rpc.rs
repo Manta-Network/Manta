@@ -129,14 +129,13 @@ where
     fn sbt_pull_ledger_total_count(&self) -> RpcResult<[u8; 16]> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(self.client.info().finalized_hash);
-        api.sbt_pull_ledger_total_count(&at)
-            .map_err(|err| {
-                CallError::Custom(ErrorObject::owned(
-                    PULL_LEDGER_DIFF_ERROR,
-                    "Unable to compute total count for pull",
-                    Some(format!("{err:?}")),
-                ))
-                .into()
-            })
+        api.sbt_pull_ledger_total_count(&at).map_err(|err| {
+            CallError::Custom(ErrorObject::owned(
+                PULL_LEDGER_DIFF_ERROR,
+                "Unable to compute total count for pull",
+                Some(format!("{err:?}")),
+            ))
+            .into()
+        })
     }
 }

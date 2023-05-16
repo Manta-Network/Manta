@@ -607,7 +607,8 @@ pub mod pallet {
         pub fn pull_ledger_total_count() -> [u8; 16] {
             let receivers_total = (0..=255)
                 .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128)
-                .sum::<u128>() + 256u128;
+                .sum::<u128>()
+                + 256u128;
             let senders_total = NullifierSetSize::<T>::get() as u128;
             asset_value_encode(receivers_total + senders_total)
         }
