@@ -16,7 +16,7 @@
 
 //! # MantaSBT Module
 //!
-//! MantaSBT creates non-transferable nfts (soul-bound) as unspendable UTXOs
+//! MantaSBT creates non-transferable nfts (soul-bound) as non spendable UTXOs
 //!
 //! ## Overview
 //!
@@ -134,7 +134,7 @@ pub type Eip712Signature = [u8; 65];
 /// Each mint type shall have a unique id
 pub type MintId = u32;
 
-/// zkSBT mint Status of `EvmAddressType`. This has flag `AlreadyMinted` to put into storage after succesful mint
+/// zkSBT mint Status of `EvmAddressType`. This has flag `AlreadyMinted` to put into storage after successful mint
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub enum MintStatus {
     Available(StandardAssetId),
@@ -219,13 +219,13 @@ pub mod pallet {
         type MinimumWeightRemainInBlock: Get<Weight>;
     }
 
-    /// Counter for SBT AssetId. Increments by one everytime a new asset id is requested.
+    /// Counter for SBT AssetId. Increments by one every time a new asset id is requested.
     ///
     /// Should only ever be modified by `next_sbt_id_and_increment()`
     #[pallet::storage]
     pub(super) type NextSbtId<T: Config> = StorageValue<_, StandardAssetId, OptionQuery>;
 
-    /// Counter for MintId. Increments by one everytime a new mint type is created (Bab, Galxe, etc.)
+    /// Counter for MintId. Increments by one every time a new mint type is created (Bab, Galxe, etc.)
     ///
     /// Should only ever be modified by `next_mint_id_and_increment()`
     #[pallet::storage]
@@ -257,14 +257,14 @@ pub mod pallet {
         OptionQuery,
     >;
 
-    /// SBT Metadata maps `StandardAsset` to the correstonding SBT metadata
+    /// SBT Metadata maps `StandardAsset` to the corresponding SBT metadata
     ///
     /// Metadata is raw bytes that correspond to an image
     #[pallet::storage]
     pub(super) type SbtMetadataV2<T: Config> =
         StorageMap<_, Blake2_128Concat, StandardAssetId, MetadataV2<T::SbtMetadataBound>>;
 
-    /// Allowlists accounts to be able to mint SBTs with designated `StandardAssetId`
+    /// Allowlist accounts to be able to mint SBTs with designated `StandardAssetId`
     #[pallet::storage]
     pub(super) type ReservedIds<T: Config> = StorageMap<
         _,
@@ -755,10 +755,10 @@ pub mod pallet {
         /// Transfer Ledger Wrong Checksum Error
         TransferLedgerChecksumError,
 
-        /// Transfer Ledger `VerifyingContext` cannont be decoded
+        /// Transfer Ledger `VerifyingContext` cannot be decoded
         TransferLedgerVerifyingContextDecodeError,
 
-        /// Transer Ledger Field Element Encoding Error
+        /// Transfer Ledger Field Element Encoding Error
         TransferLedgerFpEncodeError,
 
         /// Transfer Ledger Unknown Asset
@@ -803,7 +803,7 @@ pub mod pallet {
         /// Time range is invalid (start_time > end_time)
         InvalidTimeRange,
 
-        /// MintId does not exist, cannot update a nonexistant MintId
+        /// MintId does not exist, cannot update a nonexistent MintId
         InvalidMintId,
     }
 }
@@ -876,7 +876,7 @@ where
     }
 
     /// Returns the diff of ledger state since the given `checkpoint` and `max_receivers`.
-    /// This `Ledger` implementaion has no senders by definition, cannot transfer SBTs.
+    /// This `Ledger` implementation has no senders by definition, cannot transfer SBTs.
     #[inline]
     pub fn pull_ledger_diff(
         checkpoint: Checkpoint,
@@ -885,14 +885,21 @@ where
     ) -> PullResponse {
         let (more_receivers, receivers) =
             Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
-        let senders_receivers_total = (0..=255)
+        let mut receivers_total = (0..=255)
             .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128)
             .sum::<u128>();
+        // Workaround for the fact that we index the receivers from 0
+        if receivers_total == 0u128 {
+            // The cast is fine because the vector sizes are limited by PULL_MAX_RECEIVER_UPDATE_SIZE
+            receivers_total = receivers.len() as u128;
+        } else {
+            receivers_total += 256u128;
+        }
         PullResponse {
             should_continue: more_receivers,
             receivers,
             senders: vec![],
-            senders_receivers_total: asset_value_encode(senders_receivers_total),
+            senders_receivers_total: asset_value_encode(receivers_total),
         }
     }
 
@@ -1065,13 +1072,13 @@ where
         Ok(())
     }
 
-    /// Returns an Etherum public key derived from an Ethereum secret key.
+    /// Returns an Ethereum public key derived from an Ethereum secret key.
     #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
     pub fn eth_public(secret: &libsecp256k1::SecretKey) -> libsecp256k1::PublicKey {
         libsecp256k1::PublicKey::from_secret_key(secret)
     }
 
-    /// Returns an Etherum address derived from an Ethereum secret key.
+    /// Returns an Ethereum address derived from an Ethereum secret key.
     /// Only for tests
     #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
     pub fn eth_address(secret: &libsecp256k1::SecretKey) -> EvmAddress {
@@ -1181,7 +1188,7 @@ where
     ) -> Result<Self::ValidUtxoAccumulatorOutput, Self::Error> {
         let accumulator_output = fp_encode(output).map_err(SenderLedgerError::FpEncodeError)?;
         // NOTE: Checking for an empty(zeroed) byte array. This happens for UTXOs with `value = 0`,
-        // for which you dont need a membership proof, but you still need a root (in this case
+        // for which you don't need a membership proof, but you still need a root (in this case
         // zeroed).
         if accumulator_output == [0u8; 32]
             || UtxoAccumulatorOutputs::<T>::contains_key(accumulator_output)

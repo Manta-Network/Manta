@@ -610,10 +610,18 @@ pub mod pallet {
             let (more_receivers, receivers) =
                 Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
             let (more_senders, senders) = Self::pull_senders(checkpoint.sender_index, max_senders);
-            let senders_receivers_total = (0..=255)
+            let mut senders_receivers_total = (0..=255)
                 .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128)
-                .sum::<u128>()
-                + NullifierSetSize::<T>::get() as u128;
+                .sum::<u128>();
+            // Workaround for the fact that we index the receivers from 0
+            if senders_receivers_total == 0u128 {
+                // The cast is fine because the vector sizes are limited by PULL_MAX_RECEIVER_UPDATE_SIZE and PULL_MAX_SENDER_UPDATE_SIZE
+                senders_receivers_total = receivers.len() as u128;
+            } else {
+                senders_receivers_total += 256u128;
+            }
+            senders_receivers_total += NullifierSetSize::<T>::get() as u128;
+
             PullResponse {
                 should_continue: more_receivers || more_senders,
                 receivers,
