@@ -139,7 +139,7 @@ impl pallet_assets::Config for Test {
     type AssetIdParameter = StandardAssetId;
     type CreateOrigin = AsEnsureOriginWithArg<EnsureNever<AccountId32>>;
     type CallbackHandle = ();
-    #[cfg(feature = "runtime-benchmarks")]
+    #[cfg(any(test, feature = "runtime-benchmarks"))]
     type BenchmarkHelper = ();
 }
 

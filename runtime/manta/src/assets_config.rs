@@ -67,9 +67,9 @@ impl pallet_assets::Config for Runtime {
     #[cfg(feature = "runtime-benchmarks")]
     type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
     #[cfg(not(feature = "runtime-benchmarks"))]
-    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureNever<AccountId>>;
+    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureNever<AccountId>>; // We only allow asset creation through AssetManager
     type CallbackHandle = ();
-    #[cfg(feature = "runtime-benchmarks")]
+    #[cfg(any(test, feature = "runtime-benchmarks"))]
     type BenchmarkHelper = ();
 }
 
