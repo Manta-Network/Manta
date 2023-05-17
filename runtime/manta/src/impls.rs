@@ -19,7 +19,7 @@ use crate::{
         FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY, TIPS_PERCENTAGE_TO_AUTHOR,
         TIPS_PERCENTAGE_TO_TREASURY,
     },
-    Authorship, Balances, NegativeImbalance,
+    Authorship, Balances, NegativeImbalance, Treasury,
 };
 use frame_support::traits::{Currency, Imbalance, OnUnbalanced};
 
@@ -36,7 +36,7 @@ pub struct DealWithFees;
 impl OnUnbalanced<NegativeImbalance> for DealWithFees {
     fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
         if let Some(fees) = fees_then_tips.next() {
-            let (mut to_author, to_treasury) = fees.ration(
+            let (mut to_author, mut to_treasury) = fees.ration(
                 FEES_PERCENTAGE_TO_AUTHOR as u32,
                 FEES_PERCENTAGE_TO_TREASURY as u32,
             );

@@ -27,7 +27,6 @@ pub use sp_runtime::Perbill;
 pub const TARGET_BLOCK_FULLNESS: Perbill = Perbill::from_percent(25);
 
 pub const FEES_PERCENTAGE_TO_AUTHOR: u8 = 10;
-pub const FEES_PERCENTAGE_TO_BURN: u8 = 0;
 pub const FEES_PERCENTAGE_TO_TREASURY: u8 = 90;
 
 pub const TIPS_PERCENTAGE_TO_AUTHOR: u8 = 100;
@@ -38,10 +37,7 @@ mod fee_split_tests {
     use super::*;
     #[test]
     fn fee_split_adds_up_to_one() {
-        assert_eq!(
-            100,
-            FEES_PERCENTAGE_TO_AUTHOR + FEES_PERCENTAGE_TO_BURN + FEES_PERCENTAGE_TO_TREASURY
-        );
+        assert_eq!(100, FEES_PERCENTAGE_TO_AUTHOR + FEES_PERCENTAGE_TO_TREASURY);
     }
     #[test]
     fn tips_split_adds_up_to_one() {
