@@ -53,9 +53,18 @@ use super::{ALICE, ALICE_SESSION_KEYS};
 use sp_core::sr25519;
 use sp_runtime::{DispatchError, ModuleError};
 
-// currently, we ignore all parachain staking tests in integration tests
 mod parachain_staking_tests {
     use super::*;
+    #[cfg(feature = "calamari")]
+    use calamari_runtime::staking::{
+        EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR,
+        NORMAL_COLLATOR_MINIMUM_STAKE,
+    };
+    #[cfg(feature = "manta")]
+    use manta_runtime::staking::{
+        EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR,
+        NORMAL_COLLATOR_MINIMUM_STAKE,
+    };
 
     #[test]
     fn ensure_block_per_round_and_leave_delays_equal_7days() {
@@ -92,6 +101,8 @@ mod parachain_staking_tests {
 
     #[test]
     fn collator_cant_join_below_standard_bond() {
+        assert!(EARLY_COLLATOR_MINIMUM_STAKE + 100 < MIN_BOND_TO_BE_CONSIDERED_COLLATOR);
+
         ExtBuilder::default()
             .with_balances(vec![
                 (ALICE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),

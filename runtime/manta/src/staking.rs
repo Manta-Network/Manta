@@ -18,8 +18,8 @@ use crate::{currency::MANTA, Balance};
 use pallet_parachain_staking::{BalanceOf, InflationInfo};
 use sp_runtime::PerThing;
 
-pub const NORMAL_COLLATOR_MINIMUM_STAKE: Balance = 50 * MANTA;
-pub const EARLY_COLLATOR_MINIMUM_STAKE: Balance = 50 * MANTA;
+pub const NORMAL_COLLATOR_MINIMUM_STAKE: Balance = 400_000 * MANTA;
+pub const EARLY_COLLATOR_MINIMUM_STAKE: Balance = 40_000 * MANTA;
 pub const MIN_BOND_TO_BE_CONSIDERED_COLLATOR: Balance = NORMAL_COLLATOR_MINIMUM_STAKE;
 
 pub fn inflation_config<T: frame_system::Config + pallet_parachain_staking::Config>(
