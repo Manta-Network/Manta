@@ -52,6 +52,7 @@ pub trait WeightInfo {
     fn update_asset_metadata() -> Weight;
     fn mint_asset() -> Weight;
     fn set_min_xcm_fee() -> Weight;
+    fn update_outgoing_filtered_assets() -> Weight;
 }
 
 /// Weights for pallet_asset_manager using the Substrate node and recommended hardware.
@@ -111,6 +112,10 @@ impl<T: frame_system::Config> pallet_asset_manager::WeightInfo for SubstrateWeig
 		Weight::from_ref_time(50_365_000)
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
+	fn update_outgoing_filtered_assets() -> Weight {
+        Weight::from_ref_time(49_509_000)
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
+    }
 }
 
 // For backwards compatibility and tests
@@ -169,4 +174,8 @@ impl WeightInfo for () {
 		Weight::from_ref_time(50_365_000)
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
+	fn update_outgoing_filtered_assets() -> Weight {
+        Weight::from_ref_time(49_509_000)
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
+    }
 }

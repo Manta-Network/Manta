@@ -24,7 +24,7 @@ use core::marker::PhantomData;
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
     match_types, parameter_types,
-    traits::{Currency, Everything, Nothing},
+    traits::{Contains, Currency, Everything, Nothing},
     weights::Weight,
 };
 use frame_system::EnsureRoot;
@@ -40,6 +40,7 @@ use orml_traits::location::AbsoluteReserveProvider;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use scale_info::TypeInfo;
+use sp_runtime::traits::Convert;
 use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -333,6 +334,14 @@ parameter_types! {
     pub const MaxAssetsForTransfer: usize = 2;
 }
 
+impl Contains<CurrencyId> for AssetManager {
+    fn contains(id: &CurrencyId) -> bool {
+        let asset_id =
+            CurrencyIdtoMultiLocation::<AssetIdLocationConvert<AssetManager>>::convert(id.clone());
+        Self::check_outgoing_assets_filter(&asset_id)
+    }
+}
+
 // The XCM message wrapper wrapper
 impl orml_xtokens::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
@@ -360,5 +369,6 @@ impl orml_xtokens::Config for Runtime {
     type MaxAssetsForTransfer = MaxAssetsForTransfer;
     type MinXcmFee = AssetManager;
     type MultiLocationsFilter = AssetManager;
+    type OutgoingAssetsFilter = AssetManager;
     type ReserveProvider = AbsoluteReserveProvider;
 }

@@ -23,6 +23,8 @@ use codec::Encode;
 use frame_support::{
     assert_err, assert_noop, assert_ok, traits::tokens::fungibles::Mutate, WeakBoundedVec,
 };
+use parachain::{RuntimeEvent, System};
+
 use manta_primitives::{assets::AssetLocation, constants::WEIGHT_PER_SECOND};
 use runtime_common::test_helpers::{
     self_reserve_xcm_message_receiver_side, self_reserve_xcm_message_sender_side,
@@ -94,7 +96,6 @@ fn dmp() {
     });
 
     ParaA::execute_with(|| {
-        use parachain::{RuntimeEvent, System};
         assert!(System::events().iter().any(|r| matches!(
             r.event,
             RuntimeEvent::System(frame_system::Event::Remarked { .. })
@@ -3346,4 +3347,125 @@ fn test_sender_side_xcm_weight() {
     let weight =
         <ParaXcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
     assert!(weight < ADVERTISED_DEST_WEIGHT);
+}
+
+#[test]
+fn send_disabled_asset_should_fail() {
+    MockNet::reset();
+
+    let para_a_source_location = create_asset_location(1, PARA_A_ID);
+    let para_b_source_location = create_asset_location(1, PARA_B_ID);
+
+    let amount = INITIAL_BALANCE;
+    let fee = 40;
+
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, false);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, false);
+
+    let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(0u128),
+        None,
+    );
+    let b_asset_id_on_a = register_assets_on_parachain::<ParaA>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
+
+    let dest = MultiLocation {
+        parents: 1,
+        interior: X2(
+            Parachain(PARA_B_ID),
+            AccountId32 {
+                network: NetworkId::Any,
+                id: ALICE.into(),
+            },
+        ),
+    };
+
+    ParaA::execute_with(|| {
+        assert_ok!(parachain::AssetManager::update_outgoing_filtered_assets(
+            parachain::RuntimeOrigin::root(),
+            para_b_source_location.clone(),
+            true
+        ));
+        assert!(AssetManager::check_outgoing_assets_filter(
+            &para_b_source_location.clone().into()
+        ));
+        assert_ok!(parachain::Assets::mint_into(
+            b_asset_id_on_a,
+            &ALICE,
+            amount + 1000
+        ));
+        assert_err!(
+            parachain::XTokens::transfer(
+                parachain::RuntimeOrigin::signed(ALICE),
+                parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
+                amount,
+                Box::new(VersionedMultiLocation::V1(dest.clone())),
+                xcm_simulator::Limited(ADVERTISED_DEST_WEIGHT)
+            ),
+            orml_xtokens::Error::<parachain::Runtime>::AssetDisabledForOutgoingTransfers
+        );
+        assert_ok!(parachain::XTokens::transfer(
+            parachain::RuntimeOrigin::signed(ALICE),
+            parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
+            10,
+            Box::new(VersionedMultiLocation::V1(dest.clone())),
+            xcm_simulator::Limited(ADVERTISED_DEST_WEIGHT)
+        ));
+        assert_err!(
+            parachain::XTokens::transfer_multicurrencies(
+                Some(ALICE).into(),
+                vec![
+                    (
+                        parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
+                        amount
+                    ),
+                    (parachain::CurrencyId::MantaCurrency(b_asset_id_on_a), fee)
+                ],
+                1,
+                Box::new(VersionedMultiLocation::V1(dest.clone())),
+                xcm_simulator::Limited(ADVERTISED_DEST_WEIGHT),
+            ),
+            orml_xtokens::Error::<parachain::Runtime>::AssetDisabledForOutgoingTransfers
+        );
+        assert_err!(
+            parachain::XTokens::transfer_multicurrencies(
+                Some(ALICE).into(),
+                vec![
+                    (
+                        parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
+                        amount
+                    ),
+                    (parachain::CurrencyId::MantaCurrency(a_asset_id_on_a), fee)
+                ],
+                1,
+                Box::new(VersionedMultiLocation::V1(dest.clone())),
+                xcm_simulator::Limited(ADVERTISED_DEST_WEIGHT),
+            ),
+            orml_xtokens::Error::<parachain::Runtime>::AssetDisabledForOutgoingTransfers
+        );
+        assert_ok!(parachain::XTokens::transfer_multicurrencies(
+            Some(ALICE).into(),
+            vec![
+                (parachain::CurrencyId::MantaCurrency(a_asset_id_on_a), 10),
+                (parachain::CurrencyId::MantaCurrency(a_asset_id_on_a), fee)
+            ],
+            1,
+            Box::new(VersionedMultiLocation::V1(dest.clone())),
+            xcm_simulator::Limited(ADVERTISED_DEST_WEIGHT),
+        ));
+        assert_ok!(parachain::AssetManager::update_outgoing_filtered_assets(
+            parachain::RuntimeOrigin::root(),
+            para_b_source_location.clone(),
+            false
+        ));
+        assert!(!AssetManager::check_outgoing_assets_filter(
+            &para_b_source_location.into()
+        ),)
+    });
 }
