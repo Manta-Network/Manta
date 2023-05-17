@@ -261,6 +261,9 @@ pub mod pallet {
         /// Location Already Exists
         LocationAlreadyExists,
 
+        /// MultiLocation Type Not Supported
+        LocationNotSupported,
+
         /// An error occured while creating a new asset at the [`AssetRegistry`].
         ErrorCreatingAsset,
 
@@ -348,6 +351,12 @@ pub mod pallet {
                 !LocationAssetId::<T>::contains_key(&location),
                 Error::<T>::LocationAlreadyExists
             );
+            if let Some(multi) = location.clone().into() {
+                ensure!(
+                    Self::is_allowed_asset_location(&multi),
+                    Error::<T>::LocationNotSupported
+                );
+            }
             let asset_id = Self::next_asset_id_and_increment()?;
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
                 asset_id,
@@ -399,6 +408,12 @@ pub mod pallet {
                 !LocationAssetId::<T>::contains_key(&location),
                 Error::<T>::LocationAlreadyExists
             );
+            if let Some(multi) = location.clone().into() {
+                ensure!(
+                    Self::is_allowed_asset_location(&multi),
+                    Error::<T>::LocationNotSupported
+                );
+            }
             // change the ledger state.
             let old_location =
                 AssetIdLocation::<T>::get(asset_id).ok_or(Error::<T>::UpdateNonExistentAsset)?;
@@ -603,24 +618,47 @@ pub mod pallet {
                 Ok(())
             }
         }
+
+        /// defines what types of locations can be registered as assets
+        fn is_allowed_asset_location(location: &MultiLocation) -> bool {
+            let p = location.parents;
+            if p > 1 {
+                return false;
+            }
+            match location.interior {
+                // Local or relay asset
+                Junctions::Here => p == 0 || p == 1,
+                // A parachain native asset
+                Junctions::X1(Junction::Parachain { .. }) => p == 1,
+                // Send tokens to sibling chain.
+                Junctions::X2(Junction::Parachain { .. }, Junction::PalletInstance { .. })
+                | Junctions::X2(Junction::Parachain { .. }, Junction::GeneralKey { .. }) => p == 1,
+                Junctions::X3(
+                    Junction::Parachain { .. },
+                    Junction::PalletInstance { .. },
+                    Junction::GeneralIndex { .. },
+                ) => p == 1,
+                _ => false,
+            }
+        }
     }
 
-    /// Check the multilocation destination is supported by calamari/manta.
+    /// impl used by xtokens as `MultiLocationsFilter`. Defines where we're allowed to **send** to
     impl<T> Contains<MultiLocation> for Pallet<T>
     where
         T: Config,
     {
         #[inline]
         fn contains(location: &MultiLocation) -> bool {
-            // check parents
+            // xtokens / XCM must not be used to send transfers local to our parachain
+            // and we don't support nested chains
             if location.parents != 1 {
                 return false;
             }
-
             match location.interior {
-                // Send tokens back to relaychain.
+                // Send tokens to an account on the relaychain.
                 Junctions::X1(Junction::AccountId32 { .. }) => true,
-                // Send tokens to sibling chain.
+                // Send tokens to an account on a sibling chain.
                 Junctions::X2(Junction::Parachain(para_id), Junction::AccountId32 { .. })
                 | Junctions::X2(Junction::Parachain(para_id), Junction::AccountKey20 { .. }) => {
                     AllowedDestParaIds::<T>::contains_key(para_id)
