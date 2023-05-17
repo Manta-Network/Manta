@@ -975,6 +975,9 @@ impl_runtime_apis! {
         ) -> PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
+        fn pull_ledger_total_count() -> [u8; 16] {
+            MantaPay::pull_ledger_total_count()
+        }
         fn initial_pull(checkpoint: RawCheckpoint, max_receiver: u64) -> InitialSyncResponse {
             MantaPay::initial_pull(checkpoint.into(), max_receiver)
         }
@@ -987,6 +990,9 @@ impl_runtime_apis! {
             max_sender: u64
         ) -> PullResponse {
             MantaSbt::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
+        fn sbt_pull_ledger_total_count() -> [u8; 16] {
+            MantaSbt::pull_ledger_total_count()
         }
     }
 

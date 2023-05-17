@@ -24,7 +24,7 @@ use frame_support::{
     assert_ok, construct_runtime, match_types,
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU32, Currency, Everything, Nothing},
+    traits::{AsEnsureOriginWithArg, ConstU32, Contains, Currency, Everything, Nothing},
     weights::Weight,
     PalletId,
 };
@@ -32,7 +32,7 @@ use frame_system::{EnsureNever, EnsureRoot};
 use scale_info::TypeInfo;
 use sp_core::H256;
 use sp_runtime::{
-    traits::{BlakeTwo256, Hash, IdentityLookup},
+    traits::{BlakeTwo256, Convert, Hash, IdentityLookup},
     AccountId32,
 };
 use sp_std::prelude::*;
@@ -64,6 +64,14 @@ use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
 
 pub type AccountId = AccountId32;
 pub type Balance = u128;
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "calamari")] {
+        type RuntimeXcmWeight = calamari_runtime::weights::xcm::CalamariXcmWeight<RuntimeCall>;
+    } else {
+        type RuntimeXcmWeight = manta_runtime::weights::xcm::MantaXcmWeight<RuntimeCall>;
+    }
+}
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
@@ -295,11 +303,7 @@ impl Config for XcmExecutorConfig {
     type IsTeleporter = ();
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = Barrier;
-    type Weigher = WeightInfoBounds<
-        calamari_runtime::weights::xcm::CalamariXcmWeight<RuntimeCall>,
-        RuntimeCall,
-        MaxInstructions,
-    >;
+    type Weigher = WeightInfoBounds<RuntimeXcmWeight, RuntimeCall, MaxInstructions>;
     // Trader is the means to purchasing weight credit for XCM execution.
     // We define two traders:
     // The first one will charge parachain's native currency, who's `MultiLocation`
@@ -507,11 +511,7 @@ impl pallet_xcm::Config for Runtime {
     // Do not allow teleports
     type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Nothing;
-    type Weigher = WeightInfoBounds<
-        calamari_runtime::weights::xcm::CalamariXcmWeight<RuntimeCall>,
-        RuntimeCall,
-        MaxInstructions,
-    >;
+    type Weigher = WeightInfoBounds<RuntimeXcmWeight, RuntimeCall, MaxInstructions>;
     type LocationInverter = LocationInverter<Ancestry>;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
@@ -627,6 +627,7 @@ impl pallet_asset_manager::Config for Runtime {
     type Location = AssetLocation;
     type AssetConfig = ParachainAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId>;
+    type SuspenderOrigin = EnsureRoot<AccountId>;
     type PalletId = AssetManagerPalletId;
     type WeightInfo = ();
 }
@@ -664,6 +665,14 @@ parameter_types! {
     pub const MaxAssetsForTransfer: usize = 3;
 }
 
+impl Contains<CurrencyId> for AssetManager {
+    fn contains(id: &CurrencyId) -> bool {
+        let asset_id =
+            CurrencyIdtoMultiLocation::<AssetIdLocationConvert<AssetManager>>::convert(id.clone());
+        Self::check_outgoing_assets_filter(&asset_id)
+    }
+}
+
 // The XCM message wrapper wrapper
 impl orml_xtokens::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
@@ -673,16 +682,13 @@ impl orml_xtokens::Config for Runtime {
     type CurrencyIdConvert = CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetManager>>;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type SelfLocation = SelfReserve;
-    type Weigher = WeightInfoBounds<
-        calamari_runtime::weights::xcm::CalamariXcmWeight<RuntimeCall>,
-        RuntimeCall,
-        MaxInstructions,
-    >;
+    type Weigher = WeightInfoBounds<RuntimeXcmWeight, RuntimeCall, MaxInstructions>;
     type BaseXcmWeight = BaseXcmWeight;
     type LocationInverter = LocationInverter<Ancestry>;
     type MaxAssetsForTransfer = MaxAssetsForTransfer;
     type MinXcmFee = AssetManager;
     type MultiLocationsFilter = AssetManager;
+    type OutgoingAssetsFilter = AssetManager;
     type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
 }
 

@@ -4170,6 +4170,65 @@ dependencies = [
 ]
 
 [[package]]
+name = "integration-tests"
+version = "4.0.7"
+dependencies = [
+ "calamari-runtime",
+ "calamari-vesting",
+ "cfg-if",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
+ "cumulus-primitives-parachain-inherent",
+ "cumulus-test-relay-sproof-builder",
+ "frame-support",
+ "frame-system",
+ "lazy_static",
+ "manta-collator-selection",
+ "manta-primitives",
+ "manta-runtime",
+ "nimbus-primitives",
+ "orml-traits",
+ "orml-xtokens",
+ "pallet-asset-manager",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-collective",
+ "pallet-conviction-voting",
+ "pallet-democracy",
+ "pallet-manta-pay",
+ "pallet-manta-sbt",
+ "pallet-manta-support",
+ "pallet-parachain-staking",
+ "pallet-ranked-collective",
+ "pallet-referenda",
+ "pallet-scheduler",
+ "pallet-session",
+ "pallet-transaction-payment",
+ "pallet-tx-pause",
+ "pallet-utility",
+ "pallet-xcm",
+ "parachain-info",
+ "parity-scale-codec",
+ "polkadot-core-primitives",
+ "polkadot-parachain",
+ "polkadot-runtime-parachains",
+ "runtime-common",
+ "scale-info",
+ "session-key-primitives",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
+ "xcm-simulator",
+]
+
+[[package]]
 name = "interceptor"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5485,9 +5544,13 @@ dependencies = [
  "pallet-author-inherent",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-collective",
+ "pallet-democracy",
+ "pallet-membership",
  "pallet-multisig",
  "pallet-parachain-staking",
  "pallet-preimage",
+ "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -6312,7 +6375,7 @@ dependencies = [
 [[package]]
 name = "orml-traits"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#05f0007b30c98303078ee64d34390233d6ffb30e"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed87ba5bb12c756b3973b3f59a430bab22fc0cc9"
 dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
@@ -6330,7 +6393,7 @@ dependencies = [
 [[package]]
 name = "orml-utilities"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#05f0007b30c98303078ee64d34390233d6ffb30e"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed87ba5bb12c756b3973b3f59a430bab22fc0cc9"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -6344,7 +6407,7 @@ dependencies = [
 [[package]]
 name = "orml-xcm-support"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#05f0007b30c98303078ee64d34390233d6ffb30e"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed87ba5bb12c756b3973b3f59a430bab22fc0cc9"
 dependencies = [
  "frame-support",
  "orml-traits",
@@ -6358,7 +6421,7 @@ dependencies = [
 [[package]]
 name = "orml-xtokens"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#05f0007b30c98303078ee64d34390233d6ffb30e"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed87ba5bb12c756b3973b3f59a430bab22fc0cc9"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",

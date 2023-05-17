@@ -455,7 +455,7 @@ pub fn run_with(cli: Cli) -> Result {
                     } else if config.chain_spec.is_calamari() {
                         return crate::service::start_dev_nimbus_node::<calamari_runtime::RuntimeApi, _>(
                             config,
-                            rpc::create_common_full,
+                            rpc::create_calamari_full,
                         ).await
                             .map_err(Into::into);
                     } else {
