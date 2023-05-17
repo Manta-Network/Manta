@@ -119,7 +119,7 @@ mod multiplier_tests {
                 TransactionPayment::on_finalize(1);
                 let next = TransactionPayment::next_fee_multiplier();
 
-                assert!(next > multiplier, "{next:?} !>= {multiplier:?}", );
+                assert!(next > multiplier, "{next:?} !>= {multiplier:?}");
                 multiplier = next;
 
                 println!(
@@ -183,7 +183,7 @@ mod multiplier_tests {
                 assert!(next < multiplier, "{next:?} !>= {multiplier:?}");
                 multiplier = next;
 
-                println!("block = {blocks} / multiplier {multiplier:?}",);
+                println!("block = {blocks} / multiplier {multiplier:?}");
             });
             blocks += 1;
         }

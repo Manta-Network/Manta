@@ -36,41 +36,41 @@ fn verify_pallet_prefixes() {
         );
     }
 
-    is_pallet_prefix::<manta_runtime::System>("System");
-    is_pallet_prefix::<manta_runtime::ParachainSystem>("ParachainSystem");
-    is_pallet_prefix::<manta_runtime::Timestamp>("Timestamp");
-    is_pallet_prefix::<manta_runtime::ParachainInfo>("ParachainInfo");
+    is_pallet_prefix::<System>("System");
+    is_pallet_prefix::<ParachainSystem>("ParachainSystem");
+    is_pallet_prefix::<Timestamp>("Timestamp");
+    is_pallet_prefix::<ParachainInfo>("ParachainInfo");
 
-    is_pallet_prefix::<manta_runtime::Balances>("Balances");
-    is_pallet_prefix::<manta_runtime::TransactionPayment>("TransactionPayment");
+    is_pallet_prefix::<Balances>("Balances");
+    is_pallet_prefix::<TransactionPayment>("TransactionPayment");
 
-    is_pallet_prefix::<manta_runtime::ParachainStaking>("ParachainStaking");
+    is_pallet_prefix::<ParachainStaking>("ParachainStaking");
 
-    is_pallet_prefix::<manta_runtime::AuthorInherent>("AuthorInherent");
-    is_pallet_prefix::<manta_runtime::AuraAuthorFilter>("AuraAuthorFilter");
+    is_pallet_prefix::<AuthorInherent>("AuthorInherent");
+    is_pallet_prefix::<AuraAuthorFilter>("AuraAuthorFilter");
 
-    is_pallet_prefix::<manta_runtime::Authorship>("Authorship");
-    is_pallet_prefix::<manta_runtime::CollatorSelection>("CollatorSelection");
-    is_pallet_prefix::<manta_runtime::Session>("Session");
-    is_pallet_prefix::<manta_runtime::Aura>("Aura");
+    is_pallet_prefix::<Authorship>("Authorship");
+    is_pallet_prefix::<CollatorSelection>("CollatorSelection");
+    is_pallet_prefix::<Session>("Session");
+    is_pallet_prefix::<Aura>("Aura");
 
-    is_pallet_prefix::<manta_runtime::Treasury>("Treasury");
+    is_pallet_prefix::<Treasury>("Treasury");
 
-    is_pallet_prefix::<manta_runtime::Preimage>("Preimage");
+    is_pallet_prefix::<Preimage>("Preimage");
 
-    is_pallet_prefix::<manta_runtime::XcmpQueue>("XcmpQueue");
-    is_pallet_prefix::<manta_runtime::PolkadotXcm>("PolkadotXcm");
-    is_pallet_prefix::<manta_runtime::CumulusXcm>("CumulusXcm");
-    is_pallet_prefix::<manta_runtime::DmpQueue>("DmpQueue");
-    is_pallet_prefix::<manta_runtime::XTokens>("XTokens");
+    is_pallet_prefix::<XcmpQueue>("XcmpQueue");
+    is_pallet_prefix::<PolkadotXcm>("PolkadotXcm");
+    is_pallet_prefix::<CumulusXcm>("CumulusXcm");
+    is_pallet_prefix::<DmpQueue>("DmpQueue");
+    is_pallet_prefix::<XTokens>("XTokens");
 
-    is_pallet_prefix::<manta_runtime::Utility>("Utility");
-    is_pallet_prefix::<manta_runtime::Multisig>("Multisig");
+    is_pallet_prefix::<Utility>("Utility");
+    is_pallet_prefix::<Multisig>("Multisig");
 
     is_pallet_prefix::<manta_runtime::Sudo>("Sudo");
 
-    is_pallet_prefix::<manta_runtime::Assets>("Assets");
-    is_pallet_prefix::<manta_runtime::AssetManager>("AssetManager");
+    is_pallet_prefix::<Assets>("Assets");
+    is_pallet_prefix::<AssetManager>("AssetManager");
 
     let prefix = |pallet_name, storage_name| {
         let mut res = [0u8; 32];
@@ -143,44 +143,44 @@ fn verify_pallet_prefixes() {
 fn verify_manta_pallet_indices() {
     fn is_pallet_index<P: 'static>(index: usize) {
         assert_eq!(
-            <manta_runtime::Runtime as frame_system::Config>::PalletInfo::index::<P>(),
+            <Runtime as frame_system::Config>::PalletInfo::index::<P>(),
             Some(index)
         );
     }
 
-    is_pallet_index::<manta_runtime::System>(0);
-    is_pallet_index::<manta_runtime::ParachainSystem>(1);
-    is_pallet_index::<manta_runtime::Timestamp>(2);
-    is_pallet_index::<manta_runtime::ParachainInfo>(3);
+    is_pallet_index::<System>(0);
+    is_pallet_index::<ParachainSystem>(1);
+    is_pallet_index::<Timestamp>(2);
+    is_pallet_index::<ParachainInfo>(3);
 
-    is_pallet_index::<manta_runtime::Balances>(10);
-    is_pallet_index::<manta_runtime::TransactionPayment>(11);
+    is_pallet_index::<Balances>(10);
+    is_pallet_index::<TransactionPayment>(11);
 
-    is_pallet_index::<manta_runtime::ParachainStaking>(48);
+    is_pallet_index::<ParachainStaking>(48);
 
-    is_pallet_index::<manta_runtime::AuthorInherent>(60);
-    is_pallet_index::<manta_runtime::AuraAuthorFilter>(63);
+    is_pallet_index::<AuthorInherent>(60);
+    is_pallet_index::<AuraAuthorFilter>(63);
 
-    is_pallet_index::<manta_runtime::Authorship>(20);
-    is_pallet_index::<manta_runtime::CollatorSelection>(21);
-    is_pallet_index::<manta_runtime::Session>(22);
-    is_pallet_index::<manta_runtime::Aura>(23);
+    is_pallet_index::<Authorship>(20);
+    is_pallet_index::<CollatorSelection>(21);
+    is_pallet_index::<Session>(22);
+    is_pallet_index::<Aura>(23);
 
-    is_pallet_index::<manta_runtime::Treasury>(26);
+    is_pallet_index::<Treasury>(26);
 
-    is_pallet_index::<manta_runtime::Preimage>(28);
+    is_pallet_index::<Preimage>(28);
 
-    is_pallet_index::<manta_runtime::XcmpQueue>(30);
-    is_pallet_index::<manta_runtime::PolkadotXcm>(31);
-    is_pallet_index::<manta_runtime::CumulusXcm>(32);
-    is_pallet_index::<manta_runtime::DmpQueue>(33);
-    is_pallet_index::<manta_runtime::XTokens>(34);
+    is_pallet_index::<XcmpQueue>(30);
+    is_pallet_index::<PolkadotXcm>(31);
+    is_pallet_index::<CumulusXcm>(32);
+    is_pallet_index::<DmpQueue>(33);
+    is_pallet_index::<XTokens>(34);
 
-    is_pallet_index::<manta_runtime::Utility>(40);
-    is_pallet_index::<manta_runtime::Multisig>(41);
+    is_pallet_index::<Utility>(40);
+    is_pallet_index::<Multisig>(41);
 
     is_pallet_index::<manta_runtime::Sudo>(42);
 
-    is_pallet_index::<manta_runtime::Assets>(45);
-    is_pallet_index::<manta_runtime::AssetManager>(46);
+    is_pallet_index::<Assets>(45);
+    is_pallet_index::<AssetManager>(46);
 }

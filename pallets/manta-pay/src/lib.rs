@@ -599,6 +599,20 @@ pub mod pallet {
             )
         }
 
+        /// Returns ledger total count
+        /// In the initial state of the ledger, the total value will be 256;
+        /// if we want to get an accurate value, we need to request `pull_receivers` to fix this value;
+        /// but a simple total count interface does not need to add more complicated logic.
+        #[inline]
+        pub fn pull_ledger_total_count() -> [u8; 16] {
+            let receivers_total = (0..=255)
+                .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128)
+                .sum::<u128>()
+                + 256u128;
+            let senders_total = NullifierSetSize::<T>::get() as u128;
+            asset_value_encode(receivers_total + senders_total)
+        }
+
         /// Returns the diff of ledger state since the given `checkpoint`, `max_receivers`, and
         /// `max_senders`.
         #[inline]
@@ -610,23 +624,12 @@ pub mod pallet {
             let (more_receivers, receivers) =
                 Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
             let (more_senders, senders) = Self::pull_senders(checkpoint.sender_index, max_senders);
-            let mut senders_receivers_total = (0..=255)
-                .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128)
-                .sum::<u128>();
-            // Workaround for the fact that we index the receivers from 0
-            if senders_receivers_total == 0u128 {
-                // The cast is fine because the vector sizes are limited by PULL_MAX_RECEIVER_UPDATE_SIZE and PULL_MAX_SENDER_UPDATE_SIZE
-                senders_receivers_total = receivers.len() as u128;
-            } else {
-                senders_receivers_total += 256u128;
-            }
-            senders_receivers_total += NullifierSetSize::<T>::get() as u128;
 
             PullResponse {
                 should_continue: more_receivers || more_senders,
                 receivers,
                 senders,
-                senders_receivers_total: asset_value_encode(senders_receivers_total),
+                senders_receivers_total: Self::pull_ledger_total_count(),
             }
         }
 
