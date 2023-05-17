@@ -187,7 +187,6 @@ pub fn run_to_block(n: u32) {
         AuthorInherent::on_initialize(System::block_number());
         Session::on_initialize(System::block_number());
         ParachainStaking::on_initialize(System::block_number());
-        #[cfg(feature = "calamari")]
         {
             Scheduler::on_initialize(System::block_number());
             Democracy::on_initialize(System::block_number());

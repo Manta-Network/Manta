@@ -119,7 +119,7 @@ mod multiplier_tests {
                 TransactionPayment::on_finalize(1);
                 let next = TransactionPayment::next_fee_multiplier();
 
-                assert!(next > multiplier, "{:?} !>= {:?}", next, multiplier);
+                assert!(next > multiplier, "{next:?} !>= {multiplier:?}");
                 multiplier = next;
 
                 println!(
@@ -180,10 +180,10 @@ mod multiplier_tests {
                 TransactionPayment::on_finalize(1);
                 let next = TransactionPayment::next_fee_multiplier();
 
-                assert!(next < multiplier, "{:?} !>= {:?}", next, multiplier);
+                assert!(next < multiplier, "{next:?} !>= {multiplier:?}");
                 multiplier = next;
 
-                println!("block = {} / multiplier {:?}", blocks, multiplier);
+                println!("block = {blocks} / multiplier {multiplier:?}");
             });
             blocks += 1;
         }
@@ -191,7 +191,7 @@ mod multiplier_tests {
         let cooldown_target = 10f32;
         let days = blocks as f32 / DAYS as f32;
         if days > cooldown_target {
-            panic!("It will take more than 10 days to cool down: {:?}", days);
+            panic!("It will take more than 10 days to cool down: {days:?}");
         }
     }
 }

@@ -9,7 +9,7 @@ import { blake2AsHex } from "@polkadot/util-crypto";
 import * as fs from 'fs';
 
 const test_config = {
-    ws_address: "ws://127.0.0.1:9800",
+    ws_address: "ws://127.0.0.1:9801",
     mnemonic: 'bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice',
     timeout: 2000000
 }
@@ -36,7 +36,7 @@ describe('Node RPC Test', () => {
        
         const oldRuntimeVersion = await api.rpc.state.getRuntimeVersion();
         const oldSpecVersion = oldRuntimeVersion["specVersion"];
-
+        console.log("Old spec version: ", oldSpecVersion);
         const code = fs.readFileSync('calamari.wasm').toString('hex');
         let codeHash = blake2AsHex(`0x${code}`);
         const authorizeUpgradeCallData = api.tx.parachainSystem.authorizeUpgrade(codeHash);
