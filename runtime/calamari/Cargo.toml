@@ -196,9 +196,9 @@ runtime-benchmarks = [
   'pallet-manta-pay/runtime-benchmarks',
   'pallet-xcm-benchmarks/runtime-benchmarks',
   'pallet-manta-sbt/runtime-benchmarks',
-  "zenlink-protocol/runtime-benchmarks",
-  "zenlink-stable-amm/runtime-benchmarks",
-  "zenlink-swap-router/runtime-benchmarks",
+  'zenlink-protocol/runtime-benchmarks',
+  'zenlink-stable-amm/runtime-benchmarks',
+  'zenlink-swap-router/runtime-benchmarks',
   'manta-farming/runtime-benchmarks',
 ]
 try-runtime = [
