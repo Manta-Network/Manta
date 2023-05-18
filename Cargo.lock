@@ -1105,11 +1105,11 @@ dependencies = [
  "manta-collator-selection",
  "manta-farming",
  "manta-farming-rpc-runtime-api",
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "nimbus-primitives",
  "orml-traits",
  "orml-xtokens",
- "pallet-asset-manager",
+ "pallet-asset-manager 4.0.7",
  "pallet-assets",
  "pallet-aura",
  "pallet-aura-style-filter",
@@ -1183,7 +1183,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "pallet-balances",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -2662,11 +2662,11 @@ dependencies = [
  "manta-collator-selection",
  "manta-farming",
  "manta-farming-rpc-runtime-api",
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "nimbus-primitives",
  "orml-traits",
  "orml-xtokens",
- "pallet-asset-manager",
+ "pallet-asset-manager 4.0.7",
  "pallet-assets",
  "pallet-aura",
  "pallet-aura-style-filter",
@@ -4200,12 +4200,12 @@ dependencies = [
  "frame-system",
  "lazy_static",
  "manta-collator-selection",
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "manta-runtime",
  "nimbus-primitives",
  "orml-traits",
  "orml-xtokens",
- "pallet-asset-manager",
+ "pallet-asset-manager 4.0.7",
  "pallet-assets",
  "pallet-balances",
  "pallet-collective",
@@ -5345,7 +5345,7 @@ dependencies = [
  "log",
  "manta-farming-rpc-api",
  "manta-farming-rpc-runtime-api",
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "manta-runtime",
  "nimbus-consensus",
  "nimbus-primitives",
@@ -5433,7 +5433,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "nimbus-primitives",
  "pallet-aura",
  "pallet-authorship",
@@ -5489,9 +5489,9 @@ dependencies = [
  "frame-system",
  "hex-literal",
  "log",
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "orml-traits",
- "pallet-asset-manager",
+ "pallet-asset-manager 4.0.7",
  "pallet-assets",
  "pallet-balances",
  "parity-scale-codec",
@@ -5510,7 +5510,7 @@ version = "4.0.3"
 dependencies = [
  "jsonrpsee",
  "manta-farming-rpc-runtime-api",
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "parity-scale-codec",
  "serde",
  "sp-api",
@@ -5524,7 +5524,7 @@ dependencies = [
 name = "manta-farming-rpc-runtime-api"
 version = "4.0.3"
 dependencies = [
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "parity-scale-codec",
  "sp-api",
  "sp-std",
@@ -5584,6 +5584,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "manta-primitives"
+version = "4.0.7"
+source = "git+https://github.com/manta-network/Manta?branch=zenlink_benchmark#c736f1b5e5268ca0c22ef3a12b840451df30cf65"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "orml-traits",
+ "parity-scale-codec",
+ "scale-info",
+ "smallvec",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
+]
+
+[[package]]
 name = "manta-runtime"
 version = "4.0.7"
 dependencies = [
@@ -5605,11 +5626,11 @@ dependencies = [
  "hex-literal",
  "log",
  "manta-collator-selection",
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "nimbus-primitives",
  "orml-traits",
  "orml-xtokens",
- "pallet-asset-manager",
+ "pallet-asset-manager 4.0.7",
  "pallet-assets",
  "pallet-aura",
  "pallet-aura-style-filter",
@@ -6443,7 +6464,7 @@ dependencies = [
 [[package]]
 name = "orml-tokens"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#05f0007b30c98303078ee64d34390233d6ffb30e"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed87ba5bb12c756b3973b3f59a430bab22fc0cc9"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6458,7 +6479,7 @@ dependencies = [
 [[package]]
 name = "orml-traits"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#05f0007b30c98303078ee64d34390233d6ffb30e"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed87ba5bb12c756b3973b3f59a430bab22fc0cc9"
 dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
@@ -6476,7 +6497,7 @@ dependencies = [
 [[package]]
 name = "orml-utilities"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#05f0007b30c98303078ee64d34390233d6ffb30e"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed87ba5bb12c756b3973b3f59a430bab22fc0cc9"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -6562,7 +6583,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "orml-traits",
  "pallet-assets",
  "pallet-balances",
@@ -6571,6 +6592,24 @@ dependencies = [
  "sp-arithmetic",
  "sp-core",
  "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+]
+
+[[package]]
+name = "pallet-asset-manager"
+version = "4.0.7"
+source = "git+https://github.com/manta-network/Manta?branch=zenlink_benchmark#c736f1b5e5268ca0c22ef3a12b840451df30cf65"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "manta-primitives 4.0.7 (git+https://github.com/manta-network/Manta?branch=zenlink_benchmark)",
+ "orml-traits",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-arithmetic",
  "sp-runtime",
  "sp-std",
  "xcm",
@@ -7024,9 +7063,9 @@ dependencies = [
  "manta-accounting",
  "manta-crypto",
  "manta-pay",
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "manta-util",
- "pallet-asset-manager",
+ "pallet-asset-manager 4.0.7",
  "pallet-assets",
  "pallet-balances",
  "pallet-manta-support",
@@ -7060,9 +7099,9 @@ dependencies = [
  "manta-accounting",
  "manta-crypto",
  "manta-pay",
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "manta-util",
- "pallet-asset-manager",
+ "pallet-asset-manager 4.0.7",
  "pallet-assets",
  "pallet-balances",
  "pallet-manta-pay",
@@ -7096,7 +7135,7 @@ dependencies = [
  "manta-accounting",
  "manta-crypto",
  "manta-pay",
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "manta-util",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
@@ -7270,7 +7309,7 @@ dependencies = [
  "frame-system",
  "log",
  "manta-collator-selection",
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "pallet-balances",
  "pallet-session",
  "parity-scale-codec",
@@ -7617,7 +7656,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "pallet-balances",
  "parity-scale-codec",
  "scale-info",
@@ -9989,10 +10028,10 @@ dependencies = [
  "frame-support",
  "frame-system",
  "lazy_static",
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "orml-traits",
  "orml-xtokens",
- "pallet-asset-manager",
+ "pallet-asset-manager 4.0.7",
  "pallet-assets",
  "pallet-balances",
  "pallet-transaction-payment",
@@ -11539,7 +11578,7 @@ dependencies = [
 name = "session-key-primitives"
 version = "4.0.7"
 dependencies = [
- "manta-primitives",
+ "manta-primitives 4.0.7",
  "nimbus-primitives",
  "parity-scale-codec",
  "scale-info",
@@ -14873,15 +14912,17 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#bbe67e554260f1ea8edd667e35b12f6766fa019c"
+source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#cb1fce56c9934b85c54d92e48e15e16601061bed"
 dependencies = [
  "cumulus-primitives-core",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
+ "manta-primitives 4.0.7 (git+https://github.com/manta-network/Manta?branch=zenlink_benchmark)",
  "orml-tokens",
  "orml-traits",
+ "pallet-asset-manager 4.0.7 (git+https://github.com/manta-network/Manta?branch=zenlink_benchmark)",
  "pallet-balances",
  "parity-scale-codec",
  "scale-info",
@@ -14897,7 +14938,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol-rpc"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#bbe67e554260f1ea8edd667e35b12f6766fa019c"
+source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#cb1fce56c9934b85c54d92e48e15e16601061bed"
 dependencies = [
  "jsonrpsee",
  "parity-scale-codec",
@@ -14912,7 +14953,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol-runtime-api"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#bbe67e554260f1ea8edd667e35b12f6766fa019c"
+source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#cb1fce56c9934b85c54d92e48e15e16601061bed"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -14923,7 +14964,7 @@ dependencies = [
 [[package]]
 name = "zenlink-stable-amm"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#bbe67e554260f1ea8edd667e35b12f6766fa019c"
+source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#cb1fce56c9934b85c54d92e48e15e16601061bed"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -14941,7 +14982,7 @@ dependencies = [
 [[package]]
 name = "zenlink-stable-amm-rpc"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#bbe67e554260f1ea8edd667e35b12f6766fa019c"
+source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#cb1fce56c9934b85c54d92e48e15e16601061bed"
 dependencies = [
  "jsonrpsee",
  "parity-scale-codec",
@@ -14955,7 +14996,7 @@ dependencies = [
 [[package]]
 name = "zenlink-stable-amm-runtime-api"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#bbe67e554260f1ea8edd667e35b12f6766fa019c"
+source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#cb1fce56c9934b85c54d92e48e15e16601061bed"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -14966,7 +15007,7 @@ dependencies = [
 [[package]]
 name = "zenlink-swap-router"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#bbe67e554260f1ea8edd667e35b12f6766fa019c"
+source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#cb1fce56c9934b85c54d92e48e15e16601061bed"
 dependencies = [
  "frame-benchmarking",
  "frame-support",

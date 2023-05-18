@@ -595,20 +595,11 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
 
-            let (asset_id0, asset_id1) = Self::sort_asset_id(asset_0, asset_1);
-            ensure!(
-                !AssetIdLp::<T>::contains_key((&asset_id0, &asset_id1)),
-                Error::<T>::AssetAlreadyRegistered
-            );
-
-            let asset_id = Self::do_register_asset(&location, &metadata)?;
-
-            AssetIdLp::<T>::insert((asset_id0, asset_id1), asset_id);
-            PoolIdLp::<T>::insert(asset_id, (asset_id0, asset_id1));
+            let asset_id = Self::do_register_lp_asset(asset_0, asset_1, &location, &metadata)?;
 
             Self::deposit_event(Event::<T>::LPAssetRegistered {
-                asset_id0,
-                asset_id1,
+                asset_id0: asset_0.clone(),
+                asset_id1: asset_1.clone(),
                 asset_id,
                 location: location.clone(),
                 metadata: metadata.clone(),
@@ -641,6 +632,26 @@ pub mod pallet {
             AssetIdLocation::<T>::insert(asset_id, location);
             AssetIdMetadata::<T>::insert(asset_id, metadata);
             LocationAssetId::<T>::insert(location, asset_id);
+            Ok(asset_id)
+        }
+
+        pub fn do_register_lp_asset(
+            asset_0: T::AssetId,
+            asset_1: T::AssetId,
+            location: &T::Location,
+            metadata: &<T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+        ) -> Result<T::AssetId, DispatchError> {
+            let (asset_id0, asset_id1) = Self::sort_asset_id(asset_0, asset_1);
+            ensure!(
+                !AssetIdLp::<T>::contains_key((&asset_id0, &asset_id1)),
+                Error::<T>::AssetAlreadyRegistered
+            );
+
+            let asset_id = Self::do_register_asset(location, metadata)?;
+
+            AssetIdLp::<T>::insert((asset_id0, asset_id1), asset_id);
+            PoolIdLp::<T>::insert(asset_id, (asset_id0, asset_id1));
+
             Ok(asset_id)
         }
 

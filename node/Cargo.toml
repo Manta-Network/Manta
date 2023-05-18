@@ -38,11 +38,11 @@ sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate.git",
 
 manta-farming-rpc-api = { path = "../pallets/farming/rpc" }
 manta-farming-rpc-runtime-api = { path = "../pallets/farming/rpc/runtime-api" }
-zenlink-protocol = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37" }
-zenlink-protocol-rpc = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37" }
-zenlink-protocol-runtime-api = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37" }
-zenlink-stable-amm-rpc = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37" }
-zenlink-stable-amm-runtime-api = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37" }
+zenlink-protocol = { git = 'https://github.com/manta-network/Zenlink', branch = "benchmark" }
+zenlink-protocol-rpc = { git = 'https://github.com/manta-network/Zenlink', branch = "benchmark" }
+zenlink-protocol-runtime-api = { git = 'https://github.com/manta-network/Zenlink', branch = "benchmark" }
+zenlink-stable-amm-rpc = { git = 'https://github.com/manta-network/Zenlink', branch = "benchmark" }
+zenlink-stable-amm-runtime-api = { git = 'https://github.com/manta-network/Zenlink', branch = "benchmark" }
 
 # Substrate client dependencies
 sc-basic-authorship = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
