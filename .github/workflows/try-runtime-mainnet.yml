@@ -112,7 +112,7 @@ jobs:
           yarn install
           yarn
           latest_hash=$(node get-latest-block-hash --address=$PROD_URL)
-          $HOME/.local/bin/manta try-runtime --chain $CHAIN_SPEC on-runtime-upgrade live --at $latest_hash --uri $PROD_URL
+          $HOME/.local/bin/manta try-runtime --chain $CHAIN_SPEC on-runtime-upgrade --checks=all live --at $latest_hash --uri $PROD_URL
       - name: stop sccache server
         run: sccache --stop-server || true
   stop-checks:

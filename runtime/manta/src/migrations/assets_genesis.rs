@@ -114,10 +114,9 @@ where
 
         log::info!(target: "assets", "✅ Storage migration for Assets has been executed successfully and storage version has been update to: {:?}.", INITIAL_PALLET_ASSETS_MANAGER_VERSION + 1);
 
-        StorageVersion::new(INITIAL_PALLET_ASSETS_VERSION + 1)
-            .put::<pallet_asset_manager::Pallet<T>>();
+        StorageVersion::new(INITIAL_PALLET_ASSETS_VERSION + 1).put::<pallet_assets::Pallet<T>>();
 
-        T::BlockWeights::get().max_block / 2 // simply use the whole block
+        T::BlockWeights::get().max_block // simply use the whole block
     }
 
     #[cfg(feature = "try-runtime")]
@@ -253,6 +252,8 @@ where
             2
         );
 
+        log::info!(target: "assets", "✅ Migrations pre checks finished!");
+
         Ok(().encode())
     }
 
@@ -261,13 +262,13 @@ where
         let asset_manager_storage_version =
             <pallet_asset_manager::Pallet<T> as GetStorageVersion>::on_chain_storage_version();
         if asset_manager_storage_version != INITIAL_PALLET_ASSETS_MANAGER_VERSION + 1 {
-            return Err("AssetManager storage version is not 1, the migration won't be executed.");
+            return Err("AssetManager storage version is not 1, the migration was not executed.");
         }
 
         let assets_storage_version =
             <pallet_assets::Pallet<T> as GetStorageVersion>::on_chain_storage_version();
         if assets_storage_version != INITIAL_PALLET_ASSETS_VERSION + 1 {
-            return Err("Assets storage version is not 1, the migration won't be executed.");
+            return Err("Assets storage version is not 1, the migration was not executed.");
         }
 
         // AssetIdLocation
@@ -293,7 +294,7 @@ where
                 storage_item_prefix,
             )
             .count(),
-            2
+            1
         );
 
         // AssetIdMetadata
@@ -388,6 +389,8 @@ where
             .count(),
             0
         );
+
+        log::info!(target: "assets", "✅ Migrations post checks finished!");
 
         Ok(())
     }
