@@ -16,31 +16,24 @@
 
 #![allow(clippy::unnecessary_cast)]
 
-use crate::{
-    assets_config::MantaAssetConfig,
-    sp_api_hidden_includes_construct_runtime::hidden_include::StorageHasher,
-};
-use codec::{Decode, Encode};
+use crate::sp_api_hidden_includes_construct_runtime::hidden_include::StorageHasher;
+use codec::Encode;
 use core::marker::PhantomData;
 use cumulus_primitives_core::ParaId;
 #[allow(deprecated)]
 use frame_support::migration::{
     clear_storage_prefix, get_storage_value, put_storage_value, storage_key_iter,
-    take_storage_value,
 };
 use frame_support::{
     dispatch::GetStorageVersion,
     pallet_prelude::Weight,
-    storage_alias,
     traits::{Currency, Get, OnRuntimeUpgrade, StorageVersion},
     Blake2_128Concat,
 };
 use manta_primitives::{
-    assets::{AssetConfig, AssetLocation, AssetRegistryMetadata, AssetStorageMetadata},
+    assets::{AssetConfig, AssetLocation, AssetRegistryMetadata},
     types::{Balance, MantaAssetId},
 };
-use scale_info::TypeInfo;
-use sp_core::H160;
 use sp_runtime::BoundedVec;
 use sp_std::vec::Vec;
 
