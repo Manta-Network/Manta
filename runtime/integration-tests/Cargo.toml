@@ -78,6 +78,7 @@ calamari = [
   "calamari-runtime?/runtime-benchmarks",
   "runtime-benchmarks",
 ]
+default = ["manta"]
 manta = [
   "dep:manta-runtime",
   "manta-runtime?/runtime-benchmarks",
