@@ -105,7 +105,7 @@ impl pallet_assets::Config for Runtime {
     type AssetIdParameter = CalamariAssetId;
     type CreateOrigin = AsEnsureOriginWithArg<EnsureNever<AccountId>>;
     type CallbackHandle = ();
-    #[cfg(any(test, feature = "runtime-benchmarks"))]
+    #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = ();
 }
 
