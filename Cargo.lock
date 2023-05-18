@@ -5586,8 +5586,9 @@ dependencies = [
 [[package]]
 name = "manta-primitives"
 version = "4.0.7"
-source = "git+https://github.com/manta-network/Manta?branch=zenlink_benchmark#b61a0f9205ca83c7d2ff7672160f3ac03b43121c"
+source = "git+https://github.com/manta-network/Manta?branch=zenlink_benchmark#621f98a596359a874dcd9660a84ed12e700554e8"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -6604,8 +6605,9 @@ dependencies = [
 [[package]]
 name = "pallet-asset-manager"
 version = "4.0.7"
-source = "git+https://github.com/manta-network/Manta?branch=zenlink_benchmark#b61a0f9205ca83c7d2ff7672160f3ac03b43121c"
+source = "git+https://github.com/manta-network/Manta?branch=zenlink_benchmark#621f98a596359a874dcd9660a84ed12e700554e8"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -14916,7 +14918,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#c39058c074555f768337d4ae683fb0aef54367aa"
+source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#b2ab82f3fbdec14db5c23778a1e9c5ebda3ade7d"
 dependencies = [
  "cumulus-primitives-core",
  "frame-benchmarking",
@@ -14943,7 +14945,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol-rpc"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#c39058c074555f768337d4ae683fb0aef54367aa"
+source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#b2ab82f3fbdec14db5c23778a1e9c5ebda3ade7d"
 dependencies = [
  "jsonrpsee",
  "parity-scale-codec",
@@ -14958,7 +14960,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol-runtime-api"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#c39058c074555f768337d4ae683fb0aef54367aa"
+source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#b2ab82f3fbdec14db5c23778a1e9c5ebda3ade7d"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -14969,7 +14971,7 @@ dependencies = [
 [[package]]
 name = "zenlink-stable-amm"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#c39058c074555f768337d4ae683fb0aef54367aa"
+source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#b2ab82f3fbdec14db5c23778a1e9c5ebda3ade7d"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -14987,7 +14989,7 @@ dependencies = [
 [[package]]
 name = "zenlink-stable-amm-rpc"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#c39058c074555f768337d4ae683fb0aef54367aa"
+source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#b2ab82f3fbdec14db5c23778a1e9c5ebda3ade7d"
 dependencies = [
  "jsonrpsee",
  "parity-scale-codec",
@@ -15001,7 +15003,7 @@ dependencies = [
 [[package]]
 name = "zenlink-stable-amm-runtime-api"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#c39058c074555f768337d4ae683fb0aef54367aa"
+source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#b2ab82f3fbdec14db5c23778a1e9c5ebda3ade7d"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -15012,7 +15014,7 @@ dependencies = [
 [[package]]
 name = "zenlink-swap-router"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#c39058c074555f768337d4ae683fb0aef54367aa"
+source = "git+https://github.com/manta-network/Zenlink?branch=benchmark#b2ab82f3fbdec14db5c23778a1e9c5ebda3ade7d"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
