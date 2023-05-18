@@ -190,6 +190,7 @@ impl pallet_asset_manager::Config for Runtime {
     type Location = AssetLocation;
     type AssetConfig = DolphinAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId>;
+    type SuspenderOrigin = EnsureRoot<AccountId>;
     type PalletId = AssetManagerPalletId;
     type WeightInfo = weights::pallet_asset_manager::SubstrateWeight<Runtime>;
 }
