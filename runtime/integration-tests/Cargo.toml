@@ -11,16 +11,16 @@ version = "4.0.7"
 calamari-runtime = { path = "../calamari", optional = true }
 cfg-if = "1.0"
 manta-runtime = { path = "../manta", optional = true }
-pallet-conviction-voting = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", features = ["runtime-benchmarks"] }
-pallet-ranked-collective = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", features = ["runtime-benchmarks"] }
-pallet-referenda = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", features = ["runtime-benchmarks"] }
+pallet-conviction-voting = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+pallet-ranked-collective = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+pallet-referenda = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 
 [dev-dependencies]
 codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false, features = ["derive", "max-encoded-len"] }
 frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37", default-features = false }
 frame-system = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
 lazy_static = "1.4.0"
-pallet-assets = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37", features = ["runtime-benchmarks"] }
+pallet-assets = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 pallet-collective = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 pallet-democracy = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
@@ -75,12 +75,9 @@ session-key-primitives = { path = '../../primitives/session-keys', default-featu
 [features]
 calamari = [
   "dep:calamari-runtime",
-  "calamari-runtime?/runtime-benchmarks",
-  "runtime-benchmarks",
 ]
+default = ["manta"]
 manta = [
   "dep:manta-runtime",
-  "manta-runtime?/runtime-benchmarks",
-  "runtime-benchmarks",
 ]
 runtime-benchmarks = []

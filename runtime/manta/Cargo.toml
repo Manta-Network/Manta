@@ -93,6 +93,7 @@ manta-collator-selection = { path = '../../pallets/collator-selection', default-
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
+pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
 
@@ -132,6 +133,7 @@ runtime-benchmarks = [
   'pallet-utility/runtime-benchmarks',
   'pallet-timestamp/runtime-benchmarks',
   'pallet-xcm/runtime-benchmarks',
+  'pallet-tx-pause/runtime-benchmarks',
   'pallet-treasury/runtime-benchmarks',
   'pallet-parachain-staking/runtime-benchmarks',
   'pallet-preimage/runtime-benchmarks',
@@ -162,6 +164,7 @@ try-runtime = [
   'pallet-utility/try-runtime',
   'pallet-treasury/try-runtime',
   'pallet-assets/try-runtime',
+  'pallet-tx-pause/try-runtime',
   'pallet-asset-manager/try-runtime',
   'runtime-common/try-runtime',
   "cumulus-pallet-parachain-system/try-runtime",
@@ -238,6 +241,7 @@ std = [
   'xcm-executor/std',
   'polkadot-primitives/std',
   'manta-collator-selection/std',
+  'pallet-tx-pause/std',
   'pallet-treasury/std',
   'pallet-assets/std',
   'pallet-asset-manager/std',
