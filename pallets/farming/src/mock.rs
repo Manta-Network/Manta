@@ -266,6 +266,7 @@ impl pallet_asset_manager::Config for Runtime {
     type Location = AssetLocation;
     type AssetConfig = MantaAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId32>;
+    type SuspenderOrigin = EnsureRoot<AccountId32>;
     type PalletId = AssetManagerPalletId;
     type WeightInfo = ();
 }
