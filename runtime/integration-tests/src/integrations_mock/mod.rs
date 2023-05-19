@@ -25,7 +25,7 @@ pub use mock::run_to_block;
 
 // Compilation errors would happen without default imports.
 // See run_linters.yml => SKIP_WASM_BUILD=1 cargo check --no-default-features
-cfg_if::cfg_if {
+cfg_if::cfg_if! {
     if #[cfg(feature = "calamari")] {
         use codec::Encode;
         use manta_primitives::types::Header;
