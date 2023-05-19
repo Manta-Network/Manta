@@ -56,17 +56,6 @@ use sp_runtime::{DispatchError, ModuleError};
 
 mod parachain_staking_tests {
     use super::*;
-    cfg_if! {
-        if #[cfg(feature = "calamari")] {
-            use calamari_runtime::staking::{
-                EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR,
-            };
-        } else {
-            use manta_runtime::staking::{
-                EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR,
-            };
-        }
-    }
 
     #[test]
     fn ensure_block_per_round_and_leave_delays_equal_7days() {

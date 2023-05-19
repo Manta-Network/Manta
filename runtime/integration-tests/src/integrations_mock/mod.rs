@@ -23,17 +23,15 @@ pub mod test_manta;
 
 pub use mock::run_to_block;
 
-use cfg_if::cfg_if;
-
 // Compilation errors would happen without default imports.
 // See run_linters.yml => SKIP_WASM_BUILD=1 cargo check --no-default-features
-cfg_if! {
+cfg_if::cfg_if {
     if #[cfg(feature = "calamari")] {
         use codec::Encode;
         use manta_primitives::types::Header;
         use nimbus_primitives::NIMBUS_ENGINE_ID;
         use sp_runtime::{traits::Header as HeaderT, DigestItem};
-        pub use calamari_runtime::{
+        use calamari_runtime::{
             currency::KMA,
             fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
             opaque::SessionKeys,
@@ -51,7 +49,7 @@ cfg_if! {
         type RuntimeConcreteFungibleLedger =
             calamari_runtime::assets_config::CalamariConcreteFungibleLedger;
     } else {
-        pub use manta_runtime::{
+        use manta_runtime::{
             assets_config::MantaConcreteFungibleLedger,
             currency::MANTA as KMA,
             opaque::SessionKeys,
