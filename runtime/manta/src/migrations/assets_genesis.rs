@@ -352,7 +352,7 @@ where
         let storage_item_prefix: &[u8] = b"NextAssetId";
         assert_eq!(
             get_storage_value::<MantaAssetId>(pallet_prefix, storage_item_prefix, &[]).unwrap(),
-            8
+            <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get()
         );
 
         // Asset
