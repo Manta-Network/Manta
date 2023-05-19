@@ -31,7 +31,7 @@ cfg_if::cfg_if! {
         use manta_primitives::types::Header;
         use nimbus_primitives::NIMBUS_ENGINE_ID;
         use sp_runtime::{traits::Header as HeaderT, DigestItem};
-        pub use calamari_runtime::{
+        use calamari_runtime::{
             currency::KMA,
             fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
             opaque::SessionKeys,
@@ -40,7 +40,7 @@ cfg_if::cfg_if! {
             AssetManager, Assets, AuthorInherent, Authorship, Balances, CalamariVesting, RuntimeCall,
             CollatorSelection, Council, DefaultBlocksPerRound, Democracy, EnactmentPeriod, RuntimeEvent,
             InflationInfo, LaunchPeriod, LeaveDelayRounds, NativeTokenExistentialDeposit, RuntimeOrigin,
-            ParachainStaking, Period, PolkadotXcm, Range, Runtime, Scheduler, Session, System,
+            ParachainStaking, PolkadotXcm, Range, Runtime, Scheduler, Session, System,
             TechnicalCommittee, Timestamp, TransactionPause, TransactionPayment, Treasury, Utility,
             VotingPeriod, Preimage, ParachainSystem, ParachainInfo, AuraAuthorFilter, Aura, XcmpQueue,
             CumulusXcm, DmpQueue, XTokens, Multisig, NonPausablePallets, AllPalletsWithSystem
@@ -49,7 +49,7 @@ cfg_if::cfg_if! {
         type RuntimeConcreteFungibleLedger =
             calamari_runtime::assets_config::CalamariConcreteFungibleLedger;
     } else {
-        pub use manta_runtime::{
+        use manta_runtime::{
             assets_config::MantaConcreteFungibleLedger,
             currency::MANTA as KMA,
             opaque::SessionKeys,
@@ -57,7 +57,7 @@ cfg_if::cfg_if! {
             xcm_config::{XcmExecutorConfig, XcmFeesAccount},
             AssetManager, Assets, AuthorInherent, Authorship, Balances, RuntimeCall, CollatorSelection,
             DefaultBlocksPerRound, RuntimeEvent, InflationInfo, LeaveDelayRounds, NativeTokenExistentialDeposit,
-            RuntimeOrigin, ParachainStaking, Period, PolkadotXcm, Range, Runtime, Session, System, Timestamp, TransactionPause,
+            RuntimeOrigin, ParachainStaking, PolkadotXcm, Range, Runtime, Session, System, Timestamp, TransactionPause,
             TransactionPayment, Treasury, Utility, TechnicalCommittee, Council, EnactmentPeriod, VotingPeriod,
             LaunchPeriod, Preimage, Democracy, Scheduler, Aura, Multisig, Sudo, ParachainSystem, ParachainInfo,
             XTokens, DmpQueue, CumulusXcm, XcmpQueue, AuraAuthorFilter, NonPausablePallets, AllPalletsWithSystem
