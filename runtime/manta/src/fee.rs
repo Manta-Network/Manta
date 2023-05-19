@@ -17,8 +17,7 @@
 pub use sp_runtime::Perbill;
 
 pub const FEES_PERCENTAGE_TO_AUTHOR: u8 = 10;
-pub const FEES_PERCENTAGE_TO_BURN: u8 = 45;
-pub const FEES_PERCENTAGE_TO_TREASURY: u8 = 45;
+pub const FEES_PERCENTAGE_TO_TREASURY: u8 = 90;
 
 pub const TIPS_PERCENTAGE_TO_AUTHOR: u8 = 100;
 pub const TIPS_PERCENTAGE_TO_TREASURY: u8 = 0;
@@ -28,16 +27,14 @@ mod fee_split_tests {
     use super::*;
     #[test]
     fn fee_split_adds_up_to_one() {
-        assert_eq!(
-            100,
-            FEES_PERCENTAGE_TO_AUTHOR + FEES_PERCENTAGE_TO_BURN + FEES_PERCENTAGE_TO_TREASURY
-        );
+        assert_eq!(100, FEES_PERCENTAGE_TO_AUTHOR + FEES_PERCENTAGE_TO_TREASURY);
     }
     #[test]
     fn tips_split_adds_up_to_one() {
         assert_eq!(100, TIPS_PERCENTAGE_TO_AUTHOR + TIPS_PERCENTAGE_TO_TREASURY);
     }
 }
+
 #[cfg(test)]
 mod multiplier_tests {
     use crate::{

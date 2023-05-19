@@ -24,7 +24,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-pub use frame_support::traits::Get;
+pub use frame_support::traits::{Get, IsInVec};
 use manta_collator_selection::IdentityCollator;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -199,6 +199,11 @@ impl Contains<RuntimeCall> for MantaFilter {
             return true;
         }
 
+        if pallet_tx_pause::PausedTransactionFilter::<Runtime>::contains(call) {
+            // no paused call
+            return false;
+        }
+
         #[allow(clippy::match_like_matches_macro)]
         // keep CallFilter with explicit true/false for documentation
         match call {
@@ -231,6 +236,7 @@ impl Contains<RuntimeCall> for MantaFilter {
             | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..})
             | RuntimeCall::Balances(_)
             | RuntimeCall::Preimage(_)
+            | RuntimeCall::TransactionPause(_)
             | RuntimeCall::Utility(_) => true,
 
             // DISALLOW anything else
@@ -265,6 +271,23 @@ impl frame_system::Config for Runtime {
     type SS58Prefix = SS58Prefix;
     type OnSetCode = ParachainSetCode<Self>;
     type MaxConsumers = ConstU32<16>;
+}
+
+parameter_types! {
+    pub NonPausablePallets: Vec<Vec<u8>> = vec![b"Democracy".to_vec(), b"Balances".to_vec(), b"Council".to_vec(), b"CouncilMembership".to_vec(), b"TechnicalCommittee".to_vec(), b"TechnicalMembership".to_vec()];
+}
+
+impl pallet_tx_pause::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type MaxCallNames = ConstU32<25>;
+    type PauseOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        pallet_collective::EnsureMembers<AccountId, TechnicalCollective, 2>,
+    >;
+    type UnpauseOrigin = EnsureRoot<AccountId>;
+    type NonPausablePallets = IsInVec<NonPausablePallets>;
+    type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -397,9 +420,9 @@ impl pallet_parachain_staking::Config for Runtime {
     /// WHITELIST: Minimum stake required for *a whitelisted* account to be a collator candidate
     type MinWhitelistCandidateStk = ConstU128<{ crate::staking::EARLY_COLLATOR_MINIMUM_STAKE }>;
     /// Smallest amount that can be delegated
-    type MinDelegation = ConstU128<{ 50 * MANTA }>;
+    type MinDelegation = ConstU128<{ 500 * MANTA }>;
     /// Minimum stake required to be reserved to be a delegator
-    type MinDelegatorStk = ConstU128<{ 50 * MANTA }>;
+    type MinDelegatorStk = ConstU128<{ 500 * MANTA }>;
     type OnCollatorPayout = ();
     type OnNewRound = ();
     type WeightInfo = weights::pallet_parachain_staking::SubstrateWeight<Runtime>;
@@ -717,6 +740,7 @@ construct_runtime!(
         } = 1,
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
         ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
+        TransactionPause: pallet_tx_pause::{Pallet, Call, Storage, Event<T>} = 9,
 
         // Monetary stuff.
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
@@ -828,6 +852,7 @@ mod benches {
         [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
         [pallet_session, SessionBench::<Runtime>]
         // Manta pallets
+        [pallet_tx_pause, TransactionPause]
         [manta_collator_selection, CollatorSelection]
         [pallet_parachain_staking, ParachainStaking]
         // Nimbus pallets
