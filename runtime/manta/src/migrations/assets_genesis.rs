@@ -48,6 +48,7 @@ pub struct AssetsGenesis<T>(PhantomData<T>);
 impl<T> OnRuntimeUpgrade for AssetsGenesis<T>
 where
     T: pallet_asset_manager::Config + pallet_assets::Config,
+    u128: From<<T as pallet_asset_manager::Config>::AssetId>,
 {
     fn on_runtime_upgrade() -> Weight {
         let asset_manager_storage_version =
@@ -352,7 +353,7 @@ where
         let storage_item_prefix: &[u8] = b"NextAssetId";
         assert_eq!(
             get_storage_value::<MantaAssetId>(pallet_prefix, storage_item_prefix, &[]).unwrap(),
-            <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get()
+            u128::from(<T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get())
         );
 
         // Asset
