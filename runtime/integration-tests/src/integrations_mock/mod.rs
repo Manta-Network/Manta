@@ -42,7 +42,8 @@ cfg_if::cfg_if! {
             InflationInfo, LaunchPeriod, LeaveDelayRounds, NativeTokenExistentialDeposit, RuntimeOrigin,
             ParachainStaking, Period, PolkadotXcm, Range, Runtime, Scheduler, Session, System,
             TechnicalCommittee, Timestamp, TransactionPause, TransactionPayment, Treasury, Utility,
-            VotingPeriod, Preimage,
+            VotingPeriod, Preimage, ParachainSystem, ParachainInfo, AuraAuthorFilter, Aura, XcmpQueue,
+            CumulusXcm, DmpQueue, XTokens, Multisig, NonPausablePallets, AllPalletsWithSystem
         };
         type RuntimeAssetConfig = calamari_runtime::assets_config::CalamariAssetConfig;
         type RuntimeConcreteFungibleLedger =
@@ -56,8 +57,10 @@ cfg_if::cfg_if! {
             xcm_config::{XcmExecutorConfig, XcmFeesAccount},
             AssetManager, Assets, AuthorInherent, Authorship, Balances, RuntimeCall, CollatorSelection,
             DefaultBlocksPerRound, RuntimeEvent, InflationInfo, LeaveDelayRounds, NativeTokenExistentialDeposit,
-            RuntimeOrigin, ParachainStaking, Period, PolkadotXcm, Range, Runtime, Session, System, Timestamp,
-            TransactionPayment, Treasury, Utility,
+            RuntimeOrigin, ParachainStaking, Period, PolkadotXcm, Range, Runtime, Session, System, Timestamp, TransactionPause,
+            TransactionPayment, Treasury, Utility, TechnicalCommittee, Council, EnactmentPeriod, VotingPeriod,
+            LaunchPeriod, Preimage, Democracy, Scheduler, Aura, Multisig, Sudo, ParachainSystem, ParachainInfo,
+            XTokens, DmpQueue, CumulusXcm, XcmpQueue, AuraAuthorFilter, NonPausablePallets, AllPalletsWithSystem
         };
         type RuntimeAssetConfig = manta_runtime::assets_config::MantaAssetConfig;
         type RuntimeConcreteFungibleLedger = manta_runtime::assets_config::MantaConcreteFungibleLedger;

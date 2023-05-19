@@ -192,7 +192,7 @@ parameter_types! {
 }
 
 parameter_types! {
-    pub NonPausablePallets: Vec<Vec<u8>> = vec![b"Democracy".to_vec(), b"Balances".to_vec(), b"Council".to_vec(), b"CouncilCollective".to_vec(), b"TechnicalCommittee".to_vec(), b"TechnicalCollective".to_vec()];
+    pub NonPausablePallets: Vec<Vec<u8>> = vec![b"Democracy".to_vec(), b"Balances".to_vec(), b"Council".to_vec(), b"CouncilMembership".to_vec(), b"TechnicalCommittee".to_vec(), b"TechnicalMembership".to_vec()];
 }
 
 impl pallet_tx_pause::Config for Runtime {
@@ -418,13 +418,13 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-    pub LaunchPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 5 * MINUTES, "CALAMARI_LAUNCHPERIOD");
-    pub VotingPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 5 * MINUTES, "CALAMARI_VOTINGPERIOD");
-    pub FastTrackVotingPeriod: BlockNumber = prod_or_fast!(3 * HOURS, 2 * MINUTES, "CALAMARI_FASTTRACKVOTINGPERIOD");
+    pub LaunchPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 5 * MINUTES, "CALAMARI_LAUNCH_PERIOD");
+    pub VotingPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 5 * MINUTES, "CALAMARI_VOTING_PERIOD");
+    pub FastTrackVotingPeriod: BlockNumber = prod_or_fast!(3 * HOURS, 2 * MINUTES, "CALAMARI_FAST_TRACK_VOTING_PERIOD");
     pub const InstantAllowed: bool = true;
     pub const MinimumDeposit: Balance = 1000 * KMA;
-    pub EnactmentPeriod: BlockNumber = prod_or_fast!(1 * DAYS, 2 * MINUTES, "CALAMARI_ENACTMENTPERIOD");
-    pub CooloffPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 2 * MINUTES, "CALAMARI_COOLOFFPERIOD");
+    pub EnactmentPeriod: BlockNumber = prod_or_fast!(1 * DAYS, 2 * MINUTES, "CALAMARI_ENACTMENT_PERIOD");
+    pub CooloffPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 2 * MINUTES, "CALAMARI_COOL_OFF_PERIOD");
     pub const PreimageByteDeposit: Balance = deposit(0, 1);
 }
 
@@ -550,7 +550,7 @@ parameter_types! {
     pub const ProposalBond: Permill = Permill::from_percent(1);
     pub const ProposalBondMinimum: Balance = 500 * KMA;
     pub const ProposalBondMaximum: Balance = 10_000 * KMA;
-    pub SpendPeriod: BlockNumber = prod_or_fast!(6 * DAYS, 2 * MINUTES, "CALAMARI_SPENDPERIOD");
+    pub SpendPeriod: BlockNumber = prod_or_fast!(6 * DAYS, 2 * MINUTES, "CALAMARI_SPEND_PERIOD");
     pub const Burn: Permill = Permill::from_percent(0);
     pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
 }
@@ -597,8 +597,8 @@ parameter_types! {
     pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(10);
     /// Default percent of inflation set aside for parachain bond every round
     pub const DefaultParachainBondReservePercent: Percent = Percent::zero();
-    pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(6 * HOURS,15,"CALAMARI_DEFAULTBLOCKSPERROUND");
-    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(28,1,"CALAMARI_LEAVEDELAYROUNDS"); // == 7 * DAYS / 6 * HOURS
+    pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(6 * HOURS,15,"CALAMARI_DEFAULT_BLOCKS_PER_ROUND");
+    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(28,1,"CALAMARI_LEAVE_DELAY_ROUNDS"); // == 7 * DAYS / 6 * HOURS
 }
 impl pallet_parachain_staking::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
@@ -958,9 +958,9 @@ mod benches {
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
         // Dex
-        [zenlink_protocol, ZenlinkProtocol]
-        [zenlink_stable_amm, ZenlinkStableAMM]
-        [zenlink_swap_router, ZenlinkSwapRouter]
+        // [zenlink_protocol, ZenlinkProtocol]
+        // [zenlink_stable_amm, ZenlinkStableAMM]
+        // [zenlink_swap_router, ZenlinkSwapRouter]
         [manta_farming, Farming]
         // XCM
         [cumulus_pallet_xcmp_queue, XcmpQueue]
@@ -1105,6 +1105,9 @@ impl_runtime_apis! {
         ) -> PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
+        fn pull_ledger_total_count() -> [u8; 16] {
+            MantaPay::pull_ledger_total_count()
+        }
         fn initial_pull(checkpoint: RawCheckpoint, max_receiver: u64) -> InitialSyncResponse {
             MantaPay::initial_pull(checkpoint.into(), max_receiver)
         }
@@ -1117,6 +1120,9 @@ impl_runtime_apis! {
             max_sender: u64
         ) -> PullResponse {
             MantaSbt::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
+        fn sbt_pull_ledger_total_count() -> [u8; 16] {
+            MantaSbt::pull_ledger_total_count()
         }
     }
 

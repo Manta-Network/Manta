@@ -19,8 +19,8 @@
 use super::*;
 use crate::command::MANTA_PARACHAIN_ID;
 use manta_runtime::{
-    opaque::SessionKeys, staking::NORMAL_COLLATOR_MINIMUM_STAKE, GenesisConfig,
-    ParachainStakingConfig, PolkadotXcmConfig,
+    opaque::SessionKeys, staking::NORMAL_COLLATOR_MINIMUM_STAKE, CouncilConfig, DemocracyConfig,
+    GenesisConfig, ParachainStakingConfig, PolkadotXcmConfig, TechnicalCommitteeConfig,
 };
 use sc_network_common::config::MultiaddrWithPeerId;
 
@@ -110,7 +110,7 @@ fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
                 .to_vec(),
         },
         balances: manta_runtime::BalancesConfig {
-            balances: endowments,
+            balances: endowments.clone(),
         },
         // empty aura authorities, collators registered with parachain staking instead
         aura: Default::default(),
@@ -150,5 +150,24 @@ fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
             safe_xcm_version: Some(SAFE_XCM_VERSION),
         },
         asset_manager: Default::default(),
+        democracy: DemocracyConfig::default(),
+        council: CouncilConfig {
+            members: endowments
+                .iter()
+                .map(|endowed| endowed.0.clone())
+                .take(1)
+                .collect(),
+            phantom: Default::default(),
+        },
+        technical_committee: TechnicalCommitteeConfig {
+            members: endowments
+                .iter()
+                .map(|endowed| endowed.0.clone())
+                .take(1)
+                .collect(),
+            phantom: Default::default(),
+        },
+        council_membership: Default::default(),
+        technical_membership: Default::default(),
     }
 }

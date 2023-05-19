@@ -16,8 +16,8 @@
 
 use super::{
     weights, xcm_config::SelfReserve, AssetManager, Assets, Balances,
-    NativeTokenExistentialDeposit, Runtime, RuntimeEvent, RuntimeOrigin, TechnicalCollective,
-    Timestamp, KMA,
+    EnsureRootOrThreeFourthsCouncil, NativeTokenExistentialDeposit, Runtime, RuntimeEvent,
+    RuntimeOrigin, TechnicalCollective, Timestamp, KMA,
 };
 
 use manta_primitives::{
@@ -180,6 +180,7 @@ impl pallet_asset_manager::Config for Runtime {
     type Location = AssetLocation;
     type AssetConfig = CalamariAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId>;
+    type SuspenderOrigin = EnsureRootOrThreeFourthsCouncil;
     type PalletId = AssetManagerPalletId;
     type WeightInfo = weights::pallet_asset_manager::SubstrateWeight<Runtime>;
 }
