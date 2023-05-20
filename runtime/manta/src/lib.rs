@@ -66,9 +66,7 @@ use manta_primitives::{
 };
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use pallet_session::ShouldEndSession;
-use runtime_common::{
-    prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, SlowAdjustingFeeUpdate,
-};
+use runtime_common::{prod_or_fast, BlockExecutionWeight, ExtrinsicBaseWeight};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -86,6 +84,7 @@ pub mod staking;
 pub mod xcm_config;
 
 use currency::*;
+use fee::{BlockHashCount, SlowAdjustingFeeUpdate};
 use impls::DealWithFees;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
@@ -326,8 +325,8 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    pub const TransactionLengthToFeeCoeff: Balance = 40 * uMANTA;
-    pub const WeightToFeeCoeff: Balance = 20;
+    pub const TransactionLengthToFeeCoeff: Balance = 40 * mMANTA;
+    pub const WeightToFeeCoeff: Balance = 50_000_000;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
