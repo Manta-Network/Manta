@@ -61,7 +61,9 @@ use manta_primitives::{
 use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use pallet_session::ShouldEndSession;
-use runtime_common::{prod_or_fast, BlockExecutionWeight, ExtrinsicBaseWeight};
+use runtime_common::{
+    prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, SlowAdjustingFeeUpdate,
+};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
 #[cfg(any(feature = "std", test))]
@@ -79,7 +81,6 @@ pub mod staking;
 pub mod xcm_config;
 
 use currency::*;
-use fee::{BlockHashCount, SlowAdjustingFeeUpdate};
 use impls::DealWithFees;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;

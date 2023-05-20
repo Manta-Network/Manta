@@ -14,41 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use super::*;
-pub use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
-pub use sp_runtime::{traits::Bounded, FixedPointNumber, Perbill, Perquintill};
-
 pub const FEES_PERCENTAGE_TO_AUTHOR: u8 = 10;
 pub const FEES_PERCENTAGE_TO_BURN: u8 = 45;
 pub const FEES_PERCENTAGE_TO_TREASURY: u8 = 45;
 
 pub const TIPS_PERCENTAGE_TO_AUTHOR: u8 = 100;
 pub const TIPS_PERCENTAGE_TO_TREASURY: u8 = 0;
-
-parameter_types! {
-    pub const BlockHashCount: BlockNumber = 2400;
-    /// The portion of the `NORMAL_DISPATCH_RATIO` that we adjust the fees with. Blocks filled less
-    /// than this will decrease the weight and more will increase.
-    pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
-    /// The adjustment variable of the runtime. Higher values will cause `TargetBlockFullness` to
-    /// change the fees more rapidly.
-    pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(225, 100_000);
-    /// Minimum amount of the multiplier. This value cannot be too low. A test case should ensure
-    /// that combined with `AdjustmentVariable`, we can recover from the minimum.
-    /// See `multiplier_can_grow_from_zero`.
-    pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 5_000u128);
-    pub MaximumMultiplier: Multiplier = Bounded::max_value();
-}
-
-/// Parameterized slow adjusting fee updated based on
-/// https://research.web3.foundation/en/latest/polkadot/overview/2-token-economics.html#-2.-slow-adjusting-mechanism
-pub type SlowAdjustingFeeUpdate<R> = TargetedFeeAdjustment<
-    R,
-    TargetBlockFullness,
-    AdjustmentVariable,
-    MinimumMultiplier,
-    MaximumMultiplier,
->;
 
 #[cfg(test)]
 mod fee_split_tests {
@@ -67,13 +38,14 @@ mod fee_split_tests {
 }
 #[cfg(test)]
 mod multiplier_tests {
-    use super::*;
     use crate::{
         sp_api_hidden_includes_construct_runtime::hidden_include::traits::Hooks, Runtime,
         RuntimeBlockWeights as BlockWeights, System, TransactionPayment, KMA,
     };
     use frame_support::dispatch::{DispatchClass, DispatchInfo};
     use manta_primitives::constants::time::DAYS;
+    use pallet_transaction_payment::Multiplier;
+    use runtime_common::MinimumMultiplier;
 
     fn fetch_kma_price() -> Result<f32, &'static str> {
         let body = reqwest::blocking::get(
