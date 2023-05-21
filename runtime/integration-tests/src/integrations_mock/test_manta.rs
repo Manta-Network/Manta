@@ -198,6 +198,7 @@ fn reward_fees_to_block_author_and_treasury() {
             (ALICE.clone(), INITIAL_BALANCE),
             (BOB.clone(), INITIAL_BALANCE),
             (CHARLIE.clone(), INITIAL_BALANCE),
+            (Treasury::account_id(), INITIAL_BALANCE),
         ])
         .with_authorities(vec![(
             ALICE.clone(),
@@ -258,7 +259,7 @@ fn reward_fees_to_block_author_and_treasury() {
 
             let treasury_percent = Percent::from_percent(FEES_PERCENTAGE_TO_TREASURY);
             assert_eq!(
-                Balances::free_balance(Treasury::account_id()),
+                Balances::free_balance(Treasury::account_id()) - INITIAL_BALANCE,
                 treasury_percent * expected_fee
             );
         });
