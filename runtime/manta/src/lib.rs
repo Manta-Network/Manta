@@ -421,9 +421,9 @@ impl pallet_parachain_staking::Config for Runtime {
     /// WHITELIST: Minimum stake required for *a whitelisted* account to be a collator candidate
     type MinWhitelistCandidateStk = ConstU128<{ crate::staking::EARLY_COLLATOR_MINIMUM_STAKE }>;
     /// Smallest amount that can be delegated
-    type MinDelegation = ConstU128<{ 50 * MANTA }>;
+    type MinDelegation = ConstU128<{ 500 * MANTA }>;
     /// Minimum stake required to be reserved to be a delegator
-    type MinDelegatorStk = ConstU128<{ 50 * MANTA }>;
+    type MinDelegatorStk = ConstU128<{ 500 * MANTA }>;
     type OnCollatorPayout = ();
     type OnNewRound = ();
     type WeightInfo = weights::pallet_parachain_staking::SubstrateWeight<Runtime>;

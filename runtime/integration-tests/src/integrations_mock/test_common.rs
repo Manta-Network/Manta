@@ -54,12 +54,10 @@ use super::{ALICE, ALICE_SESSION_KEYS};
 use sp_core::sr25519;
 use sp_runtime::{DispatchError, ModuleError};
 
-// currently, we ignore all parachain staking tests in integration tests
 mod parachain_staking_tests {
     use super::*;
 
     #[test]
-    #[ignore]
     fn ensure_block_per_round_and_leave_delays_equal_7days() {
         // NOTE: If you change one, change the other as well
         type LeaveCandidatesDelay =
@@ -93,7 +91,6 @@ mod parachain_staking_tests {
     }
 
     #[test]
-    #[ignore]
     fn collator_cant_join_below_standard_bond() {
         ExtBuilder::default()
             .with_balances(vec![
@@ -116,7 +113,6 @@ mod parachain_staking_tests {
     }
 
     #[test]
-    #[ignore]
     fn collator_can_join_with_min_bond() {
         ExtBuilder::default()
             .with_collators(vec![(ALICE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR)])
@@ -161,7 +157,6 @@ mod parachain_staking_tests {
     }
 
     #[test]
-    #[ignore]
     fn collator_with_large_stake_but_too_low_self_bond_not_selected_for_block_production() {
         ExtBuilder::default()
             .with_balances(vec![
@@ -229,7 +224,6 @@ mod parachain_staking_tests {
     }
 
     #[test]
-    #[ignore]
     fn collator_can_leave_if_below_standard_bond() {
         ExtBuilder::default()
             .with_balances(vec![
@@ -268,7 +262,6 @@ mod parachain_staking_tests {
     }
 
     #[test]
-    #[ignore]
     fn collator_with_400k_not_selected_for_block_production() {
         ExtBuilder::default()
             .with_balances(vec![

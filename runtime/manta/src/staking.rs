@@ -16,9 +16,10 @@
 
 use crate::{currency::MANTA, Balance};
 use pallet_parachain_staking::{BalanceOf, InflationInfo};
+use sp_runtime::PerThing;
 
-pub const NORMAL_COLLATOR_MINIMUM_STAKE: Balance = 50 * MANTA;
-pub const EARLY_COLLATOR_MINIMUM_STAKE: Balance = 50 * MANTA;
+pub const NORMAL_COLLATOR_MINIMUM_STAKE: Balance = 400_000 * MANTA;
+pub const EARLY_COLLATOR_MINIMUM_STAKE: Balance = 40_000 * MANTA;
 pub const MIN_BOND_TO_BE_CONSIDERED_COLLATOR: Balance = NORMAL_COLLATOR_MINIMUM_STAKE;
 
 pub fn inflation_config<T: frame_system::Config + pallet_parachain_staking::Config>(
@@ -38,17 +39,20 @@ pub fn inflation_config<T: frame_system::Config + pallet_parachain_staking::Conf
         )
     }
     let annual = Range {
-        min: Perbill::zero(),
-        ideal: Perbill::zero(),
-        max: Perbill::zero(),
+        min: Perbill::from_rational_with_rounding(5u32, 200u32, sp_arithmetic::Rounding::Down)
+            .expect("constant denom is not 0. qed"), // = 2.5%
+        ideal: Perbill::from_percent(3),
+        max: Perbill::from_percent(3),
     };
     InflationInfo::<BalanceOf<T>> {
         // staking expectations **per round**
+        // TOTAL_ISSUANCE: 1_000_000_000 * MANTA
+        // ideal = TOTAL_ISSUANCE * annual.ideal (3%) / rounds_per_year (2629800 / (6 * 300))
+        //       = 30_000_000 * MANTA / 1461 ~ 20_534 * MANTA
         expect: Range {
-            // TODO: Correct this for manta numbers
-            min: 0u128.unique_saturated_into(),
-            ideal: 0u128.unique_saturated_into(), // annual inflation / number of rounds
-            max: 0u128.unique_saturated_into(),
+            min: (17_110 * MANTA).unique_saturated_into(),
+            ideal: (20_534 * MANTA).unique_saturated_into(), // annual inflation / number of rounds
+            max: (21_000 * MANTA).unique_saturated_into(),
         },
         // annual inflation
         annual,
