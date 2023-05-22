@@ -81,6 +81,7 @@ pub mod assets_config;
 pub mod currency;
 pub mod fee;
 pub mod impls;
+pub mod migrations;
 mod nimbus_session_adapter;
 pub mod staking;
 pub mod xcm_config;
@@ -815,7 +816,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, Si
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = ();
+pub type OnRuntimeUpgradeHooks = migrations::assets_genesis::AssetsGenesis<Runtime>;
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
