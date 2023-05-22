@@ -311,7 +311,7 @@ impl pallet_authorship::Config for Runtime {
 }
 
 parameter_types! {
-    pub const NativeTokenExistentialDeposit: u128 = MANTA;
+    pub const NativeTokenExistentialDeposit: u128 = 10 * cMANTA; // 0.1 MANTA
 }
 
 impl pallet_balances::Config for Runtime {
