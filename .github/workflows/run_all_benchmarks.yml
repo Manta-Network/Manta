@@ -4,7 +4,7 @@ on:
     inputs:
       chain_spec:
         description: The chain spec to be used for all benchmarks. Required.
-        default: calamari-dev
+        default: manta-dev
         required: true
       snapshot_url:
         description: The chain snapshot to use for storage benchmarks. Leaving it blank will skip the storage benchmark.
