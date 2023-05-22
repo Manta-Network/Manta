@@ -108,6 +108,8 @@ pub mod pallet {
         /// attributes.
         type ModifierOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
+        type SuspenderOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
         /// Pallet ID
         type PalletId: Get<PalletId>;
 
@@ -253,6 +255,18 @@ pub mod pallet {
             /// Updated Minimum XCM Fee
             min_xcm_fee: u128,
         },
+
+        /// An asset location has been filtered from outgoing transfers
+        AssetLocationFilteredForOutgoingTransfers {
+            /// The asset location which can't be transferred out
+            filtered_location: T::Location,
+        },
+
+        /// An asset location has been unfiltered from outgoing transfers
+        AssetLocationUnfilteredForOutgoingTransfers {
+            /// The asset location which can be transferred out
+            filtered_location: T::Location,
+        },
     }
 
     /// Asset Manager Error
@@ -324,6 +338,12 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn get_para_id)]
     pub type AllowedDestParaIds<T: Config> = StorageMap<_, Blake2_128Concat, ParaId, AssetCount>;
+
+    /// Multilocation of assets that should not be transfered out of the chain
+    #[pallet::storage]
+    #[pallet::getter(fn get_filtered_location)]
+    pub type FilteredOutgoingAssetLocations<T: Config> =
+        StorageMap<_, Blake2_128Concat, Option<MultiLocation>, ()>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
@@ -551,6 +571,33 @@ pub mod pallet {
             });
             Ok(())
         }
+
+        /// Set min xcm fee for asset/s on their reserve chain.
+        ///
+        /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
+        /// * `filtered_location`: Multilocation to be filtered.
+        #[pallet::call_index(6)]
+        #[pallet::weight(T::WeightInfo::update_outgoing_filtered_assets())]
+        #[transactional]
+        pub fn update_outgoing_filtered_assets(
+            origin: OriginFor<T>,
+            filtered_location: T::Location,
+            should_add: bool,
+        ) -> DispatchResult {
+            T::ModifierOrigin::ensure_origin(origin)?;
+            if should_add {
+                FilteredOutgoingAssetLocations::<T>::insert(filtered_location.clone().into(), ());
+                Self::deposit_event(Event::<T>::AssetLocationFilteredForOutgoingTransfers {
+                    filtered_location,
+                });
+            } else {
+                FilteredOutgoingAssetLocations::<T>::remove(filtered_location.clone().into());
+                Self::deposit_event(Event::<T>::AssetLocationUnfilteredForOutgoingTransfers {
+                    filtered_location,
+                });
+            }
+            Ok(())
+        }
     }
 
     impl<T> Pallet<T>
@@ -602,6 +649,10 @@ pub mod pallet {
                 AllowedDestParaIds::<T>::insert(para_id, <AssetCount as One>::one());
                 Ok(())
             }
+        }
+
+        pub fn check_outgoing_assets_filter(asset_location: &Option<MultiLocation>) -> bool {
+            FilteredOutgoingAssetLocations::<T>::contains_key(asset_location)
         }
     }
 
