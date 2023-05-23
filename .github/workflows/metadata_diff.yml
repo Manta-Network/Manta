@@ -7,7 +7,7 @@ on:
         required: true
       chain:
         description: The name of the chain under test. Usually, you would pass a local chain
-        default: calamari-local
+        default: manta-local
         required: true
 env:
   AWS_REGION: us-east-1

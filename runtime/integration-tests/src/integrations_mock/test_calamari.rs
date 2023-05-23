@@ -328,7 +328,7 @@ fn reward_fees_to_block_author_and_treasury() {
             let author_received_reward = Balances::free_balance(ALICE.clone()) - INITIAL_BALANCE;
             println!("The rewarded_amount is: {author_received_reward:?}");
 
-            // Fees split: 40% burned, 40% to treasury, 10% to author.
+            // Fees split: 45% burned, 45% to treasury, 10% to author.
             let author_percent = Percent::from_percent(FEES_PERCENTAGE_TO_AUTHOR);
             let expected_fee =
                 TransactionPayment::compute_actual_fee(len as u32, &info, &post_info, 0);

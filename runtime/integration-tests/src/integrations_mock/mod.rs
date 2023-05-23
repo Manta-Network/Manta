@@ -17,21 +17,22 @@
 #![cfg(test)]
 
 pub mod mock;
-pub mod test_calamari;
 pub mod test_common;
-pub mod test_manta;
 
 pub use mock::run_to_block;
+
+// imports used in both runtime tests
+use codec::Encode;
+use manta_primitives::types::Header;
+use nimbus_primitives::NIMBUS_ENGINE_ID;
+use sp_runtime::{traits::Header as HeaderT, DigestItem};
 
 // Compilation errors would happen without default imports.
 // See run_linters.yml => SKIP_WASM_BUILD=1 cargo check --no-default-features
 cfg_if::cfg_if! {
     if #[cfg(feature = "calamari")] {
-        use codec::Encode;
-        use manta_primitives::types::Header;
-        use nimbus_primitives::NIMBUS_ENGINE_ID;
-        use sp_runtime::{traits::Header as HeaderT, DigestItem};
-        pub use calamari_runtime::{
+        pub mod test_calamari;
+        use calamari_runtime::{
             currency::KMA,
             fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
             opaque::SessionKeys,
@@ -40,26 +41,26 @@ cfg_if::cfg_if! {
             AssetManager, Assets, AuthorInherent, Authorship, Balances, CalamariVesting, RuntimeCall,
             CollatorSelection, Council, DefaultBlocksPerRound, Democracy, EnactmentPeriod, RuntimeEvent,
             InflationInfo, LaunchPeriod, LeaveDelayRounds, NativeTokenExistentialDeposit, RuntimeOrigin,
-            ParachainStaking, Period, PolkadotXcm, Range, Runtime, Scheduler, Session, System,
-            TechnicalCommittee, Timestamp, TransactionPause, TransactionPayment, Treasury, Utility,
-            VotingPeriod, Preimage, ParachainSystem, ParachainInfo, AuraAuthorFilter, Aura, XcmpQueue,
-            CumulusXcm, DmpQueue, XTokens, Multisig, NonPausablePallets, AllPalletsWithSystem
+            ParachainStaking, PolkadotXcm, Range, Runtime, Scheduler, Session, System,
+            TechnicalCommittee, Timestamp, TransactionPause, TransactionPayment, Treasury,
+            VotingPeriod, Preimage, NonPausablePallets, AllPalletsWithSystem
         };
         type RuntimeAssetConfig = calamari_runtime::assets_config::CalamariAssetConfig;
         type RuntimeConcreteFungibleLedger =
             calamari_runtime::assets_config::CalamariConcreteFungibleLedger;
     } else {
-        pub use manta_runtime::{
-            assets_config::MantaConcreteFungibleLedger,
+        pub mod test_manta;
+        use manta_runtime::{
             currency::MANTA as KMA,
+            fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
             opaque::SessionKeys,
             staking::{self, EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR},
             xcm_config::{XcmExecutorConfig, XcmFeesAccount},
             AssetManager, Assets, AuthorInherent, Authorship, Balances, RuntimeCall, CollatorSelection,
             DefaultBlocksPerRound, RuntimeEvent, InflationInfo, LeaveDelayRounds, NativeTokenExistentialDeposit,
-            RuntimeOrigin, ParachainStaking, Period, PolkadotXcm, Range, Runtime, Session, System, Timestamp, TransactionPause,
+            RuntimeOrigin, ParachainStaking, PolkadotXcm, Range, Runtime, Session, System, Timestamp, TransactionPause,
             TransactionPayment, Treasury, Utility, TechnicalCommittee, Council, EnactmentPeriod, VotingPeriod,
-            LaunchPeriod, Preimage, Democracy, Scheduler, Aura, Multisig, Sudo, ParachainSystem, ParachainInfo,
+            LaunchPeriod, Preimage, Democracy, Scheduler, Aura, Multisig, ParachainSystem, ParachainInfo,
             XTokens, DmpQueue, CumulusXcm, XcmpQueue, AuraAuthorFilter, NonPausablePallets, AllPalletsWithSystem
         };
         type RuntimeAssetConfig = manta_runtime::assets_config::MantaAssetConfig;
@@ -73,7 +74,7 @@ use manta_primitives::types::{AccountId, Balance};
 use session_key_primitives::util::unchecked_account_id;
 use sp_core::sr25519::Public;
 
-pub const INITIAL_BALANCE: Balance = 1_000_000_000_000 * KMA;
+pub const INITIAL_BALANCE: Balance = 1_000_000_000_000_000_000_000_000_000;
 
 lazy_static! {
     pub(crate) static ref ALICE: AccountId = unchecked_account_id::<Public>("Alice");
@@ -141,7 +142,6 @@ pub fn initialize_collators_through_whitelist(collators: Vec<AccountId>) {
     ));
 }
 
-#[cfg(feature = "calamari")]
 fn seal_header(mut header: Header, author: AccountId) -> Header {
     {
         let digest = header.digest_mut();
