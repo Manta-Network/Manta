@@ -36,7 +36,7 @@ describe('Node RPC Test', () => {
        
         const oldRuntimeVersion = await api.rpc.state.getRuntimeVersion();
         const oldSpecVersion = oldRuntimeVersion["specVersion"];
-        console.log("Old spec version: ", oldSpecVersion);
+        console.log("Old spec version: ", oldSpecVersion.toString());
         const code = fs.readFileSync('calamari.wasm').toString('hex');
         let codeHash = blake2AsHex(`0x${code}`);
         const authorizeUpgradeCallData = api.tx.parachainSystem.authorizeUpgrade(codeHash);
@@ -48,13 +48,16 @@ describe('Node RPC Test', () => {
 
         let newRuntimeVersions = await api.rpc.state.getRuntimeVersion();
         const newSpecVersion = newRuntimeVersions["specVersion"];
+        console.log("New spec version: ", newSpecVersion.toString());
         assert(newSpecVersion > oldSpecVersion);
 
         let blockNow = await api.rpc.chain.getBlock();
         let blockNumberNow = blockNow.block.header.number;
+        console.log("Block number before upgrade is enacted: ", blockNumberNow.toString());
         await delay(60000);
         let blockLater = await api.rpc.chain.getBlock();
         let blockNumberLater = blockLater.block.header.number;
+        console.log("Block number after upgrade is enacted: ", blockNumberLater.toString());
         assert(blockNumberLater > blockNumberNow);
 
         api.disconnect();

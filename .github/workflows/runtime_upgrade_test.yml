@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       runtime:
-        description: The runtime for which an upgrade will be tested - manta, calamari or dolphin
+        description: The runtime for which an upgrade will be tested - manta, calamari
         default: manta
         required: true
       manta_base_url:

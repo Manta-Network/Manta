@@ -135,10 +135,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("manta"),
     impl_name: create_runtime_str!("manta"),
     authoring_version: 1,
-    spec_version: 4070,
+    spec_version: 4080,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 2,
+    transaction_version: 3,
     state_version: 1,
 };
 

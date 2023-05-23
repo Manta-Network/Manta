@@ -25,7 +25,7 @@ These checks should be performed on the codebase prior to freezing our release c
     - [ ] Check for any upstream storage migrations and perform tests with `try-runtime`, if any.
     - [ ] Grep github actions files for the following version URLs and update them
         - `https://github.com/paritytech/polkadot/releases/download/v`
-        - `https://github.com/Manta-Network/Manta/releases/download/v`
+    - [ ] Execute the manual runtime upgrade CI workflow and verify that it succeeds.
     - [ ] Generate new changelog using `dev-tools` repo
     - [ ] Merge when green and reviewed
     - [ ] Tag the release with the same version you used on the release PR. IMPORTANT: Use the `manta` branch commit for the tag, NOT a `release-` or other branch
@@ -121,7 +121,7 @@ There is a manually deployed github action that runs all benchmarks on a bare-me
 * Go to [Run All Benchmarks Github Action](https://github.com/Manta-Network/Manta/actions/workflows/run_all_benchmarks.yml)
 * Open `Run workflow` drop-down menu.
 * Choose your branch.
-* Choose a chain-spec. You'll have to run the workflow multiple times usually with `dolphin-dev`, `calamari-dev`, `manta-dev`.
+* Choose a chain-spec. You'll have to run the workflow multiple times usually with `calamari-dev`, `manta-dev`.
 * Optionally choose whether you want to provide a chain database snapshot to benchmark storage performance.
 * When these jobs have completed (it takes a few hours), all the benchmarks outputs files will be available to download as workflow artifacts.
 * Commit the changes to your branch and push to the remote branch for review.
