@@ -958,7 +958,7 @@ mod benches {
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
         // Dex
-        // [zenlink_protocol, ZenlinkProtocol]
+        [zenlink_protocol, ZenlinkProtocol]
         // [zenlink_stable_amm, ZenlinkStableAMM]
         // [zenlink_swap_router, ZenlinkSwapRouter]
         [manta_farming, Farming]
@@ -1158,7 +1158,7 @@ impl_runtime_apis! {
         }
     }
 
-        // zenlink runtime outer apis
+    // zenlink runtime outer apis
     impl zenlink_protocol_runtime_api::ZenlinkProtocolApi<Block, AccountId, ZenlinkAssetId> for Runtime {
 
         fn get_balance(

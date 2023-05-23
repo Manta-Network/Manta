@@ -67,7 +67,10 @@ impl zenlink_protocol::Config for Runtime {
     type TargetChains = ZenlinkRegistedParaChains;
     type AssetId = ZenlinkAssetId;
     type AssetIdConverter = MantaAssetIdConverter;
+    #[cfg(not(feature = "runtime-benchmarks"))]
     type LpGenerate = AssetManagerLpGenerate;
+    #[cfg(feature = "runtime-benchmarks")]
+    type LpGenerate = MockAssetManagerLpGenerate;
     type AccountIdConverter = ZenlinkLocationToAccountId;
     type XcmExecutor = ();
     type WeightInfo = ();
@@ -169,10 +172,25 @@ impl GenerateLpAssetId<ZenlinkAssetId> for AssetManagerLpGenerate {
     }
 }
 
+pub struct MockAssetManagerLpGenerate;
+impl GenerateLpAssetId<ZenlinkAssetId> for MockAssetManagerLpGenerate {
+    fn generate_lp_asset_id(
+        asset_0: ZenlinkAssetId,
+        asset_1: ZenlinkAssetId,
+    ) -> Option<ZenlinkAssetId> {
+        Some(ZenlinkAssetId {
+            chain_id: SelfParaId::get(),
+            asset_type: LOCAL,
+            asset_index: asset_0.asset_index + asset_1.asset_index,
+        })
+    }
+}
+
 /// Zenlink protocol Asset adaptor for orml_traits::MultiCurrency.
 pub struct LocalAssetAdaptor;
 
 impl LocalAssetAdaptor {
+    #[cfg(not(feature = "runtime-benchmarks"))]
     fn asset_id_convert(asset_id: ZenlinkAssetId) -> Option<CalamariAssetId> {
         // Notice: Manta native asset id is 1, but Zenlink native asset id is 0.
         if asset_id.asset_index == ZenlinkNativeAssetId::get() {
@@ -188,6 +206,19 @@ impl LocalAssetAdaptor {
         // Must have location mapping of asset id
         let location = AssetManager::location(&manta_asset_id);
         location.map(|_| manta_asset_id)
+    }
+    #[cfg(feature = "runtime-benchmarks")]
+    fn asset_id_convert(asset_id: ZenlinkAssetId) -> Option<CalamariAssetId> {
+        // Notice: Manta native asset id is 1, but Zenlink native asset id is 0.
+        if asset_id.asset_index == ZenlinkNativeAssetId::get() {
+            // When Zenlink asset index is 0, the asset type need to be NATIVE(0).
+            return if asset_id.asset_type != NATIVE {
+                None
+            } else {
+                Some(MantaNativeAssetId::get())
+            };
+        }
+        Some(asset_id.asset_index as CalamariAssetId)
     }
 }
 
