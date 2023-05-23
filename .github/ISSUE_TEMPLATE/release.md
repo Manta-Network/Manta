@@ -121,7 +121,7 @@ There is a manually deployed github action that runs all benchmarks on a bare-me
 * Go to [Run All Benchmarks Github Action](https://github.com/Manta-Network/Manta/actions/workflows/run_all_benchmarks.yml)
 * Open `Run workflow` drop-down menu.
 * Choose your branch.
-* Choose a chain-spec. You'll have to run the workflow multiple times usually with `dolphin-dev`, `calamari-dev`, `manta-dev`.
+* Choose a chain-spec. You'll have to run the workflow multiple times usually with `calamari-dev`, `manta-dev`.
 * Optionally choose whether you want to provide a chain database snapshot to benchmark storage performance.
 * When these jobs have completed (it takes a few hours), all the benchmarks outputs files will be available to download as workflow artifacts.
 * Commit the changes to your branch and push to the remote branch for review.
