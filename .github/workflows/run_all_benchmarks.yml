@@ -4,7 +4,7 @@ on:
     inputs:
       chain_spec:
         description: The chain spec to be used for all benchmarks. Required.
-        default: calamari-dev
+        default: manta-dev
         required: true
       snapshot_url:
         description: The chain snapshot to use for storage benchmarks. Leaving it blank will skip the storage benchmark.
@@ -58,6 +58,9 @@ jobs:
         run: sccache --start-server
       - name: init
         run: |
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install stable

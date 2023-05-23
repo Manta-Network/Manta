@@ -16,7 +16,7 @@
 
 //! # MantaSBT Module
 //!
-//! MantaSBT creates non-transferable nfts (soul-bound) as unspendable UTXOs
+//! MantaSBT creates non-transferable nfts (soul-bound) as non spendable UTXOs
 //!
 //! ## Overview
 //!
@@ -131,56 +131,14 @@ type EvmAddress = H160;
 /// A signature (a 512-bit value, plus 8 bits for recovery ID).
 pub type Eip712Signature = [u8; 65];
 
-/// Enum with each possible type of allowlisted Eth Address
-///
-/// Type is deprecated delete after migration
-#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub enum EvmAddressType {
-    /// BAB holder
-    Bab(EvmAddress),
-    /// Galxe holder
-    Galxe(EvmAddress),
-}
-
-/// Different mint types
-///
-/// Type is deprecated delete after migration
-#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub enum MintType {
-    /// Bab allowlist mint
-    Bab,
-    /// Galxe allowlist mint
-    Galxe,
-    /// Mint using native token (KMA/MANTA)
-    Manta,
-}
-
 /// Each mint type shall have a unique id
 pub type MintId = u32;
 
-impl From<EvmAddressType> for MintType {
-    fn from(address_type: EvmAddressType) -> Self {
-        match address_type {
-            EvmAddressType::Bab(_) => MintType::Bab,
-            EvmAddressType::Galxe(_) => MintType::Galxe,
-        }
-    }
-}
-
-/// zkSBT mint Status of `EvmAddressType`. This has flag `AlreadyMinted` to put into storage after succesful mint
+/// zkSBT mint Status of `EvmAddressType`. This has flag `AlreadyMinted` to put into storage after successful mint
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub enum MintStatus {
     Available(StandardAssetId),
     AlreadyMinted,
-}
-
-/// Info about a particular `MintType`
-///
-/// Deprecated remove after migration
-#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub struct MintChainInfo<Moment> {
-    pub start_time: Moment,
-    pub end_time: Option<Moment>,
 }
 
 /// Mint metadata that corresponds to an assigned `MintId`
@@ -190,18 +148,6 @@ pub struct RegisteredMint<Moment, Bound: Get<u32>> {
     pub mint_name: BoundedVec<u8, Bound>,
     pub start_time: Moment,
     pub end_time: Option<Moment>,
-}
-
-/// Metadata stored for a minted zkSBT
-///
-/// Deprecated remove after migration
-#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[scale_info(skip_type_params(Bound))]
-pub struct Metadata<Bound: Get<u32>> {
-    pub mint_type: MintType,
-    pub collection_id: Option<u128>,
-    pub item_id: Option<u128>,
-    pub extra: Option<BoundedVec<u8, Bound>>,
 }
 
 /// Mint Metadata stored for a minted zkSBT
@@ -234,7 +180,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -243,7 +189,7 @@ pub mod pallet {
         type Currency: ReservableCurrency<Self::AccountId>;
 
         /// The origin which can change the privileged allowlist account and set time range for mints
-        type AdminOrigin: EnsureOrigin<Self::Origin>;
+        type AdminOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
         /// Gets the current on-chain time
         type Now: Time;
@@ -273,13 +219,13 @@ pub mod pallet {
         type MinimumWeightRemainInBlock: Get<Weight>;
     }
 
-    /// Counter for SBT AssetId. Increments by one everytime a new asset id is requested.
+    /// Counter for SBT AssetId. Increments by one every time a new asset id is requested.
     ///
     /// Should only ever be modified by `next_sbt_id_and_increment()`
     #[pallet::storage]
     pub(super) type NextSbtId<T: Config> = StorageValue<_, StandardAssetId, OptionQuery>;
 
-    /// Counter for MintId. Increments by one everytime a new mint type is created (Bab, Galxe, etc.)
+    /// Counter for MintId. Increments by one every time a new mint type is created (Bab, Galxe, etc.)
     ///
     /// Should only ever be modified by `next_mint_id_and_increment()`
     #[pallet::storage]
@@ -288,13 +234,6 @@ pub mod pallet {
     /// Account that can add evm accounts to allowlist
     #[pallet::storage]
     pub(super) type AllowlistAccount<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
-
-    /// Allowlist for Evm Accounts
-    ///
-    /// Deprecated delete after migration
-    #[pallet::storage]
-    pub(super) type EvmAddressAllowlist<T: Config> =
-        StorageMap<_, Blake2_128Concat, EvmAddressType, MintStatus, OptionQuery>;
 
     /// Allowlist for Evm Accounts
     #[pallet::storage]
@@ -308,13 +247,6 @@ pub mod pallet {
         OptionQuery,
     >;
 
-    /// Range of time and chain_id at which evm mints for each `MintType` are possible.
-    ///
-    /// Deprecated delete after migration
-    #[pallet::storage]
-    pub(super) type MintChainInfos<T: Config> =
-        StorageMap<_, Blake2_128Concat, MintType, MintChainInfo<Moment<T>>, OptionQuery>;
-
     /// Registers a number for mint type
     #[pallet::storage]
     pub(super) type MintIdRegistry<T: Config> = StorageMap<
@@ -325,28 +257,14 @@ pub mod pallet {
         OptionQuery,
     >;
 
-    /// SBT Metadata maps `StandardAsset` to the correstonding SBT metadata
-    ///
-    /// Metadata is raw bytes that correspond to an image
-    ///
-    /// Deprecated delete after migration
-    #[pallet::storage]
-    pub(super) type SbtMetadata<T: Config> = StorageMap<
-        _,
-        Blake2_128Concat,
-        StandardAssetId,
-        Metadata<T::SbtMetadataBound>,
-        OptionQuery,
-    >;
-
-    /// SBT Metadata maps `StandardAsset` to the correstonding SBT metadata
+    /// SBT Metadata maps `StandardAsset` to the corresponding SBT metadata
     ///
     /// Metadata is raw bytes that correspond to an image
     #[pallet::storage]
     pub(super) type SbtMetadataV2<T: Config> =
         StorageMap<_, Blake2_128Concat, StandardAssetId, MetadataV2<T::SbtMetadataBound>>;
 
-    /// Allowlists accounts to be able to mint SBTs with designated `StandardAssetId`
+    /// Allowlist accounts to be able to mint SBTs with designated `StandardAssetId`
     #[pallet::storage]
     pub(super) type ReservedIds<T: Config> = StorageMap<
         _,
@@ -645,56 +563,6 @@ pub mod pallet {
         }
     }
 
-    #[pallet::hooks]
-    impl<T: Config> Hooks<T::BlockNumber> for Pallet<T>
-    where
-        T::AccountId: From<AccountId> + Into<AccountId>,
-    {
-        /// Migrates sbt pallet to new storage scheme
-        ///
-        /// remove once migration is complete
-        fn on_idle(_n: T::BlockNumber, remaining_weight: Weight) -> Weight {
-            let mut weight_tracking = remaining_weight;
-            if weight_tracking <= T::MinimumWeightRemainInBlock::get() {
-                // return total weight so all the weight is exhausted
-                return remaining_weight;
-            }
-            let two_writes_one_read = T::DbWeight::get()
-                .write
-                .saturating_mul(2)
-                .saturating_add(T::DbWeight::get().read);
-
-            for (mint_type, mint_info) in MintChainInfos::<T>::drain() {
-                if weight_tracking <= T::MinimumWeightRemainInBlock::get() {
-                    break;
-                }
-
-                weight_tracking = weight_tracking.saturating_sub(two_writes_one_read);
-                Self::migrate_mint_info(mint_type, mint_info);
-            }
-
-            for (evm_address_type, mint_status) in EvmAddressAllowlist::<T>::drain() {
-                if weight_tracking <= T::MinimumWeightRemainInBlock::get() {
-                    break;
-                }
-                weight_tracking = weight_tracking.saturating_sub(two_writes_one_read);
-
-                Self::migrate_evm_address_type(evm_address_type, mint_status)
-            }
-
-            for (asset_id, old_metadata) in SbtMetadata::<T>::drain() {
-                if weight_tracking <= T::MinimumWeightRemainInBlock::get() {
-                    break;
-                }
-                weight_tracking = weight_tracking.saturating_sub(two_writes_one_read);
-
-                Self::migrate_metadata(asset_id, old_metadata);
-            }
-            // return total weight so all weight is exhausted
-            remaining_weight
-        }
-    }
-
     /// Event
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -887,10 +755,10 @@ pub mod pallet {
         /// Transfer Ledger Wrong Checksum Error
         TransferLedgerChecksumError,
 
-        /// Transfer Ledger `VerifyingContext` cannont be decoded
+        /// Transfer Ledger `VerifyingContext` cannot be decoded
         TransferLedgerVerifyingContextDecodeError,
 
-        /// Transer Ledger Field Element Encoding Error
+        /// Transfer Ledger Field Element Encoding Error
         TransferLedgerFpEncodeError,
 
         /// Transfer Ledger Unknown Asset
@@ -935,7 +803,7 @@ pub mod pallet {
         /// Time range is invalid (start_time > end_time)
         InvalidTimeRange,
 
-        /// MintId does not exist, cannot update a nonexistant MintId
+        /// MintId does not exist, cannot update a nonexistent MintId
         InvalidMintId,
     }
 }
@@ -1007,8 +875,21 @@ where
         Shards::<T>::contains_key(shard_index, max_receiver_index)
     }
 
+    /// Returns ledger total count
+    /// In the initial state of the ledger, the total value will be 256;
+    /// if we want to get an accurate value, we need to request `pull_receivers` to fix this value;
+    /// but a simple total count interface does not need to add more complicated logic.
+    #[inline]
+    pub fn pull_ledger_total_count() -> [u8; 16] {
+        let receivers_total = (0..=255)
+            .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128)
+            .sum::<u128>()
+            + 256u128;
+        asset_value_encode(receivers_total)
+    }
+
     /// Returns the diff of ledger state since the given `checkpoint` and `max_receivers`.
-    /// This `Ledger` implementaion has no senders by definition, cannot transfer SBTs.
+    /// This `Ledger` implementation has no senders by definition, cannot transfer SBTs.
     #[inline]
     pub fn pull_ledger_diff(
         checkpoint: Checkpoint,
@@ -1017,14 +898,11 @@ where
     ) -> PullResponse {
         let (more_receivers, receivers) =
             Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
-        let senders_receivers_total = (0..=255)
-            .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128)
-            .sum::<u128>();
         PullResponse {
             should_continue: more_receivers,
             receivers,
             senders: vec![],
-            senders_receivers_total: asset_value_encode(senders_receivers_total),
+            senders_receivers_total: Self::pull_ledger_total_count(),
         }
     }
 
@@ -1197,13 +1075,13 @@ where
         Ok(())
     }
 
-    /// Returns an Etherum public key derived from an Ethereum secret key.
+    /// Returns an Ethereum public key derived from an Ethereum secret key.
     #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
     pub fn eth_public(secret: &libsecp256k1::SecretKey) -> libsecp256k1::PublicKey {
         libsecp256k1::PublicKey::from_secret_key(secret)
     }
 
-    /// Returns an Etherum address derived from an Ethereum secret key.
+    /// Returns an Ethereum address derived from an Ethereum secret key.
     /// Only for tests
     #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
     pub fn eth_address(secret: &libsecp256k1::SecretKey) -> EvmAddress {
@@ -1223,76 +1101,6 @@ where
         r[0..64].copy_from_slice(&sig.serialize()[..]);
         r[64] = recovery_id.serialize();
         r
-    }
-
-    /// Migrate to `EvmAccountAllowlist` from `EvmAddressAllowlist`
-    ///
-    /// Delete once migration is complete
-    #[inline]
-    pub fn migrate_evm_address_type(evm_address: EvmAddressType, mint_status: MintStatus) {
-        match evm_address {
-            EvmAddressType::Bab(address) => {
-                // bab has MintId of 1
-                let bab_id = 1;
-                EvmAccountAllowlist::<T>::insert(bab_id, address, mint_status)
-            }
-            EvmAddressType::Galxe(address) => {
-                // galxe has MintId of 2
-                let galxe_id = 2;
-                EvmAccountAllowlist::<T>::insert(galxe_id, address, mint_status)
-            }
-        }
-    }
-
-    /// Migrate to `MetadataV2`
-    ///
-    /// Delete once migration is complete
-    #[inline]
-    pub fn migrate_metadata(
-        asset_id: StandardAssetId,
-        old_metadata: Metadata<T::SbtMetadataBound>,
-    ) {
-        let mint_id: MintId = match old_metadata.mint_type {
-            MintType::Manta => MANTA_MINT_ID,
-            MintType::Bab => 1,
-            MintType::Galxe => 2,
-        };
-        let new_metadata = MetadataV2::<T::SbtMetadataBound> {
-            mint_id,
-            collection_id: old_metadata.collection_id,
-            item_id: old_metadata.item_id,
-            extra: old_metadata.extra,
-        };
-        SbtMetadataV2::<T>::insert(asset_id, new_metadata);
-    }
-
-    /// Migrate to `MintIdRegistry`
-    ///
-    /// Delete once migration is complete
-    #[inline]
-    pub fn migrate_mint_info(mint_type: MintType, mint_info: MintChainInfo<Moment<T>>) {
-        let (mint_id, mint_name) = match mint_type {
-            MintType::Manta => (
-                MANTA_MINT_ID,
-                b"Manta".to_vec().try_into().unwrap_or_default(),
-            ),
-            MintType::Bab => (1, b"Bab".to_vec().try_into().unwrap_or_default()),
-            MintType::Galxe => (2, b"Galxe".to_vec().try_into().unwrap_or_default()),
-        };
-        let mint_registry = RegisteredMint::<Moment<T>, T::RegistryBound> {
-            mint_name,
-            start_time: mint_info.start_time,
-            end_time: mint_info.end_time,
-        };
-        MintIdRegistry::<T>::insert(mint_id, mint_registry)
-    }
-
-    /// needed so `NextMintId` is correct value
-    ///
-    /// remove once migration is complete
-    #[inline]
-    pub fn set_next_mint_id(mint_id: MintId) {
-        NextMintId::<T>::put(mint_id);
     }
 }
 
@@ -1383,7 +1191,7 @@ where
     ) -> Result<Self::ValidUtxoAccumulatorOutput, Self::Error> {
         let accumulator_output = fp_encode(output).map_err(SenderLedgerError::FpEncodeError)?;
         // NOTE: Checking for an empty(zeroed) byte array. This happens for UTXOs with `value = 0`,
-        // for which you dont need a membership proof, but you still need a root (in this case
+        // for which you don't need a membership proof, but you still need a root (in this case
         // zeroed).
         if accumulator_output == [0u8; 32]
             || UtxoAccumulatorOutputs::<T>::contains_key(accumulator_output)

@@ -104,12 +104,15 @@ pub mod pallet {
     use sp_std::prelude::*;
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
-    pub type CallOf<T> = <T as Config>::Call;
+    pub type CallOf<T> = <T as Config>::RuntimeCall;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_parachain_staking::Config {
-        type Call: Parameter + Dispatchable<Origin = Self::Origin> + From<Call<Self>>;
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        /// The aggregated `RuntimeCall` type.
+        type RuntimeCall: Parameter
+            + Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>
+            + From<Call<Self>>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// The Scheduler.
         type Scheduler: ScheduleNamed<
             Self::BlockNumber,
@@ -125,7 +128,7 @@ pub mod pallet {
             BalanceOf<Self>,
         >;
         /// Origin that can manage lottery parameters and start/stop drawings
-        type ManageOrigin: EnsureOrigin<<Self as frame_system::Config>::Origin>;
+        type ManageOrigin: EnsureOrigin<Self::RuntimeOrigin>;
         /// Overarching type of all pallets origins.
         type PalletsOrigin: From<frame_system::RawOrigin<Self::AccountId>>;
         /// Account Identifier from which the internal Pot is generated.
@@ -814,7 +817,7 @@ pub mod pallet {
                             }
                     };
                     // Ensure the pallet has enough gas to pay for this
-                    let fee_estimate : BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(&pallet_parachain_staking::Call::execute_delegation_request { delegator: Self::account_id() , candidate: collator.account.clone()  }, None.into());
+                    let fee_estimate : BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(&pallet_parachain_staking::Call::execute_delegation_request { delegator: Self::account_id() , candidate: collator.account.clone()  }, None::<u64>.into());
                     if Self::lottery_funds_surplus() <= fee_estimate{
                         log::warn!("could not finish unstaking delegation because the pallet is out of funds to pay TX fees. Skipping");
                         return true;

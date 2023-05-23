@@ -26,9 +26,9 @@ use crate::Pallet as TransactionPause;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
 use frame_system::{EventRecord, RawOrigin};
 
-pub fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
+pub fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
     let events = frame_system::Pallet::<T>::events();
-    let system_event: <T as frame_system::Config>::Event = generic_event.into();
+    let system_event: <T as frame_system::Config>::RuntimeEvent = generic_event.into();
     let EventRecord { event, .. } = &events[events.len() - 1];
     assert_eq!(event, &system_event);
 }
@@ -47,7 +47,7 @@ benchmarks! {
 
     // Benchmark `unpause_transaction` extrinsic:
     unpause_transaction {
-        let origin: T::Origin = T::Origin::from(RawOrigin::Root);
+        let origin: T::RuntimeOrigin = T::RuntimeOrigin::from(RawOrigin::Root);
         let pallet_name = b"System".to_vec();
         let function_name =  b"remark".to_vec();
         TransactionPause::<T>::pause_transaction(origin, pallet_name.clone(), function_name.clone())?;

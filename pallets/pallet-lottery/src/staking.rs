@@ -370,7 +370,7 @@ impl<T: Config> Pallet<T> {
                     candidate_delegation_count: CANDIDATE_DELEGATION_COUNT,
                     delegation_count: DELEGATION_COUNT,
                 },
-                None.into(),
+                None::<u64>.into(),
             );
             ensure!(
                 Self::lottery_funds_surplus() > fee_estimate,
@@ -399,7 +399,7 @@ impl<T: Config> Pallet<T> {
                     candidate: collator.clone(),
                     more: amount.clone(),
                 },
-                None.into(),
+                None::<u64>.into(),
             );
             ensure!(
                 Self::lottery_funds_surplus() > fee_estimate,
@@ -447,7 +447,7 @@ impl<T: Config> Pallet<T> {
             &pallet_parachain_staking::Call::schedule_revoke_delegation {
                 collator: some_collator.clone(),
             },
-            None.into(),
+            None::<u64>.into(),
         );
         ensure!(
             Self::lottery_funds_surplus() > fee_estimate,

@@ -65,9 +65,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     // Storage: Randomness InherentIncluded (r:0 w:1)
 	#[rustfmt::skip]
     fn set_babe_randomness_results() -> Weight {
-		(28_446_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(4 as u64))
-			.saturating_add(T::DbWeight::get().writes(3 as u64))
+        Weight::from_ref_time(28_446_000)
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 }
 
@@ -80,7 +80,7 @@ impl WeightInfo for () {
     // Storage: Randomness InherentIncluded (r:0 w:1)
 	#[rustfmt::skip]
     fn set_babe_randomness_results() -> Weight {
-		(28_446_000 as Weight)
+        Weight::from_ref_time(28_446_000)
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}

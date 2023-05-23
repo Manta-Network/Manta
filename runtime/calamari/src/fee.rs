@@ -14,11 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-pub use sp_runtime::Perbill;
-
-/// The block saturation level. Fees will be updates based on this value.
-pub const TARGET_BLOCK_FULLNESS: Perbill = Perbill::from_percent(25);
-
 pub const FEES_PERCENTAGE_TO_AUTHOR: u8 = 10;
 pub const FEES_PERCENTAGE_TO_BURN: u8 = 45;
 pub const FEES_PERCENTAGE_TO_TREASURY: u8 = 45;
@@ -47,7 +42,7 @@ mod multiplier_tests {
         sp_api_hidden_includes_construct_runtime::hidden_include::traits::Hooks, Runtime,
         RuntimeBlockWeights as BlockWeights, System, TransactionPayment, KMA,
     };
-    use frame_support::{dispatch::DispatchInfo, weights::DispatchClass};
+    use frame_support::dispatch::{DispatchClass, DispatchInfo};
     use manta_primitives::constants::time::DAYS;
     use pallet_transaction_payment::Multiplier;
     use runtime_common::MinimumMultiplier;
@@ -119,7 +114,7 @@ mod multiplier_tests {
                 TransactionPayment::on_finalize(1);
                 let next = TransactionPayment::next_fee_multiplier();
 
-                assert!(next > multiplier, "{:?} !>= {:?}", next, multiplier);
+                assert!(next > multiplier, "{next:?} !>= {multiplier:?}");
                 multiplier = next;
 
                 println!(
@@ -180,10 +175,10 @@ mod multiplier_tests {
                 TransactionPayment::on_finalize(1);
                 let next = TransactionPayment::next_fee_multiplier();
 
-                assert!(next < multiplier, "{:?} !>= {:?}", next, multiplier);
+                assert!(next < multiplier, "{next:?} !>= {multiplier:?}");
                 multiplier = next;
 
-                println!("block = {} / multiplier {:?}", blocks, multiplier);
+                println!("block = {blocks} / multiplier {multiplier:?}");
             });
             blocks += 1;
         }
@@ -191,7 +186,7 @@ mod multiplier_tests {
         let cooldown_target = 10f32;
         let days = blocks as f32 / DAYS as f32;
         if days > cooldown_target {
-            panic!("It will take more than 10 days to cool down: {:?}", days);
+            panic!("It will take more than 10 days to cool down: {days:?}");
         }
     }
 }

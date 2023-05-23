@@ -28,7 +28,7 @@ use frame_support::{
 #[cfg(feature = "try-runtime")]
 use frame_support::{ensure, traits::StorageVersion};
 
-use sp_std::marker::PhantomData;
+use sp_std::{marker::PhantomData, vec::Vec};
 
 /// MigratePalletPv2Sv means a wrapped handler to automatically upgrade our pallet
 /// from PalletVersion(Pv) to StorageVersion(Sv).
@@ -48,17 +48,17 @@ where
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
         let storage_version = StorageVersion::get::<T>();
         frame_support::debug(&"----PreUpgrade----");
         frame_support::debug(&T::module_name());
         frame_support::debug(&T::name());
         frame_support::debug(&storage_version);
-        Ok(())
+        Ok(Vec::new())
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
         let storage_version = StorageVersion::get::<T>();
         frame_support::debug(&"----PostUpgrade----");
         frame_support::debug(&T::module_name());
@@ -145,7 +145,7 @@ mod test {
                 StorageVersion::new(0)
             );
             let weight = MigratePalletPv2Sv::<MockForMigrationTesting>::on_runtime_upgrade();
-            assert_eq!(100_000 * 1000 * 2, weight);
+            assert_eq!(Weight::from_ref_time(100_000 * 1000 * 2), weight);
             assert!(
                 sp_io::storage::get(&pallet_version_key(MockForMigrationTesting::name())).is_none()
             );

@@ -27,14 +27,14 @@ use sc_consensus::{
     import_queue::{BasicQueue, Verifier as VerifierT},
     BlockImport, BlockImportParams,
 };
-use sc_consensus_aura::BuildVerifierParams;
+use sc_consensus_aura::{BuildVerifierParams, CompatibilityMode};
 use sc_consensus_slots::InherentDataProviderExt;
 use sc_telemetry::TelemetryHandle;
 use session_key_primitives::aura::AuraId;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::Result as ClientResult;
-use sp_consensus::{error::Error as ConsensusError, CacheKeyId, NeverCanAuthor};
+use sp_consensus::{error::Error as ConsensusError, CacheKeyId};
 use sp_consensus_aura::AuraApi;
 use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::{
@@ -49,8 +49,12 @@ use sc_consensus_aura::CompatibleDigestItem as AuraDigestItem;
 const LOG_TARGET: &str = "aura-nimbus-consensus";
 
 struct AuraOrNimbusVerifier<Client, Block: BlockT, AuraCIDP, NimbusCIDP> {
-    aura_verifier:
-        sc_consensus_aura::AuraVerifier<Client, <AuraId as AppKey>::Pair, NeverCanAuthor, AuraCIDP>,
+    aura_verifier: sc_consensus_aura::AuraVerifier<
+        Client,
+        <AuraId as AppKey>::Pair,
+        AuraCIDP,
+        <<Block as BlockT>::Header as HeaderT>::Number,
+    >,
     nimbus_verifier: nimbus_consensus::Verifier<Client, Block, NimbusCIDP>,
 }
 impl<Client, Block, AuraCIDP, NimbusCIDP> AuraOrNimbusVerifier<Client, Block, AuraCIDP, NimbusCIDP>
@@ -73,10 +77,9 @@ where
             aura_verifier: sc_consensus_aura::build_verifier(BuildVerifierParams {
                 client: client.clone(),
                 create_inherent_data_providers: create_inherent_data_providers_aura,
-                // NOTE: We only support verification of historic aura blocks, not new block proposals using aura
-                can_author_with: NeverCanAuthor {},
                 check_for_equivocation: sc_consensus_aura::CheckForEquivocation::Yes,
                 telemetry,
+                compatibility_mode: CompatibilityMode::None,
             }),
             nimbus_verifier: nimbus_consensus::Verifier::new(
                 client,
@@ -139,6 +142,7 @@ where
 pub fn import_queue<Client, Block: BlockT, InnerBI>(
     client: Arc<Client>,
     block_import: InnerBI,
+    backend: Arc<sc_client_db::Backend<Block>>,
     spawner: &impl sp_core::traits::SpawnEssentialNamed,
     registry: Option<&substrate_prometheus_endpoint::Registry>,
     telemetry: Option<TelemetryHandle>,
@@ -164,7 +168,7 @@ where
                             *timestamp,
                             slot_duration,
                         );
-                Ok((timestamp, slot))
+                Ok((slot, timestamp))
             }
         },
         move |_, _| async move {
@@ -182,6 +186,7 @@ where
         //       node/src/service.rs:L467 aka. BuildNimbusConsensusParams
         Box::new(cumulus_client_consensus_common::ParachainBlockImport::new(
             block_import,
+            backend,
         )),
         None,
         spawner,
