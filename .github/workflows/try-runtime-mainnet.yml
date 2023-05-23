@@ -100,7 +100,7 @@ jobs:
         run: |
           mkdir -p $HOME/.local/bin
           mv target/release/manta $HOME/.local/bin/
-          mv target/release/wbuild/manta-runtime/${{ env.RUNTIME }}_runtime.compact.compressed.wasm $HOME/.local/bin/runtime.wasm
+          mv target/release/wbuild/${{ env.RUNTIME }}-runtime/${{ env.RUNTIME }}_runtime.compact.compressed.wasm $HOME/.local/bin/runtime.wasm
           chmod +x $HOME/.local/bin/manta
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       - uses: actions/checkout@v2
