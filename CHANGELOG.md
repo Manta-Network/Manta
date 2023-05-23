@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## v4.0.8
+### Added
+- [\#1080](https://github.com/Manta-Network/Manta/pull/1080) Rust integration tests for Manta runtime [MACA]
+- [\#1109](https://github.com/Manta-Network/Manta/pull/1109) feat: add ledger total count api [CA]
+- [\#1087](https://github.com/Manta-Network/Manta/pull/1087) Manta runtime - add governance pallets [MA]
+- [\#1103](https://github.com/Manta-Network/Manta/pull/1103) Add xTokens outgoing transfers filter for MANTA asset [MA]
+- [\#1108](https://github.com/Manta-Network/Manta/pull/1108) Add tx-pause to Manta Runtime [MACA]
+
+### Changed
+- [\#1029](https://github.com/Manta-Network/Manta/pull/1029) Polkadot v0.9.37 [MACADO]
+- [\#1102](https://github.com/Manta-Network/Manta/pull/1102) Add MantaPay RPC to calamari-localdev [CA]
+- [\#1106](https://github.com/Manta-Network/Manta/pull/1106) Remove timeout for check_tests pipeline [MACA]
+- [\#1111](https://github.com/Manta-Network/Manta/pull/1111) Manta Staking Parameters [MA]
+- [\#1089](https://github.com/Manta-Network/Manta/pull/1089) Tune Tx-Payment Parameters for Manta Runtime [MA]
+
+### Fixed
+- [\#1104](https://github.com/Manta-Network/Manta/pull/1104) Fix off by 1 erorrs in pull-ledger-diff rpc [MACA]
+- [\#1113](https://github.com/Manta-Network/Manta/pull/1113) Fix integration test compile options, deps cleanup & clippy [MACA]
+- [\#1112](https://github.com/Manta-Network/Manta/pull/1112) Manta assets genesis storage migration [MA]
+
+### Removed
+- [\#1100](https://github.com/Manta-Network/Manta/pull/1100) Retire dolphin ci except publish draft release [DO]
+- [\#1099](https://github.com/Manta-Network/Manta/pull/1099) Remove SBT deprecated storage [CA]
+
 ## v4.0.7
 ### Changed
 - [\#1084](https://github.com/Manta-Network/Manta/pull/1084) Use safe-math in xcm `buy_weight` impl [MACA]
