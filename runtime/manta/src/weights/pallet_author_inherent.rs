@@ -57,8 +57,8 @@ impl<T: frame_system::Config> pallet_author_inherent::WeightInfo for SubstrateWe
 	// Storage: AuthorInherent Author (r:1 w:0)
 	// Storage: ParachainStaking SelectedCandidates (r:1 w:0)
 	fn kick_off_authorship_validation() -> Weight {
-		// Minimum execution time: 15_661 nanoseconds.
-		Weight::from_ref_time(16_304_000)
+		// Minimum execution time: 16_176 nanoseconds.
+		Weight::from_ref_time(16_624_000)
 			.saturating_add(T::DbWeight::get().reads(4))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -71,8 +71,8 @@ impl WeightInfo for () {
 	// Storage: AuthorInherent Author (r:1 w:0)
 	// Storage: ParachainStaking SelectedCandidates (r:1 w:0)
 	fn kick_off_authorship_validation() -> Weight {
-		// Minimum execution time: 15_661 nanoseconds.
-		Weight::from_ref_time(16_304_000)
+		// Minimum execution time: 16_176 nanoseconds.
+		Weight::from_ref_time(16_624_000)
 			.saturating_add(RocksDbWeight::get().reads(4))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}

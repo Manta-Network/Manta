@@ -58,32 +58,32 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_utility::WeightInfo for SubstrateWeight<T> {
 	/// The range of component `c` is `[0, 1000]`.
 	fn batch(c: u32, ) -> Weight {
-		// Minimum execution time: 12_855 nanoseconds.
-		Weight::from_ref_time(41_123_074)
-			// Standard Error: 5_543
-			.saturating_add(Weight::from_ref_time(5_041_057).saturating_mul(c.into()))
+		// Minimum execution time: 34_962 nanoseconds.
+		Weight::from_ref_time(67_982_152)
+			// Standard Error: 6_959
+			.saturating_add(Weight::from_ref_time(4_719_282).saturating_mul(c.into()))
 	}
 	fn as_derivative() -> Weight {
-		// Minimum execution time: 7_343 nanoseconds.
-		Weight::from_ref_time(7_550_000)
+		// Minimum execution time: 20_620 nanoseconds.
+		Weight::from_ref_time(21_944_000)
 	}
 	/// The range of component `c` is `[0, 1000]`.
 	fn batch_all(c: u32, ) -> Weight {
-		// Minimum execution time: 12_924 nanoseconds.
-		Weight::from_ref_time(54_619_739)
-			// Standard Error: 6_481
-			.saturating_add(Weight::from_ref_time(5_282_522).saturating_mul(c.into()))
+		// Minimum execution time: 37_730 nanoseconds.
+		Weight::from_ref_time(81_340_590)
+			// Standard Error: 13_710
+			.saturating_add(Weight::from_ref_time(4_884_109).saturating_mul(c.into()))
 	}
 	fn dispatch_as() -> Weight {
-		// Minimum execution time: 15_933 nanoseconds.
-		Weight::from_ref_time(16_160_000)
+		// Minimum execution time: 15_169 nanoseconds.
+		Weight::from_ref_time(15_570_000)
 	}
 	/// The range of component `c` is `[0, 1000]`.
 	fn force_batch(c: u32, ) -> Weight {
-		// Minimum execution time: 12_843 nanoseconds.
-		Weight::from_ref_time(49_103_282)
-			// Standard Error: 5_666
-			.saturating_add(Weight::from_ref_time(5_061_571).saturating_mul(c.into()))
+		// Minimum execution time: 12_636 nanoseconds.
+		Weight::from_ref_time(44_829_694)
+			// Standard Error: 7_549
+			.saturating_add(Weight::from_ref_time(4_727_145).saturating_mul(c.into()))
 	}
 }
 
@@ -91,31 +91,31 @@ impl<T: frame_system::Config> pallet_utility::WeightInfo for SubstrateWeight<T> 
 impl WeightInfo for () {
 	/// The range of component `c` is `[0, 1000]`.
 	fn batch(c: u32, ) -> Weight {
-		// Minimum execution time: 12_855 nanoseconds.
-		Weight::from_ref_time(41_123_074)
-			// Standard Error: 5_543
-			.saturating_add(Weight::from_ref_time(5_041_057).saturating_mul(c.into()))
+		// Minimum execution time: 34_962 nanoseconds.
+		Weight::from_ref_time(67_982_152)
+			// Standard Error: 6_959
+			.saturating_add(Weight::from_ref_time(4_719_282).saturating_mul(c.into()))
 	}
 	fn as_derivative() -> Weight {
-		// Minimum execution time: 7_343 nanoseconds.
-		Weight::from_ref_time(7_550_000)
+		// Minimum execution time: 20_620 nanoseconds.
+		Weight::from_ref_time(21_944_000)
 	}
 	/// The range of component `c` is `[0, 1000]`.
 	fn batch_all(c: u32, ) -> Weight {
-		// Minimum execution time: 12_924 nanoseconds.
-		Weight::from_ref_time(54_619_739)
-			// Standard Error: 6_481
-			.saturating_add(Weight::from_ref_time(5_282_522).saturating_mul(c.into()))
+		// Minimum execution time: 37_730 nanoseconds.
+		Weight::from_ref_time(81_340_590)
+			// Standard Error: 13_710
+			.saturating_add(Weight::from_ref_time(4_884_109).saturating_mul(c.into()))
 	}
 	fn dispatch_as() -> Weight {
-		// Minimum execution time: 15_933 nanoseconds.
-		Weight::from_ref_time(16_160_000)
+		// Minimum execution time: 15_169 nanoseconds.
+		Weight::from_ref_time(15_570_000)
 	}
 	/// The range of component `c` is `[0, 1000]`.
 	fn force_batch(c: u32, ) -> Weight {
-		// Minimum execution time: 12_843 nanoseconds.
-		Weight::from_ref_time(49_103_282)
-			// Standard Error: 5_666
-			.saturating_add(Weight::from_ref_time(5_061_571).saturating_mul(c.into()))
+		// Minimum execution time: 12_636 nanoseconds.
+		Weight::from_ref_time(44_829_694)
+			// Standard Error: 7_549
+			.saturating_add(Weight::from_ref_time(4_727_145).saturating_mul(c.into()))
 	}
 }

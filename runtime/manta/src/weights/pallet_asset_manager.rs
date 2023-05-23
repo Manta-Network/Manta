@@ -52,7 +52,7 @@ pub trait WeightInfo {
     fn update_asset_metadata() -> Weight;
     fn mint_asset() -> Weight;
     fn set_min_xcm_fee() -> Weight;
-	fn update_outgoing_filtered_assets() -> Weight;
+    fn update_outgoing_filtered_assets() -> Weight;
 }
 
 /// Weights for pallet_asset_manager using the Substrate node and recommended hardware.
@@ -65,16 +65,16 @@ impl<T: frame_system::Config> pallet_asset_manager::WeightInfo for SubstrateWeig
 	// Storage: AssetManager AssetIdMetadata (r:0 w:1)
 	// Storage: AssetManager AssetIdLocation (r:0 w:1)
 	fn register_asset() -> Weight {
-		// Minimum execution time: 51_539 nanoseconds.
-		Weight::from_ref_time(52_696_000)
+		// Minimum execution time: 49_991 nanoseconds.
+		Weight::from_ref_time(51_310_000)
 			.saturating_add(T::DbWeight::get().reads(4))
 			.saturating_add(T::DbWeight::get().writes(6))
 	}
 	// Storage: AssetManager AssetIdLocation (r:1 w:0)
 	// Storage: AssetManager UnitsPerSecond (r:0 w:1)
 	fn set_units_per_second() -> Weight {
-		// Minimum execution time: 55_075 nanoseconds.
-		Weight::from_ref_time(57_092_000)
+		// Minimum execution time: 57_738 nanoseconds.
+		Weight::from_ref_time(60_805_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -82,8 +82,8 @@ impl<T: frame_system::Config> pallet_asset_manager::WeightInfo for SubstrateWeig
 	// Storage: AssetManager LocationAssetId (r:1 w:2)
 	// Storage: AssetManager AllowedDestParaIds (r:2 w:2)
 	fn update_asset_location() -> Weight {
-		// Minimum execution time: 75_529 nanoseconds.
-		Weight::from_ref_time(77_019_000)
+		// Minimum execution time: 75_513 nanoseconds.
+		Weight::from_ref_time(76_900_000)
 			.saturating_add(T::DbWeight::get().reads(4))
 			.saturating_add(T::DbWeight::get().writes(5))
 	}
@@ -92,8 +92,8 @@ impl<T: frame_system::Config> pallet_asset_manager::WeightInfo for SubstrateWeig
 	// Storage: Assets Metadata (r:1 w:1)
 	// Storage: AssetManager AssetIdMetadata (r:0 w:1)
 	fn update_asset_metadata() -> Weight {
-		// Minimum execution time: 72_638 nanoseconds.
-		Weight::from_ref_time(74_763_000)
+		// Minimum execution time: 72_183 nanoseconds.
+		Weight::from_ref_time(74_513_000)
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -101,21 +101,23 @@ impl<T: frame_system::Config> pallet_asset_manager::WeightInfo for SubstrateWeig
 	// Storage: Assets Asset (r:1 w:1)
 	// Storage: Assets Account (r:1 w:1)
 	fn mint_asset() -> Weight {
-		// Minimum execution time: 78_508 nanoseconds.
-		Weight::from_ref_time(80_424_000)
+		// Minimum execution time: 79_493 nanoseconds.
+		Weight::from_ref_time(81_890_000)
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	// Storage: AssetManager MinXcmFee (r:0 w:1)
 	fn set_min_xcm_fee() -> Weight {
-		// Minimum execution time: 41_933 nanoseconds.
-		Weight::from_ref_time(43_616_000)
+		// Minimum execution time: 45_664 nanoseconds.
+		Weight::from_ref_time(47_148_000)
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
+	// Storage: AssetManager FilteredOutgoingAssetLocations (r:0 w:1)
 	fn update_outgoing_filtered_assets() -> Weight {
-        Weight::from_ref_time(49_509_000)
-            .saturating_add(RocksDbWeight::get().writes(1_u64))
-    }
+		// Minimum execution time: 35_155 nanoseconds.
+		Weight::from_ref_time(36_451_000)
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
 }
 
 // For backwards compatibility and tests
@@ -127,16 +129,16 @@ impl WeightInfo for () {
 	// Storage: AssetManager AssetIdMetadata (r:0 w:1)
 	// Storage: AssetManager AssetIdLocation (r:0 w:1)
 	fn register_asset() -> Weight {
-		// Minimum execution time: 51_539 nanoseconds.
-		Weight::from_ref_time(52_696_000)
+		// Minimum execution time: 49_991 nanoseconds.
+		Weight::from_ref_time(51_310_000)
 			.saturating_add(RocksDbWeight::get().reads(4))
 			.saturating_add(RocksDbWeight::get().writes(6))
 	}
 	// Storage: AssetManager AssetIdLocation (r:1 w:0)
 	// Storage: AssetManager UnitsPerSecond (r:0 w:1)
 	fn set_units_per_second() -> Weight {
-		// Minimum execution time: 55_075 nanoseconds.
-		Weight::from_ref_time(57_092_000)
+		// Minimum execution time: 57_738 nanoseconds.
+		Weight::from_ref_time(60_805_000)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
@@ -144,8 +146,8 @@ impl WeightInfo for () {
 	// Storage: AssetManager LocationAssetId (r:1 w:2)
 	// Storage: AssetManager AllowedDestParaIds (r:2 w:2)
 	fn update_asset_location() -> Weight {
-		// Minimum execution time: 75_529 nanoseconds.
-		Weight::from_ref_time(77_019_000)
+		// Minimum execution time: 75_513 nanoseconds.
+		Weight::from_ref_time(76_900_000)
 			.saturating_add(RocksDbWeight::get().reads(4))
 			.saturating_add(RocksDbWeight::get().writes(5))
 	}
@@ -154,8 +156,8 @@ impl WeightInfo for () {
 	// Storage: Assets Metadata (r:1 w:1)
 	// Storage: AssetManager AssetIdMetadata (r:0 w:1)
 	fn update_asset_metadata() -> Weight {
-		// Minimum execution time: 72_638 nanoseconds.
-		Weight::from_ref_time(74_763_000)
+		// Minimum execution time: 72_183 nanoseconds.
+		Weight::from_ref_time(74_513_000)
 			.saturating_add(RocksDbWeight::get().reads(3))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
@@ -163,19 +165,21 @@ impl WeightInfo for () {
 	// Storage: Assets Asset (r:1 w:1)
 	// Storage: Assets Account (r:1 w:1)
 	fn mint_asset() -> Weight {
-		// Minimum execution time: 78_508 nanoseconds.
-		Weight::from_ref_time(80_424_000)
+		// Minimum execution time: 79_493 nanoseconds.
+		Weight::from_ref_time(81_890_000)
 			.saturating_add(RocksDbWeight::get().reads(3))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
 	// Storage: AssetManager MinXcmFee (r:0 w:1)
 	fn set_min_xcm_fee() -> Weight {
-		// Minimum execution time: 41_933 nanoseconds.
-		Weight::from_ref_time(43_616_000)
+		// Minimum execution time: 45_664 nanoseconds.
+		Weight::from_ref_time(47_148_000)
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
+	// Storage: AssetManager FilteredOutgoingAssetLocations (r:0 w:1)
 	fn update_outgoing_filtered_assets() -> Weight {
-        Weight::from_ref_time(49_509_000)
-            .saturating_add(RocksDbWeight::get().writes(1_u64))
-    }
+		// Minimum execution time: 35_155 nanoseconds.
+		Weight::from_ref_time(36_451_000)
+			.saturating_add(RocksDbWeight::get().writes(1))
+	}
 }

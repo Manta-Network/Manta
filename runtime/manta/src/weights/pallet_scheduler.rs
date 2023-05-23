@@ -65,31 +65,31 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T> {
 	// Storage: Scheduler IncompleteSince (r:1 w:1)
 	fn service_agendas_base() -> Weight {
-		// Minimum execution time: 4_662 nanoseconds.
-		Weight::from_ref_time(4_866_000)
+		// Minimum execution time: 4_626 nanoseconds.
+		Weight::from_ref_time(4_746_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: Scheduler Agenda (r:1 w:1)
 	/// The range of component `s` is `[0, 50]`.
 	fn service_agenda_base(s: u32, ) -> Weight {
-		// Minimum execution time: 4_002 nanoseconds.
-		Weight::from_ref_time(7_707_200)
-			// Standard Error: 3_525
-			.saturating_add(Weight::from_ref_time(827_178).saturating_mul(s.into()))
+		// Minimum execution time: 7_982 nanoseconds.
+		Weight::from_ref_time(8_979_566)
+			// Standard Error: 8_783
+			.saturating_add(Weight::from_ref_time(639_249).saturating_mul(s.into()))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	fn service_task_base() -> Weight {
-		// Minimum execution time: 10_804 nanoseconds.
-		Weight::from_ref_time(11_059_000)
+		// Minimum execution time: 10_640 nanoseconds.
+		Weight::from_ref_time(10_831_000)
 	}
 	// Storage: Preimage PreimageFor (r:1 w:1)
 	// Storage: Preimage StatusFor (r:1 w:1)
 	/// The range of component `s` is `[128, 4194304]`.
 	fn service_task_fetched(s: u32, ) -> Weight {
-		// Minimum execution time: 51_428 nanoseconds.
-		Weight::from_ref_time(52_164_000)
+		// Minimum execution time: 69_680 nanoseconds.
+		Weight::from_ref_time(70_776_000)
 			// Standard Error: 2
 			.saturating_add(Weight::from_ref_time(1_739).saturating_mul(s.into()))
 			.saturating_add(T::DbWeight::get().reads(2))
@@ -97,29 +97,29 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 	}
 	// Storage: Scheduler Lookup (r:0 w:1)
 	fn service_task_named() -> Weight {
-		// Minimum execution time: 33_778 nanoseconds.
-		Weight::from_ref_time(35_692_000)
+		// Minimum execution time: 12_243 nanoseconds.
+		Weight::from_ref_time(12_487_000)
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	fn service_task_periodic() -> Weight {
-		// Minimum execution time: 20_315 nanoseconds.
-		Weight::from_ref_time(21_360_000)
+		// Minimum execution time: 10_618 nanoseconds.
+		Weight::from_ref_time(10_860_000)
 	}
 	fn execute_dispatch_signed() -> Weight {
-		// Minimum execution time: 9_152 nanoseconds.
-		Weight::from_ref_time(9_421_000)
+		// Minimum execution time: 4_408 nanoseconds.
+		Weight::from_ref_time(4_494_000)
 	}
 	fn execute_dispatch_unsigned() -> Weight {
-		// Minimum execution time: 14_227 nanoseconds.
-		Weight::from_ref_time(14_816_000)
+		// Minimum execution time: 13_070 nanoseconds.
+		Weight::from_ref_time(13_624_000)
 	}
 	// Storage: Scheduler Agenda (r:1 w:1)
 	/// The range of component `s` is `[0, 49]`.
 	fn schedule(s: u32, ) -> Weight {
-		// Minimum execution time: 23_472 nanoseconds.
-		Weight::from_ref_time(29_231_177)
-			// Standard Error: 18_439
-			.saturating_add(Weight::from_ref_time(682_277).saturating_mul(s.into()))
+		// Minimum execution time: 23_461 nanoseconds.
+		Weight::from_ref_time(25_359_624)
+			// Standard Error: 7_330
+			.saturating_add(Weight::from_ref_time(629_077).saturating_mul(s.into()))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -127,10 +127,10 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 	// Storage: Scheduler Lookup (r:0 w:1)
 	/// The range of component `s` is `[1, 50]`.
 	fn cancel(s: u32, ) -> Weight {
-		// Minimum execution time: 24_072 nanoseconds.
-		Weight::from_ref_time(24_645_719)
-			// Standard Error: 6_551
-			.saturating_add(Weight::from_ref_time(1_442_883).saturating_mul(s.into()))
+		// Minimum execution time: 23_602 nanoseconds.
+		Weight::from_ref_time(27_541_394)
+			// Standard Error: 12_571
+			.saturating_add(Weight::from_ref_time(1_086_436).saturating_mul(s.into()))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -138,10 +138,10 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 	// Storage: Scheduler Agenda (r:1 w:1)
 	/// The range of component `s` is `[0, 49]`.
 	fn schedule_named(s: u32, ) -> Weight {
-		// Minimum execution time: 21_774 nanoseconds.
-		Weight::from_ref_time(27_248_406)
-			// Standard Error: 5_761
-			.saturating_add(Weight::from_ref_time(889_235).saturating_mul(s.into()))
+		// Minimum execution time: 21_418 nanoseconds.
+		Weight::from_ref_time(34_372_626)
+			// Standard Error: 28_265
+			.saturating_add(Weight::from_ref_time(531_180).saturating_mul(s.into()))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -149,10 +149,10 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 	// Storage: Scheduler Agenda (r:1 w:1)
 	/// The range of component `s` is `[1, 50]`.
 	fn cancel_named(s: u32, ) -> Weight {
-		// Minimum execution time: 25_565 nanoseconds.
-		Weight::from_ref_time(30_880_415)
-			// Standard Error: 19_982
-			.saturating_add(Weight::from_ref_time(1_343_441).saturating_mul(s.into()))
+		// Minimum execution time: 25_315 nanoseconds.
+		Weight::from_ref_time(26_725_614)
+			// Standard Error: 6_378
+			.saturating_add(Weight::from_ref_time(1_194_759).saturating_mul(s.into()))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -162,31 +162,31 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for SubstrateWeight<T
 impl WeightInfo for () {
 	// Storage: Scheduler IncompleteSince (r:1 w:1)
 	fn service_agendas_base() -> Weight {
-		// Minimum execution time: 4_662 nanoseconds.
-		Weight::from_ref_time(4_866_000)
+		// Minimum execution time: 4_626 nanoseconds.
+		Weight::from_ref_time(4_746_000)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: Scheduler Agenda (r:1 w:1)
 	/// The range of component `s` is `[0, 50]`.
 	fn service_agenda_base(s: u32, ) -> Weight {
-		// Minimum execution time: 4_002 nanoseconds.
-		Weight::from_ref_time(7_707_200)
-			// Standard Error: 3_525
-			.saturating_add(Weight::from_ref_time(827_178).saturating_mul(s.into()))
+		// Minimum execution time: 7_982 nanoseconds.
+		Weight::from_ref_time(8_979_566)
+			// Standard Error: 8_783
+			.saturating_add(Weight::from_ref_time(639_249).saturating_mul(s.into()))
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	fn service_task_base() -> Weight {
-		// Minimum execution time: 10_804 nanoseconds.
-		Weight::from_ref_time(11_059_000)
+		// Minimum execution time: 10_640 nanoseconds.
+		Weight::from_ref_time(10_831_000)
 	}
 	// Storage: Preimage PreimageFor (r:1 w:1)
 	// Storage: Preimage StatusFor (r:1 w:1)
 	/// The range of component `s` is `[128, 4194304]`.
 	fn service_task_fetched(s: u32, ) -> Weight {
-		// Minimum execution time: 51_428 nanoseconds.
-		Weight::from_ref_time(52_164_000)
+		// Minimum execution time: 69_680 nanoseconds.
+		Weight::from_ref_time(70_776_000)
 			// Standard Error: 2
 			.saturating_add(Weight::from_ref_time(1_739).saturating_mul(s.into()))
 			.saturating_add(RocksDbWeight::get().reads(2))
@@ -194,29 +194,29 @@ impl WeightInfo for () {
 	}
 	// Storage: Scheduler Lookup (r:0 w:1)
 	fn service_task_named() -> Weight {
-		// Minimum execution time: 33_778 nanoseconds.
-		Weight::from_ref_time(35_692_000)
+		// Minimum execution time: 12_243 nanoseconds.
+		Weight::from_ref_time(12_487_000)
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	fn service_task_periodic() -> Weight {
-		// Minimum execution time: 20_315 nanoseconds.
-		Weight::from_ref_time(21_360_000)
+		// Minimum execution time: 10_618 nanoseconds.
+		Weight::from_ref_time(10_860_000)
 	}
 	fn execute_dispatch_signed() -> Weight {
-		// Minimum execution time: 9_152 nanoseconds.
-		Weight::from_ref_time(9_421_000)
+		// Minimum execution time: 4_408 nanoseconds.
+		Weight::from_ref_time(4_494_000)
 	}
 	fn execute_dispatch_unsigned() -> Weight {
-		// Minimum execution time: 14_227 nanoseconds.
-		Weight::from_ref_time(14_816_000)
+		// Minimum execution time: 13_070 nanoseconds.
+		Weight::from_ref_time(13_624_000)
 	}
 	// Storage: Scheduler Agenda (r:1 w:1)
 	/// The range of component `s` is `[0, 49]`.
 	fn schedule(s: u32, ) -> Weight {
-		// Minimum execution time: 23_472 nanoseconds.
-		Weight::from_ref_time(29_231_177)
-			// Standard Error: 18_439
-			.saturating_add(Weight::from_ref_time(682_277).saturating_mul(s.into()))
+		// Minimum execution time: 23_461 nanoseconds.
+		Weight::from_ref_time(25_359_624)
+			// Standard Error: 7_330
+			.saturating_add(Weight::from_ref_time(629_077).saturating_mul(s.into()))
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
@@ -224,10 +224,10 @@ impl WeightInfo for () {
 	// Storage: Scheduler Lookup (r:0 w:1)
 	/// The range of component `s` is `[1, 50]`.
 	fn cancel(s: u32, ) -> Weight {
-		// Minimum execution time: 24_072 nanoseconds.
-		Weight::from_ref_time(24_645_719)
-			// Standard Error: 6_551
-			.saturating_add(Weight::from_ref_time(1_442_883).saturating_mul(s.into()))
+		// Minimum execution time: 23_602 nanoseconds.
+		Weight::from_ref_time(27_541_394)
+			// Standard Error: 12_571
+			.saturating_add(Weight::from_ref_time(1_086_436).saturating_mul(s.into()))
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
@@ -235,10 +235,10 @@ impl WeightInfo for () {
 	// Storage: Scheduler Agenda (r:1 w:1)
 	/// The range of component `s` is `[0, 49]`.
 	fn schedule_named(s: u32, ) -> Weight {
-		// Minimum execution time: 21_774 nanoseconds.
-		Weight::from_ref_time(27_248_406)
-			// Standard Error: 5_761
-			.saturating_add(Weight::from_ref_time(889_235).saturating_mul(s.into()))
+		// Minimum execution time: 21_418 nanoseconds.
+		Weight::from_ref_time(34_372_626)
+			// Standard Error: 28_265
+			.saturating_add(Weight::from_ref_time(531_180).saturating_mul(s.into()))
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
@@ -246,10 +246,10 @@ impl WeightInfo for () {
 	// Storage: Scheduler Agenda (r:1 w:1)
 	/// The range of component `s` is `[1, 50]`.
 	fn cancel_named(s: u32, ) -> Weight {
-		// Minimum execution time: 25_565 nanoseconds.
-		Weight::from_ref_time(30_880_415)
-			// Standard Error: 19_982
-			.saturating_add(Weight::from_ref_time(1_343_441).saturating_mul(s.into()))
+		// Minimum execution time: 25_315 nanoseconds.
+		Weight::from_ref_time(26_725_614)
+			// Standard Error: 6_378
+			.saturating_add(Weight::from_ref_time(1_194_759).saturating_mul(s.into()))
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}

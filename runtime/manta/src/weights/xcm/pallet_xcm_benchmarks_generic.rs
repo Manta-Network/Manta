@@ -18,7 +18,7 @@
 //!
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-05-23, STEPS: `50`, REPEAT: 20, LOW RANGE: `[]`, HIGH RANGE: `[]`
-//! HOSTNAME: `ip-172-31-31-45`, CPU: `Intel(R) Xeon(R) Platinum 8275CL CPU @ 3.00GHz`
+//! HOSTNAME: `ip-172-31-94-190`, CPU: `Intel(R) Xeon(R) Platinum 8275CL CPU @ 3.00GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("manta-dev"), DB CACHE: 1024
 
 // Executed Command:
@@ -53,38 +53,38 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn query_holding() -> Weight {
-		Weight::from_ref_time(1_149_573_000)
+		Weight::from_ref_time(925_914_000)
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	pub(crate) fn buy_execution() -> Weight {
-		Weight::from_ref_time(4_860_000)
+		Weight::from_ref_time(4_727_000)
 	}
 	// Storage: PolkadotXcm Queries (r:1 w:0)
 	pub(crate) fn query_response() -> Weight {
-		Weight::from_ref_time(14_928_000)
+		Weight::from_ref_time(14_518_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 	}
 	pub(crate) fn transact() -> Weight {
-		Weight::from_ref_time(17_331_000)
+		Weight::from_ref_time(16_870_000)
 	}
 	pub(crate) fn refund_surplus() -> Weight {
-		Weight::from_ref_time(4_701_000)
+		Weight::from_ref_time(7_384_000)
 	}
 	pub(crate) fn set_error_handler() -> Weight {
-		Weight::from_ref_time(1_068_000)
+		Weight::from_ref_time(1_111_000)
 	}
 	pub(crate) fn set_appendix() -> Weight {
-		Weight::from_ref_time(1_102_000)
+		Weight::from_ref_time(2_385_000)
 	}
 	pub(crate) fn clear_error() -> Weight {
-		Weight::from_ref_time(3_154_000)
+		Weight::from_ref_time(2_887_000)
 	}
 	pub(crate) fn descend_origin() -> Weight {
-		Weight::from_ref_time(8_351_000)
+		Weight::from_ref_time(6_977_000)
 	}
 	pub(crate) fn clear_origin() -> Weight {
-		Weight::from_ref_time(3_282_000)
+		Weight::from_ref_time(1_945_000)
 	}
 	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
 	// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
@@ -92,18 +92,18 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn report_error() -> Weight {
-		Weight::from_ref_time(29_043_000)
+		Weight::from_ref_time(19_358_000)
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	// Storage: PolkadotXcm AssetTraps (r:1 w:1)
 	pub(crate) fn claim_asset() -> Weight {
-		Weight::from_ref_time(27_965_000)
+		Weight::from_ref_time(27_606_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	pub(crate) fn trap() -> Weight {
-		Weight::from_ref_time(3_203_000)
+		Weight::from_ref_time(967_000)
 	}
 	// Storage: PolkadotXcm VersionNotifyTargets (r:1 w:1)
 	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
@@ -112,13 +112,13 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn subscribe_version() -> Weight {
-		Weight::from_ref_time(36_780_000)
+		Weight::from_ref_time(53_020_000)
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
 	// Storage: PolkadotXcm VersionNotifyTargets (r:0 w:1)
 	pub(crate) fn unsubscribe_version() -> Weight {
-		Weight::from_ref_time(5_821_000)
+		Weight::from_ref_time(5_423_000)
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: ParachainInfo ParachainId (r:1 w:0)
@@ -128,7 +128,7 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn initiate_reserve_withdraw() -> Weight {
-		Weight::from_ref_time(1_351_539_000)
+		Weight::from_ref_time(1_171_331_000)
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}

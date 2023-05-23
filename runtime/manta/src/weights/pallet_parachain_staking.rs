@@ -84,51 +84,51 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_parachain_staking::WeightInfo for SubstrateWeight<T> {
 	// Storage: ParachainStaking InflationConfig (r:1 w:1)
 	fn set_staking_expectations() -> Weight {
-		// Minimum execution time: 19_525 nanoseconds.
-		Weight::from_ref_time(19_982_000)
+		// Minimum execution time: 21_121 nanoseconds.
+		Weight::from_ref_time(21_573_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: ParachainStaking InflationConfig (r:1 w:1)
 	fn set_inflation() -> Weight {
-		// Minimum execution time: 65_819 nanoseconds.
-		Weight::from_ref_time(66_256_000)
+		// Minimum execution time: 65_637 nanoseconds.
+		Weight::from_ref_time(68_184_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: ParachainStaking ParachainBondInfo (r:1 w:1)
 	fn set_parachain_bond_account() -> Weight {
-		// Minimum execution time: 19_644 nanoseconds.
-		Weight::from_ref_time(20_188_000)
+		// Minimum execution time: 20_841 nanoseconds.
+		Weight::from_ref_time(21_485_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: ParachainStaking ParachainBondInfo (r:1 w:1)
 	fn set_parachain_bond_reserve_percent() -> Weight {
-		// Minimum execution time: 18_830 nanoseconds.
-		Weight::from_ref_time(19_110_000)
+		// Minimum execution time: 20_232 nanoseconds.
+		Weight::from_ref_time(20_667_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: ParachainStaking TotalSelected (r:1 w:1)
 	fn set_total_selected() -> Weight {
-		// Minimum execution time: 41_957 nanoseconds.
-		Weight::from_ref_time(44_200_000)
+		// Minimum execution time: 21_838 nanoseconds.
+		Weight::from_ref_time(22_222_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: ParachainStaking CollatorCommission (r:1 w:1)
 	fn set_collator_commission() -> Weight {
-		// Minimum execution time: 23_619 nanoseconds.
-		Weight::from_ref_time(24_305_000)
+		// Minimum execution time: 19_276 nanoseconds.
+		Weight::from_ref_time(19_836_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: ParachainStaking TotalSelected (r:1 w:0)
 	// Storage: ParachainStaking InflationConfig (r:1 w:1)
 	fn set_blocks_per_round() -> Weight {
-		// Minimum execution time: 69_359 nanoseconds.
-		Weight::from_ref_time(70_004_000)
+		// Minimum execution time: 71_062 nanoseconds.
+		Weight::from_ref_time(71_786_000)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -143,10 +143,10 @@ impl<T: frame_system::Config> pallet_parachain_staking::WeightInfo for Substrate
 	// Storage: ParachainStaking BottomDelegations (r:0 w:1)
 	/// The range of component `x` is `[3, 1000]`.
 	fn join_candidates(x: u32, ) -> Weight {
-		// Minimum execution time: 55_102 nanoseconds.
-		Weight::from_ref_time(68_338_910)
-			// Standard Error: 769
-			.saturating_add(Weight::from_ref_time(91_559).saturating_mul(x.into()))
+		// Minimum execution time: 57_130 nanoseconds.
+		Weight::from_ref_time(70_597_428)
+			// Standard Error: 889
+			.saturating_add(Weight::from_ref_time(85_081).saturating_mul(x.into()))
 			.saturating_add(T::DbWeight::get().reads(7))
 			.saturating_add(T::DbWeight::get().writes(7))
 	}
@@ -154,10 +154,10 @@ impl<T: frame_system::Config> pallet_parachain_staking::WeightInfo for Substrate
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	/// The range of component `x` is `[3, 1000]`.
 	fn schedule_leave_candidates(x: u32, ) -> Weight {
-		// Minimum execution time: 31_018 nanoseconds.
-		Weight::from_ref_time(36_561_792)
-			// Standard Error: 775
-			.saturating_add(Weight::from_ref_time(78_148).saturating_mul(x.into()))
+		// Minimum execution time: 33_634 nanoseconds.
+		Weight::from_ref_time(36_639_830)
+			// Standard Error: 815
+			.saturating_add(Weight::from_ref_time(77_704).saturating_mul(x.into()))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -171,10 +171,10 @@ impl<T: frame_system::Config> pallet_parachain_staking::WeightInfo for Substrate
 	// Storage: ParachainStaking Total (r:1 w:1)
 	/// The range of component `x` is `[2, 150]`.
 	fn execute_leave_candidates(x: u32, ) -> Weight {
-		// Minimum execution time: 95_620 nanoseconds.
-		Weight::from_ref_time(96_631_000)
-			// Standard Error: 41_731
-			.saturating_add(Weight::from_ref_time(20_647_397).saturating_mul(x.into()))
+		// Minimum execution time: 94_019 nanoseconds.
+		Weight::from_ref_time(94_844_000)
+			// Standard Error: 40_174
+			.saturating_add(Weight::from_ref_time(20_624_602).saturating_mul(x.into()))
 			.saturating_add(T::DbWeight::get().reads(4))
 			.saturating_add(T::DbWeight::get().reads((3_u64).saturating_mul(x.into())))
 			.saturating_add(T::DbWeight::get().writes(4))
@@ -184,26 +184,26 @@ impl<T: frame_system::Config> pallet_parachain_staking::WeightInfo for Substrate
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	/// The range of component `x` is `[3, 1000]`.
 	fn cancel_leave_candidates(x: u32, ) -> Weight {
-		// Minimum execution time: 28_749 nanoseconds.
-		Weight::from_ref_time(32_930_417)
-			// Standard Error: 855
-			.saturating_add(Weight::from_ref_time(89_274).saturating_mul(x.into()))
+		// Minimum execution time: 27_934 nanoseconds.
+		Weight::from_ref_time(33_431_627)
+			// Standard Error: 782
+			.saturating_add(Weight::from_ref_time(84_796).saturating_mul(x.into()))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	// Storage: ParachainStaking CandidateInfo (r:1 w:1)
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	fn go_offline() -> Weight {
-		// Minimum execution time: 27_642 nanoseconds.
-		Weight::from_ref_time(28_957_000)
+		// Minimum execution time: 28_032 nanoseconds.
+		Weight::from_ref_time(29_043_000)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	// Storage: ParachainStaking CandidateInfo (r:1 w:1)
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	fn go_online() -> Weight {
-		// Minimum execution time: 27_855 nanoseconds.
-		Weight::from_ref_time(28_973_000)
+		// Minimum execution time: 28_569 nanoseconds.
+		Weight::from_ref_time(28_960_000)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -213,15 +213,15 @@ impl<T: frame_system::Config> pallet_parachain_staking::WeightInfo for Substrate
 	// Storage: Balances Locks (r:1 w:1)
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	fn candidate_bond_more() -> Weight {
-		// Minimum execution time: 46_562 nanoseconds.
-		Weight::from_ref_time(49_631_000)
+		// Minimum execution time: 46_853 nanoseconds.
+		Weight::from_ref_time(51_044_000)
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(5))
 	}
 	// Storage: ParachainStaking CandidateInfo (r:1 w:1)
 	fn schedule_candidate_bond_less() -> Weight {
-		// Minimum execution time: 25_249 nanoseconds.
-		Weight::from_ref_time(27_280_000)
+		// Minimum execution time: 25_074 nanoseconds.
+		Weight::from_ref_time(27_572_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -231,15 +231,15 @@ impl<T: frame_system::Config> pallet_parachain_staking::WeightInfo for Substrate
 	// Storage: System Account (r:1 w:1)
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	fn execute_candidate_bond_less() -> Weight {
-		// Minimum execution time: 59_969 nanoseconds.
-		Weight::from_ref_time(60_657_000)
+		// Minimum execution time: 59_900 nanoseconds.
+		Weight::from_ref_time(60_945_000)
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(5))
 	}
 	// Storage: ParachainStaking CandidateInfo (r:1 w:1)
 	fn cancel_candidate_bond_less() -> Weight {
-		// Minimum execution time: 31_996 nanoseconds.
-		Weight::from_ref_time(47_210_000)
+		// Minimum execution time: 24_084 nanoseconds.
+		Weight::from_ref_time(24_662_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -253,20 +253,20 @@ impl<T: frame_system::Config> pallet_parachain_staking::WeightInfo for Substrate
 	/// The range of component `x` is `[3, 25]`.
 	/// The range of component `y` is `[2, 100]`.
 	fn delegate(x: u32, y: u32, ) -> Weight {
-		// Minimum execution time: 82_617 nanoseconds.
-		Weight::from_ref_time(78_207_949)
-			// Standard Error: 6_720
-			.saturating_add(Weight::from_ref_time(261_796).saturating_mul(x.into()))
-			// Standard Error: 1_549
-			.saturating_add(Weight::from_ref_time(170_413).saturating_mul(y.into()))
+		// Minimum execution time: 80_589 nanoseconds.
+		Weight::from_ref_time(77_098_769)
+			// Standard Error: 5_411
+			.saturating_add(Weight::from_ref_time(256_163).saturating_mul(x.into()))
+			// Standard Error: 1_247
+			.saturating_add(Weight::from_ref_time(153_042).saturating_mul(y.into()))
 			.saturating_add(T::DbWeight::get().reads(7))
 			.saturating_add(T::DbWeight::get().writes(7))
 	}
 	// Storage: ParachainStaking DelegatorState (r:1 w:1)
 	// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:1)
 	fn schedule_leave_delegators() -> Weight {
-		// Minimum execution time: 30_911 nanoseconds.
-		Weight::from_ref_time(31_644_000)
+		// Minimum execution time: 30_889 nanoseconds.
+		Weight::from_ref_time(31_531_000)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -280,10 +280,10 @@ impl<T: frame_system::Config> pallet_parachain_staking::WeightInfo for Substrate
 	// Storage: System Account (r:1 w:1)
 	/// The range of component `x` is `[2, 25]`.
 	fn execute_leave_delegators(x: u32, ) -> Weight {
-		// Minimum execution time: 85_334 nanoseconds.
-		Weight::from_ref_time(48_078_697)
-			// Standard Error: 22_110
-			.saturating_add(Weight::from_ref_time(19_231_579).saturating_mul(x.into()))
+		// Minimum execution time: 83_962 nanoseconds.
+		Weight::from_ref_time(48_077_881)
+			// Standard Error: 26_665
+			.saturating_add(Weight::from_ref_time(19_397_820).saturating_mul(x.into()))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().reads((3_u64).saturating_mul(x.into())))
 			.saturating_add(T::DbWeight::get().writes(2))
@@ -292,16 +292,16 @@ impl<T: frame_system::Config> pallet_parachain_staking::WeightInfo for Substrate
 	// Storage: ParachainStaking DelegatorState (r:1 w:1)
 	// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:1)
 	fn cancel_leave_delegators() -> Weight {
-		// Minimum execution time: 31_107 nanoseconds.
-		Weight::from_ref_time(31_454_000)
+		// Minimum execution time: 41_754 nanoseconds.
+		Weight::from_ref_time(42_324_000)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	// Storage: ParachainStaking DelegatorState (r:1 w:1)
 	// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:1)
 	fn schedule_revoke_delegation() -> Weight {
-		// Minimum execution time: 29_274 nanoseconds.
-		Weight::from_ref_time(32_039_000)
+		// Minimum execution time: 29_661 nanoseconds.
+		Weight::from_ref_time(32_216_000)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -314,16 +314,16 @@ impl<T: frame_system::Config> pallet_parachain_staking::WeightInfo for Substrate
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	// Storage: ParachainStaking Total (r:1 w:1)
 	fn delegator_bond_more() -> Weight {
-		// Minimum execution time: 70_145 nanoseconds.
-		Weight::from_ref_time(72_021_000)
+		// Minimum execution time: 67_453 nanoseconds.
+		Weight::from_ref_time(68_210_000)
 			.saturating_add(T::DbWeight::get().reads(8))
 			.saturating_add(T::DbWeight::get().writes(7))
 	}
 	// Storage: ParachainStaking DelegatorState (r:1 w:1)
 	// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:1)
 	fn schedule_delegator_bond_less() -> Weight {
-		// Minimum execution time: 29_689 nanoseconds.
-		Weight::from_ref_time(31_608_000)
+		// Minimum execution time: 41_277 nanoseconds.
+		Weight::from_ref_time(42_019_000)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -336,8 +336,8 @@ impl<T: frame_system::Config> pallet_parachain_staking::WeightInfo for Substrate
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	// Storage: ParachainStaking Total (r:1 w:1)
 	fn execute_revoke_delegation() -> Weight {
-		// Minimum execution time: 87_236 nanoseconds.
-		Weight::from_ref_time(88_391_000)
+		// Minimum execution time: 88_986 nanoseconds.
+		Weight::from_ref_time(89_961_000)
 			.saturating_add(T::DbWeight::get().reads(8))
 			.saturating_add(T::DbWeight::get().writes(8))
 	}
@@ -350,24 +350,24 @@ impl<T: frame_system::Config> pallet_parachain_staking::WeightInfo for Substrate
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	// Storage: ParachainStaking Total (r:1 w:1)
 	fn execute_delegator_bond_less() -> Weight {
-		// Minimum execution time: 79_295 nanoseconds.
-		Weight::from_ref_time(81_026_000)
+		// Minimum execution time: 80_061 nanoseconds.
+		Weight::from_ref_time(81_300_000)
 			.saturating_add(T::DbWeight::get().reads(8))
 			.saturating_add(T::DbWeight::get().writes(8))
 	}
 	// Storage: ParachainStaking DelegatorState (r:1 w:1)
 	// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:1)
 	fn cancel_revoke_delegation() -> Weight {
-		// Minimum execution time: 29_592 nanoseconds.
-		Weight::from_ref_time(32_291_000)
+		// Minimum execution time: 31_946 nanoseconds.
+		Weight::from_ref_time(32_327_000)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	// Storage: ParachainStaking DelegatorState (r:1 w:1)
 	// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:1)
 	fn cancel_delegator_bond_less() -> Weight {
-		// Minimum execution time: 36_448 nanoseconds.
-		Weight::from_ref_time(36_945_000)
+		// Minimum execution time: 35_967 nanoseconds.
+		Weight::from_ref_time(36_448_000)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -390,10 +390,10 @@ impl<T: frame_system::Config> pallet_parachain_staking::WeightInfo for Substrate
 	/// The range of component `x` is `[8, 100]`.
 	/// The range of component `y` is `[0, 10000]`.
 	fn round_transition_on_initialize(x: u32, _y: u32, ) -> Weight {
-		// Minimum execution time: 736_154 nanoseconds.
-		Weight::from_ref_time(1_435_743_808)
-			// Standard Error: 340_789
-			.saturating_add(Weight::from_ref_time(1_215_151).saturating_mul(x.into()))
+		// Minimum execution time: 725_957 nanoseconds.
+		Weight::from_ref_time(1_418_280_885)
+			// Standard Error: 338_325
+			.saturating_add(Weight::from_ref_time(1_348_849).saturating_mul(x.into()))
 			.saturating_add(T::DbWeight::get().reads(119))
 			.saturating_add(T::DbWeight::get().reads((2_u64).saturating_mul(x.into())))
 			.saturating_add(T::DbWeight::get().writes(113))
@@ -405,18 +405,18 @@ impl<T: frame_system::Config> pallet_parachain_staking::WeightInfo for Substrate
 	// Storage: System Account (r:1 w:1)
 	/// The range of component `y` is `[0, 100]`.
 	fn pay_one_collator_reward(y: u32, ) -> Weight {
-		// Minimum execution time: 47_181 nanoseconds.
-		Weight::from_ref_time(58_101_151)
-			// Standard Error: 17_918
-			.saturating_add(Weight::from_ref_time(12_113_823).saturating_mul(y.into()))
+		// Minimum execution time: 46_939 nanoseconds.
+		Weight::from_ref_time(59_855_647)
+			// Standard Error: 13_604
+			.saturating_add(Weight::from_ref_time(11_971_016).saturating_mul(y.into()))
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().reads((1_u64).saturating_mul(y.into())))
 			.saturating_add(T::DbWeight::get().writes(3))
 			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(y.into())))
 	}
 	fn base_on_initialize() -> Weight {
-		// Minimum execution time: 5_918 nanoseconds.
-		Weight::from_ref_time(6_101_000)
+		// Minimum execution time: 5_846 nanoseconds.
+		Weight::from_ref_time(6_142_000)
 	}
 }
 
@@ -424,51 +424,51 @@ impl<T: frame_system::Config> pallet_parachain_staking::WeightInfo for Substrate
 impl WeightInfo for () {
 	// Storage: ParachainStaking InflationConfig (r:1 w:1)
 	fn set_staking_expectations() -> Weight {
-		// Minimum execution time: 19_525 nanoseconds.
-		Weight::from_ref_time(19_982_000)
+		// Minimum execution time: 21_121 nanoseconds.
+		Weight::from_ref_time(21_573_000)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: ParachainStaking InflationConfig (r:1 w:1)
 	fn set_inflation() -> Weight {
-		// Minimum execution time: 65_819 nanoseconds.
-		Weight::from_ref_time(66_256_000)
+		// Minimum execution time: 65_637 nanoseconds.
+		Weight::from_ref_time(68_184_000)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: ParachainStaking ParachainBondInfo (r:1 w:1)
 	fn set_parachain_bond_account() -> Weight {
-		// Minimum execution time: 19_644 nanoseconds.
-		Weight::from_ref_time(20_188_000)
+		// Minimum execution time: 20_841 nanoseconds.
+		Weight::from_ref_time(21_485_000)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: ParachainStaking ParachainBondInfo (r:1 w:1)
 	fn set_parachain_bond_reserve_percent() -> Weight {
-		// Minimum execution time: 18_830 nanoseconds.
-		Weight::from_ref_time(19_110_000)
+		// Minimum execution time: 20_232 nanoseconds.
+		Weight::from_ref_time(20_667_000)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: ParachainStaking TotalSelected (r:1 w:1)
 	fn set_total_selected() -> Weight {
-		// Minimum execution time: 41_957 nanoseconds.
-		Weight::from_ref_time(44_200_000)
+		// Minimum execution time: 21_838 nanoseconds.
+		Weight::from_ref_time(22_222_000)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: ParachainStaking CollatorCommission (r:1 w:1)
 	fn set_collator_commission() -> Weight {
-		// Minimum execution time: 23_619 nanoseconds.
-		Weight::from_ref_time(24_305_000)
+		// Minimum execution time: 19_276 nanoseconds.
+		Weight::from_ref_time(19_836_000)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: ParachainStaking TotalSelected (r:1 w:0)
 	// Storage: ParachainStaking InflationConfig (r:1 w:1)
 	fn set_blocks_per_round() -> Weight {
-		// Minimum execution time: 69_359 nanoseconds.
-		Weight::from_ref_time(70_004_000)
+		// Minimum execution time: 71_062 nanoseconds.
+		Weight::from_ref_time(71_786_000)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
@@ -483,10 +483,10 @@ impl WeightInfo for () {
 	// Storage: ParachainStaking BottomDelegations (r:0 w:1)
 	/// The range of component `x` is `[3, 1000]`.
 	fn join_candidates(x: u32, ) -> Weight {
-		// Minimum execution time: 55_102 nanoseconds.
-		Weight::from_ref_time(68_338_910)
-			// Standard Error: 769
-			.saturating_add(Weight::from_ref_time(91_559).saturating_mul(x.into()))
+		// Minimum execution time: 57_130 nanoseconds.
+		Weight::from_ref_time(70_597_428)
+			// Standard Error: 889
+			.saturating_add(Weight::from_ref_time(85_081).saturating_mul(x.into()))
 			.saturating_add(RocksDbWeight::get().reads(7))
 			.saturating_add(RocksDbWeight::get().writes(7))
 	}
@@ -494,10 +494,10 @@ impl WeightInfo for () {
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	/// The range of component `x` is `[3, 1000]`.
 	fn schedule_leave_candidates(x: u32, ) -> Weight {
-		// Minimum execution time: 31_018 nanoseconds.
-		Weight::from_ref_time(36_561_792)
-			// Standard Error: 775
-			.saturating_add(Weight::from_ref_time(78_148).saturating_mul(x.into()))
+		// Minimum execution time: 33_634 nanoseconds.
+		Weight::from_ref_time(36_639_830)
+			// Standard Error: 815
+			.saturating_add(Weight::from_ref_time(77_704).saturating_mul(x.into()))
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
@@ -511,10 +511,10 @@ impl WeightInfo for () {
 	// Storage: ParachainStaking Total (r:1 w:1)
 	/// The range of component `x` is `[2, 150]`.
 	fn execute_leave_candidates(x: u32, ) -> Weight {
-		// Minimum execution time: 95_620 nanoseconds.
-		Weight::from_ref_time(96_631_000)
-			// Standard Error: 41_731
-			.saturating_add(Weight::from_ref_time(20_647_397).saturating_mul(x.into()))
+		// Minimum execution time: 94_019 nanoseconds.
+		Weight::from_ref_time(94_844_000)
+			// Standard Error: 40_174
+			.saturating_add(Weight::from_ref_time(20_624_602).saturating_mul(x.into()))
 			.saturating_add(RocksDbWeight::get().reads(4))
 			.saturating_add(RocksDbWeight::get().reads((3_u64).saturating_mul(x.into())))
 			.saturating_add(RocksDbWeight::get().writes(4))
@@ -524,26 +524,26 @@ impl WeightInfo for () {
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	/// The range of component `x` is `[3, 1000]`.
 	fn cancel_leave_candidates(x: u32, ) -> Weight {
-		// Minimum execution time: 28_749 nanoseconds.
-		Weight::from_ref_time(32_930_417)
-			// Standard Error: 855
-			.saturating_add(Weight::from_ref_time(89_274).saturating_mul(x.into()))
+		// Minimum execution time: 27_934 nanoseconds.
+		Weight::from_ref_time(33_431_627)
+			// Standard Error: 782
+			.saturating_add(Weight::from_ref_time(84_796).saturating_mul(x.into()))
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
 	// Storage: ParachainStaking CandidateInfo (r:1 w:1)
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	fn go_offline() -> Weight {
-		// Minimum execution time: 27_642 nanoseconds.
-		Weight::from_ref_time(28_957_000)
+		// Minimum execution time: 28_032 nanoseconds.
+		Weight::from_ref_time(29_043_000)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
 	// Storage: ParachainStaking CandidateInfo (r:1 w:1)
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	fn go_online() -> Weight {
-		// Minimum execution time: 27_855 nanoseconds.
-		Weight::from_ref_time(28_973_000)
+		// Minimum execution time: 28_569 nanoseconds.
+		Weight::from_ref_time(28_960_000)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
@@ -553,15 +553,15 @@ impl WeightInfo for () {
 	// Storage: Balances Locks (r:1 w:1)
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	fn candidate_bond_more() -> Weight {
-		// Minimum execution time: 46_562 nanoseconds.
-		Weight::from_ref_time(49_631_000)
+		// Minimum execution time: 46_853 nanoseconds.
+		Weight::from_ref_time(51_044_000)
 			.saturating_add(RocksDbWeight::get().reads(5))
 			.saturating_add(RocksDbWeight::get().writes(5))
 	}
 	// Storage: ParachainStaking CandidateInfo (r:1 w:1)
 	fn schedule_candidate_bond_less() -> Weight {
-		// Minimum execution time: 25_249 nanoseconds.
-		Weight::from_ref_time(27_280_000)
+		// Minimum execution time: 25_074 nanoseconds.
+		Weight::from_ref_time(27_572_000)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
@@ -571,15 +571,15 @@ impl WeightInfo for () {
 	// Storage: System Account (r:1 w:1)
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	fn execute_candidate_bond_less() -> Weight {
-		// Minimum execution time: 59_969 nanoseconds.
-		Weight::from_ref_time(60_657_000)
+		// Minimum execution time: 59_900 nanoseconds.
+		Weight::from_ref_time(60_945_000)
 			.saturating_add(RocksDbWeight::get().reads(5))
 			.saturating_add(RocksDbWeight::get().writes(5))
 	}
 	// Storage: ParachainStaking CandidateInfo (r:1 w:1)
 	fn cancel_candidate_bond_less() -> Weight {
-		// Minimum execution time: 31_996 nanoseconds.
-		Weight::from_ref_time(47_210_000)
+		// Minimum execution time: 24_084 nanoseconds.
+		Weight::from_ref_time(24_662_000)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
@@ -593,20 +593,20 @@ impl WeightInfo for () {
 	/// The range of component `x` is `[3, 25]`.
 	/// The range of component `y` is `[2, 100]`.
 	fn delegate(x: u32, y: u32, ) -> Weight {
-		// Minimum execution time: 82_617 nanoseconds.
-		Weight::from_ref_time(78_207_949)
-			// Standard Error: 6_720
-			.saturating_add(Weight::from_ref_time(261_796).saturating_mul(x.into()))
-			// Standard Error: 1_549
-			.saturating_add(Weight::from_ref_time(170_413).saturating_mul(y.into()))
+		// Minimum execution time: 80_589 nanoseconds.
+		Weight::from_ref_time(77_098_769)
+			// Standard Error: 5_411
+			.saturating_add(Weight::from_ref_time(256_163).saturating_mul(x.into()))
+			// Standard Error: 1_247
+			.saturating_add(Weight::from_ref_time(153_042).saturating_mul(y.into()))
 			.saturating_add(RocksDbWeight::get().reads(7))
 			.saturating_add(RocksDbWeight::get().writes(7))
 	}
 	// Storage: ParachainStaking DelegatorState (r:1 w:1)
 	// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:1)
 	fn schedule_leave_delegators() -> Weight {
-		// Minimum execution time: 30_911 nanoseconds.
-		Weight::from_ref_time(31_644_000)
+		// Minimum execution time: 30_889 nanoseconds.
+		Weight::from_ref_time(31_531_000)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
@@ -620,10 +620,10 @@ impl WeightInfo for () {
 	// Storage: System Account (r:1 w:1)
 	/// The range of component `x` is `[2, 25]`.
 	fn execute_leave_delegators(x: u32, ) -> Weight {
-		// Minimum execution time: 85_334 nanoseconds.
-		Weight::from_ref_time(48_078_697)
-			// Standard Error: 22_110
-			.saturating_add(Weight::from_ref_time(19_231_579).saturating_mul(x.into()))
+		// Minimum execution time: 83_962 nanoseconds.
+		Weight::from_ref_time(48_077_881)
+			// Standard Error: 26_665
+			.saturating_add(Weight::from_ref_time(19_397_820).saturating_mul(x.into()))
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().reads((3_u64).saturating_mul(x.into())))
 			.saturating_add(RocksDbWeight::get().writes(2))
@@ -632,16 +632,16 @@ impl WeightInfo for () {
 	// Storage: ParachainStaking DelegatorState (r:1 w:1)
 	// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:1)
 	fn cancel_leave_delegators() -> Weight {
-		// Minimum execution time: 31_107 nanoseconds.
-		Weight::from_ref_time(31_454_000)
+		// Minimum execution time: 41_754 nanoseconds.
+		Weight::from_ref_time(42_324_000)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
 	// Storage: ParachainStaking DelegatorState (r:1 w:1)
 	// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:1)
 	fn schedule_revoke_delegation() -> Weight {
-		// Minimum execution time: 29_274 nanoseconds.
-		Weight::from_ref_time(32_039_000)
+		// Minimum execution time: 29_661 nanoseconds.
+		Weight::from_ref_time(32_216_000)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
@@ -654,16 +654,16 @@ impl WeightInfo for () {
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	// Storage: ParachainStaking Total (r:1 w:1)
 	fn delegator_bond_more() -> Weight {
-		// Minimum execution time: 70_145 nanoseconds.
-		Weight::from_ref_time(72_021_000)
+		// Minimum execution time: 67_453 nanoseconds.
+		Weight::from_ref_time(68_210_000)
 			.saturating_add(RocksDbWeight::get().reads(8))
 			.saturating_add(RocksDbWeight::get().writes(7))
 	}
 	// Storage: ParachainStaking DelegatorState (r:1 w:1)
 	// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:1)
 	fn schedule_delegator_bond_less() -> Weight {
-		// Minimum execution time: 29_689 nanoseconds.
-		Weight::from_ref_time(31_608_000)
+		// Minimum execution time: 41_277 nanoseconds.
+		Weight::from_ref_time(42_019_000)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
@@ -676,8 +676,8 @@ impl WeightInfo for () {
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	// Storage: ParachainStaking Total (r:1 w:1)
 	fn execute_revoke_delegation() -> Weight {
-		// Minimum execution time: 87_236 nanoseconds.
-		Weight::from_ref_time(88_391_000)
+		// Minimum execution time: 88_986 nanoseconds.
+		Weight::from_ref_time(89_961_000)
 			.saturating_add(RocksDbWeight::get().reads(8))
 			.saturating_add(RocksDbWeight::get().writes(8))
 	}
@@ -690,24 +690,24 @@ impl WeightInfo for () {
 	// Storage: ParachainStaking CandidatePool (r:1 w:1)
 	// Storage: ParachainStaking Total (r:1 w:1)
 	fn execute_delegator_bond_less() -> Weight {
-		// Minimum execution time: 79_295 nanoseconds.
-		Weight::from_ref_time(81_026_000)
+		// Minimum execution time: 80_061 nanoseconds.
+		Weight::from_ref_time(81_300_000)
 			.saturating_add(RocksDbWeight::get().reads(8))
 			.saturating_add(RocksDbWeight::get().writes(8))
 	}
 	// Storage: ParachainStaking DelegatorState (r:1 w:1)
 	// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:1)
 	fn cancel_revoke_delegation() -> Weight {
-		// Minimum execution time: 29_592 nanoseconds.
-		Weight::from_ref_time(32_291_000)
+		// Minimum execution time: 31_946 nanoseconds.
+		Weight::from_ref_time(32_327_000)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
 	// Storage: ParachainStaking DelegatorState (r:1 w:1)
 	// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:1)
 	fn cancel_delegator_bond_less() -> Weight {
-		// Minimum execution time: 36_448 nanoseconds.
-		Weight::from_ref_time(36_945_000)
+		// Minimum execution time: 35_967 nanoseconds.
+		Weight::from_ref_time(36_448_000)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
@@ -730,10 +730,10 @@ impl WeightInfo for () {
 	/// The range of component `x` is `[8, 100]`.
 	/// The range of component `y` is `[0, 10000]`.
 	fn round_transition_on_initialize(x: u32, _y: u32, ) -> Weight {
-		// Minimum execution time: 736_154 nanoseconds.
-		Weight::from_ref_time(1_435_743_808)
-			// Standard Error: 340_789
-			.saturating_add(Weight::from_ref_time(1_215_151).saturating_mul(x.into()))
+		// Minimum execution time: 725_957 nanoseconds.
+		Weight::from_ref_time(1_418_280_885)
+			// Standard Error: 338_325
+			.saturating_add(Weight::from_ref_time(1_348_849).saturating_mul(x.into()))
 			.saturating_add(RocksDbWeight::get().reads(119))
 			.saturating_add(RocksDbWeight::get().reads((2_u64).saturating_mul(x.into())))
 			.saturating_add(RocksDbWeight::get().writes(113))
@@ -745,17 +745,17 @@ impl WeightInfo for () {
 	// Storage: System Account (r:1 w:1)
 	/// The range of component `y` is `[0, 100]`.
 	fn pay_one_collator_reward(y: u32, ) -> Weight {
-		// Minimum execution time: 47_181 nanoseconds.
-		Weight::from_ref_time(58_101_151)
-			// Standard Error: 17_918
-			.saturating_add(Weight::from_ref_time(12_113_823).saturating_mul(y.into()))
+		// Minimum execution time: 46_939 nanoseconds.
+		Weight::from_ref_time(59_855_647)
+			// Standard Error: 13_604
+			.saturating_add(Weight::from_ref_time(11_971_016).saturating_mul(y.into()))
 			.saturating_add(RocksDbWeight::get().reads(6))
 			.saturating_add(RocksDbWeight::get().reads((1_u64).saturating_mul(y.into())))
 			.saturating_add(RocksDbWeight::get().writes(3))
 			.saturating_add(RocksDbWeight::get().writes((1_u64).saturating_mul(y.into())))
 	}
 	fn base_on_initialize() -> Weight {
-		// Minimum execution time: 5_918 nanoseconds.
-		Weight::from_ref_time(6_101_000)
+		// Minimum execution time: 5_846 nanoseconds.
+		Weight::from_ref_time(6_142_000)
 	}
 }

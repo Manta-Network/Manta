@@ -56,16 +56,16 @@ impl<T: frame_system::Config> pallet_session::WeightInfo for SubstrateWeight<T> 
 	// Storage: Session NextKeys (r:1 w:1)
 	// Storage: Session KeyOwner (r:2 w:2)
 	fn set_keys() -> Weight {
-		// Minimum execution time: 52_512 nanoseconds.
-		Weight::from_ref_time(53_835_000)
+		// Minimum execution time: 26_520 nanoseconds.
+		Weight::from_ref_time(27_073_000)
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
 	// Storage: Session NextKeys (r:1 w:1)
 	// Storage: Session KeyOwner (r:0 w:2)
 	fn purge_keys() -> Weight {
-		// Minimum execution time: 27_560 nanoseconds.
-		Weight::from_ref_time(28_037_000)
+		// Minimum execution time: 20_396 nanoseconds.
+		Weight::from_ref_time(20_757_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
@@ -76,16 +76,16 @@ impl WeightInfo for () {
 	// Storage: Session NextKeys (r:1 w:1)
 	// Storage: Session KeyOwner (r:2 w:2)
 	fn set_keys() -> Weight {
-		// Minimum execution time: 52_512 nanoseconds.
-		Weight::from_ref_time(53_835_000)
+		// Minimum execution time: 26_520 nanoseconds.
+		Weight::from_ref_time(27_073_000)
 			.saturating_add(RocksDbWeight::get().reads(3))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
 	// Storage: Session NextKeys (r:1 w:1)
 	// Storage: Session KeyOwner (r:0 w:2)
 	fn purge_keys() -> Weight {
-		// Minimum execution time: 27_560 nanoseconds.
-		Weight::from_ref_time(28_037_000)
+		// Minimum execution time: 20_396 nanoseconds.
+		Weight::from_ref_time(20_757_000)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
