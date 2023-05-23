@@ -236,7 +236,11 @@ export async function setup_storage(
     await api.tx.preimage.notePreimage(encodedCallData).signAndSend(keyring, {nonce: -1});
     console.log("Runtime upgrade preimage noted ...");
     let encodedCallDataHash = blake2AsHex(encodedCallData);
-    let externalProposeDefault = await api.tx.democracy.externalProposeDefault(encodedCallDataHash);
+    let externalProposeDefault = await api.tx.democracy.externalProposeDefault({
+        Legacy: {
+            hash: encodedCallDataHash
+        }
+    });
     const encodedExternalProposeDefault = externalProposeDefault.method.toHex();
     await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce: -1});
     console.log("Runtime upgrade governance proposed ...");
@@ -246,6 +250,6 @@ export async function setup_storage(
     await api.tx.democracy.vote(referendumIndexObject.referendumIndex, {
         Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
     }).signAndSend(keyring, {nonce: -1});
-    console.log("Runtime upgrade governance voted on ...");
+    console.log("Runtime upgrade governanceZ voted on ...");
     referendumIndexObject.referendumIndex++;
 }
