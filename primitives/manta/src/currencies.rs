@@ -180,7 +180,7 @@ where
             <Native as fungible::Mutate<C::AccountId>>::slash(who, amount)
                 .expect("slash should not failed")
         } else {
-            NonNative::slash(currency_id, who, amount).expect("slash shound not failed")
+            NonNative::slash(currency_id, who, amount).expect("slash should not failed")
         }
     }
 }

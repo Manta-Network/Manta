@@ -309,7 +309,7 @@ pub mod pallet {
         /// Location Already Exists
         LocationAlreadyExists,
 
-        /// An error occured while creating a new asset at the [`AssetRegistry`].
+        /// An error occurred while creating a new asset at the [`AssetRegistry`].
         ErrorCreatingAsset,
 
         /// There was an attempt to update a non-existent asset.
@@ -326,6 +326,12 @@ pub mod pallet {
 
         /// An error occurred while updating the parachain id.
         UpdateParaIdError,
+
+        /// Two asset that used for generate LP asset should different
+        AssetIdNotDifferent,
+
+        /// Two asset that used for generate LP asset should exist
+        AssetIdNotExist,
     }
 
     /// [`AssetId`](AssetConfig::AssetId) to [`MultiLocation`] Map
@@ -393,7 +399,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Register a new asset in the asset manager.
         ///
-        /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
+        /// * `origin`: Caller of this extrinsic, the access control is specified by `ModifierOrigin`.
         /// * `location`: Location of the asset.
         /// * `metadata`: Asset metadata.
         /// * `min_balance`: Minimum balance to keep an account alive, used in conjunction with `is_sufficient`.
@@ -429,7 +435,7 @@ pub mod pallet {
 
         /// Update an asset by its asset id in the asset manager.
         ///
-        /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
+        /// * `origin`: Caller of this extrinsic, the access control is specified by `ModifierOrigin`.
         /// * `asset_id`: AssetId to be updated.
         /// * `location`: `location` to update the asset location.
         #[pallet::call_index(1)]
@@ -491,7 +497,7 @@ pub mod pallet {
 
         /// Update an asset's metadata by its `asset_id`
         ///
-        /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
+        /// * `origin`: Caller of this extrinsic, the access control is specified by `ModifierOrigin`.
         /// * `asset_id`: AssetId to be updated.
         /// * `metadata`: new `metadata` to be associated with `asset_id`.
         #[pallet::call_index(2)]
@@ -522,7 +528,7 @@ pub mod pallet {
 
         /// Update an asset by its asset id in the asset manager.
         ///
-        /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
+        /// * `origin`: Caller of this extrinsic, the access control is specified by `ModifierOrigin`.
         /// * `asset_id`: AssetId to be updated.
         /// * `units_per_second`: units per second for `asset_id`
         #[pallet::call_index(3)]
@@ -548,7 +554,7 @@ pub mod pallet {
 
         /// Mint asset by its asset id to a beneficiary.
         ///
-        /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
+        /// * `origin`: Caller of this extrinsic, the access control is specified by `ModifierOrigin`.
         /// * `asset_id`: AssetId to be updated.
         /// * `beneficiary`: Account to mint the asset.
         /// * `amount`: Amount of asset being minted.
@@ -583,7 +589,7 @@ pub mod pallet {
 
         /// Set min xcm fee for asset/s on their reserve chain.
         ///
-        /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
+        /// * `origin`: Caller of this extrinsic, the access control is specified by `ModifierOrigin`.
         /// * `reserve_chain`: Multilocation to be haven min xcm fee.
         /// * `min_xcm_fee`: Amount of min_xcm_fee.
         #[pallet::call_index(5)]
@@ -605,7 +611,7 @@ pub mod pallet {
 
         /// Set min xcm fee for asset/s on their reserve chain.
         ///
-        /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
+        /// * `origin`: Caller of this extrinsic, the access control is specified by `ModifierOrigin`.
         /// * `filtered_location`: Multilocation to be filtered.
         #[pallet::call_index(6)]
         #[pallet::weight(T::WeightInfo::update_outgoing_filtered_assets())]
@@ -630,6 +636,13 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Register a LP(liquidity provider) asset in the asset manager based on two given already exist asset.
+        ///
+        /// * `origin`: Caller of this extrinsic, the access control is specified by `ModifierOrigin`.
+        /// * `asset_0`: First assetId.
+        /// * `asset_1`: Second assetId.
+        /// * `location`: Location of the LP asset.
+        /// * `metadata`: LP Asset metadata.
         #[pallet::call_index(7)]
         #[pallet::weight(T::WeightInfo::register_asset())]
         #[transactional]
@@ -641,6 +654,12 @@ pub mod pallet {
             metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
+            ensure!(asset_0 != asset_1, Error::<T>::AssetIdNotDifferent);
+            ensure!(
+                AssetIdLocation::<T>::contains_key(asset_0)
+                    && AssetIdLocation::<T>::contains_key(asset_1),
+                Error::<T>::AssetIdNotExist
+            );
 
             let (asset_id0, asset_id1) = Self::sort_asset_id(asset_0, asset_1);
             ensure!(

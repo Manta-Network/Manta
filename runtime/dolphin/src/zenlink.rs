@@ -40,7 +40,6 @@ use zenlink_stable_amm::traits::{StablePoolLpCurrencyIdGenerate, ValidateCurrenc
 
 parameter_types! {
     pub const ZenlinkPalletId: PalletId = PalletId(*b"/zenlink");
-    pub const GetExchangeFee: (u32, u32) = (3, 1000);   // 0.3%
     pub SelfParaId: u32 = ParachainInfo::parachain_id().into();
     pub MantaNativeAssetId: DolphinAssetId = 1;
     pub ZenlinkNativeAssetId: u64 = 0;

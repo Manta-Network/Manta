@@ -804,6 +804,7 @@ parameter_types! {
     pub TreasuryAccount: AccountId = TreasuryPalletId::get().into_account_truncating();
 }
 
+/// Zenlink protocol Asset adaptor for orml_traits::MultiCurrency.
 type MantaCurrencies = Currencies<Runtime, CalamariAssetConfig, Balances, Assets>;
 
 impl manta_farming::Config for Runtime {
