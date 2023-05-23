@@ -53,11 +53,11 @@ describe('Node RPC Test', () => {
 
         let blockNow = await api.rpc.chain.getBlock();
         let blockNumberNow = blockNow.block.header.number;
+        console.log("Block number before upgrade is enacted: ", blockNumberNow.toString());
         await delay(60000);
         let blockLater = await api.rpc.chain.getBlock();
         let blockNumberLater = blockLater.block.header.number;
-        console.log("Block number before upgrade ", blockNumberLater.toString());
-        console.log("Block number after upgrade ", blockNumberLater.toString());
+        console.log("Block number after upgrade is enacted: ", blockNumberLater.toString());
         assert(blockNumberLater > blockNumberNow);
 
         api.disconnect();
