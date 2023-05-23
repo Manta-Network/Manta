@@ -65,34 +65,34 @@ impl<T: frame_system::Config> manta_collator_selection::WeightInfo for Substrate
 	// Storage: CollatorSelection Invulnerables (r:0 w:1)
 	/// The range of component `b` is `[1, 5]`.
 	fn set_invulnerables(b: u32, ) -> Weight {
-		// Minimum execution time: 14_120 nanoseconds.
-		Weight::from_ref_time(16_346_813)
-			// Standard Error: 281_894
-			.saturating_add(Weight::from_ref_time(1_950_277).saturating_mul(b.into()))
+		// Minimum execution time: 14_303 nanoseconds.
+		Weight::from_ref_time(19_551_205)
+			// Standard Error: 233_282
+			.saturating_add(Weight::from_ref_time(1_610_452).saturating_mul(b.into()))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: CollatorSelection DesiredCandidates (r:0 w:1)
 	fn set_desired_candidates() -> Weight {
-		// Minimum execution time: 39_263 nanoseconds.
-		Weight::from_ref_time(40_703_000)
+		// Minimum execution time: 31_760 nanoseconds.
+		Weight::from_ref_time(32_383_000)
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: CollatorSelection CandidacyBond (r:0 w:1)
 	fn set_candidacy_bond() -> Weight {
-		// Minimum execution time: 23_318 nanoseconds.
-		Weight::from_ref_time(23_660_000)
+		// Minimum execution time: 19_280 nanoseconds.
+		Weight::from_ref_time(19_761_000)
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: CollatorSelection EvictionBaseline (r:0 w:1)
 	fn set_eviction_baseline() -> Weight {
-		// Minimum execution time: 15_988 nanoseconds.
-		Weight::from_ref_time(16_496_000)
+		// Minimum execution time: 13_309 nanoseconds.
+		Weight::from_ref_time(18_628_000)
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: CollatorSelection EvictionTolerance (r:0 w:1)
 	fn set_eviction_tolerance() -> Weight {
-		// Minimum execution time: 16_028 nanoseconds.
-		Weight::from_ref_time(16_548_000)
+		// Minimum execution time: 13_531 nanoseconds.
+		Weight::from_ref_time(13_758_000)
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: CollatorSelection Candidates (r:1 w:1)
@@ -102,20 +102,20 @@ impl<T: frame_system::Config> manta_collator_selection::WeightInfo for Substrate
 	// Storage: CollatorSelection CandidacyBond (r:1 w:0)
 	/// The range of component `c` is `[1, 50]`.
 	fn register_as_candidate(c: u32, ) -> Weight {
-		// Minimum execution time: 46_967 nanoseconds.
-		Weight::from_ref_time(57_157_317)
-			// Standard Error: 32_179
-			.saturating_add(Weight::from_ref_time(68_610).saturating_mul(c.into()))
+		// Minimum execution time: 47_873 nanoseconds.
+		Weight::from_ref_time(53_435_819)
+			// Standard Error: 6_906
+			.saturating_add(Weight::from_ref_time(183_513).saturating_mul(c.into()))
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: CollatorSelection Candidates (r:1 w:1)
 	/// The range of component `c` is `[1, 50]`.
 	fn leave_intent(c: u32, ) -> Weight {
-		// Minimum execution time: 32_424 nanoseconds.
-		Weight::from_ref_time(34_925_230)
-			// Standard Error: 4_052
-			.saturating_add(Weight::from_ref_time(208_525).saturating_mul(c.into()))
+		// Minimum execution time: 31_889 nanoseconds.
+		Weight::from_ref_time(35_996_160)
+			// Standard Error: 3_893
+			.saturating_add(Weight::from_ref_time(183_419).saturating_mul(c.into()))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -123,10 +123,10 @@ impl<T: frame_system::Config> manta_collator_selection::WeightInfo for Substrate
 	// Storage: CollatorSelection Candidates (r:1 w:1)
 	/// The range of component `c` is `[1, 50]`.
 	fn remove_collator(c: u32, ) -> Weight {
-		// Minimum execution time: 34_404 nanoseconds.
-		Weight::from_ref_time(37_988_749)
-			// Standard Error: 6_019
-			.saturating_add(Weight::from_ref_time(222_325).saturating_mul(c.into()))
+		// Minimum execution time: 34_330 nanoseconds.
+		Weight::from_ref_time(38_552_737)
+			// Standard Error: 4_719
+			.saturating_add(Weight::from_ref_time(211_327).saturating_mul(c.into()))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -137,10 +137,10 @@ impl<T: frame_system::Config> manta_collator_selection::WeightInfo for Substrate
 	// Storage: CollatorSelection CandidacyBond (r:1 w:0)
 	/// The range of component `c` is `[1, 50]`.
 	fn register_candidate(c: u32, ) -> Weight {
-		// Minimum execution time: 46_397 nanoseconds.
-		Weight::from_ref_time(51_364_330)
-			// Standard Error: 5_472
-			.saturating_add(Weight::from_ref_time(232_327).saturating_mul(c.into()))
+		// Minimum execution time: 46_741 nanoseconds.
+		Weight::from_ref_time(52_820_250)
+			// Standard Error: 5_904
+			.saturating_add(Weight::from_ref_time(208_646).saturating_mul(c.into()))
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -148,8 +148,8 @@ impl<T: frame_system::Config> manta_collator_selection::WeightInfo for Substrate
 	// Storage: CollatorSelection BlocksPerCollatorThisSession (r:1 w:1)
 	// Storage: System BlockWeight (r:1 w:1)
 	fn note_author() -> Weight {
-		// Minimum execution time: 36_846 nanoseconds.
-		Weight::from_ref_time(37_336_000)
+		// Minimum execution time: 37_963 nanoseconds.
+		Weight::from_ref_time(38_601_000)
 			.saturating_add(T::DbWeight::get().reads(4))
 			.saturating_add(T::DbWeight::get().writes(4))
 	}
@@ -163,10 +163,10 @@ impl<T: frame_system::Config> manta_collator_selection::WeightInfo for Substrate
 	// Storage: System Account (r:1 w:1)
 	/// The range of component `c` is `[1, 50]`.
 	fn new_session(c: u32, ) -> Weight {
-		// Minimum execution time: 36_603 nanoseconds.
-		Weight::from_ref_time(30_179_140)
-			// Standard Error: 73_801
-			.saturating_add(Weight::from_ref_time(22_308_208).saturating_mul(c.into()))
+		// Minimum execution time: 38_633 nanoseconds.
+		Weight::from_ref_time(29_949_284)
+			// Standard Error: 66_838
+			.saturating_add(Weight::from_ref_time(22_677_285).saturating_mul(c.into()))
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().reads((2_u64).saturating_mul(c.into())))
 			.saturating_add(T::DbWeight::get().writes(3))
@@ -179,34 +179,34 @@ impl WeightInfo for () {
 	// Storage: CollatorSelection Invulnerables (r:0 w:1)
 	/// The range of component `b` is `[1, 5]`.
 	fn set_invulnerables(b: u32, ) -> Weight {
-		// Minimum execution time: 14_120 nanoseconds.
-		Weight::from_ref_time(16_346_813)
-			// Standard Error: 281_894
-			.saturating_add(Weight::from_ref_time(1_950_277).saturating_mul(b.into()))
+		// Minimum execution time: 14_303 nanoseconds.
+		Weight::from_ref_time(19_551_205)
+			// Standard Error: 233_282
+			.saturating_add(Weight::from_ref_time(1_610_452).saturating_mul(b.into()))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: CollatorSelection DesiredCandidates (r:0 w:1)
 	fn set_desired_candidates() -> Weight {
-		// Minimum execution time: 39_263 nanoseconds.
-		Weight::from_ref_time(40_703_000)
+		// Minimum execution time: 31_760 nanoseconds.
+		Weight::from_ref_time(32_383_000)
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: CollatorSelection CandidacyBond (r:0 w:1)
 	fn set_candidacy_bond() -> Weight {
-		// Minimum execution time: 23_318 nanoseconds.
-		Weight::from_ref_time(23_660_000)
+		// Minimum execution time: 19_280 nanoseconds.
+		Weight::from_ref_time(19_761_000)
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: CollatorSelection EvictionBaseline (r:0 w:1)
 	fn set_eviction_baseline() -> Weight {
-		// Minimum execution time: 15_988 nanoseconds.
-		Weight::from_ref_time(16_496_000)
+		// Minimum execution time: 13_309 nanoseconds.
+		Weight::from_ref_time(18_628_000)
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: CollatorSelection EvictionTolerance (r:0 w:1)
 	fn set_eviction_tolerance() -> Weight {
-		// Minimum execution time: 16_028 nanoseconds.
-		Weight::from_ref_time(16_548_000)
+		// Minimum execution time: 13_531 nanoseconds.
+		Weight::from_ref_time(13_758_000)
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: CollatorSelection Candidates (r:1 w:1)
@@ -216,20 +216,20 @@ impl WeightInfo for () {
 	// Storage: CollatorSelection CandidacyBond (r:1 w:0)
 	/// The range of component `c` is `[1, 50]`.
 	fn register_as_candidate(c: u32, ) -> Weight {
-		// Minimum execution time: 46_967 nanoseconds.
-		Weight::from_ref_time(57_157_317)
-			// Standard Error: 32_179
-			.saturating_add(Weight::from_ref_time(68_610).saturating_mul(c.into()))
+		// Minimum execution time: 47_873 nanoseconds.
+		Weight::from_ref_time(53_435_819)
+			// Standard Error: 6_906
+			.saturating_add(Weight::from_ref_time(183_513).saturating_mul(c.into()))
 			.saturating_add(RocksDbWeight::get().reads(5))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: CollatorSelection Candidates (r:1 w:1)
 	/// The range of component `c` is `[1, 50]`.
 	fn leave_intent(c: u32, ) -> Weight {
-		// Minimum execution time: 32_424 nanoseconds.
-		Weight::from_ref_time(34_925_230)
-			// Standard Error: 4_052
-			.saturating_add(Weight::from_ref_time(208_525).saturating_mul(c.into()))
+		// Minimum execution time: 31_889 nanoseconds.
+		Weight::from_ref_time(35_996_160)
+			// Standard Error: 3_893
+			.saturating_add(Weight::from_ref_time(183_419).saturating_mul(c.into()))
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
@@ -237,10 +237,10 @@ impl WeightInfo for () {
 	// Storage: CollatorSelection Candidates (r:1 w:1)
 	/// The range of component `c` is `[1, 50]`.
 	fn remove_collator(c: u32, ) -> Weight {
-		// Minimum execution time: 34_404 nanoseconds.
-		Weight::from_ref_time(37_988_749)
-			// Standard Error: 6_019
-			.saturating_add(Weight::from_ref_time(222_325).saturating_mul(c.into()))
+		// Minimum execution time: 34_330 nanoseconds.
+		Weight::from_ref_time(38_552_737)
+			// Standard Error: 4_719
+			.saturating_add(Weight::from_ref_time(211_327).saturating_mul(c.into()))
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
@@ -251,10 +251,10 @@ impl WeightInfo for () {
 	// Storage: CollatorSelection CandidacyBond (r:1 w:0)
 	/// The range of component `c` is `[1, 50]`.
 	fn register_candidate(c: u32, ) -> Weight {
-		// Minimum execution time: 46_397 nanoseconds.
-		Weight::from_ref_time(51_364_330)
-			// Standard Error: 5_472
-			.saturating_add(Weight::from_ref_time(232_327).saturating_mul(c.into()))
+		// Minimum execution time: 46_741 nanoseconds.
+		Weight::from_ref_time(52_820_250)
+			// Standard Error: 5_904
+			.saturating_add(Weight::from_ref_time(208_646).saturating_mul(c.into()))
 			.saturating_add(RocksDbWeight::get().reads(5))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
@@ -262,8 +262,8 @@ impl WeightInfo for () {
 	// Storage: CollatorSelection BlocksPerCollatorThisSession (r:1 w:1)
 	// Storage: System BlockWeight (r:1 w:1)
 	fn note_author() -> Weight {
-		// Minimum execution time: 36_846 nanoseconds.
-		Weight::from_ref_time(37_336_000)
+		// Minimum execution time: 37_963 nanoseconds.
+		Weight::from_ref_time(38_601_000)
 			.saturating_add(RocksDbWeight::get().reads(4))
 			.saturating_add(RocksDbWeight::get().writes(4))
 	}
@@ -277,10 +277,10 @@ impl WeightInfo for () {
 	// Storage: System Account (r:1 w:1)
 	/// The range of component `c` is `[1, 50]`.
 	fn new_session(c: u32, ) -> Weight {
-		// Minimum execution time: 36_603 nanoseconds.
-		Weight::from_ref_time(30_179_140)
-			// Standard Error: 73_801
-			.saturating_add(Weight::from_ref_time(22_308_208).saturating_mul(c.into()))
+		// Minimum execution time: 38_633 nanoseconds.
+		Weight::from_ref_time(29_949_284)
+			// Standard Error: 66_838
+			.saturating_add(Weight::from_ref_time(22_677_285).saturating_mul(c.into()))
 			.saturating_add(RocksDbWeight::get().reads(6))
 			.saturating_add(RocksDbWeight::get().reads((2_u64).saturating_mul(c.into())))
 			.saturating_add(RocksDbWeight::get().writes(3))

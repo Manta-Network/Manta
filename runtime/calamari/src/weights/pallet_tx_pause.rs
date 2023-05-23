@@ -55,15 +55,15 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_tx_pause::WeightInfo for SubstrateWeight<T> {
 	// Storage: TransactionPause PausedTransactions (r:1 w:1)
 	fn pause_transaction() -> Weight {
-		// Minimum execution time: 18_798 nanoseconds.
-		Weight::from_ref_time(19_159_000)
+		// Minimum execution time: 19_331 nanoseconds.
+		Weight::from_ref_time(19_897_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: TransactionPause PausedTransactions (r:1 w:1)
 	fn unpause_transaction() -> Weight {
-		// Minimum execution time: 20_307 nanoseconds.
-		Weight::from_ref_time(20_677_000)
+		// Minimum execution time: 20_746 nanoseconds.
+		Weight::from_ref_time(21_131_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -73,15 +73,15 @@ impl<T: frame_system::Config> pallet_tx_pause::WeightInfo for SubstrateWeight<T>
 impl WeightInfo for () {
 	// Storage: TransactionPause PausedTransactions (r:1 w:1)
 	fn pause_transaction() -> Weight {
-		// Minimum execution time: 18_798 nanoseconds.
-		Weight::from_ref_time(19_159_000)
+		// Minimum execution time: 19_331 nanoseconds.
+		Weight::from_ref_time(19_897_000)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: TransactionPause PausedTransactions (r:1 w:1)
 	fn unpause_transaction() -> Weight {
-		// Minimum execution time: 20_307 nanoseconds.
-		Weight::from_ref_time(20_677_000)
+		// Minimum execution time: 20_746 nanoseconds.
+		Weight::from_ref_time(21_131_000)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}

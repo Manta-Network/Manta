@@ -64,10 +64,10 @@ impl<T: frame_system::Config> pallet_membership::WeightInfo for SubstrateWeight<
 	// Storage: Council Prime (r:0 w:1)
 	/// The range of component `m` is `[1, 99]`.
 	fn add_member(m: u32, ) -> Weight {
-		// Minimum execution time: 22_467 nanoseconds.
-		Weight::from_ref_time(24_552_918)
-			// Standard Error: 15_161
-			.saturating_add(Weight::from_ref_time(106_395).saturating_mul(m.into()))
+		// Minimum execution time: 22_185 nanoseconds.
+		Weight::from_ref_time(24_147_294)
+			// Standard Error: 737
+			.saturating_add(Weight::from_ref_time(45_782).saturating_mul(m.into()))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
@@ -78,10 +78,10 @@ impl<T: frame_system::Config> pallet_membership::WeightInfo for SubstrateWeight<
 	// Storage: Council Prime (r:0 w:1)
 	/// The range of component `m` is `[2, 100]`.
 	fn remove_member(m: u32, ) -> Weight {
-		// Minimum execution time: 25_182 nanoseconds.
-		Weight::from_ref_time(27_547_590)
-			// Standard Error: 5_873
-			.saturating_add(Weight::from_ref_time(36_950).saturating_mul(m.into()))
+		// Minimum execution time: 25_168 nanoseconds.
+		Weight::from_ref_time(27_274_976)
+			// Standard Error: 902
+			.saturating_add(Weight::from_ref_time(39_243).saturating_mul(m.into()))
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
@@ -92,10 +92,10 @@ impl<T: frame_system::Config> pallet_membership::WeightInfo for SubstrateWeight<
 	// Storage: Council Prime (r:0 w:1)
 	/// The range of component `m` is `[2, 100]`.
 	fn swap_member(m: u32, ) -> Weight {
-		// Minimum execution time: 25_485 nanoseconds.
-		Weight::from_ref_time(28_369_429)
-			// Standard Error: 6_119
-			.saturating_add(Weight::from_ref_time(37_249).saturating_mul(m.into()))
+		// Minimum execution time: 25_037 nanoseconds.
+		Weight::from_ref_time(27_231_970)
+			// Standard Error: 1_022
+			.saturating_add(Weight::from_ref_time(54_714).saturating_mul(m.into()))
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
@@ -106,10 +106,10 @@ impl<T: frame_system::Config> pallet_membership::WeightInfo for SubstrateWeight<
 	// Storage: Council Prime (r:0 w:1)
 	/// The range of component `m` is `[1, 100]`.
 	fn reset_member(m: u32, ) -> Weight {
-		// Minimum execution time: 25_544 nanoseconds.
-		Weight::from_ref_time(32_907_243)
-			// Standard Error: 12_110
-			.saturating_add(Weight::from_ref_time(108_371).saturating_mul(m.into()))
+		// Minimum execution time: 25_772 nanoseconds.
+		Weight::from_ref_time(28_643_119)
+			// Standard Error: 8_389
+			.saturating_add(Weight::from_ref_time(176_273).saturating_mul(m.into()))
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
@@ -120,10 +120,10 @@ impl<T: frame_system::Config> pallet_membership::WeightInfo for SubstrateWeight<
 	// Storage: Council Prime (r:0 w:1)
 	/// The range of component `m` is `[1, 100]`.
 	fn change_key(m: u32, ) -> Weight {
-		// Minimum execution time: 25_506 nanoseconds.
-		Weight::from_ref_time(29_877_155)
-			// Standard Error: 8_349
-			.saturating_add(Weight::from_ref_time(29_259).saturating_mul(m.into()))
+		// Minimum execution time: 26_564 nanoseconds.
+		Weight::from_ref_time(32_395_214)
+			// Standard Error: 15_046
+			.saturating_add(Weight::from_ref_time(11_236).saturating_mul(m.into()))
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(4))
 	}
@@ -132,19 +132,17 @@ impl<T: frame_system::Config> pallet_membership::WeightInfo for SubstrateWeight<
 	// Storage: Council Prime (r:0 w:1)
 	/// The range of component `m` is `[1, 100]`.
 	fn set_prime(_m: u32, ) -> Weight {
-		// Minimum execution time: 10_120 nanoseconds.
-		Weight::from_ref_time(12_918_733)
+		// Minimum execution time: 10_243 nanoseconds.
+		Weight::from_ref_time(17_290_968)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	// Storage: CouncilMembership Prime (r:0 w:1)
 	// Storage: Council Prime (r:0 w:1)
 	/// The range of component `m` is `[1, 100]`.
-	fn clear_prime(m: u32, ) -> Weight {
-		// Minimum execution time: 4_973 nanoseconds.
-		Weight::from_ref_time(7_106_449)
-			// Standard Error: 6_038
-			.saturating_add(Weight::from_ref_time(24_223).saturating_mul(m.into()))
+	fn clear_prime(_m: u32, ) -> Weight {
+		// Minimum execution time: 5_081 nanoseconds.
+		Weight::from_ref_time(8_907_211)
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
 }
@@ -157,10 +155,10 @@ impl WeightInfo for () {
 	// Storage: Council Prime (r:0 w:1)
 	/// The range of component `m` is `[1, 99]`.
 	fn add_member(m: u32, ) -> Weight {
-		// Minimum execution time: 22_467 nanoseconds.
-		Weight::from_ref_time(24_552_918)
-			// Standard Error: 15_161
-			.saturating_add(Weight::from_ref_time(106_395).saturating_mul(m.into()))
+		// Minimum execution time: 22_185 nanoseconds.
+		Weight::from_ref_time(24_147_294)
+			// Standard Error: 737
+			.saturating_add(Weight::from_ref_time(45_782).saturating_mul(m.into()))
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
@@ -171,10 +169,10 @@ impl WeightInfo for () {
 	// Storage: Council Prime (r:0 w:1)
 	/// The range of component `m` is `[2, 100]`.
 	fn remove_member(m: u32, ) -> Weight {
-		// Minimum execution time: 25_182 nanoseconds.
-		Weight::from_ref_time(27_547_590)
-			// Standard Error: 5_873
-			.saturating_add(Weight::from_ref_time(36_950).saturating_mul(m.into()))
+		// Minimum execution time: 25_168 nanoseconds.
+		Weight::from_ref_time(27_274_976)
+			// Standard Error: 902
+			.saturating_add(Weight::from_ref_time(39_243).saturating_mul(m.into()))
 			.saturating_add(RocksDbWeight::get().reads(3))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
@@ -185,10 +183,10 @@ impl WeightInfo for () {
 	// Storage: Council Prime (r:0 w:1)
 	/// The range of component `m` is `[2, 100]`.
 	fn swap_member(m: u32, ) -> Weight {
-		// Minimum execution time: 25_485 nanoseconds.
-		Weight::from_ref_time(28_369_429)
-			// Standard Error: 6_119
-			.saturating_add(Weight::from_ref_time(37_249).saturating_mul(m.into()))
+		// Minimum execution time: 25_037 nanoseconds.
+		Weight::from_ref_time(27_231_970)
+			// Standard Error: 1_022
+			.saturating_add(Weight::from_ref_time(54_714).saturating_mul(m.into()))
 			.saturating_add(RocksDbWeight::get().reads(3))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
@@ -199,10 +197,10 @@ impl WeightInfo for () {
 	// Storage: Council Prime (r:0 w:1)
 	/// The range of component `m` is `[1, 100]`.
 	fn reset_member(m: u32, ) -> Weight {
-		// Minimum execution time: 25_544 nanoseconds.
-		Weight::from_ref_time(32_907_243)
-			// Standard Error: 12_110
-			.saturating_add(Weight::from_ref_time(108_371).saturating_mul(m.into()))
+		// Minimum execution time: 25_772 nanoseconds.
+		Weight::from_ref_time(28_643_119)
+			// Standard Error: 8_389
+			.saturating_add(Weight::from_ref_time(176_273).saturating_mul(m.into()))
 			.saturating_add(RocksDbWeight::get().reads(3))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
@@ -213,10 +211,10 @@ impl WeightInfo for () {
 	// Storage: Council Prime (r:0 w:1)
 	/// The range of component `m` is `[1, 100]`.
 	fn change_key(m: u32, ) -> Weight {
-		// Minimum execution time: 25_506 nanoseconds.
-		Weight::from_ref_time(29_877_155)
-			// Standard Error: 8_349
-			.saturating_add(Weight::from_ref_time(29_259).saturating_mul(m.into()))
+		// Minimum execution time: 26_564 nanoseconds.
+		Weight::from_ref_time(32_395_214)
+			// Standard Error: 15_046
+			.saturating_add(Weight::from_ref_time(11_236).saturating_mul(m.into()))
 			.saturating_add(RocksDbWeight::get().reads(3))
 			.saturating_add(RocksDbWeight::get().writes(4))
 	}
@@ -225,19 +223,17 @@ impl WeightInfo for () {
 	// Storage: Council Prime (r:0 w:1)
 	/// The range of component `m` is `[1, 100]`.
 	fn set_prime(_m: u32, ) -> Weight {
-		// Minimum execution time: 10_120 nanoseconds.
-		Weight::from_ref_time(12_918_733)
+		// Minimum execution time: 10_243 nanoseconds.
+		Weight::from_ref_time(17_290_968)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
 	// Storage: CouncilMembership Prime (r:0 w:1)
 	// Storage: Council Prime (r:0 w:1)
 	/// The range of component `m` is `[1, 100]`.
-	fn clear_prime(m: u32, ) -> Weight {
-		// Minimum execution time: 4_973 nanoseconds.
-		Weight::from_ref_time(7_106_449)
-			// Standard Error: 6_038
-			.saturating_add(Weight::from_ref_time(24_223).saturating_mul(m.into()))
+	fn clear_prime(_m: u32, ) -> Weight {
+		// Minimum execution time: 5_081 nanoseconds.
+		Weight::from_ref_time(8_907_211)
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
 }

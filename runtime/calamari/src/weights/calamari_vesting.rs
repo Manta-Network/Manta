@@ -57,8 +57,8 @@ impl<T: frame_system::Config> calamari_vesting::WeightInfo for SubstrateWeight<T
 	// Storage: CalamariVesting VestingSchedule (r:1 w:1)
 	// Storage: Timestamp Now (r:1 w:0)
 	fn update_vesting_schedule() -> Weight {
-		// Minimum execution time: 20_002 nanoseconds.
-		Weight::from_ref_time(20_582_000)
+		// Minimum execution time: 20_132 nanoseconds.
+		Weight::from_ref_time(20_549_000)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -68,8 +68,8 @@ impl<T: frame_system::Config> calamari_vesting::WeightInfo for SubstrateWeight<T
 	// Storage: Balances Locks (r:1 w:1)
 	// Storage: System Account (r:1 w:1)
 	fn vest() -> Weight {
-		// Minimum execution time: 42_745 nanoseconds.
-		Weight::from_ref_time(46_294_000)
+		// Minimum execution time: 46_253 nanoseconds.
+		Weight::from_ref_time(46_751_000)
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
@@ -79,8 +79,8 @@ impl<T: frame_system::Config> calamari_vesting::WeightInfo for SubstrateWeight<T
 	// Storage: CalamariVesting VestingSchedule (r:1 w:0)
 	// Storage: Balances Locks (r:1 w:1)
 	fn vested_transfer() -> Weight {
-		// Minimum execution time: 66_908 nanoseconds.
-		Weight::from_ref_time(69_344_000)
+		// Minimum execution time: 67_460 nanoseconds.
+		Weight::from_ref_time(70_042_000)
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
@@ -91,8 +91,8 @@ impl WeightInfo for () {
 	// Storage: CalamariVesting VestingSchedule (r:1 w:1)
 	// Storage: Timestamp Now (r:1 w:0)
 	fn update_vesting_schedule() -> Weight {
-		// Minimum execution time: 20_002 nanoseconds.
-		Weight::from_ref_time(20_582_000)
+		// Minimum execution time: 20_132 nanoseconds.
+		Weight::from_ref_time(20_549_000)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
@@ -102,8 +102,8 @@ impl WeightInfo for () {
 	// Storage: Balances Locks (r:1 w:1)
 	// Storage: System Account (r:1 w:1)
 	fn vest() -> Weight {
-		// Minimum execution time: 42_745 nanoseconds.
-		Weight::from_ref_time(46_294_000)
+		// Minimum execution time: 46_253 nanoseconds.
+		Weight::from_ref_time(46_751_000)
 			.saturating_add(RocksDbWeight::get().reads(5))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
@@ -113,8 +113,8 @@ impl WeightInfo for () {
 	// Storage: CalamariVesting VestingSchedule (r:1 w:0)
 	// Storage: Balances Locks (r:1 w:1)
 	fn vested_transfer() -> Weight {
-		// Minimum execution time: 66_908 nanoseconds.
-		Weight::from_ref_time(69_344_000)
+		// Minimum execution time: 67_460 nanoseconds.
+		Weight::from_ref_time(70_042_000)
 			.saturating_add(RocksDbWeight::get().reads(5))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}

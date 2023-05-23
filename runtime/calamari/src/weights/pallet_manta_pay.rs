@@ -63,8 +63,8 @@ impl<T: frame_system::Config> pallet_manta_pay::WeightInfo for SubstrateWeight<T
 	// Storage: MantaPay UtxoAccumulatorOutputs (r:0 w:1)
 	// Storage: MantaPay Shards (r:0 w:1)
 	fn to_private() -> Weight {
-		// Minimum execution time: 39_530_298 nanoseconds.
-		Weight::from_ref_time(39_633_082_000)
+		// Minimum execution time: 39_410_908 nanoseconds.
+		Weight::from_ref_time(39_507_698_000)
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(7))
 	}
@@ -79,8 +79,8 @@ impl<T: frame_system::Config> pallet_manta_pay::WeightInfo for SubstrateWeight<T
 	// Storage: MantaPay NullifierSetInsertionOrder (r:0 w:2)
 	// Storage: MantaPay Shards (r:0 w:1)
 	fn to_public() -> Weight {
-		// Minimum execution time: 52_700_665 nanoseconds.
-		Weight::from_ref_time(52_811_296_000)
+		// Minimum execution time: 52_519_309 nanoseconds.
+		Weight::from_ref_time(52_601_767_000)
 			.saturating_add(T::DbWeight::get().reads(11))
 			.saturating_add(T::DbWeight::get().writes(13))
 	}
@@ -92,16 +92,16 @@ impl<T: frame_system::Config> pallet_manta_pay::WeightInfo for SubstrateWeight<T
 	// Storage: MantaPay NullifierSetInsertionOrder (r:0 w:2)
 	// Storage: MantaPay Shards (r:0 w:2)
 	fn private_transfer() -> Weight {
-		// Minimum execution time: 70_013_376 nanoseconds.
-		Weight::from_ref_time(70_125_907_000)
+		// Minimum execution time: 69_738_413 nanoseconds.
+		Weight::from_ref_time(69_832_995_000)
 			.saturating_add(T::DbWeight::get().reads(9))
 			.saturating_add(T::DbWeight::get().writes(13))
 	}
 	// Storage: Assets Asset (r:1 w:1)
 	// Storage: Assets Account (r:2 w:2)
 	fn public_transfer() -> Weight {
-		// Minimum execution time: 65_975 nanoseconds.
-		Weight::from_ref_time(99_315_000)
+		// Minimum execution time: 66_511 nanoseconds.
+		Weight::from_ref_time(101_236_000)
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
@@ -117,8 +117,8 @@ impl WeightInfo for () {
 	// Storage: MantaPay UtxoAccumulatorOutputs (r:0 w:1)
 	// Storage: MantaPay Shards (r:0 w:1)
 	fn to_private() -> Weight {
-		// Minimum execution time: 39_530_298 nanoseconds.
-		Weight::from_ref_time(39_633_082_000)
+		// Minimum execution time: 39_410_908 nanoseconds.
+		Weight::from_ref_time(39_507_698_000)
 			.saturating_add(RocksDbWeight::get().reads(6))
 			.saturating_add(RocksDbWeight::get().writes(7))
 	}
@@ -133,8 +133,8 @@ impl WeightInfo for () {
 	// Storage: MantaPay NullifierSetInsertionOrder (r:0 w:2)
 	// Storage: MantaPay Shards (r:0 w:1)
 	fn to_public() -> Weight {
-		// Minimum execution time: 52_700_665 nanoseconds.
-		Weight::from_ref_time(52_811_296_000)
+		// Minimum execution time: 52_519_309 nanoseconds.
+		Weight::from_ref_time(52_601_767_000)
 			.saturating_add(RocksDbWeight::get().reads(11))
 			.saturating_add(RocksDbWeight::get().writes(13))
 	}
@@ -146,16 +146,16 @@ impl WeightInfo for () {
 	// Storage: MantaPay NullifierSetInsertionOrder (r:0 w:2)
 	// Storage: MantaPay Shards (r:0 w:2)
 	fn private_transfer() -> Weight {
-		// Minimum execution time: 70_013_376 nanoseconds.
-		Weight::from_ref_time(70_125_907_000)
+		// Minimum execution time: 69_738_413 nanoseconds.
+		Weight::from_ref_time(69_832_995_000)
 			.saturating_add(RocksDbWeight::get().reads(9))
 			.saturating_add(RocksDbWeight::get().writes(13))
 	}
 	// Storage: Assets Asset (r:1 w:1)
 	// Storage: Assets Account (r:2 w:2)
 	fn public_transfer() -> Weight {
-		// Minimum execution time: 65_975 nanoseconds.
-		Weight::from_ref_time(99_315_000)
+		// Minimum execution time: 66_511 nanoseconds.
+		Weight::from_ref_time(101_236_000)
 			.saturating_add(RocksDbWeight::get().reads(3))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
