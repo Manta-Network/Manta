@@ -34,7 +34,7 @@ use xcm::latest::prelude::*;
 use xcm_builder::{AccountId32Aliases, SiblingParachainConvertsVia};
 use zenlink_protocol::{
     AssetBalance, AssetId as ZenlinkAssetId, ConvertMultiLocation, GenerateLpAssetId,
-    LocalAssetHandler, ZenlinkMultiAssets, LOCAL, NATIVE,
+    LocalAssetHandler, ZenlinkMultiAssets, LOCAL,
 };
 use zenlink_stable_amm::traits::{StablePoolLpCurrencyIdGenerate, ValidateCurrency};
 
@@ -70,7 +70,7 @@ impl zenlink_protocol::Config for Runtime {
     #[cfg(not(feature = "runtime-benchmarks"))]
     type LpGenerate = AssetManagerLpGenerate;
     #[cfg(feature = "runtime-benchmarks")]
-    type LpGenerate = MockAssetManagerLpGenerate;
+    type LpGenerate = mock_benchmark::MockAssetManagerLpGenerate;
     type AccountIdConverter = ZenlinkLocationToAccountId;
     type XcmExecutor = ();
     type WeightInfo = ();
@@ -172,20 +172,6 @@ impl GenerateLpAssetId<ZenlinkAssetId> for AssetManagerLpGenerate {
     }
 }
 
-pub struct MockAssetManagerLpGenerate;
-impl GenerateLpAssetId<ZenlinkAssetId> for MockAssetManagerLpGenerate {
-    fn generate_lp_asset_id(
-        asset_0: ZenlinkAssetId,
-        asset_1: ZenlinkAssetId,
-    ) -> Option<ZenlinkAssetId> {
-        Some(ZenlinkAssetId {
-            chain_id: SelfParaId::get(),
-            asset_type: LOCAL,
-            asset_index: asset_0.asset_index + asset_1.asset_index,
-        })
-    }
-}
-
 /// Zenlink protocol Asset adaptor for orml_traits::MultiCurrency.
 pub struct LocalAssetAdaptor;
 
@@ -195,7 +181,7 @@ impl LocalAssetAdaptor {
         // Notice: Manta native asset id is 1, but Zenlink native asset id is 0.
         if asset_id.asset_index == ZenlinkNativeAssetId::get() {
             // When Zenlink asset index is 0, the asset type need to be NATIVE(0).
-            return if asset_id.asset_type != NATIVE {
+            return if asset_id.asset_type != zenlink_protocol::NATIVE {
                 None
             } else {
                 Some(MantaNativeAssetId::get())
@@ -209,16 +195,7 @@ impl LocalAssetAdaptor {
     }
     #[cfg(feature = "runtime-benchmarks")]
     fn asset_id_convert(asset_id: ZenlinkAssetId) -> Option<CalamariAssetId> {
-        // Notice: Manta native asset id is 1, but Zenlink native asset id is 0.
-        if asset_id.asset_index == ZenlinkNativeAssetId::get() {
-            // When Zenlink asset index is 0, the asset type need to be NATIVE(0).
-            return if asset_id.asset_type != NATIVE {
-                None
-            } else {
-                Some(MantaNativeAssetId::get())
-            };
-        }
-        Some(asset_id.asset_index as CalamariAssetId)
+        mock_benchmark::asset_id_convert(asset_id)
     }
 }
 
@@ -283,5 +260,97 @@ impl LocalAssetHandler<sp_runtime::AccountId32> for LocalAssetAdaptor {
         } else {
             Err(DispatchError::Other("unknown asset in local withdraw"))
         }
+    }
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+mod mock_benchmark {
+    use super::super::*;
+    use crate::{
+        zenlink::{mock_benchmark, MantaNativeAssetId, SelfParaId, ZenlinkNativeAssetId},
+        ZenlinkAssetId,
+    };
+    use manta_primitives::{
+        assets::{AssetLocation, AssetRegistryMetadata, AssetStorageMetadata},
+        types::{Balance, CalamariAssetId},
+    };
+    use xcm::{
+        latest::MultiLocation,
+        prelude::{GeneralIndex, PalletInstance, Parachain, X3},
+        VersionedMultiLocation,
+    };
+    use zenlink_protocol::{GenerateLpAssetId, LOCAL, NATIVE};
+
+    pub struct MockAssetManagerLpGenerate;
+    impl GenerateLpAssetId<ZenlinkAssetId> for MockAssetManagerLpGenerate {
+        fn generate_lp_asset_id(
+            _asset_0: ZenlinkAssetId,
+            asset_1: ZenlinkAssetId,
+        ) -> Option<ZenlinkAssetId> {
+            Some(ZenlinkAssetId {
+                chain_id: SelfParaId::get(),
+                asset_type: LOCAL,
+                asset_index: asset_1.asset_index + 1u64,
+            })
+        }
+    }
+
+    pub fn create_asset_metadata(
+        name: &str,
+        symbol: &str,
+        decimals: u8,
+        min_balance: u128,
+        is_frozen: bool,
+        is_sufficient: bool,
+        index: u128,
+    ) -> (AssetRegistryMetadata<Balance>, AssetLocation) {
+        let metadata = AssetRegistryMetadata {
+            metadata: AssetStorageMetadata {
+                name: name.as_bytes().to_vec(),
+                symbol: symbol.as_bytes().to_vec(),
+                decimals,
+                is_frozen,
+            },
+            min_balance,
+            is_sufficient,
+        };
+        let location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+            1,
+            X3(
+                Parachain(SelfParaId::get()),
+                PalletInstance(45),
+                GeneralIndex(index),
+            ),
+        )));
+        (metadata, location)
+    }
+
+    pub fn asset_id_convert(asset_id: ZenlinkAssetId) -> Option<CalamariAssetId> {
+        // Notice: Manta native asset id is 1, but Zenlink native asset id is 0.
+        if asset_id.asset_index == ZenlinkNativeAssetId::get() {
+            // When Zenlink asset index is 0, the asset type need to be NATIVE(0).
+            return if asset_id.asset_type != NATIVE {
+                None
+            } else {
+                Some(MantaNativeAssetId::get())
+            };
+        }
+        // Manual create asset if not exist to make sure deposit_mint is fine.
+        let (metadata1, location1) =
+            mock_benchmark::create_asset_metadata("Asset0", "Asset0", 12, 1u128, false, true, 8);
+        let (metadata2, location2) =
+            create_asset_metadata("Asset1", "Asset1", 12, 1u128, false, true, 9);
+        let (metadata3, location3) =
+            create_asset_metadata("LPAsset01", "LPAsset01", 12, 1u128, false, true, 10);
+        let (metadata4, location4) =
+            create_asset_metadata("Asset2", "Asset2", 12, 1u128, false, true, 11);
+        let (metadata5, location5) =
+            create_asset_metadata("LPAsset12", "LPAsset12", 12, 1u128, false, true, 12);
+        let _ = AssetManager::do_register_asset(&location1, &metadata1);
+        let _ = AssetManager::do_register_asset(&location2, &metadata2);
+        let _ = AssetManager::do_register_asset(&location3, &metadata3);
+        let _ = AssetManager::do_register_asset(&location4, &metadata4);
+        let _ = AssetManager::do_register_asset(&location5, &metadata5);
+        Some(asset_id.asset_index as CalamariAssetId)
     }
 }

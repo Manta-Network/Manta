@@ -416,6 +416,25 @@ fn sanity_check_round_duration() {
 }
 
 #[test]
+fn mint_testing() {
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE.clone(), INITIAL_BALANCE),
+            (BOB.clone(), INITIAL_BALANCE),
+            (CHARLIE.clone(), INITIAL_BALANCE),
+        ])
+        .build()
+        .execute_with(|| {
+            let amount = Balance::MAX;
+            assert_ok!(RuntimeConcreteFungibleLedger::deposit_minting(
+                8,
+                &ALICE.clone(),
+                amount,
+            ),);
+        });
+}
+
+#[test]
 fn concrete_fungible_ledger_transfers_work() {
     ExtBuilder::default()
         .with_balances(vec![
