@@ -958,7 +958,7 @@ mod benches {
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
         // Dex
-        // [zenlink_protocol, ZenlinkProtocol]
+        [zenlink_protocol, ZenlinkProtocol]
         // [zenlink_stable_amm, ZenlinkStableAMM]
         // [zenlink_swap_router, ZenlinkSwapRouter]
         [manta_farming, Farming]
