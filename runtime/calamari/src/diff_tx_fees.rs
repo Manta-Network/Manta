@@ -19,17 +19,16 @@
 use crate::{Runtime, TransactionPayment};
 use codec::{Decode, Encode};
 use frame_support::{
-    dispatch::DispatchInfo,
-    traits::{schedule::MaybeHashed, OriginTrait, WrapperKeepOpaque},
-    weights::GetDispatchInfo,
+    dispatch::{DispatchInfo, GetDispatchInfo},
+    traits::{GetCallMetadata, OriginTrait, StorePreimage},
 };
 use manta_primitives::assets::{AssetRegistryMetadata, TestingDefault};
 use manta_support::manta_pay::TransferPost;
 use pallet_transaction_payment::Multiplier;
-use runtime_common::MinimumMultiplier;
+// use runtime_common::MinimumMultiplier;
 use sp_runtime::{
-    traits::{Hash, One, Saturating, Zero},
-    AccountId32, Perbill, Percent,
+    traits::{One, Saturating, Zero},
+    AccountId32, MultiAddress, Perbill, Percent,
 };
 use std::str::FromStr;
 use xcm::prelude::*;
@@ -46,9 +45,11 @@ struct TxFeeDetail {
     tx_fee_without_decimal: String,
 }
 
-fn get_call_details(call: &crate::Call) -> (DispatchInfo, u32) {
+fn get_call_details(call: &crate::RuntimeCall) -> (DispatchInfo, u32) {
     let dispatch_info =
-        <<Runtime as frame_system::Config>::Call as GetDispatchInfo>::get_dispatch_info(call);
+        <<Runtime as frame_system::Config>::RuntimeCall as GetDispatchInfo>::get_dispatch_info(
+            call,
+        );
     let call_len = call.using_encoded(|e| e.len()) as u32;
     (dispatch_info, call_len)
 }
@@ -115,7 +116,7 @@ fn diff_tx_fees() {
 }
 
 #[test]
-// #[ignore]
+#[ignore]
 fn write_all_current_extrinsic_tx_fee_to_csv() {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
     const CURRENT_PATH: &str = env!("CARGO_MANIFEST_DIR");
@@ -145,34 +146,32 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
     let mut calamari_runtime_calls = vec![];
     // frame_system
     {
-        // fill_block
-        let call = crate::Call::System(frame_system::Call::fill_block {
-            ratio: Perbill::from_percent(20),
-        });
-        let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("frame_system", "fill_block", dispatch_info, call_len));
-
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("System").len(),
+            8,
+            "Please update new extrinsic here."
+        );
         // remark
-        let call = crate::Call::System(frame_system::Call::remark {
+        let call = crate::RuntimeCall::System(frame_system::Call::remark {
             remark: vec![1u8; 32],
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("frame_system", "remark", dispatch_info, call_len));
 
         // set_heap_pages
-        let call = crate::Call::System(frame_system::Call::set_heap_pages { pages: 64 });
+        let call = crate::RuntimeCall::System(frame_system::Call::set_heap_pages { pages: 64 });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("frame_system", "set_heap_pages", dispatch_info, call_len));
 
         // set_code
-        let call = crate::Call::System(frame_system::Call::set_code {
+        let call = crate::RuntimeCall::System(frame_system::Call::set_code {
             code: vec![1u8; 32],
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("frame_system", "set_code", dispatch_info, call_len));
 
         // set_code_without_checks
-        let call = crate::Call::System(frame_system::Call::set_code_without_checks {
+        let call = crate::RuntimeCall::System(frame_system::Call::set_code_without_checks {
             code: vec![1u8; 32],
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -184,21 +183,21 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // set_storage
-        let call = crate::Call::System(frame_system::Call::set_storage {
+        let call = crate::RuntimeCall::System(frame_system::Call::set_storage {
             items: vec![(vec![1u8; 32], vec![2u8; 32])],
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("frame_system", "set_storage", dispatch_info, call_len));
 
         // kill_storage
-        let call = crate::Call::System(frame_system::Call::kill_storage {
+        let call = crate::RuntimeCall::System(frame_system::Call::kill_storage {
             keys: vec![vec![1u8; 32], vec![2u8; 32]],
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("frame_system", "kill_storage", dispatch_info, call_len));
 
         // kill_prefix
-        let call = crate::Call::System(frame_system::Call::kill_prefix {
+        let call = crate::RuntimeCall::System(frame_system::Call::kill_prefix {
             prefix: vec![1u8; 32],
             subkeys: 8,
         });
@@ -206,7 +205,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("frame_system", "kill_prefix", dispatch_info, call_len));
 
         // remark_with_event
-        let call = crate::Call::System(frame_system::Call::remark_with_event {
+        let call = crate::RuntimeCall::System(frame_system::Call::remark_with_event {
             remark: vec![1u8; 32],
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -215,8 +214,13 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
     // pallet_treasury
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("Treasury").len(),
+            5,
+            "Please update new extrinsic here."
+        );
         // propose_spend
-        let call = crate::Call::Treasury(pallet_treasury::Call::propose_spend {
+        let call = crate::RuntimeCall::Treasury(pallet_treasury::Call::propose_spend {
             value: 8,
             beneficiary: ALICE.into(),
         });
@@ -224,7 +228,8 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_treasury", "propose_spend", dispatch_info, call_len));
 
         // reject_proposal
-        let call = crate::Call::Treasury(pallet_treasury::Call::reject_proposal { proposal_id: 8 });
+        let call =
+            crate::RuntimeCall::Treasury(pallet_treasury::Call::reject_proposal { proposal_id: 8 });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_treasury",
@@ -234,8 +239,9 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // approve_proposal
-        let call =
-            crate::Call::Treasury(pallet_treasury::Call::approve_proposal { proposal_id: 8 });
+        let call = crate::RuntimeCall::Treasury(pallet_treasury::Call::approve_proposal {
+            proposal_id: 8,
+        });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_treasury",
@@ -245,7 +251,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // spend
-        let call = crate::Call::Treasury(pallet_treasury::Call::spend {
+        let call = crate::RuntimeCall::Treasury(pallet_treasury::Call::spend {
             amount: 8,
             beneficiary: ALICE.into(),
         });
@@ -253,7 +259,8 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_treasury", "spend", dispatch_info, call_len));
 
         // remove_approval
-        let call = crate::Call::Treasury(pallet_treasury::Call::remove_approval { proposal_id: 8 });
+        let call =
+            crate::RuntimeCall::Treasury(pallet_treasury::Call::remove_approval { proposal_id: 8 });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_treasury",
@@ -265,8 +272,13 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
     // pallet_timestamp
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("Timestamp").len(),
+            1,
+            "Please update new extrinsic here."
+        );
         // set
-        let call = crate::Call::Timestamp(pallet_timestamp::Call::set {
+        let call = crate::RuntimeCall::Timestamp(pallet_timestamp::Call::set {
             now: Default::default(),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -275,15 +287,20 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
     // pallet_preimage
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("Preimage").len(),
+            4,
+            "Please update new extrinsic here."
+        );
         // note_preimage
-        let call = crate::Call::Preimage(pallet_preimage::Call::note_preimage {
+        let call = crate::RuntimeCall::Preimage(pallet_preimage::Call::note_preimage {
             bytes: vec![1u8; 32],
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_preimage", "note_preimage", dispatch_info, call_len));
 
         // unnote_preimage
-        let call = crate::Call::Preimage(pallet_preimage::Call::unnote_preimage {
+        let call = crate::RuntimeCall::Preimage(pallet_preimage::Call::unnote_preimage {
             hash: Default::default(),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -295,7 +312,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // request_preimage
-        let call = crate::Call::Preimage(pallet_preimage::Call::request_preimage {
+        let call = crate::RuntimeCall::Preimage(pallet_preimage::Call::request_preimage {
             hash: Default::default(),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -307,7 +324,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // unrequest_preimage
-        let call = crate::Call::Preimage(pallet_preimage::Call::unrequest_preimage {
+        let call = crate::RuntimeCall::Preimage(pallet_preimage::Call::unrequest_preimage {
             hash: Default::default(),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -321,11 +338,16 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
     // pallet_multisig
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("Multisig").len(),
+            4,
+            "Please update new extrinsic here."
+        );
         // as_multi_threshold_1
-        let dummy_call = crate::Call::Preimage(pallet_preimage::Call::unrequest_preimage {
+        let dummy_call = crate::RuntimeCall::Preimage(pallet_preimage::Call::unrequest_preimage {
             hash: Default::default(),
         });
-        let call = crate::Call::Multisig(pallet_multisig::Call::as_multi_threshold_1 {
+        let call = crate::RuntimeCall::Multisig(pallet_multisig::Call::as_multi_threshold_1 {
             other_signatories: vec![ALICE],
             call: Box::new(dummy_call.clone()),
         });
@@ -338,26 +360,23 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // as_multi
-        let call = crate::Call::Multisig(pallet_multisig::Call::as_multi {
+        let call = crate::RuntimeCall::Multisig(pallet_multisig::Call::as_multi {
             threshold: 2,
             other_signatories: vec![ALICE],
             maybe_timepoint: None,
-            call: WrapperKeepOpaque::<<Runtime as frame_system::Config>::Call>::from_encoded(
-                dummy_call.encode(),
-            ),
-            store_call: true,
-            max_weight: 64,
+            call: Box::new(dummy_call),
+            max_weight: Default::default(),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_multisig", "as_multi", dispatch_info, call_len));
 
         // approve_as_multi
-        let call = crate::Call::Multisig(pallet_multisig::Call::approve_as_multi {
+        let call = crate::RuntimeCall::Multisig(pallet_multisig::Call::approve_as_multi {
             threshold: 2,
             other_signatories: vec![ALICE],
             maybe_timepoint: None,
             call_hash: [1u8; 32],
-            max_weight: 64,
+            max_weight: Default::default(),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -368,7 +387,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // cancel_as_multi
-        let call = crate::Call::Multisig(pallet_multisig::Call::cancel_as_multi {
+        let call = crate::RuntimeCall::Multisig(pallet_multisig::Call::cancel_as_multi {
             threshold: 2,
             other_signatories: vec![ALICE],
             timepoint: Default::default(),
@@ -385,15 +404,22 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
     // pallet_membership
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("CouncilMembership").len(),
+            7,
+            "Please update new extrinsic here."
+        );
         // add_member
-        let call =
-            crate::Call::CouncilMembership(pallet_membership::Call::add_member { who: ALICE });
+        let call = crate::RuntimeCall::CouncilMembership(pallet_membership::Call::add_member {
+            who: ALICE.into(),
+        });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_membership", "add_member", dispatch_info, call_len));
 
         // remove_member
-        let call =
-            crate::Call::CouncilMembership(pallet_membership::Call::remove_member { who: ALICE });
+        let call = crate::RuntimeCall::CouncilMembership(pallet_membership::Call::remove_member {
+            who: ALICE.into(),
+        });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_membership",
@@ -403,15 +429,15 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // swap_member
-        let call = crate::Call::CouncilMembership(pallet_membership::Call::swap_member {
-            remove: ALICE,
-            add: BOB,
+        let call = crate::RuntimeCall::CouncilMembership(pallet_membership::Call::swap_member {
+            remove: ALICE.into(),
+            add: BOB.into(),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_membership", "swap_member", dispatch_info, call_len));
 
         // reset_members
-        let call = crate::Call::CouncilMembership(pallet_membership::Call::reset_members {
+        let call = crate::RuntimeCall::CouncilMembership(pallet_membership::Call::reset_members {
             members: vec![ALICE, BOB],
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -423,43 +449,50 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // change_key
-        let call =
-            crate::Call::CouncilMembership(pallet_membership::Call::change_key { new: ALICE });
+        let call = crate::RuntimeCall::CouncilMembership(pallet_membership::Call::change_key {
+            new: ALICE.into(),
+        });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_membership", "change_key", dispatch_info, call_len));
 
         // set_prime
-        let call =
-            crate::Call::CouncilMembership(pallet_membership::Call::set_prime { who: ALICE });
+        let call = crate::RuntimeCall::CouncilMembership(pallet_membership::Call::set_prime {
+            who: ALICE.into(),
+        });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_membership", "set_prime", dispatch_info, call_len));
 
         // set_prime
-        let call = crate::Call::CouncilMembership(pallet_membership::Call::clear_prime {});
+        let call = crate::RuntimeCall::CouncilMembership(pallet_membership::Call::clear_prime {});
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_membership", "clear_prime", dispatch_info, call_len));
     }
 
     // pallet_democracy
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("Democracy").len(),
+            18,
+            "Please update new extrinsic here."
+        );
         // propose
-        let call = crate::Call::Democracy(pallet_democracy::Call::propose {
-            proposal_hash: Default::default(),
+        let dummy_call = crate::RuntimeCall::Democracy(pallet_democracy::Call::cancel_proposal {
+            prop_index: 2,
+        });
+        let call = crate::RuntimeCall::Democracy(pallet_democracy::Call::propose {
+            proposal: crate::Preimage::bound(dummy_call.clone()).unwrap(),
             value: 1,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_democracy", "propose", dispatch_info, call_len));
 
         // second
-        let call = crate::Call::Democracy(pallet_democracy::Call::second {
-            proposal: 3,
-            seconds_upper_bound: 1,
-        });
+        let call = crate::RuntimeCall::Democracy(pallet_democracy::Call::second { proposal: 3 });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_democracy", "second", dispatch_info, call_len));
 
         // vote
-        let call = crate::Call::Democracy(pallet_democracy::Call::vote {
+        let call = crate::RuntimeCall::Democracy(pallet_democracy::Call::vote {
             ref_index: 3,
             vote: pallet_democracy::AccountVote::Standard {
                 vote: Default::default(),
@@ -470,8 +503,9 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_democracy", "vote", dispatch_info, call_len));
 
         // emergency_cancel
-        let call =
-            crate::Call::Democracy(pallet_democracy::Call::emergency_cancel { ref_index: 3 });
+        let call = crate::RuntimeCall::Democracy(pallet_democracy::Call::emergency_cancel {
+            ref_index: 3,
+        });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_democracy",
@@ -481,8 +515,8 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // external_propose
-        let call = crate::Call::Democracy(pallet_democracy::Call::external_propose {
-            proposal_hash: Default::default(),
+        let call = crate::RuntimeCall::Democracy(pallet_democracy::Call::external_propose {
+            proposal: crate::Preimage::bound(dummy_call.clone()).unwrap(),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -493,9 +527,10 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // external_propose_majority
-        let call = crate::Call::Democracy(pallet_democracy::Call::external_propose_majority {
-            proposal_hash: Default::default(),
-        });
+        let call =
+            crate::RuntimeCall::Democracy(pallet_democracy::Call::external_propose_majority {
+                proposal: crate::Preimage::bound(dummy_call.clone()).unwrap(),
+            });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_democracy",
@@ -505,9 +540,10 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // external_propose_default
-        let call = crate::Call::Democracy(pallet_democracy::Call::external_propose_default {
-            proposal_hash: Default::default(),
-        });
+        let call =
+            crate::RuntimeCall::Democracy(pallet_democracy::Call::external_propose_default {
+                proposal: crate::Preimage::bound(dummy_call.clone()).unwrap(),
+            });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_democracy",
@@ -517,7 +553,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // fast_track
-        let call = crate::Call::Democracy(pallet_democracy::Call::fast_track {
+        let call = crate::RuntimeCall::Democracy(pallet_democracy::Call::fast_track {
             proposal_hash: Default::default(),
             voting_period: 300,
             delay: 30,
@@ -526,15 +562,16 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_democracy", "fast_track", dispatch_info, call_len));
 
         // veto_external
-        let call = crate::Call::Democracy(pallet_democracy::Call::veto_external {
+        let call = crate::RuntimeCall::Democracy(pallet_democracy::Call::veto_external {
             proposal_hash: Default::default(),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_democracy", "veto_external", dispatch_info, call_len));
 
         // cancel_referendum
-        let call =
-            crate::Call::Democracy(pallet_democracy::Call::cancel_referendum { ref_index: 3 });
+        let call = crate::RuntimeCall::Democracy(pallet_democracy::Call::cancel_referendum {
+            ref_index: 3,
+        });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_democracy",
@@ -543,14 +580,9 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
             call_len,
         ));
 
-        // cancel_queued
-        let call = crate::Call::Democracy(pallet_democracy::Call::cancel_queued { which: 3 });
-        let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("pallet_democracy", "cancel_queued", dispatch_info, call_len));
-
         // delegate
-        let call = crate::Call::Democracy(pallet_democracy::Call::delegate {
-            to: ALICE,
+        let call = crate::RuntimeCall::Democracy(pallet_democracy::Call::delegate {
+            to: ALICE.into(),
             conviction: pallet_democracy::Conviction::Locked3x,
             balance: 3,
         });
@@ -558,12 +590,12 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_democracy", "delegate", dispatch_info, call_len));
 
         // undelegate
-        let call = crate::Call::Democracy(pallet_democracy::Call::undelegate {});
+        let call = crate::RuntimeCall::Democracy(pallet_democracy::Call::undelegate {});
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_democracy", "undelegate", dispatch_info, call_len));
 
         // clear_public_proposals
-        let call = crate::Call::Democracy(pallet_democracy::Call::clear_public_proposals {});
+        let call = crate::RuntimeCall::Democracy(pallet_democracy::Call::clear_public_proposals {});
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_democracy",
@@ -572,71 +604,21 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
             call_len,
         ));
 
-        // note_preimage
-        let call = crate::Call::Democracy(pallet_democracy::Call::note_preimage {
-            encoded_proposal: vec![1u8; 32],
-        });
-        let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("pallet_democracy", "note_preimage", dispatch_info, call_len));
-
-        // note_preimage_operational
-        let call = crate::Call::Democracy(pallet_democracy::Call::note_preimage_operational {
-            encoded_proposal: vec![1u8; 32],
-        });
-        let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push((
-            "pallet_democracy",
-            "note_preimage_operational",
-            dispatch_info,
-            call_len,
-        ));
-
-        // note_imminent_preimage
-        let call = crate::Call::Democracy(pallet_democracy::Call::note_imminent_preimage {
-            encoded_proposal: vec![1u8; 32],
-        });
-        let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push((
-            "pallet_democracy",
-            "note_imminent_preimage",
-            dispatch_info,
-            call_len,
-        ));
-
-        // note_imminent_preimage_operational
-        let call =
-            crate::Call::Democracy(pallet_democracy::Call::note_imminent_preimage_operational {
-                encoded_proposal: vec![1u8; 32],
-            });
-        let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push((
-            "pallet_democracy",
-            "note_imminent_preimage_operational",
-            dispatch_info,
-            call_len,
-        ));
-
-        // reap_preimage
-        let call = crate::Call::Democracy(pallet_democracy::Call::reap_preimage {
-            proposal_hash: Default::default(),
-            proposal_len_upper_bound: 2,
-        });
-        let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("pallet_democracy", "reap_preimage", dispatch_info, call_len));
-
         // unlock
-        let call = crate::Call::Democracy(pallet_democracy::Call::unlock { target: ALICE });
+        let call = crate::RuntimeCall::Democracy(pallet_democracy::Call::unlock {
+            target: MultiAddress::Id(ALICE),
+        });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_democracy", "unlock", dispatch_info, call_len));
 
         // remove_vote
-        let call = crate::Call::Democracy(pallet_democracy::Call::remove_vote { index: 2 });
+        let call = crate::RuntimeCall::Democracy(pallet_democracy::Call::remove_vote { index: 2 });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_democracy", "remove_vote", dispatch_info, call_len));
 
         // remove_other_vote
-        let call = crate::Call::Democracy(pallet_democracy::Call::remove_other_vote {
-            target: ALICE,
+        let call = crate::RuntimeCall::Democracy(pallet_democracy::Call::remove_other_vote {
+            target: ALICE.into(),
             index: 2,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -647,21 +629,8 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
             call_len,
         ));
 
-        // enact_proposal
-        let call = crate::Call::Democracy(pallet_democracy::Call::enact_proposal {
-            proposal_hash: Default::default(),
-            index: 2,
-        });
-        let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push((
-            "pallet_democracy",
-            "enact_proposal",
-            dispatch_info,
-            call_len,
-        ));
-
         // blacklist
-        let call = crate::Call::Democracy(pallet_democracy::Call::blacklist {
+        let call = crate::RuntimeCall::Democracy(pallet_democracy::Call::blacklist {
             proposal_hash: Default::default(),
             maybe_ref_index: Some(2),
         });
@@ -669,8 +638,9 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_democracy", "blacklist", dispatch_info, call_len));
 
         // cancel_proposal
-        let call =
-            crate::Call::Democracy(pallet_democracy::Call::cancel_proposal { prop_index: 2 });
+        let call = crate::RuntimeCall::Democracy(pallet_democracy::Call::cancel_proposal {
+            prop_index: 2,
+        });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_democracy",
@@ -682,8 +652,13 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
     // pallet_collective
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("TechnicalCommittee").len(),
+            7,
+            "Please update new extrinsic here."
+        );
         // set_members
-        let call = crate::Call::TechnicalCommittee(pallet_collective::Call::set_members {
+        let call = crate::RuntimeCall::TechnicalCommittee(pallet_collective::Call::set_members {
             new_members: vec![ALICE, BOB],
             prime: Some(ALICE),
             old_count: 6,
@@ -692,9 +667,10 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_collective", "set_members", dispatch_info, call_len));
 
         // execute
-        let dummy_call =
-            crate::Call::Democracy(pallet_democracy::Call::cancel_proposal { prop_index: 2 });
-        let call = crate::Call::TechnicalCommittee(pallet_collective::Call::execute {
+        let dummy_call = crate::RuntimeCall::Democracy(pallet_democracy::Call::cancel_proposal {
+            prop_index: 2,
+        });
+        let call = crate::RuntimeCall::TechnicalCommittee(pallet_collective::Call::execute {
             proposal: Box::new(dummy_call.clone()),
             length_bound: 6,
         });
@@ -702,7 +678,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_collective", "execute", dispatch_info, call_len));
 
         // propose
-        let call = crate::Call::TechnicalCommittee(pallet_collective::Call::propose {
+        let call = crate::RuntimeCall::TechnicalCommittee(pallet_collective::Call::propose {
             threshold: 3,
             proposal: Box::new(dummy_call),
             length_bound: 6,
@@ -711,7 +687,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_collective", "propose", dispatch_info, call_len));
 
         // vote
-        let call = crate::Call::TechnicalCommittee(pallet_collective::Call::vote {
+        let call = crate::RuntimeCall::TechnicalCommittee(pallet_collective::Call::vote {
             proposal: Default::default(),
             index: 2,
             approve: true,
@@ -720,19 +696,20 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_collective", "vote", dispatch_info, call_len));
 
         // close
-        let call = crate::Call::TechnicalCommittee(pallet_collective::Call::close {
+        let call = crate::RuntimeCall::TechnicalCommittee(pallet_collective::Call::close {
             proposal_hash: Default::default(),
             index: 2,
-            proposal_weight_bound: 2,
+            proposal_weight_bound: Default::default(),
             length_bound: 6,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_collective", "close", dispatch_info, call_len));
 
         // disapprove_proposal
-        let call = crate::Call::TechnicalCommittee(pallet_collective::Call::disapprove_proposal {
-            proposal_hash: Default::default(),
-        });
+        let call =
+            crate::RuntimeCall::TechnicalCommittee(pallet_collective::Call::disapprove_proposal {
+                proposal_hash: Default::default(),
+            });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_collective",
@@ -744,11 +721,17 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
     // cumulus_pallet_xcmp_queue
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("XcmpQueue").len(),
+            9,
+            "Please update new extrinsic here."
+        );
         // service_overweight
-        let call = crate::Call::XcmpQueue(cumulus_pallet_xcmp_queue::Call::service_overweight {
-            index: 1,
-            weight_limit: 64,
-        });
+        let call =
+            crate::RuntimeCall::XcmpQueue(cumulus_pallet_xcmp_queue::Call::service_overweight {
+                index: 1,
+                weight_limit: 64,
+            });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "cumulus_pallet_xcmp_queue",
@@ -758,8 +741,9 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // suspend_xcm_execution
-        let call =
-            crate::Call::XcmpQueue(cumulus_pallet_xcmp_queue::Call::suspend_xcm_execution {});
+        let call = crate::RuntimeCall::XcmpQueue(
+            cumulus_pallet_xcmp_queue::Call::suspend_xcm_execution {},
+        );
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "cumulus_pallet_xcmp_queue",
@@ -769,7 +753,8 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // resume_xcm_execution
-        let call = crate::Call::XcmpQueue(cumulus_pallet_xcmp_queue::Call::resume_xcm_execution {});
+        let call =
+            crate::RuntimeCall::XcmpQueue(cumulus_pallet_xcmp_queue::Call::resume_xcm_execution {});
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "cumulus_pallet_xcmp_queue",
@@ -779,10 +764,9 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // update_suspend_threshold
-        let call =
-            crate::Call::XcmpQueue(cumulus_pallet_xcmp_queue::Call::update_suspend_threshold {
-                new: 2,
-            });
+        let call = crate::RuntimeCall::XcmpQueue(
+            cumulus_pallet_xcmp_queue::Call::update_suspend_threshold { new: 2 },
+        );
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "cumulus_pallet_xcmp_queue",
@@ -792,10 +776,9 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // update_drop_threshold
-        let call =
-            crate::Call::XcmpQueue(cumulus_pallet_xcmp_queue::Call::update_suspend_threshold {
-                new: 2,
-            });
+        let call = crate::RuntimeCall::XcmpQueue(
+            cumulus_pallet_xcmp_queue::Call::update_suspend_threshold { new: 2 },
+        );
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "cumulus_pallet_xcmp_queue",
@@ -805,10 +788,9 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // update_resume_threshold
-        let call =
-            crate::Call::XcmpQueue(cumulus_pallet_xcmp_queue::Call::update_resume_threshold {
-                new: 2,
-            });
+        let call = crate::RuntimeCall::XcmpQueue(
+            cumulus_pallet_xcmp_queue::Call::update_resume_threshold { new: 2 },
+        );
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "cumulus_pallet_xcmp_queue",
@@ -818,10 +800,9 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // update_threshold_weight
-        let call =
-            crate::Call::XcmpQueue(cumulus_pallet_xcmp_queue::Call::update_threshold_weight {
-                new: 64,
-            });
+        let call = crate::RuntimeCall::XcmpQueue(
+            cumulus_pallet_xcmp_queue::Call::update_threshold_weight { new: 64 },
+        );
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "cumulus_pallet_xcmp_queue",
@@ -831,7 +812,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // update_weight_restrict_decay
-        let call = crate::Call::XcmpQueue(
+        let call = crate::RuntimeCall::XcmpQueue(
             cumulus_pallet_xcmp_queue::Call::update_weight_restrict_decay { new: 64 },
         );
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -843,7 +824,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // update_xcmp_max_individual_weight
-        let call = crate::Call::XcmpQueue(
+        let call = crate::RuntimeCall::XcmpQueue(
             cumulus_pallet_xcmp_queue::Call::update_xcmp_max_individual_weight { new: 64 },
         );
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -858,13 +839,18 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
     // orml_xtokens
     // cannot run this part out side of mock runtime.
     t.execute_with(|| {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("XTokens").len(),
+            6,
+            "Please update new extrinsic here."
+        );
         // transfer
         let dest = VersionedMultiLocation::V1(Default::default());
-        let call = crate::Call::XTokens(orml_xtokens::Call::transfer {
+        let call = crate::RuntimeCall::XTokens(orml_xtokens::Call::transfer {
             currency_id: crate::xcm_config::CurrencyId::MantaCurrency(1),
             amount: 10,
             dest: Box::new(dest.clone()),
-            dest_weight: 64,
+            dest_weight_limit: WeightLimit::Unlimited,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("orml_xtokens", "transfer", dispatch_info, call_len));
@@ -878,10 +864,10 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
             fun: Fungible(10000000000000),
         };
         let asset = xcm::VersionedMultiAsset::V1(_asset.clone());
-        let call = crate::Call::XTokens(orml_xtokens::Call::transfer_multiasset {
+        let call = crate::RuntimeCall::XTokens(orml_xtokens::Call::transfer_multiasset {
             asset: Box::new(asset.clone()),
             dest: Box::new(dest.clone()),
-            dest_weight: 64,
+            dest_weight_limit: WeightLimit::Unlimited,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -892,12 +878,12 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // transfer_with_fee
-        let call = crate::Call::XTokens(orml_xtokens::Call::transfer_with_fee {
+        let call = crate::RuntimeCall::XTokens(orml_xtokens::Call::transfer_with_fee {
             currency_id: crate::xcm_config::CurrencyId::MantaCurrency(1),
             amount: 10,
             fee: 20,
             dest: Box::new(dest.clone()),
-            dest_weight: 64,
+            dest_weight_limit: WeightLimit::Unlimited,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("orml_xtokens", "transfer_with_fee", dispatch_info, call_len));
@@ -911,11 +897,11 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
             fun: Fungible(5000000000000),
         };
         let fee_asset = xcm::VersionedMultiAsset::V1(_fee_asset.clone());
-        let call = crate::Call::XTokens(orml_xtokens::Call::transfer_multiasset_with_fee {
+        let call = crate::RuntimeCall::XTokens(orml_xtokens::Call::transfer_multiasset_with_fee {
             asset: Box::new(asset),
             fee: Box::new(fee_asset),
             dest: Box::new(dest.clone()),
-            dest_weight: 64,
+            dest_weight_limit: WeightLimit::Unlimited,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -926,14 +912,14 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // transfer_multicurrencies
-        let call = crate::Call::XTokens(orml_xtokens::Call::transfer_multicurrencies {
+        let call = crate::RuntimeCall::XTokens(orml_xtokens::Call::transfer_multicurrencies {
             currencies: vec![
                 (crate::xcm_config::CurrencyId::MantaCurrency(1), 10),
                 (crate::xcm_config::CurrencyId::MantaCurrency(2), 20),
             ],
             fee_item: 1,
             dest: Box::new(dest.clone()),
-            dest_weight: 64,
+            dest_weight_limit: WeightLimit::Unlimited,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -945,11 +931,11 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
         // transfer_multiassets
         let assets = xcm::VersionedMultiAssets::V1(MultiAssets::from(vec![_asset, _fee_asset]));
-        let call = crate::Call::XTokens(orml_xtokens::Call::transfer_multiassets {
+        let call = crate::RuntimeCall::XTokens(orml_xtokens::Call::transfer_multiassets {
             assets: Box::new(assets),
             fee_item: 1,
             dest: Box::new(dest),
-            dest_weight: 64,
+            dest_weight_limit: WeightLimit::Unlimited,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -962,19 +948,28 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
     // calamari_vesting
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("CalamariVesting").len(),
+            3,
+            "Please update new extrinsic here."
+        );
         // vest
-        let call = crate::Call::CalamariVesting(calamari_vesting::Call::vest {});
+        let call = crate::RuntimeCall::CalamariVesting(calamari_vesting::Call::vest {});
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("calamari_vesting", "vest", dispatch_info, call_len));
     }
 
     // manta_collator_selection
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("CollatorSelection").len(),
+            9,
+            "Please update new extrinsic here."
+        );
         // set_invulnerables
-        let call =
-            crate::Call::CollatorSelection(manta_collator_selection::Call::set_invulnerables {
-                new: vec![ALICE],
-            });
+        let call = crate::RuntimeCall::CollatorSelection(
+            manta_collator_selection::Call::set_invulnerables { new: vec![ALICE] },
+        );
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "manta_collator_selection",
@@ -984,7 +979,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // set_desired_candidates
-        let call = crate::Call::CollatorSelection(
+        let call = crate::RuntimeCall::CollatorSelection(
             manta_collator_selection::Call::set_desired_candidates { max: 1 },
         );
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -996,10 +991,9 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // set_candidacy_bond
-        let call =
-            crate::Call::CollatorSelection(manta_collator_selection::Call::set_candidacy_bond {
-                bond: 1,
-            });
+        let call = crate::RuntimeCall::CollatorSelection(
+            manta_collator_selection::Call::set_candidacy_bond { bond: 1 },
+        );
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "manta_collator_selection",
@@ -1009,7 +1003,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // register_as_candidate
-        let call = crate::Call::CollatorSelection(
+        let call = crate::RuntimeCall::CollatorSelection(
             manta_collator_selection::Call::register_as_candidate {},
         );
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -1021,10 +1015,11 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // register_candidate
-        let call =
-            crate::Call::CollatorSelection(manta_collator_selection::Call::register_candidate {
+        let call = crate::RuntimeCall::CollatorSelection(
+            manta_collator_selection::Call::register_candidate {
                 new_candidate: ALICE,
-            });
+            },
+        );
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "manta_collator_selection",
@@ -1034,7 +1029,8 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // leave_intent
-        let call = crate::Call::CollatorSelection(manta_collator_selection::Call::leave_intent {});
+        let call =
+            crate::RuntimeCall::CollatorSelection(manta_collator_selection::Call::leave_intent {});
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "manta_collator_selection",
@@ -1044,10 +1040,9 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // remove_collator
-        let call =
-            crate::Call::CollatorSelection(manta_collator_selection::Call::remove_collator {
-                collator: ALICE,
-            });
+        let call = crate::RuntimeCall::CollatorSelection(
+            manta_collator_selection::Call::remove_collator { collator: ALICE },
+        );
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "manta_collator_selection",
@@ -1057,10 +1052,11 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // set_eviction_baseline
-        let call =
-            crate::Call::CollatorSelection(manta_collator_selection::Call::set_eviction_baseline {
+        let call = crate::RuntimeCall::CollatorSelection(
+            manta_collator_selection::Call::set_eviction_baseline {
                 percentile: Default::default(),
-            });
+            },
+        );
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "manta_collator_selection",
@@ -1070,7 +1066,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // set_eviction_tolerance
-        let call = crate::Call::CollatorSelection(
+        let call = crate::RuntimeCall::CollatorSelection(
             manta_collator_selection::Call::set_eviction_tolerance {
                 percentage: Default::default(),
             },
@@ -1086,8 +1082,13 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
     // pallet_asset_manager
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("AssetManager").len(),
+            7,
+            "Please update new extrinsic here."
+        );
         // register_asset
-        let call = crate::Call::AssetManager(pallet_asset_manager::Call::register_asset {
+        let call = crate::RuntimeCall::AssetManager(pallet_asset_manager::Call::register_asset {
             location: Default::default(),
             metadata: AssetRegistryMetadata::testing_default(),
         });
@@ -1100,10 +1101,11 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // update_asset_location
-        let call = crate::Call::AssetManager(pallet_asset_manager::Call::update_asset_location {
-            asset_id: 1,
-            location: Default::default(),
-        });
+        let call =
+            crate::RuntimeCall::AssetManager(pallet_asset_manager::Call::update_asset_location {
+                asset_id: 1,
+                location: Default::default(),
+            });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_asset_manager",
@@ -1113,10 +1115,11 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // update_asset_metadata
-        let call = crate::Call::AssetManager(pallet_asset_manager::Call::update_asset_metadata {
-            asset_id: 1,
-            metadata: AssetRegistryMetadata::testing_default(),
-        });
+        let call =
+            crate::RuntimeCall::AssetManager(pallet_asset_manager::Call::update_asset_metadata {
+                asset_id: 1,
+                metadata: AssetRegistryMetadata::testing_default(),
+            });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_asset_manager",
@@ -1126,10 +1129,11 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // set_units_per_second
-        let call = crate::Call::AssetManager(pallet_asset_manager::Call::set_units_per_second {
-            asset_id: 1,
-            units_per_second: 1,
-        });
+        let call =
+            crate::RuntimeCall::AssetManager(pallet_asset_manager::Call::set_units_per_second {
+                asset_id: 1,
+                units_per_second: 1,
+            });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_asset_manager",
@@ -1139,7 +1143,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // mint_asset
-        let call = crate::Call::AssetManager(pallet_asset_manager::Call::mint_asset {
+        let call = crate::RuntimeCall::AssetManager(pallet_asset_manager::Call::mint_asset {
             asset_id: 1,
             beneficiary: ALICE,
             amount: 1,
@@ -1153,7 +1157,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // set_min_xcm_fee
-        let call = crate::Call::AssetManager(pallet_asset_manager::Call::set_min_xcm_fee {
+        let call = crate::RuntimeCall::AssetManager(pallet_asset_manager::Call::set_min_xcm_fee {
             reserve_chain: Default::default(),
             min_xcm_fee: 1,
         });
@@ -1168,8 +1172,13 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
     // pallet_assets
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("Assets").len(),
+            28,
+            "Please update new extrinsic here."
+        );
         // create
-        let call = crate::Call::Assets(pallet_assets::Call::create {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::create {
             id: 1,
             admin: ALICE.into(),
             min_balance: 1,
@@ -1178,7 +1187,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_assets", "create", dispatch_info, call_len));
 
         // force_create
-        let call = crate::Call::Assets(pallet_assets::Call::force_create {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::force_create {
             id: 1,
             owner: ALICE.into(),
             is_sufficient: true,
@@ -1187,17 +1196,13 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_assets", "force_create", dispatch_info, call_len));
 
-        // destroy
-        // let encoded_witness = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
-        let encoded_witness = b"100010001000";
-        let witness =
-            pallet_assets::DestroyWitness::decode(&mut encoded_witness.as_slice()).unwrap();
-        let call = crate::Call::Assets(pallet_assets::Call::destroy { id: 1, witness });
+        // start_destroy
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::start_destroy { id: 1 });
         let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("pallet_assets", "destroy", dispatch_info, call_len));
+        calamari_runtime_calls.push(("pallet_assets", "start_destroy", dispatch_info, call_len));
 
         // mint
-        let call = crate::Call::Assets(pallet_assets::Call::mint {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::mint {
             id: 1,
             beneficiary: ALICE.into(),
             amount: 1,
@@ -1206,7 +1211,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_assets", "mint", dispatch_info, call_len));
 
         // burn
-        let call = crate::Call::Assets(pallet_assets::Call::burn {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::burn {
             id: 1,
             who: ALICE.into(),
             amount: 1,
@@ -1215,7 +1220,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_assets", "burn", dispatch_info, call_len));
 
         // transfer
-        let call = crate::Call::Assets(pallet_assets::Call::transfer {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::transfer {
             id: 1,
             target: ALICE.into(),
             amount: 1,
@@ -1224,7 +1229,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_assets", "transfer", dispatch_info, call_len));
 
         // transfer_keep_alive
-        let call = crate::Call::Assets(pallet_assets::Call::transfer_keep_alive {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::transfer_keep_alive {
             id: 1,
             target: ALICE.into(),
             amount: 1,
@@ -1238,7 +1243,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // force_transfer
-        let call = crate::Call::Assets(pallet_assets::Call::force_transfer {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::force_transfer {
             id: 1,
             source: ALICE.into(),
             dest: ALICE.into(),
@@ -1248,7 +1253,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_assets", "force_transfer", dispatch_info, call_len));
 
         // freeze
-        let call = crate::Call::Assets(pallet_assets::Call::freeze {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::freeze {
             id: 1,
             who: ALICE.into(),
         });
@@ -1256,7 +1261,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_assets", "freeze", dispatch_info, call_len));
 
         // thaw
-        let call = crate::Call::Assets(pallet_assets::Call::thaw {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::thaw {
             id: 1,
             who: ALICE.into(),
         });
@@ -1264,17 +1269,17 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_assets", "thaw", dispatch_info, call_len));
 
         // freeze_asset
-        let call = crate::Call::Assets(pallet_assets::Call::freeze_asset { id: 1 });
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::freeze_asset { id: 1 });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_assets", "freeze_asset", dispatch_info, call_len));
 
         // thaw_asset
-        let call = crate::Call::Assets(pallet_assets::Call::thaw_asset { id: 1 });
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::thaw_asset { id: 1 });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_assets", "thaw_asset", dispatch_info, call_len));
 
         // transfer_ownership
-        let call = crate::Call::Assets(pallet_assets::Call::transfer_ownership {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::transfer_ownership {
             id: 1,
             owner: ALICE.into(),
         });
@@ -1287,7 +1292,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // set_team
-        let call = crate::Call::Assets(pallet_assets::Call::set_team {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::set_team {
             id: 1,
             issuer: ALICE.into(),
             admin: ALICE.into(),
@@ -1297,7 +1302,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_assets", "set_team", dispatch_info, call_len));
 
         // set_metadata
-        let call = crate::Call::Assets(pallet_assets::Call::set_metadata {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::set_metadata {
             id: 1,
             name: vec![1u8; 32],
             symbol: vec![1u8; 32],
@@ -1307,12 +1312,12 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_assets", "set_metadata", dispatch_info, call_len));
 
         // clear_metadata
-        let call = crate::Call::Assets(pallet_assets::Call::clear_metadata { id: 1 });
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::clear_metadata { id: 1 });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_assets", "clear_metadata", dispatch_info, call_len));
 
         // force_set_metadata
-        let call = crate::Call::Assets(pallet_assets::Call::force_set_metadata {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::force_set_metadata {
             id: 1,
             name: vec![1u8; 32],
             symbol: vec![1u8; 32],
@@ -1328,7 +1333,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // force_clear_metadata
-        let call = crate::Call::Assets(pallet_assets::Call::force_clear_metadata { id: 1 });
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::force_clear_metadata { id: 1 });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_assets",
@@ -1338,7 +1343,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // force_asset_status
-        let call = crate::Call::Assets(pallet_assets::Call::force_asset_status {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::force_asset_status {
             id: 1,
             owner: ALICE.into(),
             issuer: ALICE.into(),
@@ -1357,7 +1362,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // approve_transfer
-        let call = crate::Call::Assets(pallet_assets::Call::approve_transfer {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::approve_transfer {
             id: 1,
             delegate: ALICE.into(),
             amount: 1,
@@ -1366,7 +1371,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_assets", "approve_transfer", dispatch_info, call_len));
 
         // cancel_approval
-        let call = crate::Call::Assets(pallet_assets::Call::cancel_approval {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::cancel_approval {
             id: 1,
             delegate: ALICE.into(),
         });
@@ -1374,7 +1379,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_assets", "cancel_approval", dispatch_info, call_len));
 
         // force_cancel_approval
-        let call = crate::Call::Assets(pallet_assets::Call::force_cancel_approval {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::force_cancel_approval {
             id: 1,
             owner: ALICE.into(),
             delegate: ALICE.into(),
@@ -1388,7 +1393,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // transfer_approved
-        let call = crate::Call::Assets(pallet_assets::Call::transfer_approved {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::transfer_approved {
             id: 1,
             owner: ALICE.into(),
             destination: ALICE.into(),
@@ -1403,12 +1408,12 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // touch
-        let call = crate::Call::Assets(pallet_assets::Call::touch { id: 1 });
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::touch { id: 1 });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_assets", "touch", dispatch_info, call_len));
 
         // refund
-        let call = crate::Call::Assets(pallet_assets::Call::refund {
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::refund {
             id: 1,
             allow_burn: true,
         });
@@ -1418,8 +1423,13 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
     // pallet_author_inherent
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("AuthorInherent").len(),
+            1,
+            "Please update new extrinsic here."
+        );
         // kick_off_authorship_validation
-        let call = crate::Call::AuthorInherent(
+        let call = crate::RuntimeCall::AuthorInherent(
             pallet_author_inherent::Call::kick_off_authorship_validation {},
         );
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -1433,8 +1443,13 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
     // pallet_balances
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("Balances").len(),
+            6,
+            "Please update new extrinsic here."
+        );
         // transfer
-        let call = crate::Call::Balances(pallet_balances::Call::transfer {
+        let call = crate::RuntimeCall::Balances(pallet_balances::Call::transfer {
             dest: ALICE.into(),
             value: 1,
         });
@@ -1442,7 +1457,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_balances", "transfer", dispatch_info, call_len));
 
         // set_balance
-        let call = crate::Call::Balances(pallet_balances::Call::set_balance {
+        let call = crate::RuntimeCall::Balances(pallet_balances::Call::set_balance {
             who: ALICE.into(),
             new_free: 1,
             new_reserved: 1,
@@ -1451,7 +1466,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_balances", "set_balance", dispatch_info, call_len));
 
         // force_transfer
-        let call = crate::Call::Balances(pallet_balances::Call::force_transfer {
+        let call = crate::RuntimeCall::Balances(pallet_balances::Call::force_transfer {
             source: ALICE.into(),
             dest: ALICE.into(),
             value: 1,
@@ -1460,7 +1475,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_balances", "force_transfer", dispatch_info, call_len));
 
         // transfer_keep_alive
-        let call = crate::Call::Balances(pallet_balances::Call::transfer_keep_alive {
+        let call = crate::RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive {
             dest: ALICE.into(),
             value: 1,
         });
@@ -1473,7 +1488,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // transfer_all
-        let call = crate::Call::Balances(pallet_balances::Call::transfer_all {
+        let call = crate::RuntimeCall::Balances(pallet_balances::Call::transfer_all {
             dest: ALICE.into(),
             keep_alive: false,
         });
@@ -1481,7 +1496,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_balances", "transfer_all", dispatch_info, call_len));
 
         // force_unreserve
-        let call = crate::Call::Balances(pallet_balances::Call::force_unreserve {
+        let call = crate::RuntimeCall::Balances(pallet_balances::Call::force_unreserve {
             who: ALICE.into(),
             amount: 1,
         });
@@ -1496,12 +1511,18 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
     // pallet_manta_pay
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("MantaPay").len(),
+            4,
+            "Please update new extrinsic here."
+        );
+
         let to_private_proof = [0u8; 552];
         let private_transfer_proof = [0u8; 1290];
         let to_public_proof = [0u8; 1000];
         // to_private
         let to_private_post = TransferPost::decode(&mut to_private_proof.as_slice()).unwrap();
-        let call = crate::Call::MantaPay(pallet_manta_pay::Call::to_private {
+        let call = crate::RuntimeCall::MantaPay(pallet_manta_pay::Call::to_private {
             post: to_private_post,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -1510,7 +1531,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         // private_transfer
         let private_transfer_post =
             TransferPost::decode(&mut private_transfer_proof.as_slice()).unwrap();
-        let call = crate::Call::MantaPay(pallet_manta_pay::Call::private_transfer {
+        let call = crate::RuntimeCall::MantaPay(pallet_manta_pay::Call::private_transfer {
             post: private_transfer_post,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -1523,14 +1544,14 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
         // to_public
         let to_public_post = TransferPost::decode(&mut to_public_proof.as_slice()).unwrap();
-        let call = crate::Call::MantaPay(pallet_manta_pay::Call::to_public {
+        let call = crate::RuntimeCall::MantaPay(pallet_manta_pay::Call::to_public {
             post: to_public_post,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_manta_pay", "to_public", dispatch_info, call_len));
 
         // public_transfer
-        let call = crate::Call::MantaPay(pallet_manta_pay::Call::public_transfer {
+        let call = crate::RuntimeCall::MantaPay(pallet_manta_pay::Call::public_transfer {
             asset: Default::default(),
             sink: ALICE,
         });
@@ -1545,11 +1566,16 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
     // pallet_manta_sbt
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("MantaSbt").len(),
+            7,
+            "Please update new extrinsic here."
+        );
         let to_private_proof = [0u8; 552];
         // to_private
         let to_private_post =
             Box::new(TransferPost::decode(&mut to_private_proof.as_slice()).unwrap());
-        let call = crate::Call::MantaSbt(pallet_manta_sbt::Call::to_private {
+        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::to_private {
             post: to_private_post.clone(),
             metadata: Default::default(),
         });
@@ -1557,13 +1583,14 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_manta_sbt", "to_private", dispatch_info, call_len));
 
         // reserve_sbt
-        let call = crate::Call::MantaSbt(pallet_manta_sbt::Call::reserve_sbt {});
+        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::reserve_sbt {});
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_manta_sbt", "reserve_sbt", dispatch_info, call_len));
 
         // allowlist_evm_account
-        let call = crate::Call::MantaSbt(pallet_manta_sbt::Call::allowlist_evm_account {
-            evm_address: pallet_manta_sbt::EvmAddressType::Bab(Default::default()),
+        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::allowlist_evm_account {
+            mint_id: 1,
+            evm_address: Default::default(),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -1574,11 +1601,11 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // mint_sbt_eth
-        let call = crate::Call::MantaSbt(pallet_manta_sbt::Call::mint_sbt_eth {
+        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::mint_sbt_eth {
             post: to_private_post,
             chain_id: 1,
             eth_signature: [1u8; 65],
-            address_type: pallet_manta_sbt::EvmAddressType::Bab(Default::default()),
+            mint_id: 1,
             collection_id: Some(1),
             item_id: Some(1),
             metadata: None,
@@ -1587,7 +1614,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_manta_sbt", "mint_sbt_eth", dispatch_info, call_len));
 
         // change_allowlist_account
-        let call = crate::Call::MantaSbt(pallet_manta_sbt::Call::change_allowlist_account {
+        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::change_allowlist_account {
             account: Some(ALICE),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -1597,26 +1624,17 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
             dispatch_info,
             call_len,
         ));
-
-        // set_mint_chain_info
-        let call = crate::Call::MantaSbt(pallet_manta_sbt::Call::set_mint_chain_info {
-            mint_type: pallet_manta_sbt::MintType::Bab,
-            start_time: Default::default(),
-            end_time: None,
-        });
-        let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push((
-            "pallet_manta_sbt",
-            "set_mint_chain_info",
-            dispatch_info,
-            call_len,
-        ));
     }
 
     // pallet_parachain_staking
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("ParachainStaking").len(),
+            26,
+            "Please update new extrinsic here."
+        );
         // set_staking_expectations
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::set_staking_expectations {
                 expectations: pallet_parachain_staking::Range::from(1),
             },
@@ -1630,9 +1648,10 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // set_inflation
-        let call = crate::Call::ParachainStaking(pallet_parachain_staking::Call::set_inflation {
-            schedule: pallet_parachain_staking::Range::from(Perbill::from_percent(20)),
-        });
+        let call =
+            crate::RuntimeCall::ParachainStaking(pallet_parachain_staking::Call::set_inflation {
+                schedule: pallet_parachain_staking::Range::from(Perbill::from_percent(20)),
+            });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_parachain_staking",
@@ -1642,7 +1661,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // set_parachain_bond_account
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::set_parachain_bond_account { new: ALICE },
         );
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -1654,7 +1673,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // set_parachain_bond_account
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::set_parachain_bond_account { new: ALICE },
         );
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -1666,7 +1685,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // set_parachain_bond_reserve_percent
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::set_parachain_bond_reserve_percent {
                 new: Default::default(),
             },
@@ -1680,10 +1699,9 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // set_total_selected
-        let call =
-            crate::Call::ParachainStaking(pallet_parachain_staking::Call::set_total_selected {
-                new: 1,
-            });
+        let call = crate::RuntimeCall::ParachainStaking(
+            pallet_parachain_staking::Call::set_total_selected { new: 1 },
+        );
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_parachain_staking",
@@ -1693,7 +1711,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // set_collator_commission
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::set_collator_commission {
                 new: Default::default(),
             },
@@ -1707,10 +1725,9 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // set_blocks_per_round
-        let call =
-            crate::Call::ParachainStaking(pallet_parachain_staking::Call::set_blocks_per_round {
-                new: 1,
-            });
+        let call = crate::RuntimeCall::ParachainStaking(
+            pallet_parachain_staking::Call::set_blocks_per_round { new: 1 },
+        );
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_parachain_staking",
@@ -1720,10 +1737,11 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // join_candidates
-        let call = crate::Call::ParachainStaking(pallet_parachain_staking::Call::join_candidates {
-            bond: 1,
-            candidate_count: 2,
-        });
+        let call =
+            crate::RuntimeCall::ParachainStaking(pallet_parachain_staking::Call::join_candidates {
+                bond: 1,
+                candidate_count: 2,
+            });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_parachain_staking",
@@ -1733,7 +1751,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // schedule_leave_candidates
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::schedule_leave_candidates { candidate_count: 2 },
         );
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -1745,7 +1763,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // execute_leave_candidates
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::execute_leave_candidates {
                 candidate: ALICE,
                 candidate_delegation_count: 2,
@@ -1760,7 +1778,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // cancel_leave_candidates
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::cancel_leave_candidates { candidate_count: 2 },
         );
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -1772,7 +1790,8 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // go_offline
-        let call = crate::Call::ParachainStaking(pallet_parachain_staking::Call::go_offline {});
+        let call =
+            crate::RuntimeCall::ParachainStaking(pallet_parachain_staking::Call::go_offline {});
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_parachain_staking",
@@ -1782,7 +1801,8 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // go_offline
-        let call = crate::Call::ParachainStaking(pallet_parachain_staking::Call::go_offline {});
+        let call =
+            crate::RuntimeCall::ParachainStaking(pallet_parachain_staking::Call::go_offline {});
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_parachain_staking",
@@ -1792,10 +1812,9 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // candidate_bond_more
-        let call =
-            crate::Call::ParachainStaking(pallet_parachain_staking::Call::candidate_bond_more {
-                more: 1,
-            });
+        let call = crate::RuntimeCall::ParachainStaking(
+            pallet_parachain_staking::Call::candidate_bond_more { more: 1 },
+        );
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_parachain_staking",
@@ -1805,7 +1824,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // schedule_candidate_bond_less
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::schedule_candidate_bond_less { less: 1 },
         );
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -1817,7 +1836,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // execute_candidate_bond_less
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::execute_candidate_bond_less { candidate: ALICE },
         );
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -1829,7 +1848,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // cancel_candidate_bond_less
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::cancel_candidate_bond_less {},
         );
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -1841,7 +1860,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // delegate
-        let call = crate::Call::ParachainStaking(pallet_parachain_staking::Call::delegate {
+        let call = crate::RuntimeCall::ParachainStaking(pallet_parachain_staking::Call::delegate {
             candidate: ALICE,
             amount: 1,
             candidate_delegation_count: 2,
@@ -1855,7 +1874,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
             call_len,
         ));
 
-        let call = crate::Call::ParachainStaking(pallet_parachain_staking::Call::delegate {
+        let call = crate::RuntimeCall::ParachainStaking(pallet_parachain_staking::Call::delegate {
             candidate: ALICE,
             amount: 1,
             candidate_delegation_count: 25,
@@ -1869,7 +1888,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
             call_len,
         ));
 
-        let call = crate::Call::ParachainStaking(pallet_parachain_staking::Call::delegate {
+        let call = crate::RuntimeCall::ParachainStaking(pallet_parachain_staking::Call::delegate {
             candidate: ALICE,
             amount: 1,
             candidate_delegation_count: 2,
@@ -1884,7 +1903,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // schedule_leave_delegators
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::schedule_leave_delegators {},
         );
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -1896,7 +1915,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // execute_leave_delegators
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::execute_leave_delegators {
                 delegator: ALICE,
                 delegation_count: 3,
@@ -1911,7 +1930,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // cancel_leave_delegators
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::cancel_leave_delegators {},
         );
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -1923,7 +1942,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // schedule_revoke_delegation
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::schedule_revoke_delegation { collator: ALICE },
         );
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -1935,11 +1954,12 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // delegator_bond_more
-        let call =
-            crate::Call::ParachainStaking(pallet_parachain_staking::Call::delegator_bond_more {
+        let call = crate::RuntimeCall::ParachainStaking(
+            pallet_parachain_staking::Call::delegator_bond_more {
                 candidate: ALICE,
                 more: 1,
-            });
+            },
+        );
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_parachain_staking",
@@ -1949,7 +1969,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // schedule_delegator_bond_less
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::schedule_delegator_bond_less {
                 candidate: ALICE,
                 less: 1,
@@ -1964,7 +1984,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // execute_delegation_request
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::execute_delegation_request {
                 delegator: ALICE,
                 candidate: ALICE,
@@ -1979,7 +1999,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // cancel_delegation_request
-        let call = crate::Call::ParachainStaking(
+        let call = crate::RuntimeCall::ParachainStaking(
             pallet_parachain_staking::Call::cancel_delegation_request { candidate: ALICE },
         );
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -1993,30 +2013,34 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
     // pallet_scheduler
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("Scheduler").len(),
+            6,
+            "Please update new extrinsic here."
+        );
         // cancel
-        let call = crate::Call::Scheduler(pallet_scheduler::Call::cancel { when: 1, index: 1 });
+        let call =
+            crate::RuntimeCall::Scheduler(pallet_scheduler::Call::cancel { when: 1, index: 1 });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_scheduler", "cancel", dispatch_info, call_len));
 
         // schedule
-        let hash = <Runtime as frame_system::Config>::Hashing::hash_of(&call);
-        let hashed = MaybeHashed::Hash(hash);
-        let call = crate::Call::Scheduler(pallet_scheduler::Call::schedule {
+        let call = crate::RuntimeCall::Scheduler(pallet_scheduler::Call::schedule {
             when: 1,
             maybe_periodic: None,
             priority: 1,
-            call: Box::new(hashed.clone()),
+            call: Box::new(call.clone()),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_scheduler", "schedule", dispatch_info, call_len));
 
         // schedule_named
-        let call = crate::Call::Scheduler(pallet_scheduler::Call::schedule_named {
-            id: vec![1u8; 32],
+        let call = crate::RuntimeCall::Scheduler(pallet_scheduler::Call::schedule_named {
+            id: [1u8; 32],
             when: 1,
             maybe_periodic: None,
             priority: 1,
-            call: Box::new(hashed.clone()),
+            call: Box::new(call),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -2028,16 +2052,16 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
         // cancel_named
         let call =
-            crate::Call::Scheduler(pallet_scheduler::Call::cancel_named { id: vec![1u8; 32] });
+            crate::RuntimeCall::Scheduler(pallet_scheduler::Call::cancel_named { id: [1u8; 32] });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_scheduler", "cancel_named", dispatch_info, call_len));
 
         // schedule_after
-        let call = crate::Call::Scheduler(pallet_scheduler::Call::schedule_after {
+        let call = crate::RuntimeCall::Scheduler(pallet_scheduler::Call::schedule_after {
             after: 1,
             maybe_periodic: None,
             priority: 1,
-            call: Box::new(hashed.clone()),
+            call: Box::new(call.clone()),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -2048,12 +2072,12 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // schedule_named_after
-        let call = crate::Call::Scheduler(pallet_scheduler::Call::schedule_named_after {
-            id: vec![1u8; 32],
+        let call = crate::RuntimeCall::Scheduler(pallet_scheduler::Call::schedule_named_after {
+            id: [1u8; 32],
             after: 1,
             maybe_periodic: None,
             priority: 1,
-            call: Box::new(hashed),
+            call: Box::new(call),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -2066,9 +2090,14 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
     // pallet_session
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("Session").len(),
+            2,
+            "Please update new extrinsic here."
+        );
         // set_keys
         let keys = crate::opaque::SessionKeys::from_seed_unchecked("//Alice");
-        let call = crate::Call::Session(pallet_session::Call::set_keys {
+        let call = crate::RuntimeCall::Session(pallet_session::Call::set_keys {
             keys,
             proof: vec![1u8; 32],
         });
@@ -2076,15 +2105,20 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_session", "set_keys", dispatch_info, call_len));
 
         // purge_keys
-        let call = crate::Call::Session(pallet_session::Call::purge_keys {});
+        let call = crate::RuntimeCall::Session(pallet_session::Call::purge_keys {});
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_session", "purge_keys", dispatch_info, call_len));
     }
 
     // pallet_tx_pause
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("TransactionPause").len(),
+            6,
+            "Please update new extrinsic here."
+        );
         // set_mint_chain_info
-        let call = crate::Call::TransactionPause(pallet_tx_pause::Call::pause_transaction {
+        let call = crate::RuntimeCall::TransactionPause(pallet_tx_pause::Call::pause_transaction {
             pallet_name: vec![1u8; 32],
             function_name: vec![1u8; 32],
         });
@@ -2097,10 +2131,11 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // unpause_transaction
-        let call = crate::Call::TransactionPause(pallet_tx_pause::Call::unpause_transaction {
-            pallet_name: vec![1u8; 32],
-            function_name: vec![1u8; 32],
-        });
+        let call =
+            crate::RuntimeCall::TransactionPause(pallet_tx_pause::Call::unpause_transaction {
+                pallet_name: vec![1u8; 32],
+                function_name: vec![1u8; 32],
+            });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_tx_pause",
@@ -2110,9 +2145,10 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // pause_transactions
-        let call = crate::Call::TransactionPause(pallet_tx_pause::Call::pause_transactions {
-            pallet_and_funcs: vec![(vec![1u8; 32], vec![vec![1u8; 32]; 2])],
-        });
+        let call =
+            crate::RuntimeCall::TransactionPause(pallet_tx_pause::Call::pause_transactions {
+                pallet_and_funcs: vec![(vec![1u8; 32], vec![vec![1u8; 32]; 2])],
+            });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_tx_pause",
@@ -2122,9 +2158,10 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // unpause_transactions
-        let call = crate::Call::TransactionPause(pallet_tx_pause::Call::unpause_transactions {
-            pallet_and_funcs: vec![(vec![1u8; 32], vec![vec![1u8; 32]; 2])],
-        });
+        let call =
+            crate::RuntimeCall::TransactionPause(pallet_tx_pause::Call::unpause_transactions {
+                pallet_and_funcs: vec![(vec![1u8; 32], vec![vec![1u8; 32]; 2])],
+            });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_tx_pause",
@@ -2134,14 +2171,14 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         ));
 
         // pause_pallets
-        let call = crate::Call::TransactionPause(pallet_tx_pause::Call::pause_pallets {
+        let call = crate::RuntimeCall::TransactionPause(pallet_tx_pause::Call::pause_pallets {
             pallet_names: vec![vec![1u8; 32], vec![2u8; 32]],
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_tx_pause", "pause_pallets", dispatch_info, call_len));
 
         // unpause_pallets
-        let call = crate::Call::TransactionPause(pallet_tx_pause::Call::unpause_pallets {
+        let call = crate::RuntimeCall::TransactionPause(pallet_tx_pause::Call::unpause_pallets {
             pallet_names: vec![vec![1u8; 32], vec![2u8; 32]],
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -2155,13 +2192,18 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
     // pallet_utility
     {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("Utility").len(),
+            6,
+            "Please update new extrinsic here."
+        );
         // batch
-        let call = crate::Call::Utility(pallet_utility::Call::batch { calls: vec![] });
+        let call = crate::RuntimeCall::Utility(pallet_utility::Call::batch { calls: vec![] });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_utility", "batch", dispatch_info, call_len));
 
         // as_derivative
-        let call = crate::Call::Utility(pallet_utility::Call::as_derivative {
+        let call = crate::RuntimeCall::Utility(pallet_utility::Call::as_derivative {
             index: 1,
             call: Box::new(call),
         });
@@ -2169,15 +2211,15 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_utility", "as_derivative", dispatch_info, call_len));
 
         // batch_all
-        let call = crate::Call::Utility(pallet_utility::Call::batch_all { calls: vec![] });
+        let call = crate::RuntimeCall::Utility(pallet_utility::Call::batch_all { calls: vec![] });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_utility", "batch_all", dispatch_info, call_len));
 
         // dispatch_as
-        let origin: crate::Origin = frame_system::RawOrigin::Signed(ALICE).into();
-        let as_origin: <crate::Origin as frame_support::traits::OriginTrait>::PalletsOrigin =
+        let origin: crate::RuntimeOrigin = frame_system::RawOrigin::Signed(ALICE).into();
+        let as_origin: <crate::RuntimeOrigin as frame_support::traits::OriginTrait>::PalletsOrigin =
             origin.caller().clone();
-        let call = crate::Call::Utility(pallet_utility::Call::dispatch_as {
+        let call = crate::RuntimeCall::Utility(pallet_utility::Call::dispatch_as {
             as_origin: Box::new(as_origin),
             call: Box::new(call),
         });
@@ -2185,7 +2227,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_utility", "dispatch_as", dispatch_info, call_len));
 
         // force_batch
-        let call = crate::Call::Utility(pallet_utility::Call::force_batch { calls: vec![] });
+        let call = crate::RuntimeCall::Utility(pallet_utility::Call::force_batch { calls: vec![] });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_utility", "force_batch", dispatch_info, call_len));
     }
