@@ -16,10 +16,16 @@
 
 #![cfg(feature = "manta")]
 
-use super::*;
+use super::{mock::ExtBuilder, *};
 use frame_support::{
+    dispatch::Dispatchable,
     traits::{PalletInfo, StorageInfo, StorageInfoTrait},
     StorageHasher, Twox128,
+};
+use pallet_transaction_payment::ChargeTransactionPayment;
+use sp_runtime::{
+    traits::{Header as HeaderT, SignedExtension},
+    Percent,
 };
 
 #[test]
@@ -183,4 +189,78 @@ fn verify_manta_pallet_indices() {
 
     is_pallet_index::<Assets>(45);
     is_pallet_index::<AssetManager>(46);
+}
+
+#[test]
+fn reward_fees_to_block_author_and_treasury() {
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE.clone(), INITIAL_BALANCE),
+            (BOB.clone(), INITIAL_BALANCE),
+            (CHARLIE.clone(), INITIAL_BALANCE),
+            (Treasury::account_id(), INITIAL_BALANCE),
+        ])
+        .with_authorities(vec![(
+            ALICE.clone(),
+            SessionKeys::from_seed_unchecked("Alice"),
+        )])
+        .build()
+        .execute_with(|| {
+            let author = ALICE.clone();
+            let mut header = seal_header(
+                Header::new(
+                    0,
+                    Default::default(),
+                    Default::default(),
+                    Default::default(),
+                    Default::default(),
+                ),
+                author.clone(),
+            );
+
+            header.digest_mut().pop(); // pop the seal off.
+            System::initialize(&1, &Default::default(), header.digest());
+            assert_eq!(Authorship::author().unwrap(), author);
+
+            let call = RuntimeCall::Balances(pallet_balances::Call::transfer {
+                dest: sp_runtime::MultiAddress::Id(CHARLIE.clone()),
+                value: 10 * KMA,
+            });
+
+            let len = 10;
+            let info = info_from_weight(Weight::from_ref_time(100));
+            let maybe_pre = ChargeTransactionPayment::<Runtime>::from(0)
+                .pre_dispatch(&BOB, &call, &info, len)
+                .unwrap();
+
+            let res = call.dispatch(RuntimeOrigin::signed(BOB.clone()));
+
+            let post_info = match res {
+                Ok(info) => info,
+                Err(err) => err.post_info,
+            };
+
+            let _res = ChargeTransactionPayment::<Runtime>::post_dispatch(
+                Some(maybe_pre),
+                &info,
+                &post_info,
+                len,
+                &res.map(|_| ()).map_err(|e| e.error),
+            );
+
+            let author_received_reward = Balances::free_balance(ALICE.clone()) - INITIAL_BALANCE;
+            println!("The rewarded_amount is: {author_received_reward:?}");
+
+            // Fees split: 90% to treasury, 10% to author.
+            let author_percent = Percent::from_percent(FEES_PERCENTAGE_TO_AUTHOR);
+            let expected_fee =
+                TransactionPayment::compute_actual_fee(len as u32, &info, &post_info, 0);
+            assert_eq!(author_received_reward, author_percent * expected_fee);
+
+            let treasury_percent = Percent::from_percent(FEES_PERCENTAGE_TO_TREASURY);
+            assert_eq!(
+                Balances::free_balance(Treasury::account_id()) - INITIAL_BALANCE,
+                treasury_percent * expected_fee
+            );
+        });
 }
