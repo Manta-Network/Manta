@@ -25,6 +25,7 @@ These checks should be performed on the codebase prior to freezing our release c
     - [ ] Check for any upstream storage migrations and perform tests with `try-runtime`, if any.
     - [ ] Grep github actions files for the following version URLs and update them
         - `https://github.com/paritytech/polkadot/releases/download/v`
+    - [ ] Execute the manual runtime upgrade CI workflow and verify that it succeeds.
     - [ ] Generate new changelog using `dev-tools` repo
     - [ ] Merge when green and reviewed
     - [ ] Tag the release with the same version you used on the release PR. IMPORTANT: Use the `manta` branch commit for the tag, NOT a `release-` or other branch
