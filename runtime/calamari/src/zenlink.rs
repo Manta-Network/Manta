@@ -267,7 +267,7 @@ impl LocalAssetHandler<sp_runtime::AccountId32> for LocalAssetAdaptor {
 mod mock_benchmark {
     use super::super::*;
     use crate::{
-        zenlink::{mock_benchmark, MantaNativeAssetId, SelfParaId, ZenlinkNativeAssetId},
+        zenlink::{MantaNativeAssetId, SelfParaId, ZenlinkNativeAssetId},
         ZenlinkAssetId,
     };
     use manta_primitives::{
@@ -295,24 +295,16 @@ mod mock_benchmark {
         }
     }
 
-    pub fn create_asset_metadata(
-        name: &str,
-        symbol: &str,
-        decimals: u8,
-        min_balance: u128,
-        is_frozen: bool,
-        is_sufficient: bool,
-        index: u128,
-    ) -> (AssetRegistryMetadata<Balance>, AssetLocation) {
+    pub fn mock_asset(name: &str, index: u128) -> (AssetRegistryMetadata<Balance>, AssetLocation) {
         let metadata = AssetRegistryMetadata {
             metadata: AssetStorageMetadata {
                 name: name.as_bytes().to_vec(),
-                symbol: symbol.as_bytes().to_vec(),
-                decimals,
-                is_frozen,
+                symbol: name.as_bytes().to_vec(),
+                decimals: 12,
+                is_frozen: false,
             },
-            min_balance,
-            is_sufficient,
+            min_balance: 1u128,
+            is_sufficient: true,
         };
         let location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
             1,
@@ -336,16 +328,11 @@ mod mock_benchmark {
             };
         }
         // Manual create asset if not exist to make sure deposit_mint is fine.
-        let (metadata1, location1) =
-            mock_benchmark::create_asset_metadata("Asset0", "Asset0", 12, 1u128, false, true, 8);
-        let (metadata2, location2) =
-            create_asset_metadata("Asset1", "Asset1", 12, 1u128, false, true, 9);
-        let (metadata3, location3) =
-            create_asset_metadata("LPAsset01", "LPAsset01", 12, 1u128, false, true, 10);
-        let (metadata4, location4) =
-            create_asset_metadata("Asset2", "Asset2", 12, 1u128, false, true, 11);
-        let (metadata5, location5) =
-            create_asset_metadata("LPAsset12", "LPAsset12", 12, 1u128, false, true, 12);
+        let (metadata1, location1) = mock_asset("Asset0", 8);
+        let (metadata2, location2) = mock_asset("Asset1", 9);
+        let (metadata3, location3) = mock_asset("LPAsset01", 10);
+        let (metadata4, location4) = mock_asset("Asset2", 11);
+        let (metadata5, location5) = mock_asset("LPAsset12", 12);
         let _ = AssetManager::do_register_asset(&location1, &metadata1);
         let _ = AssetManager::do_register_asset(&location2, &metadata2);
         let _ = AssetManager::do_register_asset(&location3, &metadata3);

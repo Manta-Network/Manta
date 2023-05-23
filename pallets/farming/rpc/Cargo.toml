@@ -1,11 +1,14 @@
 [package]
 authors = ['Manta Network']
 edition = "2021"
+homepage = "https://manta.network"
+license = "GPL-3.0"
 name = "manta-farming-rpc-api"
-version = "4.0.3"
+repository = 'https://github.com/Manta-Network/Manta/'
+version = "4.0.7"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false, features = ["derive"] }
 jsonrpsee = { version = "0.16.2", features = ["server", "macros"] }
 serde = { version = "1.0.140", features = ["derive"] }
 
