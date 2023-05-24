@@ -1166,6 +1166,8 @@ dependencies = [
  "xcm-builder",
  "xcm-executor",
  "xcm-simulator",
+ "zenlink-protocol",
+ "zenlink-protocol-runtime-api",
 ]
 
 [[package]]
@@ -5387,6 +5389,9 @@ dependencies = [
  "tracing-core",
  "try-runtime-cli",
  "xcm",
+ "zenlink-protocol",
+ "zenlink-protocol-rpc",
+ "zenlink-protocol-runtime-api",
 ]
 
 [[package]]
@@ -6371,6 +6376,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3305af35278dd29f46fcdd139e0b1fbfae2153f0e5928b39b035542dd31e37b7"
 dependencies = [
  "num-traits",
+]
+
+[[package]]
+name = "orml-tokens"
+version = "0.4.1-dev"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed87ba5bb12c756b3973b3f59a430bab22fc0cc9"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "orml-traits",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -14786,6 +14806,56 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e17bb3549cc1321ae1296b9cdc2698e2b6cb1992adfa19a8c72e5b7a738f44cd"
 dependencies = [
  "time 0.3.20",
+]
+
+[[package]]
+name = "zenlink-protocol"
+version = "0.4.4"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#3260c9a89546fe3fb72124fcc9055834fd7a8ef9"
+dependencies = [
+ "cumulus-primitives-core",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "orml-tokens",
+ "orml-traits",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
+name = "zenlink-protocol-rpc"
+version = "0.4.4"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#3260c9a89546fe3fb72124fcc9055834fd7a8ef9"
+dependencies = [
+ "jsonrpsee",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-rpc",
+ "sp-runtime",
+ "zenlink-protocol",
+ "zenlink-protocol-runtime-api",
+]
+
+[[package]]
+name = "zenlink-protocol-runtime-api"
+version = "0.4.4"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#3260c9a89546fe3fb72124fcc9055834fd7a8ef9"
+dependencies = [
+ "parity-scale-codec",
+ "sp-api",
+ "sp-std",
+ "zenlink-protocol",
 ]
 
 [[package]]
