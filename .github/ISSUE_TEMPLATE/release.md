@@ -46,9 +46,9 @@ These checks should be performed on the codebase prior to freezing our release c
 
 # Deploy to public testnet
 - Unless this release specifies a special upgrade process:
-    - [ ] Execute client upgrade on manta @ polkadot-internal nodes if needed
+    - [ ] Upgrade client binary on [manta @ polkadot-internal](https://github.com/Manta-Network/testnet-deployment/tree/master/polkadot-internal%28paleblue%29/manta) if needed
     - [ ] Execute runtime upgrade to manta @ polkadot-internal and verify network stability.
-    - [ ] Execute client upgrade on calamari @ kusama-internal nodes if needed
+    - [ ] Upgrade client binary on [calamari @ kusama-internal](https://github.com/Manta-Network/testnet-deployment/tree/master/kusama-internal%28seabird%29/calamari) if needed
     - [ ] Execute runtime upgrade to calamari @ kusama-internal and verify network stability.
 - [ ] Check network health metrics like average block times, block authors, etc with this [parachain utilities tool](https://parachain-utilities.vercel.app/)
 - [ ] Coordinate with the full stack team to deploy and test the wallet-extension, dApp or any other application that depends on the runtime against the staging testnet.
