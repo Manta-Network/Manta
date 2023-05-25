@@ -109,7 +109,6 @@ jobs:
           name: config-for-integration-test
           path: .github/resources/config-for-integration-test.json
   manta-integration-test:
-    timeout-minutes: 120
     if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')
     needs: [build-node-current, start-manta-integration-tester]
     runs-on: ${{ needs.start-manta-integration-tester.outputs.runner-label }}

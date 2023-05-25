@@ -109,7 +109,6 @@ jobs:
           name: config-for-integration-test
           path: .github/resources/config-for-integration-test.json
   calamari-integration-test:
-    timeout-minutes: 120
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
     needs: [build-node-current, start-calamari-integration-tester]
     runs-on: ${{ needs.start-calamari-integration-tester.outputs.runner-label }}
