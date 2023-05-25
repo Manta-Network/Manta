@@ -33,6 +33,7 @@ jobs:
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
   build-runtimes:
+    timeout-minutes: 180
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-20.04
     env:
@@ -78,6 +79,7 @@ jobs:
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
   build-node-current:
+    timeout-minutes: 180
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     needs: start-node-builder-current
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}

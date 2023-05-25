@@ -30,6 +30,7 @@ env:
   MANTA_BINARY: ${{github.event.inputs.manta_base_url}}
 jobs:
   build-runtimes:
+    timeout-minutes: 120
     runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always
@@ -74,6 +75,7 @@ jobs:
           name: config-for-runtime-upgrade-test
           path: .github/resources/config-for-runtime-upgrade-test.json
   runtime-upgrade-test:
+    timeout-minutes: 120
     needs: [build-runtimes, start-runtime-upgrade-tester]
     runs-on: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
     timeout-minutes: 90

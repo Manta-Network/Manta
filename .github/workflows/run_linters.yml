@@ -15,6 +15,7 @@ env:
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
 jobs:
   start-checks:
+    timeout-minutes: 120
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
