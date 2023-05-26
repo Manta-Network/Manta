@@ -166,7 +166,7 @@ mod parachain_staking_tests {
                 (DAVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
                 (EVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
                 (FERDIE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
-                (USER.clone(), 400_000_000 * KMA),
+                (USER.clone(), 400_000_000 * UNIT),
             ])
             .with_invulnerables(vec![])
             .with_authorities(vec![
@@ -206,7 +206,7 @@ mod parachain_staking_tests {
                     assert_ok!(ParachainStaking::delegate(
                         RuntimeOrigin::signed(USER.clone()),
                         collator,
-                        100_000_000 * KMA,
+                        100_000_000 * UNIT,
                         50,
                         50
                     ));
@@ -328,7 +328,7 @@ fn balances_operations_should_work() {
         ])
         .build()
         .execute_with(|| {
-            let transfer_amount = 10 * KMA;
+            let transfer_amount = 10 * UNIT;
 
             // Basic transfer should work
             assert_ok!(Balances::transfer(
@@ -425,7 +425,7 @@ fn concrete_fungible_ledger_transfers_work() {
         ])
         .build()
         .execute_with(|| {
-            let transfer_amount = 10 * KMA;
+            let transfer_amount = 10 * UNIT;
             let mut current_balance_alice = INITIAL_BALANCE;
             let mut current_balance_charlie = INITIAL_BALANCE;
 
@@ -1323,7 +1323,7 @@ mod governance_tests {
                         aye: true,
                         conviction: pallet_democracy::Conviction::None
                     },
-                    balance: 10 * KMA
+                    balance: 10 * UNIT
                 }
             ));
 
@@ -1368,7 +1368,7 @@ mod governance_tests {
                         aye: true,
                         conviction: pallet_democracy::Conviction::None
                     },
-                    balance: 100 * KMA
+                    balance: 100 * UNIT
                 }
             ));
 
@@ -1428,7 +1428,7 @@ mod governance_tests {
                         aye: true,
                         conviction: pallet_democracy::Conviction::None
                     },
-                    balance: 10 * KMA
+                    balance: 10 * UNIT
                 }
             ));
 
@@ -1463,7 +1463,7 @@ mod governance_tests {
                 &ALICE,
                 &RuntimeCall::Democracy(pallet_democracy::Call::propose {
                     proposal,
-                    value: 100 * KMA,
+                    value: 100 * UNIT,
                 }),
             );
         });
@@ -1501,7 +1501,7 @@ mod governance_tests {
                         aye: true,
                         conviction: pallet_democracy::Conviction::None
                     },
-                    balance: 10 * KMA
+                    balance: 10 * UNIT
                 }
             ));
 
