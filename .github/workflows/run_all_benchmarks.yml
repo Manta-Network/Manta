@@ -21,6 +21,7 @@ env:
   FULL_DB_FOLDER: full-db
 jobs:
   run-benchmarks:
+    timeout-minutes: 240
     needs: start-node-builder-current
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     steps:
