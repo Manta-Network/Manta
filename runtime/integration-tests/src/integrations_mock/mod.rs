@@ -48,10 +48,11 @@ cfg_if::cfg_if! {
         type RuntimeAssetConfig = calamari_runtime::assets_config::CalamariAssetConfig;
         type RuntimeConcreteFungibleLedger =
             calamari_runtime::assets_config::CalamariConcreteFungibleLedger;
+        const UNIT: Balance = KMA;
     } else {
         pub mod test_manta;
         use manta_runtime::{
-            currency::MANTA as KMA,
+            currency::MANTA,
             fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
             opaque::SessionKeys,
             staking::{self, EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR},
@@ -65,6 +66,7 @@ cfg_if::cfg_if! {
         };
         type RuntimeAssetConfig = manta_runtime::assets_config::MantaAssetConfig;
         type RuntimeConcreteFungibleLedger = manta_runtime::assets_config::MantaConcreteFungibleLedger;
+        const UNIT: Balance = MANTA;
     }
 }
 
@@ -74,7 +76,7 @@ use manta_primitives::types::{AccountId, Balance};
 use session_key_primitives::util::unchecked_account_id;
 use sp_core::sr25519::Public;
 
-pub const INITIAL_BALANCE: Balance = 1_000_000_000_000_000_000_000_000_000;
+pub const INITIAL_BALANCE: Balance = 1_000_000_000 * UNIT;
 
 lazy_static! {
     pub(crate) static ref ALICE: AccountId = unchecked_account_id::<Public>("Alice");
