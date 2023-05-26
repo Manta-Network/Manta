@@ -35,6 +35,7 @@ jobs:
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
   build-node-current:
+    timeout-minutes: 120
     if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')
     needs: start-node-builder-current
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
@@ -399,6 +400,7 @@ jobs:
       #     name: ${{ matrix.chain-spec.id }}-alice-stress.log
       #     path: ${{ github.workspace }}/polkadot-launch/9921.log
   docker-image-test:
+    timeout-minutes: 120
     if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')
     needs: [build-node-current, start-docker-image-tester]
     runs-on: ubuntu-20.04
