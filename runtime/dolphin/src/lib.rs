@@ -220,7 +220,6 @@ impl Contains<RuntimeCall> for BaseFilter {
         match call {
             // Explicitly DISALLOWED calls
             | RuntimeCall::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
-            | RuntimeCall::AssetManager(_) // AssetManager is also filtered because all of its extrinsics
                                     // are callable only by Root, and Root calls skip this whole filter.
             // Currently, we filter `register_as_candidate` as this call is not yet ready for community.
             | RuntimeCall::CollatorSelection( manta_collator_selection::Call::register_as_candidate{..})

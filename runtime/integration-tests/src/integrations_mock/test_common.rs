@@ -851,7 +851,7 @@ mod tx_pause_tests {
         let all_pallet_names: Vec<&str> = all_pallets.into_iter().map(|info| info.name).collect();
         for pallet in NonPausablePallets::get() {
             let pallet_str = sp_std::str::from_utf8(&pallet).unwrap();
-            assert!(all_pallet_names.contains(&pallet_str), "{:?}", pallet_str);
+            assert!(all_pallet_names.contains(&pallet_str), "{pallet_str:?}");
         }
     }
 }
