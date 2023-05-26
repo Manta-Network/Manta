@@ -584,7 +584,7 @@ pub mod pallet {
             filtered_location: T::Location,
             should_add: bool,
         ) -> DispatchResult {
-            T::ModifierOrigin::ensure_origin(origin)?;
+            T::SuspenderOrigin::ensure_origin(origin)?;
             if should_add {
                 FilteredOutgoingAssetLocations::<T>::insert(filtered_location.clone().into(), ());
                 Self::deposit_event(Event::<T>::AssetLocationFilteredForOutgoingTransfers {
