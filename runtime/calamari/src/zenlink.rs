@@ -15,20 +15,16 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{AssetManager, Balances, ParachainInfo, Runtime, RuntimeEvent, ZenlinkProtocol};
-use crate::{assets_config::CalamariConcreteFungibleLedger, xcm_config::RelayNetwork};
+use crate::assets_config::CalamariConcreteFungibleLedger;
 use frame_support::{parameter_types, traits::ExistenceRequirement, PalletId};
 use manta_primitives::{
-    assets::{AssetIdLocationMap, AssetIdLpMap, AssetLocation, FungibleLedger},
-    types::{AccountId, CalamariAssetId},
+    assets::{AssetIdLocationMap, AssetIdLpMap, FungibleLedger},
+    types::CalamariAssetId,
 };
-use polkadot_parachain::primitives::Sibling;
 use sp_runtime::DispatchError;
-use sp_std::prelude::*;
-use xcm::latest::prelude::*;
-use xcm_builder::{AccountId32Aliases, SiblingParachainConvertsVia};
 use zenlink_protocol::{
-    AssetBalance, AssetId as ZenlinkAssetId, ConvertMultiLocation, GenerateLpAssetId,
-    LocalAssetHandler, ZenlinkMultiAssets, LOCAL,
+    AssetBalance, AssetId as ZenlinkAssetId, GenerateLpAssetId, LocalAssetHandler,
+    ZenlinkMultiAssets, LOCAL,
 };
 
 // Normal Coin AMM
@@ -37,58 +33,21 @@ parameter_types! {
     pub SelfParaId: u32 = ParachainInfo::parachain_id().into();
     pub MantaNativeAssetId: CalamariAssetId = 1;
     pub ZenlinkNativeAssetId: u64 = 0;
-
-    pub const AnyNetwork: NetworkId = NetworkId::Any;
-    // Not allowed parachain token transfer on zenlink protocol
-    pub ZenlinkRegistedParaChains: Vec<(MultiLocation, u128)> = vec![];
 }
 
 type MultiAssets = ZenlinkMultiAssets<ZenlinkProtocol, Balances, LocalAssetAdaptor>;
-
-pub type ZenlinkLocationToAccountId = (
-    // Sibling parachain origins convert to AccountId via the `ParaId::into`.
-    SiblingParachainConvertsVia<Sibling, AccountId>,
-    // Straight up local `AccountId32` origins just alias directly to `AccountId`.
-    AccountId32Aliases<RelayNetwork, AccountId>,
-);
 
 impl zenlink_protocol::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type MultiAssetsHandler = MultiAssets;
     type PalletId = ZenlinkPalletId;
     type SelfParaId = SelfParaId;
-    type TargetChains = ZenlinkRegistedParaChains;
     type AssetId = ZenlinkAssetId;
-    type AssetIdConverter = MantaAssetIdConverter;
     #[cfg(not(feature = "runtime-benchmarks"))]
     type LpGenerate = AssetManagerLpGenerate;
     #[cfg(feature = "runtime-benchmarks")]
     type LpGenerate = mock_benchmark::MockAssetManagerLpGenerate;
-    type AccountIdConverter = ZenlinkLocationToAccountId;
-    type XcmExecutor = ();
     type WeightInfo = ();
-}
-
-pub struct MantaAssetIdConverter;
-impl ConvertMultiLocation<ZenlinkAssetId> for MantaAssetIdConverter {
-    fn chain_id(asset_id: &ZenlinkAssetId) -> u32 {
-        asset_id.chain_id
-    }
-
-    fn make_x3_location(asset_id: &ZenlinkAssetId) -> MultiLocation {
-        let asset_index = asset_id.asset_index;
-        if asset_index == ZenlinkNativeAssetId::get() {
-            // Notice: native asset is register as (1, Parachain(id)) location now.
-            return MultiLocation::new(1, X1(Parachain(SelfParaId::get())));
-        }
-        let asset = asset_index as CalamariAssetId;
-        let asset_location: AssetLocation =
-            AssetManager::location(&asset).expect("Asset should have Location!");
-        asset_location
-            .0
-            .try_into()
-            .expect("Location convert should not failed!")
-    }
 }
 
 pub struct AssetManagerLpGenerate;
@@ -130,7 +89,7 @@ impl LocalAssetAdaptor {
         let manta_asset_id = asset_id.asset_index as CalamariAssetId;
 
         // Must have location mapping of asset id
-        let location = AssetManager::location(&manta_asset_id);
+        let location = <AssetManager as AssetIdLocationMap>::location(&manta_asset_id);
         location.map(|_| manta_asset_id)
     }
     #[cfg(feature = "runtime-benchmarks")]

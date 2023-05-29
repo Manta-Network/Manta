@@ -1133,12 +1133,6 @@ impl_runtime_apis! {
             <<Runtime as zenlink_protocol::Config>::MultiAssetsHandler as MultiAssetsHandler<AccountId, ZenlinkAssetId>>::balance_of(asset_id, &owner)
         }
 
-        fn get_sovereigns_info(
-            asset_id: ZenlinkAssetId
-        ) -> Vec<(u32, AccountId, AssetBalance)> {
-            ZenlinkProtocol::get_sovereigns_info(&asset_id)
-        }
-
         fn get_pair_by_asset_id(
             asset_0: ZenlinkAssetId,
             asset_1: ZenlinkAssetId

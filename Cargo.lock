@@ -6379,21 +6379,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "orml-tokens"
-version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed87ba5bb12c756b3973b3f59a430bab22fc0cc9"
-dependencies = [
- "frame-support",
- "frame-system",
- "orml-traits",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "orml-traits"
 version = "0.4.1-dev"
 source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed87ba5bb12c756b3973b3f59a430bab22fc0cc9"
@@ -14811,14 +14796,12 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#3260c9a89546fe3fb72124fcc9055834fd7a8ef9"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#af453d294541b87033a6ee4e22ce5151c581acc1"
 dependencies = [
- "cumulus-primitives-core",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
- "orml-tokens",
  "orml-traits",
  "pallet-balances",
  "parity-scale-codec",
@@ -14828,14 +14811,12 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std",
- "xcm",
- "xcm-executor",
 ]
 
 [[package]]
 name = "zenlink-protocol-rpc"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#3260c9a89546fe3fb72124fcc9055834fd7a8ef9"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#af453d294541b87033a6ee4e22ce5151c581acc1"
 dependencies = [
  "jsonrpsee",
  "parity-scale-codec",
@@ -14850,7 +14831,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol-runtime-api"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#3260c9a89546fe3fb72124fcc9055834fd7a8ef9"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#af453d294541b87033a6ee4e22ce5151c581acc1"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
