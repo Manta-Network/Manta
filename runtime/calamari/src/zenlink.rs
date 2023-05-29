@@ -47,7 +47,7 @@ impl zenlink_protocol::Config for Runtime {
     type LpGenerate = AssetManagerLpGenerate;
     #[cfg(feature = "runtime-benchmarks")]
     type LpGenerate = mock_benchmark::MockAssetManagerLpGenerate;
-    type WeightInfo = ();
+    type WeightInfo = crate::weights::zenlink_protocol::SubstrateWeight<Runtime>;
 }
 
 pub struct AssetManagerLpGenerate;

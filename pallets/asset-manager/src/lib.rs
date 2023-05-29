@@ -684,7 +684,7 @@ pub mod pallet {
     where
         T: Config,
     {
-        /// Register asset by providing location and metadata.
+        /// Register asset by providing optional location and metadata.
         pub fn do_register_asset(
             location: Option<&T::Location>,
             metadata: &<T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
