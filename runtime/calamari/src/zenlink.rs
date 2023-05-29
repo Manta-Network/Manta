@@ -18,10 +18,10 @@ use super::{AssetManager, Balances, ParachainInfo, Runtime, RuntimeEvent, Zenlin
 use crate::assets_config::CalamariConcreteFungibleLedger;
 use frame_support::{parameter_types, traits::ExistenceRequirement, PalletId};
 use manta_primitives::{
-    assets::{AssetIdLocationMap, AssetIdLpMap, FungibleLedger},
+    assets::{AssetIdLpMap, FungibleLedger},
     types::CalamariAssetId,
 };
-use sp_runtime::DispatchError;
+use sp_runtime::{traits::Zero, DispatchError};
 use zenlink_protocol::{
     AssetBalance, AssetId as ZenlinkAssetId, GenerateLpAssetId, LocalAssetHandler,
     ZenlinkMultiAssets, LOCAL,
@@ -87,10 +87,7 @@ impl LocalAssetAdaptor {
             };
         }
         let manta_asset_id = asset_id.asset_index as CalamariAssetId;
-
-        // Must have location mapping of asset id
-        let location = <AssetManager as AssetIdLocationMap>::location(&manta_asset_id);
-        location.map(|_| manta_asset_id)
+        Some(manta_asset_id)
     }
     #[cfg(feature = "runtime-benchmarks")]
     fn asset_id_convert(asset_id: ZenlinkAssetId) -> Option<CalamariAssetId> {
@@ -104,7 +101,7 @@ impl LocalAssetHandler<sp_runtime::AccountId32> for LocalAssetAdaptor {
         if let Some(manta_asset_id) = manta_asset_id {
             <CalamariConcreteFungibleLedger as FungibleLedger>::balance(manta_asset_id, who)
         } else {
-            AssetBalance::default()
+            AssetBalance::zero()
         }
     }
 
@@ -113,7 +110,7 @@ impl LocalAssetHandler<sp_runtime::AccountId32> for LocalAssetAdaptor {
         if let Some(manta_asset_id) = manta_asset_id {
             <CalamariConcreteFungibleLedger as FungibleLedger>::supply(manta_asset_id)
         } else {
-            AssetBalance::default()
+            AssetBalance::zero()
         }
     }
 
@@ -134,7 +131,7 @@ impl LocalAssetHandler<sp_runtime::AccountId32> for LocalAssetAdaptor {
                 origin,
                 amount,
             )
-            .map_err(|_e| zenlink_protocol::Error::<Runtime>::ExecutionFailed)?;
+            .map_err(|_e| DispatchError::Other("deposit lp asset error"))?;
             Ok(amount)
         } else {
             Err(DispatchError::Other("unknown asset in local deposit"))
@@ -154,7 +151,7 @@ impl LocalAssetHandler<sp_runtime::AccountId32> for LocalAssetAdaptor {
                 amount,
                 ExistenceRequirement::AllowDeath,
             )
-            .map_err(|_e| zenlink_protocol::Error::<Runtime>::ExecutionFailed)?;
+            .map_err(|_e| DispatchError::Other("withdraw lp asset error"))?;
             Ok(amount)
         } else {
             Err(DispatchError::Other("unknown asset in local withdraw"))
@@ -229,14 +226,14 @@ mod mock_benchmark {
         // Manual create asset if not exist to make sure deposit_mint is fine.
         let (metadata1, location1) = mock_asset("Asset0", 8);
         let (metadata2, location2) = mock_asset("Asset1", 9);
-        let (metadata3, location3) = mock_asset("LPAsset01", 10);
+        let (metadata3, _location3) = mock_asset("LPAsset01", 10);
         let (metadata4, location4) = mock_asset("Asset2", 11);
-        let (metadata5, location5) = mock_asset("LPAsset12", 12);
-        let _ = AssetManager::do_register_asset(&location1, &metadata1);
-        let _ = AssetManager::do_register_asset(&location2, &metadata2);
-        let _ = AssetManager::do_register_asset(&location3, &metadata3);
-        let _ = AssetManager::do_register_asset(&location4, &metadata4);
-        let _ = AssetManager::do_register_asset(&location5, &metadata5);
+        let (metadata5, _location5) = mock_asset("LPAsset12", 12);
+        let _ = AssetManager::do_register_asset(Some(&location1), &metadata1);
+        let _ = AssetManager::do_register_asset(Some(&location2), &metadata2);
+        let _ = AssetManager::do_register_asset(None, &metadata3);
+        let _ = AssetManager::do_register_asset(Some(&location4), &metadata4);
+        let _ = AssetManager::do_register_asset(None, &metadata5);
         Some(asset_id.asset_index as CalamariAssetId)
     }
 }

@@ -17,8 +17,8 @@
 //! unit tests for asset-manager
 
 use crate::{
-    self as asset_manager, AssetIdLocation, AssetIdLp, AssetIdMetadata, Error, LocationAssetId,
-    PoolIdLp, UnitsPerSecond,
+    self as asset_manager, AssetIdLocation, AssetIdMetadata, AssetIdPairToLp, Error,
+    LocationAssetId, LpToAssetIdPair, UnitsPerSecond,
 };
 use asset_manager::mock::*;
 use frame_support::{
@@ -552,9 +552,7 @@ fn set_min_xcm_fee_should_work() {
     })
 }
 
-fn create_asset_and_location(
-    token: &str,
-) -> Option<(AssetRegistryMetadata<Balance>, AssetLocation)> {
+fn create_asset_and_location(token: &str) -> (AssetRegistryMetadata<Balance>, AssetLocation) {
     let manta_asset_metadata = create_asset_metadata(token, token, 12, 1u128, false, false);
     let manta_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
         1,
@@ -563,114 +561,83 @@ fn create_asset_and_location(
             GeneralKey(WeakBoundedVec::force_from(token.as_bytes().to_vec(), None)),
         ),
     )));
-    Some((manta_asset_metadata, manta_location))
+    (manta_asset_metadata, manta_location)
 }
 
 #[test]
 fn register_lp_asset_should_work() {
     new_test_ext().execute_with(|| {
         // Register first non native token.
-        let (manta_asset_metadata8, manta_location8) = create_asset_and_location("Asset8").unwrap();
+        let (manta_asset_metadata8, manta_location8) = create_asset_and_location("Asset8");
         assert_ok!(AssetManager::register_asset(
             RuntimeOrigin::root(),
             manta_location8.clone(),
             manta_asset_metadata8.clone()
         ));
-        assert_eq!(
-            AssetIdLocation::<Runtime>::get(8),
-            Some(manta_location8.clone())
-        );
+        assert_eq!(AssetIdLocation::<Runtime>::get(8), Some(manta_location8));
 
         assert_noop!(
             AssetManager::register_lp_asset(
                 RuntimeOrigin::root(),
                 8,
                 8,
-                manta_location8.clone(),
                 manta_asset_metadata8.clone()
             ),
             Error::<Runtime>::AssetIdNotDifferent
         );
         assert_noop!(
-            AssetManager::register_lp_asset(
-                RuntimeOrigin::root(),
-                8,
-                9,
-                manta_location8,
-                manta_asset_metadata8
-            ),
+            AssetManager::register_lp_asset(RuntimeOrigin::root(), 8, 9, manta_asset_metadata8),
             Error::<Runtime>::AssetIdNotExist
         );
 
-        let (manta_asset_metadata9, manta_location9) = create_asset_and_location("Asset9").unwrap();
+        let (manta_asset_metadata9, manta_location9) = create_asset_and_location("Asset9");
         assert_ok!(AssetManager::register_asset(
             RuntimeOrigin::root(),
             manta_location9.clone(),
-            manta_asset_metadata9.clone()
+            manta_asset_metadata9
         ));
-        assert_eq!(
-            AssetIdLocation::<Runtime>::get(9),
-            Some(manta_location9.clone())
-        );
+        assert_eq!(AssetIdLocation::<Runtime>::get(9), Some(manta_location9));
 
-        assert_noop!(
-            AssetManager::register_lp_asset(
-                RuntimeOrigin::root(),
-                8,
-                9,
-                manta_location9,
-                manta_asset_metadata9
-            ),
-            Error::<Runtime>::LocationAlreadyExists
-        );
-        let (manta_asset_metadata10, manta_location10) =
-            create_asset_and_location("Asset10").unwrap();
+        let manta_asset_metadata10 = create_asset_metadata("LP10", "LP10", 12, 1u128, false, false);
         assert_ok!(AssetManager::register_lp_asset(
             RuntimeOrigin::root(),
             8,
             9,
-            manta_location10.clone(),
-            manta_asset_metadata10
+            manta_asset_metadata10.clone()
         ),);
+        assert_eq!(AssetIdPairToLp::<Runtime>::get((8, 9)), Some(10));
+        assert_eq!(LpToAssetIdPair::<Runtime>::get(10), Some((8, 9)));
         assert_eq!(
-            AssetIdLocation::<Runtime>::get(10),
-            Some(manta_location10.clone())
+            AssetIdMetadata::<Runtime>::get(10),
+            Some(manta_asset_metadata10)
         );
-        assert_eq!(AssetIdLp::<Runtime>::get((8, 9)), Some(10));
-        assert_eq!(PoolIdLp::<Runtime>::get(10), Some((8, 9)));
 
-        let (manta_asset_metadata11, manta_location11) =
-            create_asset_and_location("Asset11").unwrap();
+        let (manta_asset_metadata11, manta_location11) = create_asset_and_location("Asset11");
         assert_noop!(
             AssetManager::register_lp_asset(
                 RuntimeOrigin::root(),
                 8,
                 9,
-                manta_location11.clone(),
                 manta_asset_metadata11.clone()
             ),
             Error::<Runtime>::AssetAlreadyRegistered
         );
-        assert_eq!(AssetIdLocation::<Runtime>::get(10), Some(manta_location10));
 
         assert_ok!(AssetManager::register_asset(
             RuntimeOrigin::root(),
             manta_location11,
             manta_asset_metadata11
         ));
-        let (manta_asset_metadata12, manta_location12) =
-            create_asset_and_location("Asset12").unwrap();
+        let manta_asset_metadata12 = create_asset_metadata("LP12", "LP12", 12, 1u128, false, false);
         // sort asset by order
         assert_ok!(AssetManager::register_lp_asset(
             RuntimeOrigin::root(),
             11,
             8,
-            manta_location12.clone(),
             manta_asset_metadata12
         ),);
-        assert_eq!(AssetIdLocation::<Runtime>::get(12), Some(manta_location12));
-        assert_eq!(AssetIdLp::<Runtime>::get((8, 11)), Some(12));
-        assert_eq!(AssetIdLp::<Runtime>::get((11, 8)), None);
-        assert_eq!(PoolIdLp::<Runtime>::get(12), Some((8, 11)));
+        assert_eq!(AssetIdPairToLp::<Runtime>::get((8, 11)), Some(12));
+        assert_eq!(AssetIdPairToLp::<Runtime>::get((11, 8)), None);
+        assert_eq!(LpToAssetIdPair::<Runtime>::get(12), Some((8, 11)));
     });
 }

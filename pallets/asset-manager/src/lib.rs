@@ -160,11 +160,11 @@ pub mod pallet {
             asset_id0: &Self::AssetId,
             asset_id1: &Self::AssetId,
         ) -> Option<Self::AssetId> {
-            AssetIdLp::<T>::get((asset_id0, asset_id1))
+            AssetIdPairToLp::<T>::get((asset_id0, asset_id1))
         }
 
         fn lp_asset_pool(pool_id: &Self::AssetId) -> Option<Self::AssetId> {
-            PoolIdLp::<T>::get(pool_id).map(|_| *pool_id)
+            LpToAssetIdPair::<T>::get(pool_id).map(|_| *pool_id)
         }
     }
 
@@ -234,9 +234,6 @@ pub mod pallet {
 
             /// Asset Id of new Asset
             asset_id: T::AssetId,
-
-            /// Location of the new Asset
-            location: T::Location,
 
             /// Metadata Registered to Asset Manager
             metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
@@ -386,13 +383,13 @@ pub mod pallet {
         StorageMap<_, Blake2_128Concat, Option<MultiLocation>, ()>;
 
     #[pallet::storage]
-    #[pallet::getter(fn asset_id_lp)]
-    pub(super) type AssetIdLp<T: Config> =
+    #[pallet::getter(fn asset_id_pair_to_lp)]
+    pub(super) type AssetIdPairToLp<T: Config> =
         StorageMap<_, Blake2_128Concat, (T::AssetId, T::AssetId), T::AssetId>;
 
     #[pallet::storage]
-    #[pallet::getter(fn pool_id_lp)]
-    pub(super) type PoolIdLp<T: Config> =
+    #[pallet::getter(fn lp_to_asset_id_pair)]
+    pub(super) type LpToAssetIdPair<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AssetId, (T::AssetId, T::AssetId)>;
 
     #[pallet::call]
@@ -415,7 +412,7 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
 
-            let asset_id = Self::do_register_asset(&location, &metadata)?;
+            let asset_id = Self::do_register_asset(Some(&location), &metadata)?;
 
             // If it's a new para id, which will be inserted with AssetCount as 1.
             // If not, AssetCount will increased by 1.
@@ -427,8 +424,8 @@ pub mod pallet {
 
             Self::deposit_event(Event::<T>::AssetRegistered {
                 asset_id,
-                location: location.clone(),
-                metadata: metadata.clone(),
+                location,
+                metadata,
             });
             Ok(())
         }
@@ -650,7 +647,6 @@ pub mod pallet {
             origin: OriginFor<T>,
             asset_0: T::AssetId,
             asset_1: T::AssetId,
-            location: T::Location,
             metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
@@ -663,21 +659,20 @@ pub mod pallet {
 
             let (asset_id0, asset_id1) = Self::sort_asset_id(asset_0, asset_1);
             ensure!(
-                !AssetIdLp::<T>::contains_key((&asset_id0, &asset_id1)),
+                !AssetIdPairToLp::<T>::contains_key((&asset_id0, &asset_id1)),
                 Error::<T>::AssetAlreadyRegistered
             );
 
-            let asset_id = Self::do_register_asset(&location, &metadata)?;
+            let asset_id = Self::do_register_asset(None, &metadata)?;
 
-            AssetIdLp::<T>::insert((asset_id0, asset_id1), asset_id);
-            PoolIdLp::<T>::insert(asset_id, (asset_id0, asset_id1));
+            AssetIdPairToLp::<T>::insert((asset_id0, asset_id1), asset_id);
+            LpToAssetIdPair::<T>::insert(asset_id, (asset_id0, asset_id1));
 
             Self::deposit_event(Event::<T>::LPAssetRegistered {
                 asset_id0,
                 asset_id1,
                 asset_id,
-                location: location.clone(),
-                metadata: metadata.clone(),
+                metadata,
             });
             Ok(())
         }
@@ -689,13 +684,15 @@ pub mod pallet {
     {
         /// Register asset by providing location and metadata.
         pub fn do_register_asset(
-            location: &T::Location,
+            location: Option<&T::Location>,
             metadata: &<T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
         ) -> Result<T::AssetId, DispatchError> {
-            ensure!(
-                !LocationAssetId::<T>::contains_key(location),
-                Error::<T>::LocationAlreadyExists
-            );
+            if let Some(location) = location {
+                ensure!(
+                    !LocationAssetId::<T>::contains_key(location),
+                    Error::<T>::LocationAlreadyExists
+                );
+            }
             let asset_id = Self::next_asset_id_and_increment()?;
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
                 asset_id,
@@ -704,9 +701,11 @@ pub mod pallet {
                 metadata.is_sufficient(),
             )
             .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
-            AssetIdLocation::<T>::insert(asset_id, location);
             AssetIdMetadata::<T>::insert(asset_id, metadata);
-            LocationAssetId::<T>::insert(location, asset_id);
+            if let Some(location) = location {
+                AssetIdLocation::<T>::insert(asset_id, location);
+                LocationAssetId::<T>::insert(location, asset_id);
+            }
             Ok(asset_id)
         }
 
