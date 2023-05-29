@@ -16,7 +16,7 @@ pallet-ranked-collective = { git = "https://github.com/paritytech/substrate.git"
 pallet-referenda = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 
 [dev-dependencies]
-codec = { package = "parity-scale-codec", version = '3.4.0', default-features = false, features = ["derive", "max-encoded-len"] }
+codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false, features = ["derive", "max-encoded-len"] }
 frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37", default-features = false }
 frame-system = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
 lazy_static = "1.4.0"

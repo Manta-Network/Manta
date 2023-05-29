@@ -25,7 +25,7 @@ use pallet_manta_sbt::{
     rpc::{SBTPull, SBTPullApiServer},
     runtime::SBTPullLedgerDiffApi,
 };
-use zenlink_protocol::AssetId;
+use zenlink_protocol::AssetId as ZenlinkAssetId;
 use zenlink_protocol_rpc::{ZenlinkProtocol, ZenlinkProtocolApiServer};
 use zenlink_protocol_runtime_api::ZenlinkProtocolApi as ZenlinkProtocolRuntimeApi;
 
@@ -44,7 +44,7 @@ where
     C::Api: BlockBuilder<Block>,
     C::Api: PullLedgerDiffApi<Block>,
     C::Api: SBTPullLedgerDiffApi<Block>,
-    C::Api: ZenlinkProtocolRuntimeApi<Block, AccountId, AssetId>,
+    C::Api: ZenlinkProtocolRuntimeApi<Block, AccountId, ZenlinkAssetId>,
     P: TransactionPool + Sync + Send + 'static,
 {
     use frame_rpc_system::{System, SystemApiServer};

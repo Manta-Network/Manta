@@ -56,19 +56,24 @@ impl GenerateLpAssetId<ZenlinkAssetId> for AssetManagerLpGenerate {
         asset_0: ZenlinkAssetId,
         asset_1: ZenlinkAssetId,
     ) -> Option<ZenlinkAssetId> {
+        if asset_0 == asset_1 {
+            return None;
+        }
         // LP asset id is registered on AssetManager based on two asset id.
         let asset_id_0 = LocalAssetAdaptor::asset_id_convert(asset_0);
         let asset_id_1 = LocalAssetAdaptor::asset_id_convert(asset_1);
-        if asset_id_0.is_none() || asset_id_1.is_none() {
-            return None;
+        match (asset_id_0, asset_id_1) {
+            (Some(asset_id0), Some(asset_id1)) => {
+                let lp_asset_id: Option<CalamariAssetId> =
+                    <AssetManager as AssetIdLpMap>::lp_asset_id(&asset_id0, &asset_id1);
+                lp_asset_id.map(|lp_asset| ZenlinkAssetId {
+                    chain_id: SelfParaId::get(),
+                    asset_type: LOCAL,
+                    asset_index: lp_asset as u64,
+                })
+            }
+            _ => None,
         }
-        let lp_asset_id: Option<CalamariAssetId> =
-            <AssetManager as AssetIdLpMap>::lp_asset_id(&asset_id_0.unwrap(), &asset_id_1.unwrap());
-        lp_asset_id.map(|lp_asset| ZenlinkAssetId {
-            chain_id: SelfParaId::get(),
-            asset_type: LOCAL,
-            asset_index: lp_asset as u64,
-        })
     }
 }
 

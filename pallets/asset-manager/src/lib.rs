@@ -382,11 +382,13 @@ pub mod pallet {
     pub type FilteredOutgoingAssetLocations<T: Config> =
         StorageMap<_, Blake2_128Concat, Option<MultiLocation>, ()>;
 
+    /// AssetId pair to LP asset id mapping.
     #[pallet::storage]
     #[pallet::getter(fn asset_id_pair_to_lp)]
     pub(super) type AssetIdPairToLp<T: Config> =
         StorageMap<_, Blake2_128Concat, (T::AssetId, T::AssetId), T::AssetId>;
 
+    /// LP asset id to asset id pair mapping.
     #[pallet::storage]
     #[pallet::getter(fn lp_to_asset_id_pair)]
     pub(super) type LpToAssetIdPair<T: Config> =
