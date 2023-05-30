@@ -283,7 +283,7 @@ pub mod pallet {
                     && post.sink_accounts.is_empty(),
                 Error::<T>::InvalidShape
             );
-            for post in post.receiver_posts.clone() {
+            for post in post.receiver_posts.iter() {
                 if !post.utxo.is_transparent {
                     ensure!(
                         post.utxo.public_asset == Asset::default(),
