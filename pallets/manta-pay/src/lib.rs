@@ -397,7 +397,8 @@ pub mod pallet {
         /// UnrestrictedPublicAsset
         ///
         /// The public asset of a receiver post utxo cannot be unrestricted,
-        /// todo: because...
+        /// Otherwise it gives a potential attacker control over the nullifier
+        /// value for no particular reason
         UnrestrictedPublicAsset,
 
         /// Invalid UTXO Accumulator Output
