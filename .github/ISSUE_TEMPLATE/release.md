@@ -21,11 +21,11 @@ These checks should be performed on the codebase prior to freezing our release c
   - [ ] Verify pallet and [extrinsic ordering](#extrinsic-ordering) has stayed
         the same. Bump `transaction_version` if not.
   - [ ] Verify new extrinsics have been correctly whitelisted/blacklisted
-  - [ ] Verify [benchmarks](#benchmarks) have been updated for any modified runtime logic.
-  - [ ] Check for any upstream storage migrations and perform tests with `try-runtime`, if any.
   - [ ] Grep github actions files for `https://github.com/paritytech/polkadot/releases/download/v` URLs and align them with current mainnet states
   - polkadot: https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fpolkadot.api.onfinality.io%2Fpublic-ws#/explorer
   - kusama: https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fkusama-public-rpc.blockops.network%2Fws#/explorer
+  - [ ] Verify [benchmarks](#benchmarks) have been updated for any modified runtime logic.
+  - [ ] Check for any upstream storage migrations and perform tests with `try-runtime`, if any.
   - [ ] Execute the manual runtime upgrade CI workflow and verify that it succeeds.
   - [ ] Generate new changelog using `dev-tools` repo
   - [ ] Merge when green and reviewed
