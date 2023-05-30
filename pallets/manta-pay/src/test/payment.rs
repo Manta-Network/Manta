@@ -780,3 +780,54 @@ fn pull_ledger_diff_should_work() {
         assert_eq!(runtime_pull_response.senders, decoded_senders);
     });
 }
+
+/// Unrestricted public assets in receiver posts are not allowed
+#[test]
+fn unrestricted_public_asset_now_allowed() {
+    new_test_ext().execute_with(|| {
+        let mut rng = OsRng;
+        let total_supply: u128 = rng.gen();
+        let mut unrestricted_asset_id = crate::Asset::default();
+        unrestricted_asset_id.id = [1u8; 32];
+        let mut unrestricted_asset_value = crate::Asset::default();
+        unrestricted_asset_value.value = [1u8; 16];
+
+        let mut mint = sample_to_private(field_from_id(1), 10, &mut rng);
+        mint.receiver_posts[0].utxo.public_asset = unrestricted_asset_id;
+        assert_noop!(
+            MantaPay::to_private(MockOrigin::signed(ALICE), mint.clone()),
+            Error::<Test>::UnrestrictedPublicAsset,
+        );
+        mint.receiver_posts[0].utxo.public_asset = unrestricted_asset_value;
+        assert_noop!(
+            MantaPay::to_private(MockOrigin::signed(ALICE), mint),
+            Error::<Test>::UnrestrictedPublicAsset,
+        );
+
+        for mut reclaim in reclaim_test(1, total_supply / 2, None, &mut rng) {
+            reclaim.receiver_posts[0].utxo.public_asset = unrestricted_asset_id;
+            assert_noop!(
+                MantaPay::to_public(MockOrigin::signed(ALICE), reclaim.clone()),
+                Error::<Test>::UnrestrictedPublicAsset,
+            );
+            reclaim.receiver_posts[0].utxo.public_asset = unrestricted_asset_value;
+            assert_noop!(
+                MantaPay::to_public(MockOrigin::signed(ALICE), reclaim),
+                Error::<Test>::UnrestrictedPublicAsset,
+            );
+        }
+
+        for mut private_transfer in private_transfer_test(1, None, &mut rng) {
+            private_transfer.receiver_posts[0].utxo.public_asset = unrestricted_asset_id;
+            assert_noop!(
+                MantaPay::private_transfer(MockOrigin::signed(ALICE), private_transfer.clone()),
+                Error::<Test>::UnrestrictedPublicAsset,
+            );
+            private_transfer.receiver_posts[0].utxo.public_asset = unrestricted_asset_value;
+            assert_noop!(
+                MantaPay::private_transfer(MockOrigin::signed(ALICE), private_transfer),
+                Error::<Test>::UnrestrictedPublicAsset,
+            );
+        }
+    });
+}
