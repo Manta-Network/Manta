@@ -787,10 +787,14 @@ fn unrestricted_public_asset_now_allowed() {
     new_test_ext().execute_with(|| {
         let mut rng = OsRng;
         let total_supply: u128 = rng.gen();
-        let mut unrestricted_asset_id = crate::Asset::default();
-        unrestricted_asset_id.id = [1u8; 32];
-        let mut unrestricted_asset_value = crate::Asset::default();
-        unrestricted_asset_value.value = [1u8; 16];
+        let unrestricted_asset_id = crate::Asset {
+            id: [1u8; 32],
+            ..Default::default()
+        };
+        let unrestricted_asset_value = crate::Asset {
+            value: [1u8; 16],
+            ..Default::default()
+        };
 
         let mut mint = sample_to_private(field_from_id(1), 10, &mut rng);
         mint.receiver_posts[0].utxo.public_asset = unrestricted_asset_id;
