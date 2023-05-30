@@ -8,7 +8,7 @@
 
 Run the command.
 ```sh
-cargo t write_all_current_extrinsic_gas_fee_to_csv
+cargo t generate_all_current_extrinsics_tx_fee_to_csv
 ```
 > Before you run this test case, please disable this line of code: `#[ignore]`.
 

@@ -25,10 +25,10 @@ use frame_support::{
 use manta_primitives::assets::{AssetRegistryMetadata, TestingDefault};
 use manta_support::manta_pay::TransferPost;
 use pallet_transaction_payment::Multiplier;
-// use runtime_common::MinimumMultiplier;
+use runtime_common::MinimumMultiplier;
 use sp_runtime::{
-    traits::{One, Saturating, Zero},
-    AccountId32, MultiAddress, Perbill, Percent,
+    traits::{Saturating, Zero},
+    AccountId32, FixedPointNumber, MultiAddress, Perbill, Percent,
 };
 use std::str::FromStr;
 use xcm::prelude::*;
@@ -43,6 +43,15 @@ struct TxFeeDetail {
     extrinsic: String,
     tx_fee_with_decimal: String,
     tx_fee_without_decimal: String,
+    fee_multiplier: String,
+}
+
+fn fee_multipliers() -> [Multiplier; 3] {
+    [
+        MinimumMultiplier::get(),                       // 0.0002
+        Multiplier::saturating_from_rational(1, 5u128), // 0.2
+        Multiplier::saturating_from_rational(1, 1u128), // 1.0
+    ]
 }
 
 fn get_call_details(call: &crate::RuntimeCall) -> (DispatchInfo, u32) {
@@ -82,48 +91,83 @@ fn diff_tx_fees() {
     let csv_path = format!("{CURRENT_PATH}/tx-fees-data/{version}-tx-fees.csv");
     let mut rdr = csv::Reader::from_path(csv_path).unwrap();
 
-    let all_extrinsics_tx_fees = calculate_all_current_extrinsic_tx_fee();
+    let (calamari_runtime_calls, mut test_runner) = calculate_all_current_extrinsic_tx_fee();
 
     let mut last_release_tx_fees = rdr.deserialize().map(|e| {
         let record: TxFeeDetail = e.unwrap();
         record
     });
 
-    for TxFeeDetail {
-        module,
-        extrinsic,
-        tx_fee_with_decimal,
-        ..
-    } in all_extrinsics_tx_fees.iter()
-    {
-        match last_release_tx_fees.find(|e| e.extrinsic.eq(extrinsic)) {
-            Some(found) => {
-                let tx_fee_with_decimal = Multiplier::from_str(tx_fee_with_decimal).unwrap();
-                let last_tx_fee = Multiplier::from_str(&found.tx_fee_with_decimal).unwrap();
-                let fluctuation = {
-                    let diff_value = tx_fee_with_decimal - last_tx_fee;
-                    if diff_value < Multiplier::zero() {
-                        Percent::from_float(diff_value.neg().to_float())
-                    } else {
-                        Percent::from_float(diff_value.to_float())
+    let fee_multipliers = fee_multipliers();
+    for multiplier in fee_multipliers {
+        test_runner.execute_with(|| {
+            pallet_transaction_payment::NextFeeMultiplier::<Runtime>::set(multiplier);
+        });
+        test_runner.execute_with(|| {
+            for (pallet_name, extrinsic_name, dispatch_info, call_len) in calamari_runtime_calls.iter()
+            {
+                match last_release_tx_fees.find(|e| e.extrinsic.eq(extrinsic_name) && e.fee_multiplier.eq(&multiplier.to_float().to_string())) {
+                    Some(found) => {
+                        let _tx_fee_with_decimal = TransactionPayment::compute_fee(*call_len, &dispatch_info, 0);
+                        let tx_fee_with_decimal = Multiplier::from_str(&_tx_fee_with_decimal.to_string()).unwrap();
+                        let last_tx_fee = Multiplier::from_str(&found.tx_fee_with_decimal).unwrap();
+                        let fluctuation = {
+                            let diff_value = tx_fee_with_decimal.saturating_sub(last_tx_fee);
+                            if diff_value < Multiplier::zero() {
+                                Percent::from_float(diff_value.neg().to_float())
+                            } else {
+                                Percent::from_float(diff_value.to_float())
+                            }
+                        };
+                        assert!(fluctuation <= TX_FEE_FLUCTUATION, "The tx fee fluctuation for the extrinsic {extrinsic_name} is {fluctuation:?}, bigger than {TX_FEE_FLUCTUATION:?}.");
                     }
-                };
-                assert!(fluctuation <= TX_FEE_FLUCTUATION, "The tx fee fluctuation for the extrinsic {extrinsic} is {:?}, bigger than {:?}.", fluctuation, TX_FEE_FLUCTUATION);
+                    None => panic!("The extrinsic {pallet_name}.{extrinsic_name} is missing from current tx fees list, please add it to latest csv file."),
+                }
             }
-            None => panic!("The extrinsic {module}.{extrinsic} is missing from current tx fees list, please add it to latest csv file."),
-        }
+        });
     }
 }
 
 #[test]
 #[ignore]
-fn write_all_current_extrinsic_tx_fee_to_csv() {
+fn generate_all_current_extrinsics_tx_fee_to_csv() {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
     const CURRENT_PATH: &str = env!("CARGO_MANIFEST_DIR");
     let csv_path = format!("{CURRENT_PATH}/tx-fees-data/{VERSION}-tx-fees.csv");
 
     let mut wtr = csv::Writer::from_path(csv_path).unwrap();
-    let all_extrinsics_tx_fees = calculate_all_current_extrinsic_tx_fee();
+    let (calamari_runtime_calls, mut test_runner) = calculate_all_current_extrinsic_tx_fee();
+
+    let fee_multipliers = fee_multipliers();
+    let decimal: Multiplier = Multiplier::from_u32(10).saturating_pow(12);
+
+    let mut all_extrinsics_tx_fees = vec![];
+    for multiplier in fee_multipliers {
+        // set the multiplier
+        test_runner.execute_with(|| {
+            pallet_transaction_payment::NextFeeMultiplier::<Runtime>::set(multiplier);
+        });
+        test_runner.execute_with(|| {
+            for (pallet_name, extrinsic_name, dispatch_info, call_len) in
+                calamari_runtime_calls.clone()
+            {
+                let tx_fee_with_decimal =
+                    TransactionPayment::compute_fee(call_len, &dispatch_info, 0);
+                let tx_fee_without_decimal = Multiplier::try_from(tx_fee_with_decimal)
+                    .unwrap()
+                    .div(decimal)
+                    .to_float();
+                let tx_fee = TxFeeDetail {
+                    module: pallet_name.to_owned(),
+                    extrinsic: extrinsic_name.to_owned(),
+                    tx_fee_with_decimal: tx_fee_with_decimal.to_string(),
+                    tx_fee_without_decimal: tx_fee_without_decimal.to_string(),
+                    fee_multiplier: multiplier.to_float().to_string(),
+                };
+                all_extrinsics_tx_fees.push(tx_fee);
+            }
+        });
+    }
 
     for extrinsic in all_extrinsics_tx_fees {
         wtr.serialize(extrinsic).unwrap();
@@ -131,17 +175,14 @@ fn write_all_current_extrinsic_tx_fee_to_csv() {
     wtr.flush().unwrap();
 }
 
-fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
-    let decimal: Multiplier = Multiplier::from_u32(10).saturating_pow(12);
-
+fn calculate_all_current_extrinsic_tx_fee() -> (
+    Vec<(&'static str, &'static str, DispatchInfo, u32)>,
+    sp_io::TestExternalities,
+) {
     let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
         .build_storage::<Runtime>()
         .unwrap()
         .into();
-    // set the minimum
-    t.execute_with(|| {
-        pallet_transaction_payment::NextFeeMultiplier::<Runtime>::set(Multiplier::one());
-    });
 
     let mut calamari_runtime_calls = vec![];
     // frame_system
@@ -151,12 +192,19 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
             8,
             "Please update new extrinsic here."
         );
-        // remark
+        // remark, which length is 32
         let call = crate::RuntimeCall::System(frame_system::Call::remark {
             remark: vec![1u8; 32],
         });
         let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("frame_system", "remark", dispatch_info, call_len));
+        calamari_runtime_calls.push(("frame_system", "remark-length=32", dispatch_info, call_len));
+
+        // remark, which length is 64
+        let call = crate::RuntimeCall::System(frame_system::Call::remark {
+            remark: vec![1u8; 32],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("frame_system", "remark-length=64", dispatch_info, call_len));
 
         // set_heap_pages
         let call = crate::RuntimeCall::System(frame_system::Call::set_heap_pages { pages: 64 });
@@ -204,12 +252,29 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("frame_system", "kill_prefix", dispatch_info, call_len));
 
-        // remark_with_event
+        // remark_with_event, which length is 32
         let call = crate::RuntimeCall::System(frame_system::Call::remark_with_event {
             remark: vec![1u8; 32],
         });
         let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("frame_system", "remark_with_event", dispatch_info, call_len));
+        calamari_runtime_calls.push((
+            "frame_system",
+            "remark_with_event-length=32",
+            dispatch_info,
+            call_len,
+        ));
+
+        // remark_with_event, which length is 64
+        let call = crate::RuntimeCall::System(frame_system::Call::remark_with_event {
+            remark: vec![1u8; 32],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "frame_system",
+            "remark_with_event-length=64",
+            dispatch_info,
+            call_len,
+        ));
     }
 
     // pallet_treasury
@@ -292,12 +357,29 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
             4,
             "Please update new extrinsic here."
         );
-        // note_preimage
+        // note_preimage, preimage length is 32
         let call = crate::RuntimeCall::Preimage(pallet_preimage::Call::note_preimage {
             bytes: vec![1u8; 32],
         });
         let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("pallet_preimage", "note_preimage", dispatch_info, call_len));
+        calamari_runtime_calls.push((
+            "pallet_preimage",
+            "note_preimage-length=32",
+            dispatch_info,
+            call_len,
+        ));
+
+        // note_preimage, preimage length is 64
+        let call = crate::RuntimeCall::Preimage(pallet_preimage::Call::note_preimage {
+            bytes: vec![1u8; 64],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_preimage",
+            "note_preimage-length=32",
+            dispatch_info,
+            call_len,
+        ));
 
         // unnote_preimage
         let call = crate::RuntimeCall::Preimage(pallet_preimage::Call::unnote_preimage {
@@ -462,7 +544,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_membership", "set_prime", dispatch_info, call_len));
 
-        // set_prime
+        // clear_prime
         let call = crate::RuntimeCall::CouncilMembership(pallet_membership::Call::clear_prime {});
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_membership", "clear_prime", dispatch_info, call_len));
@@ -1168,6 +1250,21 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
             dispatch_info,
             call_len,
         ));
+
+        // update_outgoing_filtered_assets
+        let call = crate::RuntimeCall::AssetManager(
+            pallet_asset_manager::Call::update_outgoing_filtered_assets {
+                filtered_location: Default::default(),
+                should_add: true,
+            },
+        );
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_asset_manager",
+            "update_outgoing_filtered_assets",
+            dispatch_info,
+            call_len,
+        ));
     }
 
     // pallet_assets
@@ -1200,6 +1297,26 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         let call = crate::RuntimeCall::Assets(pallet_assets::Call::start_destroy { id: 1 });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_assets", "start_destroy", dispatch_info, call_len));
+
+        // destroy_accounts
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::destroy_accounts { id: 1 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_assets", "destroy_accounts", dispatch_info, call_len));
+
+        // destroy_approvals
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::destroy_approvals { id: 1 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_assets",
+            "destroy_approvals",
+            dispatch_info,
+            call_len,
+        ));
+
+        // finish_destroy
+        let call = crate::RuntimeCall::Assets(pallet_assets::Call::finish_destroy { id: 1 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_assets", "finish_destroy", dispatch_info, call_len));
 
         // mint
         let call = crate::RuntimeCall::Assets(pallet_assets::Call::mint {
@@ -1448,13 +1565,26 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
             6,
             "Please update new extrinsic here."
         );
-        // transfer
+        // transfer, 1 token
         let call = crate::RuntimeCall::Balances(pallet_balances::Call::transfer {
             dest: ALICE.into(),
             value: 1,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("pallet_balances", "transfer", dispatch_info, call_len));
+        calamari_runtime_calls.push(("pallet_balances", "transfer-1", dispatch_info, call_len));
+
+        // transfer, 1M tokens
+        let call = crate::RuntimeCall::Balances(pallet_balances::Call::transfer {
+            dest: ALICE.into(),
+            value: 1000_000,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_balances",
+            "transfer-1000_000",
+            dispatch_info,
+            call_len,
+        ));
 
         // set_balance
         let call = crate::RuntimeCall::Balances(pallet_balances::Call::set_balance {
@@ -1474,7 +1604,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_balances", "force_transfer", dispatch_info, call_len));
 
-        // transfer_keep_alive
+        // transfer_keep_alive, 1 token
         let call = crate::RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive {
             dest: ALICE.into(),
             value: 1,
@@ -1482,7 +1612,20 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_balances",
-            "transfer_keep_alive",
+            "transfer_keep_alive-1",
+            dispatch_info,
+            call_len,
+        ));
+
+        // transfer_keep_alive, 1M tokens
+        let call = crate::RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive {
+            dest: ALICE.into(),
+            value: 1000_000,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_balances",
+            "transfer_keep_alive-1000_000",
             dispatch_info,
             call_len,
         ));
@@ -1624,6 +1767,30 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
             dispatch_info,
             call_len,
         ));
+
+        // update_mint_info
+        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::update_mint_info {
+            mint_id: 1,
+            start_time: Default::default(),
+            end_time: None,
+            mint_name: Default::default(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_manta_sbt",
+            "update_mint_info",
+            dispatch_info,
+            call_len,
+        ));
+
+        // new_mint_info
+        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::new_mint_info {
+            start_time: Default::default(),
+            end_time: None,
+            mint_name: Default::default(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_manta_sbt", "new_mint_info", dispatch_info, call_len));
     }
 
     // pallet_parachain_staking
@@ -2197,10 +2364,21 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
             6,
             "Please update new extrinsic here."
         );
-        // batch
+        // batch, one call within
         let call = crate::RuntimeCall::Utility(pallet_utility::Call::batch { calls: vec![] });
+        let call = crate::RuntimeCall::Utility(pallet_utility::Call::batch {
+            calls: vec![call; 1],
+        });
         let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("pallet_utility", "batch", dispatch_info, call_len));
+        calamari_runtime_calls.push(("pallet_utility", "batch-size=1", dispatch_info, call_len));
+
+        // batch, 32 call within
+        let call = crate::RuntimeCall::Utility(pallet_utility::Call::batch { calls: vec![] });
+        let call = crate::RuntimeCall::Utility(pallet_utility::Call::batch {
+            calls: vec![call; 32],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_utility", "batch-size=32", dispatch_info, call_len));
 
         // as_derivative
         let call = crate::RuntimeCall::Utility(pallet_utility::Call::as_derivative {
@@ -2212,8 +2390,29 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
 
         // batch_all
         let call = crate::RuntimeCall::Utility(pallet_utility::Call::batch_all { calls: vec![] });
+        let call = crate::RuntimeCall::Utility(pallet_utility::Call::batch {
+            calls: vec![call; 1],
+        });
         let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("pallet_utility", "batch_all", dispatch_info, call_len));
+        calamari_runtime_calls.push((
+            "pallet_utility",
+            "batch_all-size=1",
+            dispatch_info,
+            call_len,
+        ));
+
+        // batch_all
+        let call = crate::RuntimeCall::Utility(pallet_utility::Call::batch_all { calls: vec![] });
+        let call = crate::RuntimeCall::Utility(pallet_utility::Call::batch {
+            calls: vec![call; 32],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_utility",
+            "batch_all-size=32",
+            dispatch_info,
+            call_len,
+        ));
 
         // dispatch_as
         let origin: crate::RuntimeOrigin = frame_system::RawOrigin::Signed(ALICE).into();
@@ -2232,23 +2431,5 @@ fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
         calamari_runtime_calls.push(("pallet_utility", "force_batch", dispatch_info, call_len));
     }
 
-    let mut all_extrinsics_tx_fees = vec![];
-    t.execute_with(|| {
-        for (pallet_name, extrinsic_name, dispatch_info, call_len) in calamari_runtime_calls {
-            let tx_fee_with_decimal = TransactionPayment::compute_fee(call_len, &dispatch_info, 0);
-            let tx_fee_without_decimal = Multiplier::try_from(tx_fee_with_decimal)
-                .unwrap()
-                .div(decimal)
-                .to_float();
-            let tx_fee = TxFeeDetail {
-                module: pallet_name.to_owned(),
-                extrinsic: extrinsic_name.to_owned(),
-                tx_fee_with_decimal: tx_fee_with_decimal.to_string(),
-                tx_fee_without_decimal: tx_fee_without_decimal.to_string(),
-            };
-            all_extrinsics_tx_fees.push(tx_fee);
-        }
-    });
-
-    all_extrinsics_tx_fees
+    (calamari_runtime_calls, t)
 }
