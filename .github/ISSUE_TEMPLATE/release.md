@@ -20,8 +20,7 @@ These checks should be performed on the codebase prior to freezing our release c
     - [ ] Verify pallet and [extrinsic ordering](#extrinsic-ordering) has stayed
         the same. Bump `transaction_version` if not.
     - [ ] Verify new extrinsics have been correctly whitelisted/blacklisted
-    - [ ] Verify [benchmarks](#benchmarks) have been updated for any modified
-        runtime logic.
+    - [ ] Verify [benchmarks](#benchmarks) have been updated for any modified runtime logic.
     - [ ] Check for any upstream storage migrations and perform tests with `try-runtime`, if any.
     - [ ] Grep github actions files for the following version URLs and update them
         - `https://github.com/paritytech/polkadot/releases/download/v`
@@ -30,7 +29,7 @@ These checks should be performed on the codebase prior to freezing our release c
     - [ ] Merge when green and reviewed
     - [ ] Tag the release with the same version you used on the release PR. IMPORTANT: Use the `manta` branch commit for the tag, NOT a `release-` or other branch
     - [ ] Wait for CI to succeed running on the tag
-    - [ ] Check that a draft release has been created at https://github.com/Manta-Network/Manta/releases and add relevant [Release Notes](#release-notes)
+    - [ ] Check that a draft release has been created on the [release page](https://github.com/Manta-Network/Manta/releases) and add relevant [release notes](#release-notes)
     - [ ] Check that build artifacts have been added to the draft-release
     - [ ] Promote the draft to a Pre-Release on github
 
@@ -43,15 +42,16 @@ These checks should be performed on the codebase prior to freezing our release c
     - [ ] Execute client upgrade on Calamari @ Baikal nodes if needed
     - [ ] Execute runtime upgrade to Calamari @ Baikal and verify network stability.
 - [ ] Complete the [manual QA workflow](https://www.notion.so/mantanetwork/d55be01354bb4f579b16d6e34df9e2e1?v=dcfa54e2b4a343ad9b899574ddb94a1c).
-- [ ] If the release contains any changes that break/change functionality used in https://github.com/Manta-Network/sdk (e.g. RPC changes, see also [extrinsic ordering](#extrinsic-ordering)), raise a PR there and **block this release** until your PR has been merged and incorporated in a new SDK release.
+- [ ] If the release contains any changes that break/change functionality used in the [Manta SDK](https://github.com/Manta-Network/sdk) (e.g. RPC changes, see also [extrinsic ordering](#extrinsic-ordering)), raise a PR there and **block this release** until your PR has been merged and incorporated in a new SDK release.
 
 # Deploy to public testnet
 - Unless this release specifies a special upgrade process:
-    - [ ] Execute client upgrade on calamari @ moonbase-relay nodes if needed
-    - [ ] Execute runtime upgrade to calamari @ moonbase-relay and verify network stability.
-    - [ ] Execute client upgrade on calamari @ kusama-internal nodes if needed
+    - [ ] Upgrade client binary on [manta @ polkadot-internal](https://github.com/Manta-Network/testnet-deployment/tree/master/polkadot-internal%28paleblue%29/manta) if needed
+    - [ ] Execute runtime upgrade to manta @ polkadot-internal and verify network stability.
+    - [ ] Upgrade client binary on [calamari @ kusama-internal](https://github.com/Manta-Network/testnet-deployment/tree/master/kusama-internal%28seabird%29/calamari) if needed
     - [ ] Execute runtime upgrade to calamari @ kusama-internal and verify network stability.
-- [ ] Check network health metrics like average block times, block authors, etc with this tool https://parachain-utilities.vercel.app/
+- [ ] Check network health metrics like average block times, block authors, etc with this [parachain utilities tool](https://parachain-utilities.vercel.app/)
+- [ ] Coordinate with the full stack team to deploy and test the wallet-extension, dApp or any other application that depends on the runtime against the staging testnet.
 - [ ] Coordinate with marketing team for documentation updates and other relevant tasks.
 - [ ] Monitor [Grafana Node Explorer](https://grafana.pulse.pelagos.systems/d/rYdddlPWk/node-exporter-full) for anomalies in our nodes' memory, cpu, disk and network usage. These would include but are not limited to: memory leaks, cpu spikes, spike in tcp sockets waiting to close, etc. Make sure to take a look at all of the available graphs because some problems might only be visible in views that are collapsed by default
 - [ ] Check that the new client and/or runtime versions have burned-in without issue for at least 3 days.

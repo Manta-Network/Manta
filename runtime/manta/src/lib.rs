@@ -238,6 +238,7 @@ impl Contains<RuntimeCall> for MantaFilter {
             | RuntimeCall::Balances(_)
             | RuntimeCall::Preimage(_)
             | RuntimeCall::TransactionPause(_)
+            | RuntimeCall::AssetManager(pallet_asset_manager::Call::update_outgoing_filtered_assets {..})
             | RuntimeCall::Utility(_) => true,
 
             // DISALLOW anything else
