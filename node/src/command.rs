@@ -520,7 +520,7 @@ pub fn run_with(cli: Cli) -> Result {
                         collator_options,
                         id,
                         hwbench,
-                        rpc::create_common_full,
+                        rpc::create_manta_full,
                     )
                     .await
                     .map(|r| r.0)

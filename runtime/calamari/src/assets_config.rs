@@ -27,7 +27,6 @@ use manta_primitives::{
     },
     constants::{
         ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL, MANTA_PAY_PALLET_ID, MANTA_SBT_PALLET_ID,
-        WEIGHT_PER_MILLIS,
     },
     types::{AccountId, Balance, CalamariAssetId},
 };
@@ -36,7 +35,6 @@ use frame_support::{
     pallet_prelude::DispatchResult,
     parameter_types,
     traits::{AsEnsureOriginWithArg, ConstU128, ConstU16, ConstU32, EitherOfDiverse},
-    weights::Weight,
     PalletId,
 };
 
