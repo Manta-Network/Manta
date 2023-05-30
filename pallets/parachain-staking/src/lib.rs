@@ -1711,7 +1711,7 @@ pub mod pallet {
             // choose the top TotalSelected qualified candidates, ordered by stake
             let collators = Self::compute_top_candidates();
             if collators.is_empty() {
-                // SELECTION FAILED TO SELECT >=1 COLLATOR => select collators from previous round
+                log::error!("FAILED TO SELECT >=1 COLLATOR => using collators from previous round");
                 let last_round = now.saturating_sub(1u32);
                 let mut total_per_candidate: BTreeMap<T::AccountId, BalanceOf<T>> = BTreeMap::new();
                 // set this round AtStake to last round AtStake
