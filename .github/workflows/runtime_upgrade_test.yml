@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       runtime:
-        description: The runtime for which an upgrade will be tested - manta, calamari or dolphin
+        description: The runtime for which an upgrade will be tested - manta, calamari
         default: manta
         required: true
       manta_base_url:
@@ -30,6 +30,7 @@ env:
   MANTA_BINARY: ${{github.event.inputs.manta_base_url}}
 jobs:
   build-runtimes:
+    timeout-minutes: 120
     runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always

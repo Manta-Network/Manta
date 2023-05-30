@@ -15,6 +15,7 @@ env:
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
 jobs:
   start-unit-test-checks:
+    timeout-minutes: 240
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -133,6 +134,7 @@ jobs:
       - name: stop sccache server
         run: sccache --stop-server || true
   stop-unit-test-checks:
+    timeout-minutes: 15
     needs: start-unit-test-checks
     runs-on: ubuntu-20.04
     if: ${{ always() }}
@@ -150,6 +152,7 @@ jobs:
       - name: discard stopper success/failure
         run: true
   start-benchmark-checks:
+    timeout-minutes: 180
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}

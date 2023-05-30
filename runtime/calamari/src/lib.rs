@@ -134,10 +134,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 4070,
+    spec_version: 4080,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 12,
+    transaction_version: 13,
     state_version: 0,
 };
 
@@ -370,7 +370,6 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    /// Relay Chain `TransactionLengthToFeeCoeff` / 10 (1_000_000 on Kusama)
     pub const TransactionLengthToFeeCoeff: Balance = mKMA / 100;
     pub const WeightToFeeCoeff: Balance = 5_000;
 }

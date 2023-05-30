@@ -1079,7 +1079,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-runtime"
-version = "4.0.7"
+version = "4.0.8"
 dependencies = [
  "calamari-vesting",
  "csv",
@@ -1172,7 +1172,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-vesting"
-version = "4.0.7"
+version = "4.0.8"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -2656,7 +2656,7 @@ dependencies = [
 
 [[package]]
 name = "dolphin-runtime"
-version = "4.0.7"
+version = "4.0.8"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -4194,7 +4194,7 @@ dependencies = [
 
 [[package]]
 name = "integration-tests"
-version = "4.0.7"
+version = "4.0.8"
 dependencies = [
  "calamari-runtime",
  "calamari-vesting",
@@ -5327,7 +5327,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "4.0.7"
+version = "4.0.8"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -5429,7 +5429,7 @@ dependencies = [
 
 [[package]]
 name = "manta-collator-selection"
-version = "4.0.7"
+version = "4.0.8"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5516,7 +5516,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "4.0.7"
+version = "4.0.8"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5536,7 +5536,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "4.0.7"
+version = "4.0.8"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -6102,7 +6102,7 @@ dependencies = [
 [[package]]
 name = "nimbus-consensus"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?tag=v4.0.7#a4775e81a2980df045e33e74638c212d804f5d2c"
+source = "git+https://github.com/manta-network/nimbus.git?tag=v4.0.8#a4775e81a2980df045e33e74638c212d804f5d2c"
 dependencies = [
  "async-trait",
  "cumulus-client-consensus-common",
@@ -6133,7 +6133,7 @@ dependencies = [
 [[package]]
 name = "nimbus-primitives"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?tag=v4.0.7#a4775e81a2980df045e33e74638c212d804f5d2c"
+source = "git+https://github.com/manta-network/nimbus.git?tag=v4.0.8#a4775e81a2980df045e33e74638c212d804f5d2c"
 dependencies = [
  "async-trait",
  "frame-benchmarking",
@@ -6497,7 +6497,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-manager"
-version = "4.0.7"
+version = "4.0.8"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6551,7 +6551,7 @@ dependencies = [
 [[package]]
 name = "pallet-aura-style-filter"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?tag=v4.0.7#a4775e81a2980df045e33e74638c212d804f5d2c"
+source = "git+https://github.com/manta-network/nimbus.git?tag=v4.0.8#a4775e81a2980df045e33e74638c212d804f5d2c"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6567,7 +6567,7 @@ dependencies = [
 [[package]]
 name = "pallet-author-inherent"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?tag=v4.0.7#a4775e81a2980df045e33e74638c212d804f5d2c"
+source = "git+https://github.com/manta-network/nimbus.git?tag=v4.0.8#a4775e81a2980df045e33e74638c212d804f5d2c"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6952,7 +6952,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-pay"
-version = "4.0.7"
+version = "4.0.8"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -6987,7 +6987,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-sbt"
-version = "4.0.7"
+version = "4.0.8"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -7026,7 +7026,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-support"
-version = "4.0.7"
+version = "4.0.8"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -7204,7 +7204,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-parachain-staking"
-version = "4.0.7"
+version = "4.0.8"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7553,7 +7553,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "4.0.7"
+version = "4.0.8"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -9919,7 +9919,7 @@ dependencies = [
 
 [[package]]
 name = "runtime-common"
-version = "4.0.7"
+version = "4.0.8"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -11478,7 +11478,7 @@ dependencies = [
 
 [[package]]
 name = "session-key-primitives"
-version = "4.0.7"
+version = "4.0.8"
 dependencies = [
  "manta-primitives",
  "nimbus-primitives",

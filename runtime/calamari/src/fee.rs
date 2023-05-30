@@ -14,11 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-pub use sp_runtime::Perbill;
-
-/// The block saturation level. Fees will be updates based on this value.
-pub const TARGET_BLOCK_FULLNESS: Perbill = Perbill::from_percent(25);
-
 pub const FEES_PERCENTAGE_TO_AUTHOR: u8 = 10;
 pub const FEES_PERCENTAGE_TO_BURN: u8 = 45;
 pub const FEES_PERCENTAGE_TO_TREASURY: u8 = 45;

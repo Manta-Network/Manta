@@ -70,7 +70,6 @@ use xcm::latest::prelude::*;
 
 pub mod assets_config;
 pub mod currency;
-pub mod fee;
 pub mod impls;
 mod nimbus_session_adapter;
 pub mod xcm_config;
@@ -127,10 +126,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("dolphin"),
     impl_name: create_runtime_str!("dolphin"),
     authoring_version: 2,
-    spec_version: 4070,
+    spec_version: 4080,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 7,
+    transaction_version: 8,
     state_version: 0,
 };
 

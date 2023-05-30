@@ -139,6 +139,21 @@ benchmarks! {
     verify {
         assert_eq!(Pallet::<T>::get_min_xcm_fee(location), Some(min_xcm_fee));
     }
+
+    update_outgoing_filtered_assets {
+        let assets_count = 1000;
+        for i in 0..assets_count {
+            let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
+            let location = T::Location::from(location.clone());
+            let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
+            Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
+        }
+        let location: MultiLocation = MultiLocation::new(0, X1(Parachain(1)));
+    }: _(RawOrigin::Root, location.clone().into(), true)
+    verify {
+        assert_last_event::<T>(crate::Event::AssetLocationFilteredForOutgoingTransfers { filtered_location: location.into() }.into());
+    }
+
 }
 
 impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Runtime);

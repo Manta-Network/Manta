@@ -7,7 +7,7 @@ on:
         required: true
       chain:
         description: The name of the chain under test. Usually, you would pass a local chain
-        default: calamari-local
+        default: manta-local
         required: true
 env:
   AWS_REGION: us-east-1
@@ -19,6 +19,7 @@ env:
   REF_BINARY: ${{github.event.inputs.reference_binary}}
 jobs:
   start-checks:
+    timeout-minutes: 120
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
