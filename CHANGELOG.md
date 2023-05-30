@@ -29,91 +29,68 @@
 - [\#1099](https://github.com/Manta-Network/Manta/pull/1099) Remove SBT deprecated storage [CA]
 
 ## v4.0.7
-
 ### Changed
-
 - [\#1084](https://github.com/Manta-Network/Manta/pull/1084) Use safe-math in xcm `buy_weight` impl [MACA]
 - [\#1093](https://github.com/Manta-Network/Manta/pull/1093) Enable `democracy.external_propose_majority` on calamari [CA]
 - [\#1086](https://github.com/Manta-Network/Manta/pull/1086) Add SBT Registry [CADO]
 
 ### Fixed
-
 - [\#1078](https://github.com/Manta-Network/Manta/pull/1078) Update stress benchmark test [CADO]
 
 ## v4.0.6
-
 ### Added
-
 - [\#1067](https://github.com/Manta-Network/Manta/pull/1067) Refactor manta genesis files, add `manta-testnet` [MA]
 
 ### Changed
-
 - [\#1071](https://github.com/Manta-Network/Manta/pull/1071) Charge 0-asset XCM instructions as if they were 1-asset [MACADO]
 
 ### Fixed
-
 - [\#1068](https://github.com/Manta-Network/Manta/pull/1068) Do not skip integration tests [CA]
 - [\#1069](https://github.com/Manta-Network/Manta/pull/1069) Enable manta runtime xcm tests [MA]
 
 ## v4.0.5
-
 ### Added
-
 - [\#1012](https://github.com/Manta-Network/Manta/pull/1012) Add zkSBTs [MACADO]
 - [\#1046](https://github.com/Manta-Network/Manta/pull/1046) Initial pull method [MACADO]
 - [\#1057](https://github.com/Manta-Network/Manta/pull/1057) Add Evm Allowlist Feature to SBT Pallet [CADO]
 - [\#1050](https://github.com/Manta-Network/Manta/pull/1050) XCMP, xTokens, Assets, AssetManager and Treasury for Manta [MACA]
 
 ### Changed
-
 - [\#1053](https://github.com/Manta-Network/Manta/pull/1053) Minor: don't fail CI on congestion test failure
 - [\#1058](https://github.com/Manta-Network/Manta/pull/1058) Archive nodes as bootnodes to Manta genesis [MA]
 
 ### Fixed
-
 - [\#1064](https://github.com/Manta-Network/Manta/pull/1064) add chain id [CA]
 
 ## v4.0.4
-
 ### Fixed
-
 - [\#1043](https://github.com/Manta-Network/Manta/pull/1043) Add self-bond filter condition when computing new set of collators [CA]
 - [\#1047](https://github.com/Manta-Network/Manta/pull/1047) Transaction fees bump [CADO]
 
 ## v4.0.3
-
 ### Changed
-
 - [\#1024](https://github.com/Manta-Network/Manta/pull/1024) Minor: use checked-in genesis for --chain=manta [MA]
 - [\#1025](https://github.com/Manta-Network/Manta/pull/1025) Filter vested_transfer [CA]
 - [\#1031](https://github.com/Manta-Network/Manta/pull/1031) Verbose Error Handling [CADO]
 
 ### Fixed
-
 - [\#1032](https://github.com/Manta-Network/Manta/pull/1032) Security: Include the sink AccountId in the signed message for ToPublic transactions [MACA]
 
 ## v4.0.2
-
 ### Added
-
 - [\#1017](https://github.com/Manta-Network/Manta/pull/1017) github action for relaychain genesis files [MA]
 
 ### Changed
-
 - [\#1015](https://github.com/Manta-Network/Manta/pull/1015) Re-new MantaPay precomputed coins and re-enable tests [CADO]
 
 ### Fixed
-
 - [\#968](https://github.com/Manta-Network/Manta/pull/968) fix benchmarks, paraID and genesis [MA]
 
 ## v4.0.1
-
 ### Added
-
 - [\#870](https://github.com/Manta-Network/Manta/pull/870) Manual seal mode for dev [CADO]
 
 ### Changed
-
 - [\#966](https://github.com/Manta-Network/Manta/pull/966) Bump storage trie version for manta RT [MA]
 - [\#978](https://github.com/Manta-Network/Manta/pull/978) xcm fee of native token to treasury [CADO]
 - [\#981](https://github.com/Manta-Network/Manta/pull/981) Upgrade to manta-rs v0.5.9, switch to mainnet keys, fix ledger error handling [MACADO]
@@ -122,13 +99,10 @@
 - [\#977](https://github.com/Manta-Network/Manta/pull/977) Suspend MantaPay when InternalLedgerError [CADO]
 
 ### Fixed
-
 - [\#982](https://github.com/Manta-Network/Manta/pull/982) Fix codec issue for dense-pull-ledger-diff [CADO]
 
 ## v4.0.0
-
 ### Added
-
 - [\#903](https://github.com/Manta-Network/Manta/pull/903) Add MantaPay to Calamari runtime [CA]
 - [\#921](https://github.com/Manta-Network/Manta/pull/921) Add dense_pull_ledger_diff rpc method [CADO]
 - [\#919](https://github.com/Manta-Network/Manta/pull/919) Add pull-ledger-diff ci test for calamari [CADO]
@@ -136,7 +110,6 @@
 - [\#952](https://github.com/Manta-Network/Manta/pull/952) update genesis [MA]
 
 ### Changed
-
 - [\#814](https://github.com/Manta-Network/Manta/pull/814) feat: upgrade asset manager [CADO]
 - [\#890](https://github.com/Manta-Network/Manta/pull/890) MantaPay V1 for Dolphin V3 deployment [CADO]
 - [\#906](https://github.com/Manta-Network/Manta/pull/906) Use finalized_hash instead of best_hash in pull_ledger_diff [CADO]
@@ -149,52 +122,40 @@
 - [\#956](https://github.com/Manta-Network/Manta/pull/956) Reduce running time for CI tests [CADO]
 
 ### Fixed
-
 - [\#924](https://github.com/Manta-Network/Manta/pull/924) Fix runtime upgrade test by using governance instead of SUDO [CADO]
 - [\#948](https://github.com/Manta-Network/Manta/pull/948) add zero balance check [CADO]
 
 ## v3.4.3
-
 ### Changed
-
 - [\#836](https://github.com/Manta-Network/Manta/pull/836) client trait bound refactor [CA]
 - [\#848](https://github.com/Manta-Network/Manta/pull/848) Fix XCM tests [CADO]
 - [\#860](https://github.com/Manta-Network/Manta/pull/860) Don't include testing helpers in release code [CA]
 - [\#865](https://github.com/Manta-Network/Manta/pull/865) Aura slot skip fix v2 [CA]
 
 ### Fixed
-
 - [\#846](https://github.com/Manta-Network/Manta/pull/846) Fix sequence skipping when a collator misses its slot [CA]
 - [\#867](https://github.com/Manta-Network/Manta/pull/867) Fix round changes [CA]
 
 ## v3.4.2
-
 ### Changed
-
 - [\#834](https://github.com/Manta-Network/Manta/pull/834) Followups to Staking [CA]
 - [\#840](https://github.com/Manta-Network/Manta/pull/840) Improve mock xcm [CADO]
 
 ### Fixed
-
 - [\#835](https://github.com/Manta-Network/Manta/pull/835) align block number type in tests [CADO]
 
 ## v3.4.1
-
 ### Fixed
-
-- [\#822](https://github.com/Manta-Network/Manta/pull/822) Hardcode weight for instructions with MultiAssetFilter params [CADO]
+- [\#822](https://github.com/Manta-Network/Manta/pull/822) Hardcode weight for instructions with  MultiAssetFilter params [CADO]
 - [\#818](https://github.com/Manta-Network/Manta/pull/818) Fix Block Producer Selection [CA]
 
 ## v3.4.0
-
 ### Added
-
 - [\#745](https://github.com/Manta-Network/Manta/pull/745) Workflow to check for labels
 - [\#758](https://github.com/Manta-Network/Manta/pull/758) All-benchmarks script and CI workflow improvements
 - [\#724](https://github.com/Manta-Network/Manta/pull/724) Nimbus Stage 2 - Enable permissionless staking on Calamari [CA]
 
 ### Changed
-
 - [\#770](https://github.com/Manta-Network/Manta/pull/770) Update fees splits, 50% burned, 50% to treasury [CADO]
 - [\#766](https://github.com/Manta-Network/Manta/pull/766) Change QA workflow link to internal Notion
 - [\#743](https://github.com/Manta-Network/Manta/pull/743) Split all testing from `publish_draft_release` workflow and filter execution by labels on the PRs [CADO]
@@ -204,20 +165,16 @@
 - [\#792](https://github.com/Manta-Network/Manta/pull/792) Adapt 45/45/10 TX fee split for KMA, 100% to author for DOL [CADO]
 
 ### Fixed
-
 - [\#783](https://github.com/Manta-Network/Manta/pull/783) Fix calamari bootnode names in chain-spec and docker [CADO]
 - [\#791](https://github.com/Manta-Network/Manta/pull/791) Fix CI by ignoring failure of `stop-` jobs
 
 ## v3.3.0
-
 ### Added
-
 - [\#717](https://github.com/Manta-Network/Manta/pull/717) Dolphin-2085 on Baikal genesis [DO]
 - [\#712](https://github.com/Manta-Network/Manta/pull/712) Add RPC for latest checkpoint
 - [\#763](https://github.com/Manta-Network/Manta/pull/763) Support verification of historic Aura blocks
 
 ### Changed
-
 - [\#681](https://github.com/Manta-Network/Manta/pull/681) CI Ledger RPC Tests
 - [\#682](https://github.com/Manta-Network/Manta/pull/682) Use `LengthToFee` in the `congested_chain_simulation`'s fee calculation
 - [\#695](https://github.com/Manta-Network/Manta/pull/695) Refactor fungible ledger mint/burn
@@ -230,27 +187,21 @@
 - [\#752](https://github.com/Manta-Network/Manta/pull/752) v3.3.0 bump versions and weights
 
 ### Fixed
-
 - [\#694](https://github.com/Manta-Network/Manta/pull/694) Use u128::MAX in fungible ledger transfer test
 - [\#703](https://github.com/Manta-Network/Manta/pull/703) Fix double spend reclaim test
 - [\#723](https://github.com/Manta-Network/Manta/pull/723) fix: upgrade to `manta-rs` v0.5.4
 
 ### Removed
-
 - [\#737](https://github.com/Manta-Network/Manta/pull/737) Remove v3.2.1 SessionKey migration code [CADO]
 
 ## v3.2.1
-
 ### Breaking changes
-
 - [Dolphin] [\#628](https://github.com/Manta-Network/Manta/pull/628) Improve RPC performance, add `max_receivers` and `max_senders` fields in the RPC request.
 
 ### Features
-
 - [\#646](https://github.com/Manta-Network/Manta/pull/646) Add collator session keys for future nimbus consensus and a vrf placeholder.
 
 ### Improvements
-
 - [\#449](https://github.com/Manta-Network/Manta/pull/449) Remove strip from CI, and add strip profile to production.
 - [\#571](https://github.com/Manta-Network/Manta/pull/571) Update upstream dependencies to v0.9.22.
 - [\#563](https://github.com/Manta-Network/Manta/pull/563) Re-implement the `TransactAsset` trait with the unified interface of `FungibleLedger` trait, and `AssetConfig` trait.
@@ -266,20 +217,16 @@
 - [\#657](https://github.com/Manta-Network/Manta/pull/657) retire `manta-pc-launch` with `polkadot-launch`.
 
 ### Bug fixes
-
 - [\#671](https://github.com/Manta-Network/Manta/pull/671) polkadot-v0.9.22 syn breakage workaround.
 - [\#677](https://github.com/Manta-Network/Manta/pull/677) Fix CI failure by building the runtime with stable Rust.
 
 ## v3.2.0
-
 ### Breaking changes
 
 ### Features
-
 - [Dolphin] [\#529](https://github.com/Manta-Network/Manta/pull/529) Add RPC for MantaPay to synchronize with latest ledger state
 
 ### Improvements
-
 - [\#481](https://github.com/Manta-Network/Manta/pull/481) Update upstream dependencies to v0.9.18.
 - [\#491](https://github.com/Manta-Network/Manta/pull/491) Revamp collator-selection.
 - [\#493](https://github.com/Manta-Network/Manta/pull/493) Dedupe mock-xcm tests (part 1).
@@ -296,19 +243,16 @@
 - [\#583](https://github.com/Manta-Network/Manta/pull/583) Remove checkpoint from RPC API when synchronizing with MantaPay
 
 ### Bug fixes
-
 - [\#558](https://github.com/Manta-Network/Manta/pull/558) Fix try runtime and metadata diff ci workflows.
 - [\#567](https://github.com/Manta-Network/Manta/pull/567) Fix file structure of relay chian specs.
 - [\#570](https://github.com/Manta-Network/Manta/pull/570) Revert hard-coded branch of yamllint github action.
 
 ## v3.1.5-1
-
 ### Breaking changes
 
 ### Features
 
 ### Improvements
-
 - [\#475](https://github.com/Manta-Network/Manta/pull/475) New workflow for comparing runtime metadata before and after runtime upgrade.
 - [\#485](https://github.com/Manta-Network/Manta/pull/485) XCM Fees now accrue to the Treasury instead of AssetManager.
 - [\#509](https://github.com/Manta-Network/Manta/pull/509) OnRuntimeUpgrade hook for AssetManager to properly set initial configurations.
@@ -318,11 +262,9 @@
 ### Bug fixes
 
 ## v3.1.5
-
 ### Breaking changes
 
 ### Features
-
 - [\#484](https://github.com/Manta-Network/Manta/pull/484) Update to [latest MantaPay circuits](https://github.com/Manta-Network/manta-rs/pull/50)
 - [\#436](https://github.com/Manta-Network/Manta/pull/436) Dolphin XCM Integration
 - [\#430](https://github.com/Manta-Network/Manta/pull/430) Add private payment to dolphin runtime.
@@ -332,7 +274,6 @@
 - [\#358](https://github.com/Manta-Network/Manta/pull/358) Underperforming collators are automatically removed from the collator set after each session
 
 ### Improvements
-
 - [\#476](https://github.com/Manta-Network/Manta/pull/476) Set the version of feature resolver as 2.
 - [\#472](https://github.com/Manta-Network/Manta/pull/472) Improve asset manager.
 - [\#457](https://github.com/Manta-Network/Manta/pull/457) Add manual `try-runtime` CI workflow test against Calamari mainnet.
@@ -354,20 +295,17 @@
 - [\#373](https://github.com/Manta-Network/Manta/pull/373) Expose more ports in dockerfile.
 
 ### Bug fixes
-
 - [\#470](https://github.com/Manta-Network/Manta/pull/470) Fix: move deserialization of manta-pay types into the extrinsic.
 - [\#467](https://github.com/Manta-Network/Manta/pull/467) Fix ssl compilation issue in CI.
 - [\#461](https://github.com/Manta-Network/Manta/pull/461) Fix AssetManager's `update_asset_metadata` to update the underlying assets storage.
 - [\#421](https://github.com/Manta-Network/Manta/pull/421) Fix CI integration test false negatives.
 
 ## v3.1.4-1
-
 ### Breaking changes
 
 ### Features
 
 ### Improvements
-
 - Bump spec version to **3141**.
 - [\#403](https://github.com/Manta-Network/Manta/pull/403) Remove pallet_scheduler v3 migration after 3140 runtime upgrade.
 - [\#407](https://github.com/Manta-Network/Manta/pull/407) Update substrate dependencies to fix some low hanging fruit in democracy pallet.
@@ -375,13 +313,11 @@
 ### Bug fixes
 
 ## v3.1.4
-
 ### Breaking changes
 
 ### Features
 
 ### Improvements
-
 - Bump spec version to **3140**.
 - [\#377](https://github.com/Manta-Network/Manta/pull/377) Update upstream dependencies to v0.9.16.
 - [\#359](https://github.com/Manta-Network/Manta/pull/359) Update upstream dependencies to v0.9.15.
@@ -392,17 +328,14 @@
 ### Bug fixes
 
 ## v3.1.2
-
 ### Breaking changes
 
 ### Features
-
 - [\#311](https://github.com/Manta-Network/Manta/pull/311) Enable LTO for native binary build.
 - [\#312](https://github.com/Manta-Network/Manta/pull/312) Enable collator-selection.
 - [\#313](https://github.com/Manta-Network/Manta/pull/313) Add treasury to Calamari runtime.
 
 ### Improvements
-
 - Bump spec version to **3120**, transaction version to **3**.
 - Performance improvement. Re-benchmark all unfiltered pallets due to [\#313](https://github.com/Manta-Network/Manta/pull/313) and [\#329](https://github.com/Manta-Network/Manta/pull/329). So all weights are 20% ~ 40% less than release 3.1.1
 - [\#318](https://github.com/Manta-Network/Manta/pull/318) Update copyright year.
@@ -410,19 +343,15 @@
 - [\#353](https://github.com/Manta-Network/Manta/pull/353) Update dockerfile.
 
 ### Bug fixes
-
 - [\#317](https://github.com/Manta-Network/Manta/pull/317) Revert workaround for failing rococo-local runtime upgrade tests in CI.
 
 ## v3.1.1
-
 ### Breaking changes
 
 ### Features
-
 - [\#275](https://github.com/Manta-Network/Manta/pull/275) Deposit all TX fees to block authors.
 
 ### Improvements
-
 - [\#280](https://github.com/Manta-Network/Manta/pull/280) Update README.md.
 - [\#283](https://github.com/Manta-Network/Manta/pull/283) CI runtime upgrade test for manta parachain.
 - [\#288](https://github.com/Manta-Network/Manta/pull/288) Update PR template.
@@ -430,22 +359,18 @@
 - [\#296](https://github.com/Manta-Network/Manta/pull/296) Adjust `weight_2_fee` calculation to increase TX fees and improve DDoS protection.
 
 ### Bug fixes
-
 - [\#284](https://github.com/Manta-Network/Manta/pull/284) Unfilter utility for batched token transfer.
 - [\#302](https://github.com/Manta-Network/Manta/pull/302) Better CI runtime upgrade test success criteria.
 
 ## v3.1.0
-
 ### Breaking changes
 
 ### Features
-
 - [\#221](https://github.com/Manta-Network/Manta/pull/221) Add calamari-vesting pallet.
 - [\#263](https://github.com/Manta-Network/Manta/pull/263) Calamari/Manta docker image and integration tests.
 - [\#265](https://github.com/Manta-Network/Manta/pull/265) Integrate pallet-tx-pause in Manta/Calamari giving SUDO the ability to rapidly halt further execution of any extrinsic in the runtime.
 
 ### Improvements
-
 - Bump spec version to 3100
 - [\#260](https://github.com/Manta-Network/Manta/pull/260) Update weight for `pallet_democracy`/`pallet_collective`/`pallet_membership`/`pallet_scheduler`/`pallet_balances`/`calamari-vesting`.
 - [\#270](https://github.com/Manta-Network/Manta/pull/270) Whitelist `frame_system` calls and integrate custom `multisig` weights in Manta/Calamari runtimes.
@@ -460,14 +385,12 @@
 ### Features
 
 ### Improvements
-
 - [\#250](https://github.com/Manta-Network/Manta/pull/250) Manta initial release
 - [\#242](https://github.com/Manta-Network/Manta/pull/242) Update upstream dependencies to `0.9.12`. Various XCM safeguards. Bump runtime version to 5
 - [\#244](https://github.com/Manta-Network/Manta/pull/244) Align benchmarking work flow with polkadot/kusama
 - [\#245](https://github.com/Manta-Network/Manta/pull/245) Unify manta and calamari client.
 
 ### Bug fixes
-
 - [\#233](https://github.com/Manta-Network/Manta/pull/233) Fix dockerfile so that build args are available at runtime and container entrypoint is correctly executed
 
 ## v3.0.8
@@ -475,11 +398,9 @@
 ### Breaking changes
 
 ### Features
-
 - [\#190](https://github.com/Manta-Network/Manta/pull/190) Governance configurations for calamari runtime.
 
 ### Improvements
-
 - Bump spec version to 4
 
 ### Bug fixes
@@ -491,7 +412,6 @@
 ### Features
 
 ### Improvements
-
 - [\#225](https://github.com/Manta-Network/Manta/pull/225) split MA and KMA definitions.
 - Bump spec version to 3
 
@@ -500,17 +420,14 @@
 ## v3.0.6
 
 ### Breaking changes
-
 - [\#211](https://github.com/Manta-Network/Manta/pull/211) Update Parity dependencies to `v0.9.11`.
 - [Support Metadata V14](https://github.com/paritytech/cumulus/pull/623)
 
 ### Features
-
 - [Support XCM V2](https://github.com/paritytech/polkadot/pull/3629)
 - Split KMA and MA currencies into 18 decimal precision and 12 decimal precision
 
 ### Improvements
-
 - [Follow Rework Transaction Priority calculation](https://github.com/paritytech/substrate/pull/9834)
 - Refactor Node Rpc Service.
 - Remove some unused dependencies.
@@ -520,13 +437,11 @@
 ## v3.0.5
 
 ### Breaking changes
-
 - [\#195](https://github.com/Manta-Network/Manta/pull/195) Update Parity dependencies to `v0.9.10`.
 
 ### Features
 
 ### Improvements
-
 - [\#197](https://github.com/Manta-Network/Manta/pull/197) Migrate CI compilation checks to self-hosted runners.
 - [\#198](https://github.com/Manta-Network/Manta/pull/198) Improve CI/CD. Always trigger integration tests. Conditionally trigger runtime upgrade tests. Conditionally trigger release publish.
 
