@@ -643,7 +643,7 @@ pub mod pallet {
         /// * `location`: Location of the LP asset.
         /// * `metadata`: LP Asset metadata.
         #[pallet::call_index(7)]
-        #[pallet::weight(T::WeightInfo::register_asset())]
+        #[pallet::weight(T::WeightInfo::register_lp_asset())]
         #[transactional]
         pub fn register_lp_asset(
             origin: OriginFor<T>,

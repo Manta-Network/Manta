@@ -639,5 +639,11 @@ fn register_lp_asset_should_work() {
         assert_eq!(AssetIdPairToLp::<Runtime>::get((8, 11)), Some(12));
         assert_eq!(AssetIdPairToLp::<Runtime>::get((11, 8)), None);
         assert_eq!(LpToAssetIdPair::<Runtime>::get(12), Some((8, 11)));
+
+        let manta_asset_metadata13 = create_asset_metadata("LP13", "LP13", 12, 1u128, false, false);
+        assert_noop!(
+            AssetManager::register_lp_asset(RuntimeOrigin::root(), 12, 8, manta_asset_metadata13),
+            Error::<Runtime>::AssetIdNotExist
+        );
     });
 }
