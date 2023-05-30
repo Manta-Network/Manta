@@ -1034,7 +1034,15 @@ impl_runtime_apis! {
                 // manually check aura eligibility (in the new round)
                 // mirrors logic in `aura_style_filter`
                 let truncated_half_slot = (slot >> 1) as usize;
-                let active: Vec<AccountId> = pallet_parachain_staking::Pallet::<Self>::compute_top_candidates();
+                let mut active: Vec<AccountId> = pallet_parachain_staking::Pallet::<Self>::compute_top_candidates();
+                if active.is_empty() {
+                    // `SelectedCandidates` remains unchanged from last round (fallback)
+                    active = pallet_parachain_staking::Pallet::<Self>::selected_candidates();
+                    if active.is_empty() {
+                        log::error!("NimbusApi::can_author found no valid authors");
+                        return false;
+                    }
+                }
                 account == active[truncated_half_slot % active.len()]
             } else {
                 // We're not changing rounds, `PotentialAuthors` is not changing, just use can_author
