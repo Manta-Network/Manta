@@ -234,6 +234,29 @@ impl Contains<RuntimeCall> for MantaFilter {
             | RuntimeCall::Sudo(_)
             | RuntimeCall::Multisig(_)
             | RuntimeCall::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
+            | RuntimeCall::Session(_) // User must be able to set their session key when applying for a collator
+            | RuntimeCall::ParachainStaking(
+                // Collator extrinsics
+                pallet_parachain_staking::Call::join_candidates{..}
+                | pallet_parachain_staking::Call::schedule_leave_candidates{..}
+                | pallet_parachain_staking::Call::execute_leave_candidates{..}
+                | pallet_parachain_staking::Call::cancel_leave_candidates{..}
+                | pallet_parachain_staking::Call::go_offline{..}
+                | pallet_parachain_staking::Call::go_online{..}
+                | pallet_parachain_staking::Call::candidate_bond_more{..}
+                | pallet_parachain_staking::Call::schedule_candidate_bond_less{..}
+                | pallet_parachain_staking::Call::execute_candidate_bond_less{..}
+                | pallet_parachain_staking::Call::cancel_candidate_bond_less{..}
+                // Delegator extrinsics
+                | pallet_parachain_staking::Call::delegate{..}
+                | pallet_parachain_staking::Call::schedule_leave_delegators{..}
+                | pallet_parachain_staking::Call::execute_leave_delegators{..}
+                | pallet_parachain_staking::Call::cancel_leave_delegators{..}
+                | pallet_parachain_staking::Call::schedule_revoke_delegation{..}
+                | pallet_parachain_staking::Call::delegator_bond_more{..}
+                | pallet_parachain_staking::Call::schedule_delegator_bond_less{..}
+                | pallet_parachain_staking::Call::execute_delegation_request{..}
+                | pallet_parachain_staking::Call::cancel_delegation_request{..})
             | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..})
             | RuntimeCall::Balances(_)
             | RuntimeCall::Preimage(_)
