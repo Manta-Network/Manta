@@ -108,7 +108,7 @@ fn diff_tx_fees() {
             {
                 match last_release_tx_fees.find(|e| e.extrinsic.eq(extrinsic_name) && e.fee_multiplier.eq(&multiplier.to_float().to_string())) {
                     Some(found) => {
-                        let _tx_fee_with_decimal = TransactionPayment::compute_fee(*call_len, &dispatch_info, 0);
+                        let _tx_fee_with_decimal = TransactionPayment::compute_fee(*call_len, dispatch_info, 0);
                         let tx_fee_with_decimal = Multiplier::from_str(&_tx_fee_with_decimal.to_string()).unwrap();
                         let last_tx_fee = Multiplier::from_str(&found.tx_fee_with_decimal).unwrap();
                         let fluctuation = {
@@ -624,7 +624,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         // external_propose_default
         let call =
             crate::RuntimeCall::Democracy(pallet_democracy::Call::external_propose_default {
-                proposal: crate::Preimage::bound(dummy_call.clone()).unwrap(),
+                proposal: crate::Preimage::bound(dummy_call).unwrap(),
             });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -1576,7 +1576,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         // transfer, 1M tokens
         let call = crate::RuntimeCall::Balances(pallet_balances::Call::transfer {
             dest: ALICE.into(),
-            value: 1000_000,
+            value: 1_000_000,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -1620,7 +1620,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         // transfer_keep_alive, 1M tokens
         let call = crate::RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive {
             dest: ALICE.into(),
-            value: 1000_000,
+            value: 1_000_000,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -2196,7 +2196,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             when: 1,
             maybe_periodic: None,
             priority: 1,
-            call: Box::new(call.clone()),
+            call: Box::new(call),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_scheduler", "schedule", dispatch_info, call_len));
@@ -2228,7 +2228,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             after: 1,
             maybe_periodic: None,
             priority: 1,
-            call: Box::new(call.clone()),
+            call: Box::new(call),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
