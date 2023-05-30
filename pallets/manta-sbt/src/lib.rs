@@ -213,10 +213,6 @@ pub mod pallet {
         /// Max size in bytes of `mint_name` entered in `RegisteredMint`
         #[pallet::constant]
         type RegistryBound: Get<u32>;
-
-        /// The minimum weight that should remain as lazy migration executes.
-        #[pallet::constant]
-        type MinimumWeightRemainInBlock: Get<Weight>;
     }
 
     /// Counter for SBT AssetId. Increments by one every time a new asset id is requested.

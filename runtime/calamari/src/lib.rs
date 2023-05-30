@@ -923,10 +923,10 @@ mod benches {
         [pallet_parachain_staking, ParachainStaking]
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
-                // XCM
-                [cumulus_pallet_xcmp_queue, XcmpQueue]
-                [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
-                [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
+        // XCM
+        [cumulus_pallet_xcmp_queue, XcmpQueue]
+        [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
+        [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
 
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]

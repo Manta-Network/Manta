@@ -198,7 +198,6 @@ impl pallet_manta_pay::Config for Runtime {
 
 parameter_types! {
     pub const MantaSbtPalletId: PalletId = MANTA_SBT_PALLET_ID;
-    pub const MinimumWeightRemainInBlock: Weight = Weight::from_ref_time(25 * WEIGHT_PER_MILLIS);
 }
 
 impl pallet_manta_sbt::Config for Runtime {
@@ -213,7 +212,6 @@ impl pallet_manta_sbt::Config for Runtime {
         EnsureRoot<AccountId>,
         pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>,
     >;
-    type MinimumWeightRemainInBlock = MinimumWeightRemainInBlock;
     type Now = Timestamp;
     type WeightInfo = weights::pallet_manta_sbt::SubstrateWeight<Runtime>;
 }
