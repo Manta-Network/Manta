@@ -126,7 +126,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("dolphin"),
     impl_name: create_runtime_str!("dolphin"),
     authoring_version: 2,
-    spec_version: 4080,
+    spec_version: 4081,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 8,

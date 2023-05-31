@@ -9,6 +9,9 @@ resolver = "2"
 
 [profile.production]
 codegen-units = 1
+features = [
+  "on-chain-release-build",
+]
 inherits = "release"
 lto = true
 strip = "symbols"
