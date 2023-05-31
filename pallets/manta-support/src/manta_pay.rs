@@ -264,11 +264,7 @@ impl Zero for Asset {
             id: [0u8; 32],
             value: [0u8; 16],
         };
-        if *self == zero_asset {
-            true
-        } else {
-            false
-        }
+        *self == zero_asset
     }
 }
 
