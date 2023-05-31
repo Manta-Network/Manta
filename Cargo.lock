@@ -5547,6 +5547,8 @@ dependencies = [
  "pallet-balances",
  "pallet-collective",
  "pallet-democracy",
+ "pallet-manta-pay",
+ "pallet-manta-support",
  "pallet-membership",
  "pallet-multisig",
  "pallet-parachain-staking",
