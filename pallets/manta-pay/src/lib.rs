@@ -118,7 +118,7 @@ pub type FungibleLedgerError = assets::FungibleLedgerError<StandardAssetId, Asse
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use sp_runtime::traits::AccountIdConversion;
+    use sp_runtime::traits::{AccountIdConversion, Zero};
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
@@ -213,7 +213,7 @@ pub mod pallet {
             );
             if !post.receiver_posts[0].utxo.is_transparent {
                 ensure!(
-                    post.receiver_posts[0].utxo.public_asset == Asset::default(),
+                    post.receiver_posts[0].utxo.public_asset == Asset::zero(),
                     Error::<T>::UnrestrictedPublicAsset
                 );
             }
@@ -245,7 +245,7 @@ pub mod pallet {
             );
             if !post.receiver_posts[0].utxo.is_transparent {
                 ensure!(
-                    post.receiver_posts[0].utxo.public_asset == Asset::default(),
+                    post.receiver_posts[0].utxo.public_asset == Asset::zero(),
                     Error::<T>::UnrestrictedPublicAsset
                 );
             }
@@ -286,7 +286,7 @@ pub mod pallet {
             for post in post.receiver_posts.iter() {
                 if !post.utxo.is_transparent {
                     ensure!(
-                        post.utxo.public_asset == Asset::default(),
+                        post.utxo.public_asset == Asset::zero(),
                         Error::<T>::UnrestrictedPublicAsset
                     );
                 }

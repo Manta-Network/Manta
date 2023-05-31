@@ -22,7 +22,7 @@ use crate::{
     },
     Error, FungibleLedger,
 };
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, sp_runtime::traits::Zero};
 use manta_accounting::transfer::test::value_distribution;
 use manta_crypto::{
     arkworks::constraint::fp::Fp,
@@ -789,11 +789,11 @@ fn unrestricted_public_asset_now_allowed() {
         let total_supply: u128 = rng.gen();
         let unrestricted_asset_id = crate::Asset {
             id: [1u8; 32],
-            ..Default::default()
+            ..Zero::zero()
         };
         let unrestricted_asset_value = crate::Asset {
             value: [1u8; 16],
-            ..Default::default()
+            ..Zero::zero()
         };
 
         let mut mint = sample_to_private(field_from_id(1), 10, &mut rng);
