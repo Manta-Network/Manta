@@ -51,8 +51,8 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use manta_primitives::assets::{
-        self, AssetConfig, AssetIdLocationMap, AssetIdType, AssetMetadata, AssetRegistry,
-        FungibleLedger, LocationType,
+        self, AssetConfig, AssetIdLocationMap, AssetIdLpMap, AssetIdType, AssetMetadata,
+        AssetRegistry, FungibleLedger, LocationType,
     };
     use orml_traits::GetByKey;
     use sp_runtime::{
@@ -152,6 +152,22 @@ pub mod pallet {
         }
     }
 
+    impl<T> AssetIdLpMap for Pallet<T>
+    where
+        T: Config,
+    {
+        fn lp_asset_id(
+            asset_id0: &Self::AssetId,
+            asset_id1: &Self::AssetId,
+        ) -> Option<Self::AssetId> {
+            AssetIdPairToLp::<T>::get((asset_id0, asset_id1))
+        }
+
+        fn lp_asset_pool(pool_id: &Self::AssetId) -> Option<Self::AssetId> {
+            LpToAssetIdPair::<T>::get(pool_id).map(|_| *pool_id)
+        }
+    }
+
     impl<T> assets::UnitsPerSecond for Pallet<T>
     where
         T: Config,
@@ -203,6 +219,21 @@ pub mod pallet {
 
             /// Location of the new Asset
             location: T::Location,
+
+            /// Metadata Registered to Asset Manager
+            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+        },
+
+        /// A LP asset was registered
+        LPAssetRegistered {
+            /// Asset Id of new Asset
+            asset_id0: T::AssetId,
+
+            /// Asset Id of new Asset
+            asset_id1: T::AssetId,
+
+            /// Asset Id of new Asset
+            asset_id: T::AssetId,
 
             /// Metadata Registered to Asset Manager
             metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
@@ -275,7 +306,7 @@ pub mod pallet {
         /// Location Already Exists
         LocationAlreadyExists,
 
-        /// An error occured while creating a new asset at the [`AssetRegistry`].
+        /// An error occurred while creating a new asset at the [`AssetRegistry`].
         ErrorCreatingAsset,
 
         /// There was an attempt to update a non-existent asset.
@@ -292,6 +323,12 @@ pub mod pallet {
 
         /// An error occurred while updating the parachain id.
         UpdateParaIdError,
+
+        /// Two asset that used for generate LP asset should different
+        AssetIdNotDifferent,
+
+        /// Two asset that used for generate LP asset should exist
+        AssetIdNotExist,
     }
 
     /// [`AssetId`](AssetConfig::AssetId) to [`MultiLocation`] Map
@@ -345,11 +382,23 @@ pub mod pallet {
     pub type FilteredOutgoingAssetLocations<T: Config> =
         StorageMap<_, Blake2_128Concat, Option<MultiLocation>, ()>;
 
+    /// AssetId pair to LP asset id mapping.
+    #[pallet::storage]
+    #[pallet::getter(fn asset_id_pair_to_lp)]
+    pub(super) type AssetIdPairToLp<T: Config> =
+        StorageMap<_, Blake2_128Concat, (T::AssetId, T::AssetId), T::AssetId>;
+
+    /// LP asset id to asset id pair mapping.
+    #[pallet::storage]
+    #[pallet::getter(fn lp_to_asset_id_pair)]
+    pub(super) type LpToAssetIdPair<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AssetId, (T::AssetId, T::AssetId)>;
+
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Register a new asset in the asset manager.
         ///
-        /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
+        /// * `origin`: Caller of this extrinsic, the access control is specified by `ModifierOrigin`.
         /// * `location`: Location of the asset.
         /// * `metadata`: Asset metadata.
         /// * `min_balance`: Minimum balance to keep an account alive, used in conjunction with `is_sufficient`.
@@ -364,21 +413,8 @@ pub mod pallet {
             metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
-            ensure!(
-                !LocationAssetId::<T>::contains_key(&location),
-                Error::<T>::LocationAlreadyExists
-            );
-            let asset_id = Self::next_asset_id_and_increment()?;
-            <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
-                asset_id,
-                metadata.clone().into(),
-                metadata.min_balance().clone(),
-                metadata.is_sufficient(),
-            )
-            .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
-            AssetIdLocation::<T>::insert(asset_id, &location);
-            AssetIdMetadata::<T>::insert(asset_id, &metadata);
-            LocationAssetId::<T>::insert(&location, asset_id);
+
+            let asset_id = Self::do_register_asset(Some(&location), &metadata)?;
 
             // If it's a new para id, which will be inserted with AssetCount as 1.
             // If not, AssetCount will increased by 1.
@@ -398,7 +434,7 @@ pub mod pallet {
 
         /// Update an asset by its asset id in the asset manager.
         ///
-        /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
+        /// * `origin`: Caller of this extrinsic, the access control is specified by `ModifierOrigin`.
         /// * `asset_id`: AssetId to be updated.
         /// * `location`: `location` to update the asset location.
         #[pallet::call_index(1)]
@@ -598,12 +634,83 @@ pub mod pallet {
             }
             Ok(())
         }
+
+        /// Register a LP(liquidity provider) asset in the asset manager based on two given already exist asset.
+        ///
+        /// * `origin`: Caller of this extrinsic, the access control is specified by `ModifierOrigin`.
+        /// * `asset_0`: First assetId.
+        /// * `asset_1`: Second assetId.
+        /// * `location`: Location of the LP asset.
+        /// * `metadata`: LP Asset metadata.
+        #[pallet::call_index(7)]
+        #[pallet::weight(T::WeightInfo::register_lp_asset())]
+        #[transactional]
+        pub fn register_lp_asset(
+            origin: OriginFor<T>,
+            asset_0: T::AssetId,
+            asset_1: T::AssetId,
+            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+        ) -> DispatchResult {
+            T::ModifierOrigin::ensure_origin(origin)?;
+            ensure!(asset_0 != asset_1, Error::<T>::AssetIdNotDifferent);
+            ensure!(
+                AssetIdLocation::<T>::contains_key(asset_0)
+                    && AssetIdLocation::<T>::contains_key(asset_1),
+                Error::<T>::AssetIdNotExist
+            );
+
+            let (asset_id0, asset_id1) = Self::sort_asset_id(asset_0, asset_1);
+            ensure!(
+                !AssetIdPairToLp::<T>::contains_key((&asset_id0, &asset_id1)),
+                Error::<T>::AssetAlreadyRegistered
+            );
+
+            let asset_id = Self::do_register_asset(None, &metadata)?;
+
+            AssetIdPairToLp::<T>::insert((asset_id0, asset_id1), asset_id);
+            LpToAssetIdPair::<T>::insert(asset_id, (asset_id0, asset_id1));
+
+            Self::deposit_event(Event::<T>::LPAssetRegistered {
+                asset_id0,
+                asset_id1,
+                asset_id,
+                metadata,
+            });
+            Ok(())
+        }
     }
 
     impl<T> Pallet<T>
     where
         T: Config,
     {
+        /// Register asset by providing optional location and metadata.
+        pub fn do_register_asset(
+            location: Option<&T::Location>,
+            metadata: &<T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+        ) -> Result<T::AssetId, DispatchError> {
+            if let Some(location) = location {
+                ensure!(
+                    !LocationAssetId::<T>::contains_key(location),
+                    Error::<T>::LocationAlreadyExists
+                );
+            }
+            let asset_id = Self::next_asset_id_and_increment()?;
+            <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
+                asset_id,
+                metadata.clone().into(),
+                metadata.min_balance().clone(),
+                metadata.is_sufficient(),
+            )
+            .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
+            AssetIdMetadata::<T>::insert(asset_id, metadata);
+            if let Some(location) = location {
+                AssetIdLocation::<T>::insert(asset_id, location);
+                LocationAssetId::<T>::insert(location, asset_id);
+            }
+            Ok(asset_id)
+        }
+
         /// Returns and increments the [`NextAssetId`] by one.
         #[inline]
         fn next_asset_id_and_increment() -> Result<T::AssetId, DispatchError> {
@@ -653,6 +760,15 @@ pub mod pallet {
 
         pub fn check_outgoing_assets_filter(asset_location: &Option<MultiLocation>) -> bool {
             FilteredOutgoingAssetLocations::<T>::contains_key(asset_location)
+        }
+
+        /// Sorted the assets pair
+        pub fn sort_asset_id(asset_0: T::AssetId, asset_1: T::AssetId) -> (T::AssetId, T::AssetId) {
+            if asset_0 < asset_1 {
+                (asset_0, asset_1)
+            } else {
+                (asset_1, asset_0)
+            }
         }
     }
 
