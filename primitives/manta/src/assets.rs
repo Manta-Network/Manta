@@ -280,13 +280,22 @@ impl From<AssetLocation> for Option<MultiLocation> {
     }
 }
 
-///
+/// AssetId and Location query trait.
 pub trait AssetIdLocationMap: AssetIdType + LocationType {
     /// Returns the [`Location`](LocationType::Location) of `asset_id`.
     fn location(asset_id: &Self::AssetId) -> Option<Self::Location>;
 
     /// Returns the [`AssetId`](AssetIdType::AssetId) located at `location`.
     fn asset_id(location: &Self::Location) -> Option<Self::AssetId>;
+}
+
+/// AssetId and PoolId query trait.
+pub trait AssetIdLpMap: AssetIdType {
+    /// Returns the `lp_asset_id` by assets.
+    fn lp_asset_id(asset_id0: &Self::AssetId, asset_id1: &Self::AssetId) -> Option<Self::AssetId>;
+
+    /// Returns the `lp_asset_id` by PoolId
+    fn lp_asset_pool(pool_id: &Self::AssetId) -> Option<Self::AssetId>;
 }
 
 /// Defines the units per second charged given an `AssetId`.
@@ -390,6 +399,12 @@ pub trait FungibleLedger: AssetIdType + BalanceType {
     /// Account Id Type
     type AccountId;
 
+    /// Get balance
+    fn balance(asset_id: Self::AssetId, account: &Self::AccountId) -> Self::Balance;
+
+    /// Total supply
+    fn supply(asset_id: Self::AssetId) -> Self::Balance;
+
     /// Checks if an asset id is valid and returning and [`Error`](FungibleLedgerError) otherwise.
     fn ensure_valid(
         asset_id: Self::AssetId,
@@ -483,6 +498,22 @@ where
         + Transfer<C::AccountId>,
 {
     type AccountId = C::AccountId;
+
+    fn balance(asset_id: Self::AssetId, account: &Self::AccountId) -> Self::Balance {
+        if asset_id == A::NativeAssetId::get() {
+            Native::balance(account)
+        } else {
+            NonNative::balance(asset_id, account)
+        }
+    }
+
+    fn supply(asset_id: Self::AssetId) -> Self::Balance {
+        if asset_id == A::NativeAssetId::get() {
+            <Native as fungible::Inspect<C::AccountId>>::total_issuance()
+        } else {
+            NonNative::total_issuance(asset_id)
+        }
+    }
 
     #[inline]
     fn ensure_valid(

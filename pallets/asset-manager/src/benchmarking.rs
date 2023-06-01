@@ -120,7 +120,6 @@ benchmarks! {
     set_min_xcm_fee {
         let assets_count = 1000;
         for i in 8..assets_count + 8 {
-
             let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
             let location = T::Location::from(location.clone());
             let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
@@ -154,6 +153,20 @@ benchmarks! {
         assert_last_event::<T>(crate::Event::AssetLocationFilteredForOutgoingTransfers { filtered_location: location.into() }.into());
     }
 
+    register_lp_asset {
+        let assets_count = 10;
+        for i in 8..assets_count {
+            let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
+            let location = T::Location::from(location.clone());
+            let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
+            Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
+        }
+        let lp_metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
+    }: _(RawOrigin::Root, <T as Config>::AssetId::from(8), <T as Config>::AssetId::from(9), lp_metadata)
+    verify {
+        assert_eq!(Pallet::<T>::asset_id_pair_to_lp((<T as Config>::AssetId::from(8), <T as Config>::AssetId::from(9))), Some(<T as Config>::AssetId::from(10)));
+        assert_eq!(Pallet::<T>::lp_to_asset_id_pair(<T as Config>::AssetId::from(10)), Some((<T as Config>::AssetId::from(8), <T as Config>::AssetId::from(9))));
+    }
 }
 
 impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Runtime);
