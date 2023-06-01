@@ -851,7 +851,7 @@ mod tx_pause_tests {
         let all_pallet_names: Vec<&str> = all_pallets.into_iter().map(|info| info.name).collect();
         for pallet in NonPausablePallets::get() {
             let pallet_str = sp_std::str::from_utf8(&pallet).unwrap();
-            assert!(all_pallet_names.contains(&pallet_str), "{:?}", pallet_str);
+            assert!(all_pallet_names.contains(&pallet_str), "{pallet_str:?}");
         }
     }
 }
@@ -1509,6 +1509,35 @@ mod governance_tests {
                 referendum_index,
                 start_of_referendum + VotingPeriod::get(),
                 EnactmentPeriod::get(),
+            );
+        });
+    }
+
+    #[test]
+    fn asset_manager_filters_outgoing_assets_with_council() {
+        ExtBuilder::default().build().execute_with(|| {
+            // Setup the preimage and preimage hash
+            let runtime_call = RuntimeCall::AssetManager(
+                pallet_asset_manager::Call::update_outgoing_filtered_assets {
+                    filtered_location: MultiLocation::default().into(),
+                    should_add: true,
+                },
+            );
+
+            assert_ok!(Council::set_members(
+                root_origin(),
+                vec![ALICE.clone()],
+                None,
+                0
+            ));
+            let council_motion_hash = propose_council_motion(&runtime_call, &ALICE);
+
+            assert_eq!(
+                last_event(),
+                RuntimeEvent::Council(pallet_collective::Event::Executed {
+                    proposal_hash: council_motion_hash,
+                    result: Ok(())
+                })
             );
         });
     }

@@ -65,6 +65,7 @@ use runtime_common::{
     prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, SlowAdjustingFeeUpdate,
 };
 use session_key_primitives::{AuraId, NimbusId, VrfId};
+use zenlink_protocol::{AssetBalance, AssetId as ZenlinkAssetId, MultiAssetsHandler, PairInfo};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -81,6 +82,7 @@ pub mod migrations;
 mod nimbus_session_adapter;
 pub mod staking;
 pub mod xcm_config;
+pub mod zenlink;
 
 use currency::*;
 use impls::DealWithFees;
@@ -134,7 +136,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 4080,
+    spec_version: 4081,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 13,
@@ -299,6 +301,8 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..}
                 | orml_xtokens::Call::transfer_multicurrencies {..})
             | RuntimeCall::TransactionPause(_)
+            | RuntimeCall::ZenlinkProtocol(_)
+            | RuntimeCall::AssetManager(pallet_asset_manager::Call::update_outgoing_filtered_assets {..})
             | RuntimeCall::Utility(_) => true,
 
             // DISALLOW anything else
@@ -854,6 +858,7 @@ construct_runtime!(
 
         // Calamari stuff
         CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
+        ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 51,
     }
 );
 
@@ -915,7 +920,6 @@ mod benches {
         [pallet_scheduler, Scheduler]
         [pallet_session, SessionBench::<Runtime>]
         [pallet_assets, Assets]
-
         // Manta pallets
         [calamari_vesting, CalamariVesting]
         [pallet_tx_pause, TransactionPause]
@@ -924,11 +928,12 @@ mod benches {
         [pallet_parachain_staking, ParachainStaking]
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
-                // XCM
-                [cumulus_pallet_xcmp_queue, XcmpQueue]
-                [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
-                [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
-
+        // Dex
+        [zenlink_protocol, ZenlinkProtocol]
+        // XCM
+        [cumulus_pallet_xcmp_queue, XcmpQueue]
+        [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
+        [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
     );
@@ -1118,6 +1123,68 @@ impl_runtime_apis! {
                 // We're not changing rounds, `PotentialAuthors` is not changing, just use can_author
                 <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
             }
+        }
+    }
+
+    // zenlink runtime outer apis
+    impl zenlink_protocol_runtime_api::ZenlinkProtocolApi<Block, AccountId, ZenlinkAssetId> for Runtime {
+
+        fn get_balance(
+            asset_id: ZenlinkAssetId,
+            owner: AccountId
+        ) -> AssetBalance {
+            <<Runtime as zenlink_protocol::Config>::MultiAssetsHandler as MultiAssetsHandler<AccountId, ZenlinkAssetId>>::balance_of(asset_id, &owner)
+        }
+
+        fn get_pair_by_asset_id(
+            asset_0: ZenlinkAssetId,
+            asset_1: ZenlinkAssetId
+        ) -> Option<PairInfo<AccountId, AssetBalance, ZenlinkAssetId>> {
+            ZenlinkProtocol::get_pair_by_asset_id(asset_0, asset_1)
+        }
+
+        fn get_amount_in_price(
+            supply: AssetBalance,
+            path: Vec<ZenlinkAssetId>
+        ) -> AssetBalance {
+            ZenlinkProtocol::desired_in_amount(supply, path)
+        }
+
+        fn get_amount_out_price(
+            supply: AssetBalance,
+            path: Vec<ZenlinkAssetId>
+        ) -> AssetBalance {
+            ZenlinkProtocol::supply_out_amount(supply, path)
+        }
+
+        fn get_estimate_lptoken(
+            token_0: ZenlinkAssetId,
+            token_1: ZenlinkAssetId,
+            amount_0_desired: AssetBalance,
+            amount_1_desired: AssetBalance,
+            amount_0_min: AssetBalance,
+            amount_1_min: AssetBalance,
+        ) -> AssetBalance{
+            ZenlinkProtocol::get_estimate_lptoken(
+                token_0,
+                token_1,
+                amount_0_desired,
+                amount_1_desired,
+                amount_0_min,
+                amount_1_min
+            )
+        }
+
+        fn calculate_remove_liquidity(
+            asset_0: ZenlinkAssetId,
+            asset_1: ZenlinkAssetId,
+            amount: AssetBalance,
+        ) -> Option<(AssetBalance, AssetBalance)> {
+            ZenlinkProtocol::calculate_remove_liquidity(
+                asset_0,
+                asset_1,
+                amount
+            )
         }
     }
 

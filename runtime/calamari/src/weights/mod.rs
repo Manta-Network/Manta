@@ -39,3 +39,4 @@ pub mod pallet_treasury;
 pub mod pallet_tx_pause;
 pub mod pallet_utility;
 pub mod xcm;
+pub mod zenlink_protocol;

@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    weights, xcm_config::SelfReserve, AssetManager, Assets, Balances,
+    weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, CouncilCollective,
     NativeTokenExistentialDeposit, Runtime, RuntimeEvent, RuntimeOrigin,
 };
 
@@ -31,7 +31,7 @@ use manta_primitives::{
 use frame_support::{
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU32},
+    traits::{AsEnsureOriginWithArg, ConstU32, EitherOfDiverse},
     PalletId,
 };
 use frame_system::EnsureRoot;
@@ -174,7 +174,10 @@ impl pallet_asset_manager::Config for Runtime {
     type Location = AssetLocation;
     type AssetConfig = MantaAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId>;
-    type SuspenderOrigin = EnsureRoot<AccountId>;
+    type SuspenderOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 4>,
+    >;
     type PalletId = AssetManagerPalletId;
     type WeightInfo = weights::pallet_asset_manager::SubstrateWeight<Runtime>;
 }
