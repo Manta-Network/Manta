@@ -52,6 +52,7 @@ pub trait WeightInfo {
     fn mint_asset() -> Weight;
     fn set_min_xcm_fee() -> Weight;
     fn update_outgoing_filtered_assets() -> Weight;
+    fn register_lp_asset() -> Weight;
 }
 
 /// Weights for pallet_asset_manager using the Substrate node and recommended hardware.
@@ -105,10 +106,22 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
         Weight::from_ref_time(49_509_000)
             .saturating_add(T::DbWeight::get().writes(1_u64))
     }
-
     fn update_outgoing_filtered_assets() -> Weight {
         Weight::from_ref_time(49_509_000)
             .saturating_add(RocksDbWeight::get().writes(1_u64))
+    }
+    // Storage: AssetManager AssetIdLocation (r:2 w:0)
+    // Storage: AssetManager AssetIdPairToLp (r:1 w:1)
+    // Storage: AssetManager NextAssetId (r:1 w:1)
+    // Storage: Assets Asset (r:1 w:1)
+    // Storage: Assets Metadata (r:1 w:1)
+    // Storage: AssetManager AssetIdMetadata (r:0 w:1)
+    // Storage: AssetManager LpToAssetIdPair (r:0 w:1)
+    fn register_lp_asset() -> Weight {
+        // Minimum execution time: 546_000 nanoseconds.
+        Weight::from_ref_time(546_000_000)
+            .saturating_add(T::DbWeight::get().reads(6))
+            .saturating_add(T::DbWeight::get().writes(6))
     }
 }
 
@@ -162,9 +175,21 @@ impl WeightInfo for () {
         Weight::from_ref_time(49_509_000)
             .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
-
     fn update_outgoing_filtered_assets() -> Weight {
         Weight::from_ref_time(49_509_000)
             .saturating_add(RocksDbWeight::get().writes(1_u64))
+    }
+    // Storage: AssetManager AssetIdLocation (r:2 w:0)
+    // Storage: AssetManager AssetIdPairToLp (r:1 w:1)
+    // Storage: AssetManager NextAssetId (r:1 w:1)
+    // Storage: Assets Asset (r:1 w:1)
+    // Storage: Assets Metadata (r:1 w:1)
+    // Storage: AssetManager AssetIdMetadata (r:0 w:1)
+    // Storage: AssetManager LpToAssetIdPair (r:0 w:1)
+    fn register_lp_asset() -> Weight {
+        // Minimum execution time: 546_000 nanoseconds.
+        Weight::from_ref_time(546_000_000)
+            .saturating_add(RocksDbWeight::get().reads(6))
+            .saturating_add(RocksDbWeight::get().writes(6))
     }
 }
