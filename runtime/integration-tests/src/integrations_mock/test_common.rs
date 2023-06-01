@@ -1512,4 +1512,33 @@ mod governance_tests {
             );
         });
     }
+
+    #[test]
+    fn asset_manager_filters_outgoing_assets_with_council() {
+        ExtBuilder::default().build().execute_with(|| {
+            // Setup the preimage and preimage hash
+            let runtime_call = RuntimeCall::AssetManager(
+                pallet_asset_manager::Call::update_outgoing_filtered_assets {
+                    filtered_location: MultiLocation::default().into(),
+                    should_add: true,
+                },
+            );
+
+            assert_ok!(Council::set_members(
+                root_origin(),
+                vec![ALICE.clone()],
+                None,
+                0
+            ));
+            let council_motion_hash = propose_council_motion(&runtime_call, &ALICE);
+
+            assert_eq!(
+                last_event(),
+                RuntimeEvent::Council(pallet_collective::Event::Executed {
+                    proposal_hash: council_motion_hash,
+                    result: Ok(())
+                })
+            );
+        });
+    }
 }
