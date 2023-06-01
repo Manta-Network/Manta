@@ -65,8 +65,8 @@ use frame_system::pallet_prelude::*;
 use manta_support::manta_pay::{
     asset_value_encode, fp_decode, fp_encode, id_from_field, AccountId, AssetValue, Checkpoint,
     FullIncomingNote, MTParametersError, Proof, PullResponse, ReceiverChunk, StandardAssetId,
-    TransferPost, Utxo, UtxoAccumulatorOutput, UtxoItemHashError, UtxoMerkleTreePath,
-    VerifyingContextError, Wrap, WrapPair,
+    TransferPost, Utxo, UtxoItemHashError, UtxoMerkleTreePath, VerifyingContextError, Wrap,
+    WrapPair,
 };
 use sha3::{Digest, Keccak256};
 use sp_core::{H160, H256, U256};
@@ -294,11 +294,6 @@ pub mod pallet {
     #[pallet::storage]
     pub(super) type ShardTrees<T: Config> =
         StorageMap<_, Twox64Concat, u8, UtxoMerkleTreePath, ValueQuery>;
-
-    /// Outputs of Utxo Accumulator
-    #[pallet::storage]
-    pub(super) type UtxoAccumulatorOutputs<T: Config> =
-        StorageMap<_, Twox64Concat, UtxoAccumulatorOutput, (), ValueQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T>
@@ -1193,12 +1188,10 @@ where
         // NOTE: Checking for an empty(zeroed) byte array. This happens for UTXOs with `value = 0`,
         // for which you don't need a membership proof, but you still need a root (in this case
         // zeroed).
-        if accumulator_output == [0u8; 32]
-            || UtxoAccumulatorOutputs::<T>::contains_key(accumulator_output)
-        {
+        if accumulator_output == [0u8; 32] {
             return Ok(Wrap(output));
         }
-        Err(SenderLedgerError::InvalidUtxoAccumulatorOutput)
+        Err(SenderLedgerError::NoSenderLedger)
     }
 
     #[inline]
@@ -1314,12 +1307,8 @@ where
             tree.leaf_digest = leaf_digest
                 .map(|x| fp_encode(x).map_err(ReceiverLedgerError::FpEncodeError))
                 .map_or(Ok(None), |r| r.map(Some))?;
-            if let Some(next_root) = next_root {
+            if let Some(_next_root) = next_root {
                 ShardTrees::<T>::insert(shard_index, tree);
-                UtxoAccumulatorOutputs::<T>::insert(
-                    fp_encode(next_root).map_err(ReceiverLedgerError::FpEncodeError)?,
-                    (),
-                );
             }
         }
         Ok(())
