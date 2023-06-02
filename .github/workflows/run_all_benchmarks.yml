@@ -65,9 +65,9 @@ jobs:
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install stable
-          rustup default stable
           rustup update
           rustup target add wasm32-unknown-unknown
+          rustup default nightly-2023-01-01
       - name: build benchmarking binary
         env:
           RUST_BACKTRACE: full
