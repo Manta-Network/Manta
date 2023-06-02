@@ -26,7 +26,7 @@ use pallet_manta_sbt::{
     runtime::SBTPullLedgerDiffApi,
 };
 
-/// Instantiate all RPC extensions for calamari.
+/// Instantiate all RPC extensions for manta.
 pub fn create_manta_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, sc_service::Error>
 where
     C: ProvideRuntimeApi<Block>
