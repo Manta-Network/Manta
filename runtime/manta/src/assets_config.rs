@@ -16,7 +16,8 @@
 
 use super::{
     weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, CouncilCollective,
-    NativeTokenExistentialDeposit, Runtime, RuntimeEvent, RuntimeOrigin,
+    NativeTokenExistentialDeposit, Runtime, RuntimeEvent, RuntimeOrigin, TechnicalCollective,
+    Timestamp, MANTA,
 };
 
 use manta_primitives::{
@@ -24,14 +25,14 @@ use manta_primitives::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
         AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
-    constants::{ASSET_MANAGER_PALLET_ID, MANTA_DECIMAL, MANTA_PAY_PALLET_ID},
+    constants::{ASSET_MANAGER_PALLET_ID, MANTA_DECIMAL, MANTA_PAY_PALLET_ID, MANTA_SBT_PALLET_ID},
     types::{AccountId, Balance, MantaAssetId},
 };
 
 use frame_support::{
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU32, EitherOfDiverse},
+    traits::{AsEnsureOriginWithArg, ConstU128, ConstU16, ConstU32, EitherOfDiverse},
     PalletId,
 };
 use frame_system::EnsureRoot;
@@ -184,6 +185,7 @@ impl pallet_asset_manager::Config for Runtime {
 
 parameter_types! {
     pub const MantaPayPalletId: PalletId = MANTA_PAY_PALLET_ID;
+    pub const MantaSbtPalletId: PalletId = MANTA_SBT_PALLET_ID;
 }
 
 impl pallet_manta_pay::Config for Runtime {
@@ -191,4 +193,20 @@ impl pallet_manta_pay::Config for Runtime {
     type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
     type AssetConfig = MantaAssetConfig;
     type PalletId = MantaPayPalletId;
+}
+
+impl pallet_manta_sbt::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type PalletId = MantaSbtPalletId;
+    type Currency = Balances;
+    type MintsPerReserve = ConstU16<5>;
+    type ReservePrice = ConstU128<{ 100_000 * MANTA }>;
+    type SbtMetadataBound = ConstU32<300>;
+    type RegistryBound = ConstU32<300>;
+    type AdminOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>,
+    >;
+    type Now = Timestamp;
+    type WeightInfo = weights::pallet_manta_sbt::SubstrateWeight<Runtime>;
 }
