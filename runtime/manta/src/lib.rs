@@ -64,6 +64,7 @@ use manta_primitives::{
     constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
+use manta_support::manta_pay::{PullResponse, RawCheckpoint};
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use pallet_session::ShouldEndSession;
 use runtime_common::{
@@ -260,6 +261,7 @@ impl Contains<RuntimeCall> for MantaFilter {
             | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..})
             | RuntimeCall::Balances(_)
             | RuntimeCall::Preimage(_)
+            | RuntimeCall::MantaSbt(_)
             | RuntimeCall::TransactionPause(_)
             | RuntimeCall::AssetManager(pallet_asset_manager::Call::update_outgoing_filtered_assets {..})
             | RuntimeCall::Utility(_) => true,
@@ -810,6 +812,7 @@ construct_runtime!(
         // Assets management
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
+        MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
     }
 );
 
@@ -880,6 +883,7 @@ mod benches {
         [pallet_tx_pause, TransactionPause]
         [manta_collator_selection, CollatorSelection]
         [pallet_parachain_staking, ParachainStaking]
+        [pallet_manta_sbt, MantaSbt]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
     );
@@ -1048,6 +1052,19 @@ impl_runtime_apis! {
                 // We're not changing rounds, `PotentialAuthors` is not changing, just use can_author
                 <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
             }
+        }
+    }
+
+    impl pallet_manta_sbt::runtime::SBTPullLedgerDiffApi<Block> for Runtime {
+        fn sbt_pull_ledger_diff(
+            checkpoint: RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> PullResponse {
+            MantaSbt::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
+        fn sbt_pull_ledger_total_count() -> [u8; 16] {
+            MantaSbt::pull_ledger_total_count()
         }
     }
 

@@ -28,7 +28,9 @@ use std::sync::Arc;
 mod calamari;
 mod common;
 mod dolphin;
+mod manta;
 
+pub use self::manta::create_manta_full;
 pub use calamari::create_calamari_full;
 pub use common::create_common_full;
 pub use dolphin::create_dolphin_full;
