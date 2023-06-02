@@ -783,7 +783,7 @@ fn pull_ledger_diff_should_work() {
 
 /// Unrestricted public assets in receiver posts are not allowed
 #[test]
-fn unrestricted_public_asset_now_allowed() {
+fn unrestricted_public_asset_not_allowed() {
     new_test_ext().execute_with(|| {
         let mut rng = OsRng;
         let total_supply: u128 = rng.gen();
