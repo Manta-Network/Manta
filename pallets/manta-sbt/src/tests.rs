@@ -106,7 +106,7 @@ fn initialize_test() {
         1_000_000_000_000_000,
         0
     ));
-    assert_ok!(MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE)));
+    assert_ok!(MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None));
 }
 
 /// Tests that single to_private tx works

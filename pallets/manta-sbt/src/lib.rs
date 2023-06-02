@@ -343,17 +343,28 @@ pub mod pallet {
         #[pallet::call_index(1)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::reserve_sbt())]
         #[transactional]
-        pub fn reserve_sbt(origin: OriginFor<T>) -> DispatchResult {
+        pub fn reserve_sbt(origin: OriginFor<T>, reservee: Option<T::AccountId>) -> DispatchResult {
             let who = ensure_signed(origin)?;
+            // Use reservee account, if None then use account whom signed transaction
+            let reserve_account = reservee.unwrap_or(who.clone());
 
-            // Charges fee to reserve AssetIds
-            <T as pallet::Config>::Currency::transfer(
-                &who,
-                &Self::account_id(),
-                T::ReservePrice::get(),
-                ExistenceRequirement::KeepAlive,
-            )?;
+            let allowlist_account = AllowlistAccount::<T>::get();
+            // check if account is allowlist account... if it is can do operation for free
+            if allowlist_account.as_ref() != Some(&who) {
+                // Charges fee to tx caller to reserve AssetIds
+                <T as pallet::Config>::Currency::transfer(
+                    &who,
+                    &Self::account_id(),
+                    T::ReservePrice::get(),
+                    ExistenceRequirement::KeepAlive,
+                )?;
+            }
 
+            // ensure account does not have any `AssetId` already reserved
+            ensure!(
+                !ReservedIds::<T>::contains_key(&reserve_account),
+                Error::<T>::AssetIdsAlreadyReserved
+            );
             // Reserves uniques AssetIds to be used later to mint SBTs
             let asset_id_range: Vec<StandardAssetId> = (0..T::MintsPerReserve::get())
                 .map(|_| Self::next_sbt_id_and_increment())
@@ -363,9 +374,10 @@ pub mod pallet {
             let start_id: StandardAssetId = *asset_id_range.first().ok_or(Error::<T>::ZeroMints)?;
             let stop_id: StandardAssetId = *asset_id_range.last().ok_or(Error::<T>::ZeroMints)?;
 
-            ReservedIds::<T>::insert(&who, (start_id, stop_id));
+            ReservedIds::<T>::insert(&reserve_account, (start_id, stop_id));
             Self::deposit_event(Event::<T>::SBTReserved {
                 who,
+                reserve_account,
                 start_id,
                 stop_id,
             });
@@ -569,6 +581,8 @@ pub mod pallet {
         SBTReserved {
             /// Public Account reserving SBT mints
             who: T::AccountId,
+            /// Account which recieves reserved AssetIds, can be the same as the above account
+            reserve_account: T::AccountId,
             /// Start of `AssetIds` reserved for use on private ledger
             start_id: StandardAssetId,
             /// End of `AssetIds` reserved for use private ledger, does not include this value
@@ -796,6 +810,9 @@ pub mod pallet {
 
         /// MintId does not exist, cannot update a nonexistent MintId
         InvalidMintId,
+
+        /// Already has unused AssetIds reserved
+        AssetIdsAlreadyReserved,
     }
 }
 
