@@ -125,7 +125,7 @@ jobs:
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
-          rustup toolchain install stable
+          rustup toolchain install nightly-2023-01-01
           rustup update
           rustup target add wasm32-unknown-unknown
           rustup default nightly-2023-01-01
