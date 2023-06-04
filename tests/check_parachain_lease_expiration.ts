@@ -4,6 +4,8 @@ import '@polkadot/api-augment/kusama';
 import '@polkadot/api-augment/polkadot';
 import { assert } from 'chai';
 
+const TEST_TIMEOUT = 300000; // 5 minutes
+
 export async function createPromiseApi(nodeAddress: string) {
   const wsProvider = new WsProvider(nodeAddress);
 
@@ -44,7 +46,7 @@ describe('Check Parachain_Lease_Expiration', () => {
             const remainingDays = leasePeriod * relaychainBlockTime * (remainingLeaseLength.length - 1) / oneDay + (currentLeaseRemainedBlocks * relaychainBlockTime / oneDay);
             console.log(`Manta parachain lease has ${remainingDays} days remaining.`);
         }
-    }).timeout(2000000);
+    }).timeout(TEST_TIMEOUT);
 
     it.skip('Check Calamari Parachain Lease', async () => {
         const kusamaNode = 'wss://kusama.api.onfinality.io/public-ws';
@@ -74,5 +76,5 @@ describe('Check Parachain_Lease_Expiration', () => {
             const remainingDays = leasePeriod * relaychainBlockTime * (remainingLeaseLength.length - 1) / oneDay + (currentLeaseRemainedBlocks * relaychainBlockTime / oneDay);
             console.log(`Calamari parachain lease has ${remainingDays} days remaining.`);
         }
-    }).timeout(2000000);
+    }).timeout(TEST_TIMEOUT);
 });
