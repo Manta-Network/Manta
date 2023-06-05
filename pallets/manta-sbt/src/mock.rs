@@ -22,7 +22,7 @@ use frame_support::{
         AsEnsureOriginWithArg, ConstU128, ConstU16, ConstU32, ConstU64, Everything, GenesisBuild,
         IsInVec,
     },
-    weights::{RuntimeDbWeight, Weight},
+    weights::RuntimeDbWeight,
     PalletId,
 };
 
@@ -136,7 +136,6 @@ parameter_types! {
 parameter_types! {
     pub const MantaSBTPalletId: PalletId = MANTA_SBT_PALLET_ID;
     pub const CustodialAccount: AccountId32 = ALICE;
-    pub const MinimumWeightRemainInBlock: Weight = Weight::from_ref_time(10000);
 }
 
 impl crate::Config for Test {
@@ -150,7 +149,6 @@ impl crate::Config for Test {
     type AdminOrigin = EnsureRoot<AccountId32>;
     type Now = Timestamp;
     type RegistryBound = ConstU32<200>;
-    type MinimumWeightRemainInBlock = MinimumWeightRemainInBlock;
 }
 
 parameter_types! {

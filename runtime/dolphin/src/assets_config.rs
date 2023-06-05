@@ -27,7 +27,6 @@ use manta_primitives::{
     },
     constants::{
         ASSET_MANAGER_PALLET_ID, DOLPHIN_DECIMAL, MANTA_PAY_PALLET_ID, MANTA_SBT_PALLET_ID,
-        WEIGHT_PER_MILLIS,
     },
     types::{AccountId, Balance, DolphinAssetId},
 };
@@ -36,7 +35,6 @@ use frame_support::{
     pallet_prelude::DispatchResult,
     parameter_types,
     traits::{AsEnsureOriginWithArg, ConstU128, ConstU16, ConstU32, EitherOfDiverse},
-    weights::Weight,
     PalletId,
 };
 use frame_system::EnsureRoot;
@@ -208,7 +206,6 @@ impl pallet_manta_pay::Config for Runtime {
 
 parameter_types! {
     pub const MantaSbtPalletId: PalletId = MANTA_SBT_PALLET_ID;
-    pub const MinimumWeightRemainInBlock: Weight = Weight::from_ref_time(25 * WEIGHT_PER_MILLIS);
 }
 
 impl pallet_manta_sbt::Config for Runtime {
@@ -223,7 +220,6 @@ impl pallet_manta_sbt::Config for Runtime {
         pallet_collective::EnsureMembers<AccountId, TechnicalCollective, 2>,
     >;
     type Now = Timestamp;
-    type MinimumWeightRemainInBlock = MinimumWeightRemainInBlock;
     type RegistryBound = ConstU32<300>;
     type WeightInfo = ();
 }
