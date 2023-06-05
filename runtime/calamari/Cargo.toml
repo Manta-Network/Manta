@@ -103,6 +103,9 @@ orml-xtokens = { git = 'https://github.com/manta-network/open-runtime-module-lib
 
 zenlink-protocol = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37", default-features = false }
 zenlink-protocol-runtime-api = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37", default-features = false }
+zenlink-stable-amm = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37", default-features = false }
+zenlink-stable-amm-runtime-api = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37", default-features = false }
+zenlink-swap-router = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37", default-features = false }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -163,6 +166,8 @@ runtime-benchmarks = [
   'pallet-xcm-benchmarks/runtime-benchmarks',
   'pallet-manta-sbt/runtime-benchmarks',
   "zenlink-protocol/runtime-benchmarks",
+  "zenlink-stable-amm/runtime-benchmarks",
+  "zenlink-swap-router/runtime-benchmarks",
 ]
 try-runtime = [
   'frame-try-runtime',
@@ -202,6 +207,8 @@ try-runtime = [
   'calamari-vesting/try-runtime',
   'pallet-manta-sbt/try-runtime',
   "zenlink-protocol/try-runtime",
+  "zenlink-stable-amm/try-runtime",
+  "zenlink-swap-router/try-runtime",
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
@@ -275,6 +282,9 @@ std = [
   'manta-support/std',
   "zenlink-protocol/std",
   "zenlink-protocol-runtime-api/std",
+  "zenlink-stable-amm/std",
+  "zenlink-stable-amm-runtime-api/std",
+  "zenlink-swap-router/std",
 ]
 # A feature that should be enabled when the runtime should be build for on-chain
 # deployment. This will disable stuff that shouldn't be part of the on-chain wasm

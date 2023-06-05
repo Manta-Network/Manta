@@ -17,6 +17,7 @@
 //! Calamari RPC Extensions
 
 use super::*;
+use manta_primitives::types::{CalamariAssetId, PoolId};
 use pallet_manta_pay::{
     rpc::{Pull, PullApiServer},
     runtime::PullLedgerDiffApi,
@@ -28,6 +29,7 @@ use pallet_manta_sbt::{
 use zenlink_protocol::AssetId as ZenlinkAssetId;
 use zenlink_protocol_rpc::{ZenlinkProtocol, ZenlinkProtocolApiServer};
 use zenlink_protocol_runtime_api::ZenlinkProtocolApi as ZenlinkProtocolRuntimeApi;
+use zenlink_stable_amm_rpc::{StableAmm, StableAmmApiServer};
 
 /// Instantiate all RPC extensions for calamari.
 pub fn create_calamari_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, sc_service::Error>
@@ -45,6 +47,13 @@ where
     C::Api: PullLedgerDiffApi<Block>,
     C::Api: SBTPullLedgerDiffApi<Block>,
     C::Api: ZenlinkProtocolRuntimeApi<Block, AccountId, ZenlinkAssetId>,
+    C::Api: zenlink_stable_amm_runtime_api::StableAmmApi<
+        Block,
+        CalamariAssetId,
+        Balance,
+        AccountId,
+        PoolId,
+    >,
     P: TransactionPool + Sync + Send + 'static,
 {
     use frame_rpc_system::{System, SystemApiServer};
@@ -76,7 +85,10 @@ where
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
     module
-        .merge(ZenlinkProtocol::new(client).into_rpc())
+        .merge(ZenlinkProtocol::new(client.clone()).into_rpc())
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+    module
+        .merge(StableAmm::new(client).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
     Ok(module)

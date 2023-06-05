@@ -56,7 +56,10 @@ use frame_system::{
 };
 use manta_primitives::{
     constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
-    types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
+    currencies::Currencies,
+    types::{
+        AccountId, Balance, BlockNumber, CalamariAssetId, Hash, Header, Index, PoolId, Signature,
+    },
 };
 use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
 pub use pallet_parachain_staking::{InflationInfo, Range};
@@ -66,6 +69,7 @@ use runtime_common::{
 };
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 use zenlink_protocol::{AssetBalance, AssetId as ZenlinkAssetId, MultiAssetsHandler, PairInfo};
+use zenlink_stable_amm::traits::StableAmmApi;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -82,6 +86,7 @@ pub mod staking;
 pub mod xcm_config;
 pub mod zenlink;
 
+use crate::assets_config::CalamariAssetConfig;
 use currency::*;
 use impls::DealWithFees;
 
@@ -300,6 +305,8 @@ impl Contains<RuntimeCall> for BaseFilter {
                 | orml_xtokens::Call::transfer_multicurrencies {..})
             | RuntimeCall::TransactionPause(_)
             | RuntimeCall::ZenlinkProtocol(_)
+            | RuntimeCall::ZenlinkStableAMM(_)
+            | RuntimeCall::ZenlinkSwapRouter(_)
             | RuntimeCall::AssetManager(pallet_asset_manager::Call::update_outgoing_filtered_assets {..})
             | RuntimeCall::Utility(_) => true,
 
@@ -790,6 +797,9 @@ impl calamari_vesting::Config for Runtime {
     type WeightInfo = weights::calamari_vesting::SubstrateWeight<Runtime>;
 }
 
+/// Zenlink protocol Asset adaptor for orml_traits::MultiCurrency.
+type MantaCurrencies = Currencies<Runtime, CalamariAssetConfig, Balances, Assets>;
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -857,6 +867,8 @@ construct_runtime!(
         // Calamari stuff
         CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
         ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 51,
+        ZenlinkStableAMM: zenlink_stable_amm::{Pallet, Call, Storage, Event<T>} = 52,
+        ZenlinkSwapRouter: zenlink_swap_router::{Pallet, Call, Event<T>} = 53,
     }
 );
 
@@ -928,6 +940,8 @@ mod benches {
         [pallet_manta_sbt, MantaSbt]
         // Dex
         [zenlink_protocol, ZenlinkProtocol]
+        [zenlink_stable_amm, ZenlinkStableAMM]
+        [zenlink_swap_router, ZenlinkSwapRouter]
         // XCM
         [cumulus_pallet_xcmp_queue, XcmpQueue]
         [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
@@ -1183,6 +1197,64 @@ impl_runtime_apis! {
                 asset_1,
                 amount
             )
+        }
+    }
+
+    impl zenlink_stable_amm_runtime_api::StableAmmApi<Block, CalamariAssetId, u128, AccountId, u128> for Runtime{
+        fn get_virtual_price(pool_id: PoolId)->Balance{
+            ZenlinkStableAMM::get_virtual_price(pool_id)
+        }
+
+        fn get_a(pool_id: PoolId) -> Balance {
+            ZenlinkStableAMM::get_a(pool_id)
+        }
+
+        fn get_a_precise(pool_id: PoolId) -> Balance {
+            ZenlinkStableAMM::get_a(pool_id) * 100
+        }
+
+        fn get_currencies(pool_id: PoolId) -> Vec<CalamariAssetId> {
+            ZenlinkStableAMM::get_currencies(pool_id)
+        }
+
+        fn get_currency(pool_id: PoolId, index: u32) -> Option<CalamariAssetId> {
+            ZenlinkStableAMM::get_currency(pool_id, index)
+        }
+
+        fn get_lp_currency(pool_id: PoolId) -> Option<CalamariAssetId> {
+            ZenlinkStableAMM::get_lp_currency(pool_id)
+        }
+
+        fn get_currency_precision_multipliers(pool_id: PoolId) -> Vec<Balance> {
+            ZenlinkStableAMM::get_currency_precision_multipliers(pool_id)
+        }
+
+        fn get_currency_balances(pool_id: PoolId) -> Vec<Balance> {
+            ZenlinkStableAMM::get_currency_balances(pool_id)
+        }
+
+        fn get_number_of_currencies(pool_id: PoolId) -> u32 {
+            ZenlinkStableAMM::get_number_of_currencies(pool_id)
+        }
+
+        fn get_admin_balances(pool_id: PoolId) -> Vec<Balance> {
+            ZenlinkStableAMM::get_admin_balances(pool_id)
+        }
+
+        fn calculate_currency_amount(pool_id: PoolId, amounts:Vec<Balance>, deposit: bool) -> Balance {
+            ZenlinkStableAMM::stable_amm_calculate_currency_amount(pool_id, &amounts, deposit).unwrap_or_default()
+        }
+
+        fn calculate_swap(pool_id: PoolId, in_index: u32, out_index: u32, in_amount: Balance) -> Balance {
+            ZenlinkStableAMM::stable_amm_calculate_swap_amount(pool_id, in_index as usize, out_index as usize, in_amount).unwrap_or_default()
+        }
+
+        fn calculate_remove_liquidity(pool_id: PoolId, amount: Balance) -> Vec<Balance> {
+            ZenlinkStableAMM::stable_amm_calculate_remove_liquidity(pool_id, amount).unwrap_or_default()
+        }
+
+        fn calculate_remove_liquidity_one_currency(pool_id: PoolId, amount:Balance, index: u32) -> Balance {
+            ZenlinkStableAMM::stable_amm_calculate_remove_liquidity_one_currency(pool_id, amount, index).unwrap_or_default()
         }
     }
 

@@ -1168,6 +1168,9 @@ dependencies = [
  "xcm-simulator",
  "zenlink-protocol",
  "zenlink-protocol-runtime-api",
+ "zenlink-stable-amm",
+ "zenlink-stable-amm-runtime-api",
+ "zenlink-swap-router",
 ]
 
 [[package]]
@@ -5393,6 +5396,8 @@ dependencies = [
  "zenlink-protocol",
  "zenlink-protocol-rpc",
  "zenlink-protocol-runtime-api",
+ "zenlink-stable-amm-rpc",
+ "zenlink-stable-amm-runtime-api",
 ]
 
 [[package]]
@@ -5505,6 +5510,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "orml-traits",
  "parity-scale-codec",
  "scale-info",
  "smallvec",
@@ -14840,6 +14846,69 @@ dependencies = [
  "sp-api",
  "sp-std",
  "zenlink-protocol",
+]
+
+[[package]]
+name = "zenlink-stable-amm"
+version = "0.1.0"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#af453d294541b87033a6ee4e22ce5151c581acc1"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "orml-traits",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "zenlink-stable-amm-rpc"
+version = "0.1.0"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#af453d294541b87033a6ee4e22ce5151c581acc1"
+dependencies = [
+ "jsonrpsee",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-rpc",
+ "sp-runtime",
+ "zenlink-stable-amm-runtime-api",
+]
+
+[[package]]
+name = "zenlink-stable-amm-runtime-api"
+version = "0.1.0"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#af453d294541b87033a6ee4e22ce5151c581acc1"
+dependencies = [
+ "parity-scale-codec",
+ "sp-api",
+ "sp-std",
+ "zenlink-stable-amm",
+]
+
+[[package]]
+name = "zenlink-swap-router"
+version = "0.1.0"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#af453d294541b87033a6ee4e22ce5151c581acc1"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "orml-traits",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "zenlink-protocol",
+ "zenlink-stable-amm",
 ]
 
 [[package]]

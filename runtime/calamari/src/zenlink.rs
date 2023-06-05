@@ -14,18 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use super::{AssetManager, Balances, ParachainInfo, Runtime, RuntimeEvent, ZenlinkProtocol};
-use crate::assets_config::CalamariConcreteFungibleLedger;
+use super::{
+    AssetManager, Balances, ParachainInfo, Runtime, RuntimeEvent, Timestamp, ZenlinkProtocol,
+    ZenlinkStableAMM,
+};
+use crate::{assets_config::CalamariConcreteFungibleLedger, MantaCurrencies};
 use frame_support::{parameter_types, traits::ExistenceRequirement, PalletId};
 use manta_primitives::{
     assets::{AssetIdLpMap, FungibleLedger},
     types::CalamariAssetId,
 };
+use orml_traits::MultiCurrency;
 use sp_runtime::{traits::Zero, DispatchError};
 use zenlink_protocol::{
     AssetBalance, AssetId as ZenlinkAssetId, GenerateLpAssetId, LocalAssetHandler,
     ZenlinkMultiAssets, LOCAL,
 };
+use zenlink_stable_amm::traits::{StablePoolLpCurrencyIdGenerate, ValidateCurrency};
 
 // Normal Coin AMM
 parameter_types! {
@@ -161,6 +166,57 @@ impl LocalAssetHandler<sp_runtime::AccountId32> for LocalAssetAdaptor {
         } else {
             Err(DispatchError::Other("unknown asset in local withdraw"))
         }
+    }
+}
+
+// Stable Coin AMM
+parameter_types! {
+    pub const StringLimit: u32 = 50;
+    pub const StableAmmPalletId: PalletId = PalletId(*b"mt/stamm");
+}
+
+impl zenlink_stable_amm::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type CurrencyId = CalamariAssetId;
+    type MultiCurrency = MantaCurrencies;
+    type PoolId = CalamariAssetId;
+    type TimeProvider = Timestamp;
+    type EnsurePoolAsset = StableAmmVerifyPoolAsset;
+    type LpGenerate = PoolLpGenerate;
+    type PoolCurrencySymbolLimit = StringLimit;
+    type PalletId = StableAmmPalletId;
+    type WeightInfo = ();
+}
+
+// Router: Hybrid AMM
+impl zenlink_swap_router::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type StablePoolId = CalamariAssetId;
+    type Balance = u128;
+    type StableCurrencyId = CalamariAssetId;
+    type NormalCurrencyId = ZenlinkAssetId;
+    type NormalAmm = ZenlinkProtocol;
+    type StableAMM = ZenlinkStableAMM;
+    type WeightInfo = ();
+}
+
+pub struct StableAmmVerifyPoolAsset;
+
+impl ValidateCurrency<CalamariAssetId> for StableAmmVerifyPoolAsset {
+    fn validate_pooled_currency(_currencies: &[CalamariAssetId]) -> bool {
+        true
+    }
+
+    fn validate_pool_lp_currency(_currency_id: CalamariAssetId) -> bool {
+        <MantaCurrencies as MultiCurrency<<Runtime as frame_system::Config>::AccountId>>::total_issuance(_currency_id) > 0
+    }
+}
+
+pub struct PoolLpGenerate;
+
+impl StablePoolLpCurrencyIdGenerate<CalamariAssetId, CalamariAssetId> for PoolLpGenerate {
+    fn generate_by_pool_id(pool_id: CalamariAssetId) -> CalamariAssetId {
+        <AssetManager as AssetIdLpMap>::lp_asset_pool(&pool_id).expect("must find asset id")
     }
 }
 

@@ -39,6 +39,8 @@ sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate.git",
 zenlink-protocol = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37" }
 zenlink-protocol-rpc = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37" }
 zenlink-protocol-runtime-api = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37" }
+zenlink-stable-amm-rpc = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37" }
+zenlink-stable-amm-runtime-api = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37" }
 
 # Substrate client dependencies
 sc-basic-authorship = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
