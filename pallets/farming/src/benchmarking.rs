@@ -179,6 +179,5 @@ benchmarks! {
         let charge_rewards = vec![(ksm_asset_id,BalanceOf::<T>::unique_saturated_from(300000u128))];
         assert_ok!(Farming::<T>::charge(RawOrigin::Signed(caller.clone()).into(), 0, charge_rewards));
         assert_ok!(Farming::<T>::deposit(RawOrigin::Signed(caller.clone()).into(), 0, token_amount, Some((BalanceOf::<T>::unique_saturated_from(100u128), BlockNumberFor::<T>::from(100u32)))));
-        // System::<T>::set_block_number(System::<T>::block_number() + BlockNumberFor::<T>::from(10u32));
     }: _(RawOrigin::Signed(caller.clone()), 0)
 }

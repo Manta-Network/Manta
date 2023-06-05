@@ -85,7 +85,6 @@ pub mod staking;
 pub mod xcm_config;
 pub mod zenlink;
 
-use crate::assets_config::CalamariAssetConfig;
 use currency::*;
 use impls::DealWithFees;
 
@@ -802,13 +801,16 @@ parameter_types! {
 }
 
 /// Zenlink protocol Asset adaptor for orml_traits::MultiCurrency.
-type MantaCurrencies = Currencies<Runtime, CalamariAssetConfig, Balances, Assets>;
+type MantaCurrencies = Currencies<Runtime, assets_config::CalamariAssetConfig, Balances, Assets>;
 
 impl manta_farming::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type CurrencyId = CalamariAssetId;
     type MultiCurrency = MantaCurrencies;
-    type ControlOrigin = CollatorSelectionUpdateOrigin;
+    type ControlOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>,
+    >;
     type TreasuryAccount = TreasuryAccount;
     type Keeper = FarmingKeeperPalletId;
     type RewardIssuer = FarmingRewardIssuerPalletId;
