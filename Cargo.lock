@@ -1103,6 +1103,8 @@ dependencies = [
  "lazy_static",
  "log",
  "manta-collator-selection",
+ "manta-farming",
+ "manta-farming-rpc-runtime-api",
  "manta-primitives",
  "nimbus-primitives",
  "orml-traits",
@@ -5332,6 +5334,8 @@ dependencies = [
  "hex-literal",
  "jsonrpsee",
  "log",
+ "manta-farming-rpc-api",
+ "manta-farming-rpc-runtime-api",
  "manta-primitives",
  "manta-runtime",
  "nimbus-consensus",
@@ -5466,6 +5470,56 @@ dependencies = [
 ]
 
 [[package]]
+name = "manta-farming"
+version = "4.0.7"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "log",
+ "manta-primitives",
+ "orml-traits",
+ "pallet-asset-manager",
+ "pallet-assets",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+]
+
+[[package]]
+name = "manta-farming-rpc-api"
+version = "4.0.7"
+dependencies = [
+ "jsonrpsee",
+ "manta-farming-rpc-runtime-api",
+ "manta-primitives",
+ "parity-scale-codec",
+ "serde",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
+name = "manta-farming-rpc-runtime-api"
+version = "4.0.7"
+dependencies = [
+ "manta-primitives",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-std",
+]
+
+[[package]]
 name = "manta-parameters"
 version = "0.5.15"
 source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.15#d5fb3502f4d492deaeb376dde013d3a12a729ee5"
@@ -5505,6 +5559,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "orml-traits",
  "parity-scale-codec",
  "scale-info",
  "smallvec",

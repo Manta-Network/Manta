@@ -29,7 +29,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+    traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, Perbill, Percent, Permill,
 };
@@ -56,7 +56,10 @@ use frame_system::{
 };
 use manta_primitives::{
     constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
-    types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
+    currencies::Currencies,
+    types::{
+        AccountId, Balance, BlockNumber, CalamariAssetId, Hash, Header, Index, PoolId, Signature,
+    },
 };
 use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
 pub use pallet_parachain_staking::{InflationInfo, Range};
@@ -82,6 +85,7 @@ pub mod staking;
 pub mod xcm_config;
 pub mod zenlink;
 
+use crate::assets_config::CalamariAssetConfig;
 use currency::*;
 use impls::DealWithFees;
 
@@ -300,6 +304,7 @@ impl Contains<RuntimeCall> for BaseFilter {
                 | orml_xtokens::Call::transfer_multicurrencies {..})
             | RuntimeCall::TransactionPause(_)
             | RuntimeCall::ZenlinkProtocol(_)
+            | RuntimeCall::Farming(_)
             | RuntimeCall::AssetManager(pallet_asset_manager::Call::update_outgoing_filtered_assets {..})
             | RuntimeCall::Utility(_) => true,
 
@@ -790,6 +795,26 @@ impl calamari_vesting::Config for Runtime {
     type WeightInfo = weights::calamari_vesting::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub const FarmingKeeperPalletId: PalletId = PalletId(*b"mt/fmkpr");
+    pub const FarmingRewardIssuerPalletId: PalletId = PalletId(*b"mt/fmrir");
+    pub TreasuryAccount: AccountId = TreasuryPalletId::get().into_account_truncating();
+}
+
+/// Zenlink protocol Asset adaptor for orml_traits::MultiCurrency.
+type MantaCurrencies = Currencies<Runtime, CalamariAssetConfig, Balances, Assets>;
+
+impl manta_farming::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type CurrencyId = CalamariAssetId;
+    type MultiCurrency = MantaCurrencies;
+    type ControlOrigin = CollatorSelectionUpdateOrigin;
+    type TreasuryAccount = TreasuryAccount;
+    type Keeper = FarmingKeeperPalletId;
+    type RewardIssuer = FarmingRewardIssuerPalletId;
+    type WeightInfo = weights::manta_farming::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -857,6 +882,7 @@ construct_runtime!(
         // Calamari stuff
         CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
         ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 51,
+        Farming: manta_farming::{Pallet, Call, Storage, Event<T>} = 54,
     }
 );
 
@@ -928,6 +954,7 @@ mod benches {
         [pallet_manta_sbt, MantaSbt]
         // Dex
         [zenlink_protocol, ZenlinkProtocol]
+        [manta_farming, Farming]
         // XCM
         [cumulus_pallet_xcmp_queue, XcmpQueue]
         [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
@@ -1183,6 +1210,16 @@ impl_runtime_apis! {
                 asset_1,
                 amount
             )
+        }
+    }
+
+    impl manta_farming_rpc_runtime_api::FarmingRuntimeApi<Block, AccountId, CalamariAssetId, PoolId> for Runtime {
+        fn get_farming_rewards(who: AccountId, pid: PoolId) -> Vec<(CalamariAssetId, Balance)> {
+            Farming::get_farming_rewards(&who, pid).unwrap_or(Vec::new())
+        }
+
+        fn get_gauge_rewards(who: AccountId, pid: PoolId) -> Vec<(CalamariAssetId, Balance)> {
+            Farming::get_gauge_rewards(&who, pid).unwrap_or(Vec::new())
         }
     }
 

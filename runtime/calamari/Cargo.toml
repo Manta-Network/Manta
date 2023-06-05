@@ -87,6 +87,8 @@ xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-fea
 # Self dependencies
 calamari-vesting = { path = '../../pallets/vesting', default-features = false }
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
+manta-farming = { path = '../../pallets/farming', default-features = false }
+manta-farming-rpc-runtime-api = { path = '../../pallets/farming/rpc/runtime-api', default-features = false }
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 manta-support = { package = "pallet-manta-support", path = "../../pallets/manta-support", default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
@@ -163,6 +165,7 @@ runtime-benchmarks = [
   'pallet-xcm-benchmarks/runtime-benchmarks',
   'pallet-manta-sbt/runtime-benchmarks',
   "zenlink-protocol/runtime-benchmarks",
+  'manta-farming/runtime-benchmarks',
 ]
 try-runtime = [
   'frame-try-runtime',
@@ -202,6 +205,7 @@ try-runtime = [
   'calamari-vesting/try-runtime',
   'pallet-manta-sbt/try-runtime',
   "zenlink-protocol/try-runtime",
+  "manta-farming/try-runtime",
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
@@ -275,6 +279,8 @@ std = [
   'manta-support/std',
   "zenlink-protocol/std",
   "zenlink-protocol-runtime-api/std",
+  "manta-farming/std",
+  "manta-farming-rpc-runtime-api/std",
 ]
 # A feature that should be enabled when the runtime should be build for on-chain
 # deployment. This will disable stuff that shouldn't be part of the on-chain wasm

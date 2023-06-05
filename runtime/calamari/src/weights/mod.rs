@@ -20,6 +20,7 @@ pub mod calamari_vesting;
 pub mod cumulus_pallet_xcmp_queue;
 pub mod frame_system;
 pub mod manta_collator_selection;
+pub mod manta_farming;
 pub mod pallet_asset_manager;
 pub mod pallet_assets;
 pub mod pallet_author_inherent;
