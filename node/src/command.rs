@@ -458,6 +458,12 @@ pub fn run_with(cli: Cli) -> Result {
                             rpc::create_calamari_full,
                         ).await
                             .map_err(Into::into);
+                    } else if config.chain_spec.is_manta() {
+                        return crate::service::start_dev_nimbus_node::<manta_runtime::RuntimeApi, _>(
+                            config,
+                            rpc::create_manta_full,
+                        ).await
+                            .map_err(Into::into);
                     } else {
                         return Err("Dev mode not support for current chain".into());
                     }
