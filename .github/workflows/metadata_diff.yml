@@ -77,9 +77,8 @@ jobs:
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
-          rustup toolchain install stable
-          rustup default stable
-          rustup update
+          rustup toolchain install nightly-2023-03-03
+          rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
       - name: Build New Binary
         env:

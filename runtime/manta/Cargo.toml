@@ -93,6 +93,7 @@ manta-collator-selection = { path = '../../pallets/collator-selection', default-
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 manta-support = { package = "pallet-manta-support", path = "../../pallets/manta-support", default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
+pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
 pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
@@ -144,6 +145,7 @@ runtime-benchmarks = [
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
   'orml-xtokens/runtime-benchmarks',
   'cumulus-pallet-parachain-system/runtime-benchmarks',
+  'pallet-manta-pay/runtime-benchmarks',
   'pallet-xcm-benchmarks/runtime-benchmarks',
   'pallet-manta-sbt/runtime-benchmarks',
 ]
@@ -182,6 +184,7 @@ try-runtime = [
   'cumulus-pallet-xcmp-queue/try-runtime',
   'cumulus-pallet-xcm/try-runtime',
   'pallet-asset-manager/try-runtime',
+  'pallet-manta-pay/try-runtime',
   'orml-xtokens/try-runtime',
   'pallet-manta-sbt/try-runtime',
 ]
@@ -249,6 +252,8 @@ std = [
   'pallet-treasury/std',
   'pallet-assets/std',
   'pallet-asset-manager/std',
+  'pallet-manta-pay/std',
+  'manta-support/std',
   'orml-traits/std',
   'orml-xtokens/std',
   'pallet-manta-sbt/std',

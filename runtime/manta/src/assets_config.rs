@@ -25,7 +25,7 @@ use manta_primitives::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
         AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
-    constants::{ASSET_MANAGER_PALLET_ID, MANTA_DECIMAL, MANTA_SBT_PALLET_ID},
+    constants::{ASSET_MANAGER_PALLET_ID, MANTA_DECIMAL, MANTA_PAY_PALLET_ID, MANTA_SBT_PALLET_ID},
     types::{AccountId, Balance, MantaAssetId},
 };
 
@@ -184,7 +184,15 @@ impl pallet_asset_manager::Config for Runtime {
 }
 
 parameter_types! {
+    pub const MantaPayPalletId: PalletId = MANTA_PAY_PALLET_ID;
     pub const MantaSbtPalletId: PalletId = MANTA_SBT_PALLET_ID;
+}
+
+impl pallet_manta_pay::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
+    type AssetConfig = MantaAssetConfig;
+    type PalletId = MantaPayPalletId;
 }
 
 impl pallet_manta_sbt::Config for Runtime {
