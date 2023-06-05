@@ -1172,7 +1172,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-vesting"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -2635,7 +2635,7 @@ dependencies = [
 
 [[package]]
 name = "dolphin-runtime"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -5412,7 +5412,7 @@ dependencies = [
 
 [[package]]
 name = "manta-collator-selection"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6973,7 +6973,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-sbt"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -7190,7 +7190,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-parachain-staking"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -11464,7 +11464,7 @@ dependencies = [
 
 [[package]]
 name = "session-key-primitives"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "manta-primitives",
  "nimbus-primitives",
