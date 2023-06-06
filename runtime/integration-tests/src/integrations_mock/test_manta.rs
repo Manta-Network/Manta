@@ -224,7 +224,7 @@ fn reward_fees_to_block_author_and_treasury() {
 
             let call = RuntimeCall::Balances(pallet_balances::Call::transfer {
                 dest: sp_runtime::MultiAddress::Id(CHARLIE.clone()),
-                value: 10 * KMA,
+                value: 10 * MANTA,
             });
 
             let len = 10;

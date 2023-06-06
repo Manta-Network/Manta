@@ -14,11 +14,15 @@
 - [\#1106](https://github.com/Manta-Network/Manta/pull/1106) Remove timeout for check_tests pipeline [MACA]
 - [\#1111](https://github.com/Manta-Network/Manta/pull/1111) Manta Staking Parameters [MA]
 - [\#1089](https://github.com/Manta-Network/Manta/pull/1089) Tune Tx-Payment Parameters for Manta Runtime [MA]
+- [\#1126](https://github.com/Manta-Network/Manta/pull/1126) Unfilter outgoing assets extrinsic [MACA]
 
 ### Fixed
 - [\#1104](https://github.com/Manta-Network/Manta/pull/1104) Fix off by 1 erorrs in pull-ledger-diff rpc [MACA]
 - [\#1113](https://github.com/Manta-Network/Manta/pull/1113) Fix integration test compile options, deps cleanup & clippy [MACA]
 - [\#1112](https://github.com/Manta-Network/Manta/pull/1112) Manta assets genesis storage migration [MA]
+- [\#1121](https://github.com/Manta-Network/Manta/pull/1121) Cleanup Integration Test Import
+- [\#1129](https://github.com/Manta-Network/Manta/pull/1129) Unfilter parachain staking extrinsics [MA]
+- [\#1128](https://github.com/Manta-Network/Manta/pull/1128) fix round change when collatorset is empty + log in runtime [CA]
 
 ### Removed
 - [\#1100](https://github.com/Manta-Network/Manta/pull/1100) Retire dolphin ci except publish draft release [DO]
