@@ -21,11 +21,7 @@ use sp_runtime::traits::AccountIdConversion;
 
 use crate::{mock::*, *};
 
-fn init_gauge() -> (PoolId, BalanceOf<Runtime>) {
-    let mut tokens_proportion_map = BTreeMap::<CurrencyIdOf<Runtime>, Perbill>::new();
-    tokens_proportion_map
-        .entry(KSM)
-        .or_insert(Perbill::from_percent(100));
+fn init_gauge_900() -> (PoolId, BalanceOf<Runtime>) {
     let tokens_proportion = vec![(KSM, Perbill::from_percent(100))];
     let tokens = 1000;
     let basic_rewards = vec![(KSM, 1000)];
@@ -59,21 +55,17 @@ fn init_gauge() -> (PoolId, BalanceOf<Runtime>) {
     (pid, tokens)
 }
 
-fn init_no_gauge() -> (PoolId, BalanceOf<Runtime>) {
-    let mut tokens_proportion_map = BTreeMap::<CurrencyIdOf<Runtime>, Perbill>::new();
-    tokens_proportion_map
-        .entry(KSM)
-        .or_insert(Perbill::from_percent(100));
+fn init_gauge_1000() -> (PoolId, BalanceOf<Runtime>) {
     let tokens_proportion = vec![(KSM, Perbill::from_percent(100))];
     let tokens = 1000;
     let basic_rewards = vec![(KSM, 1000)];
-    let gauge_basic_rewards = vec![(KSM, 1000)];
+    let gauge_basic_rewards = (KSM, 1000, vec![(KSM, 1000)]);
 
     assert_ok!(Farming::create_farming_pool(
         RuntimeOrigin::signed(ALICE),
         tokens_proportion,
         basic_rewards,
-        Some((KSM, 1000, gauge_basic_rewards)),
+        Some(gauge_basic_rewards),
         0,
         0,
         10,
@@ -106,7 +98,7 @@ fn claim() {
         .one_hundred_for_alice_n_bob()
         .build()
         .execute_with(|| {
-            let (pid, _tokens) = init_no_gauge();
+            let (pid, _tokens) = init_gauge_1000();
             // assert_eq!(Farming::shares_and_withdrawn_rewards(pid, &ALICE), ShareInfo::default());
             assert_ok!(Farming::set_retire_limit(RuntimeOrigin::signed(ALICE), 10));
             assert_err!(
@@ -147,12 +139,15 @@ fn claim() {
 }
 
 #[test]
-fn deposit() {
+fn deposit_gause_should_work() {
     ExtBuilder::default()
         .one_hundred_for_alice_n_bob()
         .build()
         .execute_with(|| {
-            let (pid, tokens) = init_no_gauge();
+            assert_eq!(Assets::balance(KSM, &ALICE), 3000);
+            let (pid, tokens) = init_gauge_1000();
+            assert_eq!(Assets::balance(KSM, &ALICE), 2000);
+
             System::set_block_number(System::block_number() + 1);
             assert_ok!(Farming::deposit(
                 RuntimeOrigin::signed(ALICE),
@@ -160,6 +155,7 @@ fn deposit() {
                 tokens,
                 Some((100, 100))
             ));
+            assert_eq!(Assets::balance(KSM, &ALICE), 900);
             System::set_block_number(System::block_number() + 1);
             assert_ok!(Farming::deposit(
                 RuntimeOrigin::signed(ALICE),
@@ -168,13 +164,14 @@ fn deposit() {
                 Some((100, 100))
             ));
             assert_eq!(Assets::balance(KSM, &ALICE), 800);
+
             let keeper: AccountId =
                 <Runtime as Config>::Keeper::get().into_sub_account_truncating(pid);
             let reward_issuer: AccountId =
                 <Runtime as Config>::RewardIssuer::get().into_sub_account_truncating(pid);
             let mut gauge_basic_rewards =
                 BTreeMap::<CurrencyIdOf<Runtime>, BalanceOf<Runtime>>::new();
-            gauge_basic_rewards.entry(KSM).or_insert(1000);
+            gauge_basic_rewards.entry(KSM).or_insert(tokens);
             let gauge_pool_info2 = GaugePoolInfo {
                 pid,
                 token: KSM,
@@ -193,8 +190,33 @@ fn deposit() {
             };
             assert_eq!(Farming::gauge_pool_infos(0), Some(gauge_pool_info2));
             Farming::on_initialize(0);
+            assert_eq!(Farming::pool_infos(0).unwrap().state, PoolState::Ongoing);
+            assert!(Farming::pool_infos(0).unwrap().rewards.is_empty());
+            assert_eq!(
+                Farming::gauge_pool_infos(0).unwrap().rewards.get(&KSM),
+                Some(&(1000, 0, 0))
+            );
+
             Farming::on_initialize(0);
+            assert_eq!(
+                Farming::pool_infos(0).unwrap().rewards.get(&KSM),
+                Some(&(1000, 0))
+            );
+            assert_eq!(
+                Farming::gauge_pool_infos(0).unwrap().rewards.get(&KSM),
+                Some(&(2000, 0, 0))
+            );
+
             System::set_block_number(System::block_number() + 1000);
+            Farming::on_initialize(0);
+            assert_eq!(
+                Farming::pool_infos(0).unwrap().rewards.get(&KSM),
+                Some(&(2000, 0))
+            );
+            assert_eq!(
+                Farming::gauge_pool_infos(0).unwrap().rewards.get(&KSM),
+                Some(&(3000, 0, 0))
+            );
         })
 }
 
@@ -204,7 +226,7 @@ fn withdraw() {
         .one_hundred_for_alice_n_bob()
         .build()
         .execute_with(|| {
-            let (pid, tokens) = init_no_gauge();
+            let (pid, tokens) = init_gauge_1000();
             assert_eq!(Assets::balance(KSM, &ALICE), 2000);
             Farming::on_initialize(0);
             Farming::on_initialize(0);
@@ -253,7 +275,7 @@ fn gauge() {
         .one_hundred_for_alice_n_bob()
         .build()
         .execute_with(|| {
-            let (pid, tokens) = init_gauge();
+            let (pid, tokens) = init_gauge_900();
             assert_eq!(Assets::balance(KSM, &ALICE), 1900);
             if let Some(gauge_pool_infos) = Farming::gauge_pool_infos(0) {
                 assert_eq!(
@@ -309,7 +331,7 @@ fn gauge_withdraw() {
         .one_hundred_for_alice_n_bob()
         .build()
         .execute_with(|| {
-            let (pid, _tokens) = init_gauge();
+            let (pid, _tokens) = init_gauge_900();
             assert_eq!(Assets::balance(KSM, &ALICE), 1900);
             if let Some(gauge_pool_infos) = Farming::gauge_pool_infos(0) {
                 assert_eq!(gauge_pool_infos.gauge_amount, 100)
@@ -336,7 +358,7 @@ fn retire() {
         .one_hundred_for_alice_n_bob()
         .build()
         .execute_with(|| {
-            let (pid, tokens) = init_no_gauge();
+            let (pid, tokens) = init_gauge_1000();
             Farming::on_initialize(0);
             System::set_block_number(System::block_number() + 1);
             assert_ok!(Farming::deposit(
@@ -380,7 +402,7 @@ fn reset() {
         .one_hundred_for_alice_n_bob()
         .build()
         .execute_with(|| {
-            let (pid, _tokens) = init_gauge();
+            let (pid, _tokens) = init_gauge_900();
             assert_eq!(Assets::balance(KSM, &ALICE), 1900);
             Farming::on_initialize(0);
             System::set_block_number(System::block_number() + 1);
@@ -473,15 +495,11 @@ fn reset() {
 }
 
 #[test]
-fn create_farming_pool() {
+fn gauge_farming_pool_should_work() {
     ExtBuilder::default()
         .one_hundred_for_alice_n_bob()
         .build()
         .execute_with(|| {
-            let mut tokens_proportion_map = BTreeMap::<CurrencyIdOf<Runtime>, Perbill>::new();
-            tokens_proportion_map
-                .entry(KSM)
-                .or_insert(Perbill::from_percent(100));
             let tokens_proportion = vec![(KSM, Perbill::from_percent(100))];
             let tokens = 1000;
             let basic_rewards = vec![(KSM, 1000)];
@@ -498,6 +516,7 @@ fn create_farming_pool() {
                 6,
                 5
             ));
+            assert_eq!(PoolNextId::<Runtime>::get(), 1);
             assert_ok!(Farming::create_farming_pool(
                 RuntimeOrigin::signed(ALICE),
                 tokens_proportion,
@@ -509,11 +528,14 @@ fn create_farming_pool() {
                 6,
                 5
             ));
-            if let Some(pool_infos) = Farming::pool_infos(0) {
-                assert_eq!(pool_infos.state, PoolState::UnCharged)
-            };
-            assert_ok!(Farming::kill_pool(RuntimeOrigin::signed(ALICE), 0));
+            assert_eq!(PoolNextId::<Runtime>::get(), 2);
 
+            // Query pool initial state, kill the pool
+            assert_eq!(Farming::pool_infos(0).unwrap().state, PoolState::UnCharged);
+            assert_ok!(Farming::kill_pool(RuntimeOrigin::signed(ALICE), 0));
+            assert_eq!(Farming::pool_infos(0), None);
+
+            // Charge to the pool
             let pid = 1;
             let charge_rewards = vec![(KSM, 300000)];
             assert_ok!(Farming::charge(
@@ -521,29 +543,39 @@ fn create_farming_pool() {
                 pid,
                 charge_rewards
             ));
-            if let Some(pool_infos) = Farming::pool_infos(0) {
-                assert_eq!(pool_infos.total_shares, 0);
-                assert_eq!(pool_infos.min_deposit_to_start, 2);
-                assert_eq!(pool_infos.state, PoolState::Charged)
-            };
+            let mut pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pid).unwrap();
+            assert_eq!(pool1.total_shares, 0);
+            assert_eq!(pool1.min_deposit_to_start, 2);
+            assert_eq!(pool1.state, PoolState::Charged);
+
+            // Deposit to the pool
             assert_err!(
                 Farming::deposit(RuntimeOrigin::signed(ALICE), pid, tokens, Some((100, 100))),
                 Error::<Runtime>::CanNotDeposit
             );
             System::set_block_number(System::block_number() + 3);
+            assert_eq!(Assets::balance(KSM, &ALICE), 3000);
             assert_ok!(Farming::deposit(
                 RuntimeOrigin::signed(ALICE),
                 pid,
                 tokens,
                 Some((100, 100))
             ));
+            assert_eq!(Assets::balance(KSM, &ALICE), 1900);
+            pool1 = Farming::pool_infos(pid).unwrap();
+            assert_eq!(pool1.total_shares, 1000);
+            assert_eq!(pool1.min_deposit_to_start, 2);
+            assert_eq!(pool1.state, PoolState::Charged);
+
+            // OnInitialize hook change the pool state
             Farming::on_initialize(System::block_number() + 3);
             Farming::on_initialize(0);
-            if let Some(pool_infos) = Farming::pool_infos(0) {
-                assert_eq!(pool_infos.total_shares, 1000);
-                assert_eq!(pool_infos.min_deposit_to_start, 2);
-                assert_eq!(pool_infos.state, PoolState::Ongoing)
-            };
+            pool1 = Farming::pool_infos(pid).unwrap();
+            assert_eq!(pool1.total_shares, 1000);
+            assert_eq!(pool1.min_deposit_to_start, 2);
+            assert_eq!(pool1.state, PoolState::Ongoing);
+
+            // Claim to get rewards
             assert_err!(
                 Farming::claim(RuntimeOrigin::signed(ALICE), pid),
                 Error::<Runtime>::CanNotClaim
@@ -551,14 +583,20 @@ fn create_farming_pool() {
             System::set_block_number(System::block_number() + 6);
             assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
             assert_eq!(Assets::balance(KSM, &ALICE), 3008);
+
             System::set_block_number(System::block_number() + 100);
             assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
             assert_eq!(Assets::balance(KSM, &ALICE), 4698);
+
+            // Withdraw part tokens
             assert_ok!(Farming::withdraw(
                 RuntimeOrigin::signed(ALICE),
                 pid,
                 Some(800)
             ));
+            assert_eq!(Assets::balance(KSM, &ALICE), 4698);
+
+            // Claim again
             System::set_block_number(System::block_number() + 6);
             assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
             assert_err!(

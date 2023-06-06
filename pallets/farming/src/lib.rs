@@ -61,7 +61,7 @@ type BalanceOf<T: Config> =
     <<T as Config>::MultiCurrency as MultiCurrency<AccountIdOf<T>>>::Balance;
 
 #[allow(type_alias_bounds)]
-type GauseInitType<T: Config> = (
+type GaugeInitType<T: Config> = (
     CurrencyIdOf<T>,
     BlockNumberFor<T>,
     Vec<(CurrencyIdOf<T>, BalanceOf<T>)>,
@@ -194,11 +194,17 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        CalculationOverflow,
+        /// Pool not exist
         PoolDoesNotExist,
+        /// Gauge pool not exist
         GaugePoolNotExist,
+        /// Gauge info not exist
         GaugeInfoNotExist,
+        /// Share info is not exist
+        ShareInfoNotExists,
+        /// Pool state is invalid
         InvalidPoolState,
+        /// Can not claim gauge
         LastGaugeNotClaim,
         /// claim_limit_time exceeded
         CanNotClaim,
@@ -206,18 +212,21 @@ pub mod pallet {
         GaugeMaxBlockOverflow,
         /// withdraw_limit_time exceeded
         WithdrawLimitCountExceeded,
-        ShareInfoNotExists,
+        /// Can not deposit to pool yet
         CanNotDeposit,
     }
 
+    /// The next farming pool id.
     #[pallet::storage]
     #[pallet::getter(fn pool_next_id)]
     pub type PoolNextId<T: Config> = StorageValue<_, PoolId, ValueQuery>;
 
+    /// The next gauge farming pool id.
     #[pallet::storage]
     #[pallet::getter(fn gauge_pool_next_id)]
     pub type GaugePoolNextId<T: Config> = StorageValue<_, PoolId, ValueQuery>;
 
+    /// The retire limit of one operation when retire farming pool.
     #[pallet::storage]
     #[pallet::getter(fn retire_limit)]
     pub type RetireLimit<T: Config> = StorageValue<_, u32, ValueQuery>;
@@ -236,6 +245,7 @@ pub mod pallet {
     #[pallet::getter(fn gauge_pool_infos)]
     pub type GaugePoolInfos<T: Config> = StorageMap<_, Twox64Concat, PoolId, GaugePoolInfoOf<T>>;
 
+    ///
     #[pallet::storage]
     #[pallet::getter(fn gauge_infos)]
     pub type GaugeInfos<T: Config> =
@@ -274,8 +284,8 @@ pub mod pallet {
                     {
                         pool_info.block_startup = Some(n);
                         pool_info.state = PoolState::Ongoing;
+                        PoolInfos::<T>::insert(pid, &pool_info);
                     }
-                    PoolInfos::<T>::insert(pid, &pool_info);
                 }
                 _ => (),
             });
@@ -307,13 +317,14 @@ pub mod pallet {
         BlockNumberFor<T>: AtLeast32BitUnsigned + Copy,
         BalanceOf<T>: AtLeast32BitUnsigned + Copy,
     {
+        /// `ControlOrigin` create the farming pool.
         #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::create_farming_pool())]
         pub fn create_farming_pool(
             origin: OriginFor<T>,
             tokens_proportion: Vec<(CurrencyIdOf<T>, Perbill)>,
             basic_rewards: Vec<(CurrencyIdOf<T>, BalanceOf<T>)>,
-            gauge_init: Option<GauseInitType<T>>,
+            gauge_init: Option<GaugeInitType<T>>,
             min_deposit_to_start: BalanceOf<T>,
             #[pallet::compact] after_block_to_start: BlockNumberFor<T>,
             #[pallet::compact] withdraw_limit_time: BlockNumberFor<T>,
@@ -371,6 +382,7 @@ pub mod pallet {
             Ok(())
         }
 
+        /// After create farming pool, need to deposit reward token into the pool.
         #[pallet::call_index(1)]
         #[pallet::weight(0)]
         pub fn charge(
@@ -402,6 +414,7 @@ pub mod pallet {
             Ok(())
         }
 
+        /// User can deposit token to farming pool, and get share of pool.
         #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::deposit())]
         pub fn deposit(
@@ -426,6 +439,8 @@ pub mod pallet {
                 );
             }
 
+            // basic token proportion * add_value * token_proportion
+            // if basic token proportion and token_proportion both equals to 100%, then the final amount to transfer is equal to add_value
             let native_amount = pool_info.basic_token.1.saturating_reciprocal_mul(add_value);
             pool_info.tokens_proportion.iter().try_for_each(
                 |(token, proportion)| -> DispatchResult {
@@ -457,6 +472,8 @@ pub mod pallet {
             Ok(())
         }
 
+        /// User can withdraw token from farming pool, and remove share of pool, also this operation
+        /// will claim rewards.
         #[pallet::call_index(3)]
         #[pallet::weight(T::WeightInfo::withdraw())]
         pub fn withdraw(
@@ -489,6 +506,7 @@ pub mod pallet {
             Ok(())
         }
 
+        /// User claim rewards when deposit token into the farming pool.
         #[pallet::call_index(4)]
         #[pallet::weight(T::WeightInfo::claim())]
         pub fn claim(origin: OriginFor<T>, pid: PoolId) -> DispatchResult {
@@ -521,6 +539,7 @@ pub mod pallet {
             Ok(())
         }
 
+        /// User can withdraw but not claim rewards from farming pool.
         #[pallet::call_index(5)]
         #[pallet::weight(T::WeightInfo::claim())]
         pub fn withdraw_claim(origin: OriginFor<T>, pid: PoolId) -> DispatchResult {
@@ -624,7 +643,7 @@ pub mod pallet {
             withdraw_limit_time: Option<BlockNumberFor<T>>,
             claim_limit_time: Option<BlockNumberFor<T>>,
             withdraw_limit_count: Option<u8>,
-            gauge_init: Option<GauseInitType<T>>,
+            gauge_init: Option<GaugeInitType<T>>,
         ) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 
@@ -686,7 +705,7 @@ pub mod pallet {
 
             let pool_info = Self::pool_infos(pid).ok_or(Error::<T>::PoolDoesNotExist)?;
             ensure!(
-                pool_info.state == PoolState::Retired || pool_info.state == PoolState::UnCharged,
+                PoolState::state_valid(Action::KillPool, pool_info.state),
                 Error::<T>::InvalidPoolState
             );
             #[allow(deprecated)]

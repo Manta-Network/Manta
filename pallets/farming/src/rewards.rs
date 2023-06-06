@@ -66,10 +66,15 @@ pub struct PoolInfo<BalanceOf: HasCompact, CurrencyIdOf: Ord, AccountIdOf, Block
     /// Gauge pool id
     pub gauge: Option<PoolId>,
     pub block_startup: Option<BlockNumberFor>,
+    /// The minimum share to starting farming
     pub min_deposit_to_start: BalanceOf,
+    /// The minimum block number to starting farming
     pub after_block_to_start: BlockNumberFor,
+    /// The limit block number to withdraw
     pub withdraw_limit_time: BlockNumberFor,
+    /// The limit block number to claim
     pub claim_limit_time: BlockNumberFor,
+    /// The withdraw limit length
     pub withdraw_limit_count: u8,
 }
 
@@ -298,6 +303,10 @@ impl<T: Config> Pallet<T> {
                                 .as_u128()
                                 .saturated_into();
 
+                            if withdrawn_reward_to_remove.is_zero() {
+                                return Ok(());
+                            }
+
                             if let Some((total_reward, total_withdrawn_reward)) =
                                 pool_info.rewards.get_mut(reward_currency)
                             {
@@ -425,12 +434,12 @@ impl<T: Config> Pallet<T> {
                     let n: BlockNumberFor<T> = frame_system::Pallet::<T>::block_number();
                     let mut tmp: Vec<(BlockNumberFor<T>, BalanceOf<T>)> = Default::default();
                     share_info.withdraw_list.iter().try_for_each(
-                        |(dest_block, remove_value)| -> DispatchResult {
+                        |(dest_block, remove_amount)| -> DispatchResult {
                             if *dest_block <= n {
                                 let native_amount = pool_info
                                     .basic_token
                                     .1
-                                    .saturating_reciprocal_mul(*remove_value);
+                                    .saturating_reciprocal_mul(*remove_amount);
                                 pool_info.tokens_proportion.iter().try_for_each(
                                     |(token, &proportion)| -> DispatchResult {
                                         let withdraw_amount = proportion * native_amount;
@@ -457,7 +466,7 @@ impl<T: Config> Pallet<T> {
                                     },
                                 )?;
                             } else {
-                                tmp.push((*dest_block, *remove_value));
+                                tmp.push((*dest_block, *remove_amount));
                             };
                             Ok(())
                         },
