@@ -34,7 +34,7 @@ describe('Check Parachain_Lease_Expiration', () => {
         const endPeriod = currentPeriod + remainingLeaseLength.length - 1;
 
         await polkadotApi.disconnect();
-        assert(remainingLeaseLength.length >= 1, 'Manta lease is going to expire, please do auction.');
+        assert(remainingLeaseLength.length >= 2, 'Manta lease is going to expire, please do auction.');
         console.log(`Remaining lease period for manta: ${currentPeriod}-${endPeriod}`);
 
         const firstBlock = startNumber % leasePeriod;
@@ -64,7 +64,7 @@ describe('Check Parachain_Lease_Expiration', () => {
         const endPeriod = currentPeriod + remainingLeaseLength.length - 1;
 
         await kusamaApi.disconnect();
-        assert(remainingLeaseLength.length >= 1, 'Calamari lease is going to expire, please do auction.');
+        assert(remainingLeaseLength.length >= 2, 'Calamari lease is going to expire, please do auction.');
         console.log(`Remaining lease period for calamari: ${currentPeriod}-${endPeriod}`);
 
         const firstBlock = startNumber % leasePeriod;
