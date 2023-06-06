@@ -1138,6 +1138,19 @@ impl_runtime_apis! {
         }
     }
 
+    impl pallet_lottery::runtime::LotteryApi<Block> for Runtime {
+        fn not_in_drawing_freezeout(
+        ) -> bool {
+            Lottery::not_in_drawing_freezeout()
+        }
+        fn current_prize_pool() -> u128 {
+            Lottery::current_prize_pool().into()
+        }
+        fn next_drawing_at() -> Option<u128> {
+            Lottery::next_drawing_at().and_then(|x| Some(x as u128) )
+        }
+    }
+
     impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
         fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
             ParachainSystem::collect_collation_info(header)

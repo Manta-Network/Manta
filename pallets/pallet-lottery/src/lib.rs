@@ -56,10 +56,17 @@
 //! * [`Call::liquidate_lottery`]: Unstakes all lottery funds and schedules [`Call::process_matured_withdrawals`] after the timelock period
 //! * [`Call::rebalance_stake`]: Immediately unstakes overweight collators (with low APY) for later restaking into underweight collators (with high APY)
 //!
-//! ### Important state queries
+//! ### Important state queries callable via RPC
 //! * [`Pallet::next_drawing_at`]: Block number where the next drawing will happen
 //! * [`Pallet::not_in_drawing_freezeout`]: False if deposits/withdrawals are currently frozen
-//! * [`Pallet::lottery_funds_surplus_idle`]: Token amount currently in the pallet the winner would get if the drawing was now
+//! * [`Pallet::current_prize_pool`]: Token amount currently in the pallet the winner would get if the drawing was now
+//! Call these as
+//! ```bash
+//!    curl http://localhost:9933 -H "Content-Type:application/json;charset=utf-8" -d '{"jsonrpc":"2.0","id":1,"method":"lottery_next_drawing_at","params": []}'
+//!    curl http://localhost:9933 -H "Content-Type:application/json;charset=utf-8" -d '{"jsonrpc":"2.0","id":1,"method":"lottery_current_prize_pool","params": []}'
+//!    curl http://localhost:9933 -H "Content-Type:application/json;charset=utf-8" -d '{"jsonrpc":"2.0","id":1,"method":"lottery_not_in_drawing_freezeout","params": []}'
+//! ```
+//!
 //!
 //! Please refer to [`Pallet`] for more documentation on each function.
 //! Furthermore, the storage items containing all relevant information about lottery state can be queried via e.g. the [polkadot.js API](https://polkadot.js.org/docs/api)
@@ -68,9 +75,12 @@
 
 mod staking;
 
+#[cfg(feature = "rpc")]
+pub mod rpc;
+pub mod runtime;
+
 #[cfg(test)]
 mod mock;
-
 #[cfg(test)]
 mod tests;
 
@@ -550,7 +560,7 @@ pub mod pallet {
             );
             // Pallet has enough funds to pay gas fees for at least the first drawing
             ensure!(
-                Self::lottery_funds_surplus() >= Self::gas_reserve(),
+                Self::surplus_funds() >= Self::gas_reserve(),
                 Error::<T>::PotBalanceBelowGasReserve
             ); // XXX: If we seed more than gas_reserve, the excess will be paid out to the winner on the next drawing! This could be a feature for doping the winning balance
 
@@ -621,7 +631,7 @@ pub mod pallet {
                 <T as pallet_parachain_staking::Config>::Currency::total_balance(
                     &Self::account_id(),
                 );
-            let winning_claim = Self::lottery_funds_surplus_idle();
+            let winning_claim = Self::current_prize_pool();
             log::debug!(
                 "total funds: {:?}, surplus funds/winner payout: {:?}",
                 total_funds_in_pallet.clone(),
@@ -818,7 +828,7 @@ pub mod pallet {
                     };
                     // Ensure the pallet has enough gas to pay for this
                     let fee_estimate : BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(&pallet_parachain_staking::Call::execute_delegation_request { delegator: Self::account_id() , candidate: collator.account.clone()  }, None::<u64>.into());
-                    if Self::lottery_funds_surplus() <= fee_estimate{
+                    if Self::surplus_funds() <= fee_estimate{
                         log::warn!("could not finish unstaking delegation because the pallet is out of funds to pay TX fees. Skipping");
                         return true;
                     };
@@ -857,7 +867,7 @@ pub mod pallet {
             // Only restake what isn't needed to service outstanding withdrawal requests
 
             // TODO: If we have outstanding out-of-timelock withdrawal requests, do nothing
-            let stakable_balance = Self::lottery_funds_surplus_idle();
+            let stakable_balance = Self::current_prize_pool();
             if stakable_balance.is_zero() {
                 log::debug!("Nothing to restake");
                 return Ok(());
@@ -883,7 +893,7 @@ pub mod pallet {
             if <WithdrawalRequestQueue<T>>::get().is_empty() {
                 return Ok(()); // nothing to do
             }
-            let funds_available_to_withdraw = Self::lottery_funds_surplus();
+            let funds_available_to_withdraw = Self::surplus_funds();
             log::debug!(
                 "Withdrawable funds: {:?}",
                 funds_available_to_withdraw.clone()
@@ -946,7 +956,7 @@ pub mod pallet {
             T::Scheduler::next_dispatch_time(Self::lottery_schedule_id()).ok()
         }
         /// funds in the lottery that are not staked or assigned to previous winners ( can be used to pay TX fees )
-        pub fn lottery_funds_surplus() -> BalanceOf<T> {
+        pub(crate) fn surplus_funds() -> BalanceOf<T> {
             let non_staked_funds =
                 pallet_parachain_staking::Pallet::<T>::get_delegator_stakable_free_balance(
                     &Self::account_id(),
@@ -954,14 +964,14 @@ pub mod pallet {
             non_staked_funds.saturating_sub(Self::total_unclaimed_winnings())
         }
         /// funds in the lottery pallet that are not needed/reserved for anything
-        pub fn lottery_funds_surplus_idle() -> BalanceOf<T> {
+        pub fn current_prize_pool() -> BalanceOf<T> {
             // let outstanding_withdrawal_requests = <WithdrawalRequestQueue<T>>::get()
             // .iter()
             // .map(|request| request.balance)
             // .reduce(|acc, e| acc + e)
             // .unwrap_or(0u32.into());
 
-            Self::lottery_funds_surplus().saturating_sub(Self::gas_reserve())
+            Self::surplus_funds().saturating_sub(Self::gas_reserve())
             // .saturating_sub(outstanding_withdrawal_requests)
         }
         /// Returns if we're within the pre-drawing time where deposits/withdrawals are frozen

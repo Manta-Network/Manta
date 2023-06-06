@@ -352,7 +352,7 @@ impl<T: Config> Pallet<T> {
     ) -> DispatchResult {
         log::trace!(function_name!());
         // preconditions
-        if Self::lottery_funds_surplus().is_zero() {
+        if Self::surplus_funds().is_zero() {
             return Err(Error::<T>::PotBalanceTooLow.into());
         }
 
@@ -373,7 +373,7 @@ impl<T: Config> Pallet<T> {
                 None::<u64>.into(),
             );
             ensure!(
-                Self::lottery_funds_surplus() > fee_estimate,
+                Self::surplus_funds() > fee_estimate,
                 Error::<T>::PotBalanceTooLowToPayTxFee
             );
             pallet_parachain_staking::Pallet::<T>::delegate(
@@ -402,7 +402,7 @@ impl<T: Config> Pallet<T> {
                 None::<u64>.into(),
             );
             ensure!(
-                Self::lottery_funds_surplus() > fee_estimate,
+                Self::surplus_funds() > fee_estimate,
                 Error::<T>::PotBalanceTooLowToPayTxFee
             );
             pallet_parachain_staking::Pallet::<T>::delegator_bond_more(
@@ -450,7 +450,7 @@ impl<T: Config> Pallet<T> {
             None::<u64>.into(),
         );
         ensure!(
-            Self::lottery_funds_surplus() > fee_estimate,
+            Self::surplus_funds() > fee_estimate,
             Error::<T>::PotBalanceTooLowToPayTxFee
         );
         // unstake from parachain staking
