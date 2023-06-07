@@ -325,7 +325,7 @@ pub mod pallet {
             post: Box<TransferPost>,
             metadata: BoundedVec<u8, T::SbtMetadataBound>,
         ) -> DispatchResultWithPostInfo {
-            let mut who = ensure_signed(who)?;
+            let mut minting_account = ensure_signed(who)?;
 
             if let Some(sig) = signature {
                 // check that signature is valid
@@ -333,11 +333,12 @@ pub mod pallet {
                     Self::verify_crypto_sig(&sig, &post.proof),
                     Error::<T>::BadSignature
                 );
-                // set signature account as who
-                who = sig.pub_key.into_account();
+                // set verified signature account as the minting_account
+                minting_account = sig.pub_key.into_account();
             }
 
-            let (start_id, end_id) = ReservedIds::<T>::get(&who).ok_or(Error::<T>::NotReserved)?;
+            let (start_id, end_id) =
+                ReservedIds::<T>::get(&minting_account).ok_or(Error::<T>::NotReserved)?;
 
             // Checks that it is indeed a to_private post with a value of 1 and has correct asset_id
             Self::check_post_shape(&post, start_id)?;
@@ -356,12 +357,12 @@ pub mod pallet {
 
             // If `ReservedIds` are all used remove from storage, otherwise increment the next `AssetId` to be used next time for minting SBT
             if increment_start_id > end_id {
-                ReservedIds::<T>::remove(&who)
+                ReservedIds::<T>::remove(&minting_account)
             } else {
-                ReservedIds::<T>::insert(&who, (increment_start_id, end_id))
+                ReservedIds::<T>::insert(&minting_account, (increment_start_id, end_id))
             }
 
-            Self::post_transaction(vec![who], *post)?;
+            Self::post_transaction(vec![minting_account], *post)?;
             Ok(().into())
         }
 
