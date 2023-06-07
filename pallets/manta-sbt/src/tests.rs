@@ -154,6 +154,54 @@ fn max_reserved_to_private_works() {
     });
 }
 
+/// Cannot call reserve_sbt if account already has AssetIds reserved
+#[test]
+fn overwrite_asset_id_fails() {
+    new_test_ext().execute_with(|| {
+        initialize_test();
+        // second reserve_id fails
+        assert_noop!(
+            MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None),
+            Error::<Test>::AssetIdsAlreadyReserved
+        );
+    });
+}
+
+#[test]
+fn allowlist_account_reserves_works() {
+    new_test_ext().execute_with(|| {
+        initialize_test();
+        // reserving AssetId was not free
+        assert_eq!(Balances::free_balance(&ALICE), 999999999999000);
+
+        assert_ok!(MantaSBTPallet::change_allowlist_account(
+            MockOrigin::root(),
+            Some(ALICE)
+        ));
+        assert_ok!(MantaSBTPallet::reserve_sbt(
+            MockOrigin::signed(ALICE),
+            Some(BOB)
+        ));
+        assert!(ReservedIds::<Test>::get(BOB).is_some());
+        // balance remains the same as allowlist account is free
+        assert_eq!(Balances::free_balance(&ALICE), 999999999999000);
+
+        // allowlist account cannot overwrite reserved ids
+        assert_noop!(
+            MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None),
+            Error::<Test>::AssetIdsAlreadyReserved
+        );
+        assert_noop!(
+            MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), Some(ALICE)),
+            Error::<Test>::AssetIdsAlreadyReserved
+        );
+        assert_noop!(
+            MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), Some(BOB)),
+            Error::<Test>::AssetIdsAlreadyReserved
+        );
+    });
+}
+
 /// Tests that `ReservedIds` are successfully removed from storage after minting all the designated number SBTs
 #[test]
 fn overflow_reserved_ids_fails() {
