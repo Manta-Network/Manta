@@ -320,12 +320,12 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::to_private())]
         #[transactional]
         pub fn to_private(
-            who: OriginFor<T>,
+            origin: OriginFor<T>,
             signature: Option<SignatureInfoOf<T>>,
             post: Box<TransferPost>,
             metadata: BoundedVec<u8, T::SbtMetadataBound>,
         ) -> DispatchResultWithPostInfo {
-            let mut minting_account = ensure_signed(who)?;
+            let mut minting_account = ensure_signed(origin)?;
 
             if let Some(sig) = signature {
                 // check that signature is valid
