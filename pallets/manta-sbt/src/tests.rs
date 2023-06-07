@@ -19,7 +19,7 @@
 use crate::{
     mock::{new_test_ext, Balances, MantaSBTPallet, RuntimeOrigin as MockOrigin, Test, Timestamp},
     AllowlistAccount, DispatchError, Error, EvmAccountAllowlist, EvmAddress, MintId,
-    MintIdRegistry, MintStatus, ReservedIds, SbtMetadataV2, MANTA_MINT_ID,
+    MintIdRegistry, MintStatus, ReservedIds, SbtMetadataV2, SignatureInfoOf, MANTA_MINT_ID,
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use manta_crypto::{
@@ -37,7 +37,9 @@ use manta_pay::{
 use manta_support::manta_pay::{
     field_from_id, id_from_field, AssetId, AssetValue, TransferPost as PalletTransferPost,
 };
+use sp_core::{sr25519, Pair};
 use sp_io::hashing::keccak_256;
+use sp_runtime::AccountId32;
 
 /// UTXO Accumulator for Building Circuits
 type UtxoAccumulator =
@@ -122,6 +124,55 @@ fn to_private_should_work() {
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
             None,
+            Box::new(post),
+            bvec![0]
+        ));
+        assert_eq!(SbtMetadataV2::<Test>::get(1).unwrap().extra, Some(bvec![0]));
+        assert_eq!(
+            SbtMetadataV2::<Test>::get(1).unwrap().mint_id,
+            MANTA_MINT_ID
+        );
+    });
+}
+
+#[test]
+fn to_private_relay_signature_works() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        assert_ok!(Balances::set_balance(
+            MockOrigin::root(),
+            ALICE,
+            1_000_000_000_000_000,
+            0
+        ));
+        let account_pair = sr25519::Pair::from_string(
+            "endorse doctor arch helmet master dragon wild favorite property mercy vault maze",
+            None,
+        )
+        .unwrap();
+        let public_account: AccountId32 = account_pair.public().into();
+        assert_ok!(MantaSBTPallet::reserve_sbt(
+            MockOrigin::signed(ALICE),
+            Some(public_account.clone())
+        ));
+
+        let value = 1;
+        let id = field_from_id(ReservedIds::<Test>::get(public_account).unwrap().0);
+        let post = sample_to_private(id, value, &mut rng);
+
+        let signature = account_pair.sign(&keccak_256(&MantaSBTPallet::eip712_signable_message(
+            &post.proof,
+            0,
+        )));
+        let signature_info = SignatureInfoOf::<Test> {
+            sig: signature.into(),
+            pub_key: account_pair.public().into(),
+        };
+
+        // have alice relay `account_pair`
+        assert_ok!(MantaSBTPallet::to_private(
+            MockOrigin::signed(ALICE),
+            Some(signature_info),
             Box::new(post),
             bvec![0]
         ));

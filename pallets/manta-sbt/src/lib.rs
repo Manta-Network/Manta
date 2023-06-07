@@ -1112,6 +1112,7 @@ where
         Ok(())
     }
 
+    /// Signature Verification using substrate crypto library in `sp_core::crypto`
     #[inline]
     fn verify_crypto_sig(sig_info: &SignatureInfoOf<T>, proof: &Proof) -> bool {
         // Eip712 msg with chain_id of zero
