@@ -121,6 +121,7 @@ fn to_private_should_work() {
         let post = sample_to_private(id, value, &mut rng);
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
+            None,
             Box::new(post),
             bvec![0]
         ));
@@ -145,6 +146,7 @@ fn max_reserved_to_private_works() {
             let post = sample_to_private(id, value, &mut rng);
             assert_ok!(MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
+                None,
                 Box::new(post),
                 bvec![0]
             ));
@@ -167,6 +169,7 @@ fn overflow_reserved_ids_fails() {
                 assert!(ReservedIds::<Test>::contains_key(ALICE));
                 assert_ok!(MantaSBTPallet::to_private(
                     MockOrigin::signed(ALICE),
+                    None,
                     Box::new(post),
                     bvec![0]
                 ));
@@ -186,7 +189,7 @@ fn not_reserved_fails() {
         let id = field_from_id(10);
         let post = sample_to_private(id, value, &mut rng);
         assert_noop!(
-            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), Box::new(post), bvec![0]),
+            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), None, Box::new(post), bvec![0]),
             Error::<Test>::NotReserved
         );
     });
@@ -203,6 +206,7 @@ fn private_transfer_fails() {
 
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
+            None,
             Box::new(sample_to_private(id, value, &mut rng)),
             bvec![]
         ));
@@ -219,7 +223,7 @@ fn private_transfer_fails() {
 
         let post = PalletTransferPost::try_from(private_transfer).unwrap();
         assert_noop!(
-            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), Box::new(post), bvec![]),
+            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), None, Box::new(post), bvec![]),
             Error::<Test>::InvalidShape
         );
     });
@@ -236,6 +240,7 @@ fn to_public_fails() {
 
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
+            None,
             Box::new(sample_to_private(id, value, &mut rng)),
             bvec![]
         ));
@@ -253,7 +258,7 @@ fn to_public_fails() {
 
         let post = PalletTransferPost::try_from(private_transfer).unwrap();
         assert_noop!(
-            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), Box::new(post), bvec![]),
+            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), None, Box::new(post), bvec![]),
             Error::<Test>::InvalidShape
         );
     });
@@ -272,6 +277,7 @@ fn wrong_asset_id_fails() {
         assert_noop!(
             MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
+                None,
                 Box::new(sample_to_private(asset_id, value, &mut rng)),
                 bvec![]
             ),
@@ -291,6 +297,7 @@ fn only_value_of_one_allowed() {
         assert_noop!(
             MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
+                None,
                 Box::new(sample_to_private(id, value, &mut rng)),
                 bvec![]
             ),

@@ -72,7 +72,7 @@ use sha3::{Digest, Keccak256};
 use sp_core::{H160, H256, U256};
 use sp_io::{crypto::secp256k1_ecdsa_recover, hashing::keccak_256};
 use sp_runtime::{
-    traits::{AccountIdConversion, One, Zero},
+    traits::{AccountIdConversion, IdentifyAccount, One, Verify, Zero},
     ArithmeticError,
 };
 
@@ -160,8 +160,18 @@ pub struct MetadataV2<Bound: Get<u32>> {
     pub extra: Option<BoundedVec<u8, Bound>>,
 }
 
+/// Signature and Public key used for verification
+#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub struct SignatureInfo<S, P> {
+    sig: S,
+    pub_key: P,
+}
+
 /// Type for timestamp
 pub type Moment<T> = <<T as Config>::Now as Time>::Moment;
+
+/// `SignatureInfo` with generics defined for ease of use
+pub type SignatureInfoOf<T> = SignatureInfo<<T as Config>::Signature, <T as Config>::PublicKey>;
 
 /// MantaSBT Pallet
 #[frame_support::pallet]
@@ -193,6 +203,13 @@ pub mod pallet {
 
         /// Gets the current on-chain time
         type Now: Time;
+
+        /// A Signature can be verified with a specific `PublicKey`.
+        type Signature: Verify<Signer = Self::PublicKey> + Decode + Parameter;
+
+        /// A PublicKey can be converted into an `AccountId`. This is required by the
+        /// `Signature` type.
+        type PublicKey: IdentifyAccount<AccountId = Self::AccountId> + Decode + Parameter;
 
         /// Pallet ID
         #[pallet::constant]
@@ -304,10 +321,21 @@ pub mod pallet {
         #[transactional]
         pub fn to_private(
             who: OriginFor<T>,
+            signature: Option<SignatureInfoOf<T>>,
             post: Box<TransferPost>,
             metadata: BoundedVec<u8, T::SbtMetadataBound>,
         ) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(who)?;
+            let mut who = ensure_signed(who)?;
+
+            if let Some(sig) = signature {
+                // check that signature is valid
+                ensure!(
+                    Self::verify_crypto_sig(&sig, &post.proof),
+                    Error::<T>::BadSignature
+                );
+                // set signature account as who
+                who = sig.pub_key.into_account();
+            }
 
             let (start_id, end_id) = ReservedIds::<T>::get(&who).ok_or(Error::<T>::NotReserved)?;
 
@@ -1081,6 +1109,17 @@ where
             }
         }
         Ok(())
+    }
+
+    #[inline]
+    fn verify_crypto_sig(sig_info: &SignatureInfoOf<T>, proof: &Proof) -> bool {
+        // Eip712 msg with chain_id of zero
+        let msg = Self::eip712_signable_message(proof, Zero::zero());
+        let msg_hash = keccak_256(msg.as_slice());
+
+        sig_info
+            .sig
+            .verify(msg_hash.as_ref(), &sig_info.pub_key.clone().into_account())
     }
 
     /// Returns an Ethereum public key derived from an Ethereum secret key.
