@@ -316,6 +316,7 @@ pub mod pallet {
         /// Mints a zkSBT
         ///
         /// `TransferPost` is posted to private ledger and SBT metadata is stored onchain.
+        /// `signature` parameter can be used to relay a tx.
         #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::to_private())]
         #[transactional]
