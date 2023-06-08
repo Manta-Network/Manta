@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## v4.1.0
+### Added
+- [\#1122](https://github.com/Manta-Network/Manta/pull/1122) dex amm [CA]
+- [\#1135](https://github.com/Manta-Network/Manta/pull/1135) Add MantaSBT to Manta Runtime [MA]
+- [\#1137](https://github.com/Manta-Network/Manta/pull/1137) Add mantapay to manta runtime [MA]
+
+### Changed
+- [\#1126](https://github.com/Manta-Network/Manta/pull/1126) Unfilter outgoing assets extrinsic [MACA]
+
+### Fixed
+- [\#1121](https://github.com/Manta-Network/Manta/pull/1121) Cleanup Integration Test Import
+- [\#1129](https://github.com/Manta-Network/Manta/pull/1129) Unfilter parachain staking extrinsics [MA]
+- [\#1128](https://github.com/Manta-Network/Manta/pull/1128) fix round change when collatorset is empty + log in runtime [CA]
+- [\#1125](https://github.com/Manta-Network/Manta/pull/1125) Remove UtxoAccumulator from MantaSbt [MACA]
+
 ## v4.0.8
 ### Added
 - [\#1080](https://github.com/Manta-Network/Manta/pull/1080) Rust integration tests for Manta runtime [MACA]
