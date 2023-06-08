@@ -14,15 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{Config, Error, Pallet, RandomnessResults, RelayEpoch};
-use frame_support::{
-    pallet_prelude::*,
-    traits::{Currency, ExistenceRequirement::KeepAlive},
-};
-use sp_runtime::traits::{CheckedAdd, CheckedSub, Saturating};
-use sp_std::vec::Vec;
+use frame_support::pallet_prelude::*;
 
-#[derive(PartialEq, Copy, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 /// Shared request info, a subset of `RequestInfo`
 pub enum RequestType {
@@ -30,7 +24,7 @@ pub enum RequestType {
     BabeEpoch(u64),
 }
 
-#[derive(PartialEq, Copy, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 /// Type of request
 /// Represents a request for the most recent randomness at or after the inner first field
@@ -40,7 +34,7 @@ pub enum RequestInfo {
     BabeEpoch(u64, u64),
 }
 
-#[derive(PartialEq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 /// Raw randomness snapshot, the unique value for a `RequestType` in `RandomnessResults` map
 pub struct RandomnessResult<Hash> {
     /// Randomness once available

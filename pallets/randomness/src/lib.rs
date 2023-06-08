@@ -59,19 +59,11 @@ pub trait GetBabeData<EpochIndex, Randomness> {
 pub mod pallet {
     use super::*;
     use crate::weights::{SubstrateWeight, WeightInfo};
-    use frame_support::{pallet_prelude::*, traits::ExistenceRequirement::KeepAlive, PalletId};
+    use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use nimbus_primitives::NimbusId;
     use session_key_primitives::inherent::{InherentError, INHERENT_IDENTIFIER};
-    use sp_runtime::traits::{AccountIdConversion, Hash, Saturating};
+    use sp_runtime::traits::Hash;
     use sp_std::convert::TryInto;
-
-    /// The Randomness's pallet id
-    pub const PALLET_ID: PalletId = PalletId(*b"moonrand");
-
-    /// Request identifier, unique per request for randomness
-    pub type RequestId = u64;
-
     #[pallet::pallet]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(PhantomData<T>);

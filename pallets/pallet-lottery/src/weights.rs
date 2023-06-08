@@ -51,14 +51,14 @@ pub trait WeightInfo {
 /// Weights for manta_collator_selection using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-    fn new_session(c: u32, ) -> Weight {
+    fn new_session(_c: u32, ) -> Weight {
         Weight::from_ref_time(0)
     }
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-    fn new_session(c: u32, ) -> Weight {
+    fn new_session(_c: u32, ) -> Weight {
         Weight::from_ref_time(0)
     }
 }

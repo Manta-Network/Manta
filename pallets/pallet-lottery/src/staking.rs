@@ -24,7 +24,7 @@ use frame_support::{
 use pallet_parachain_staking::BalanceOf;
 use sp_runtime::{
     traits::{Saturating, Zero},
-    DispatchResult, PerThing, Percent,
+    DispatchResult, Percent,
 };
 use sp_std::{vec, vec::Vec};
 
@@ -71,7 +71,7 @@ impl<T: Config> Pallet<T> {
             if !remaining_deposit.is_zero() {
                 // distribute remaining tokens evenly
                 let deposit_per_collator =
-                    Percent::from_rational(1, deposits.len().into()).mul_ceil(remaining_deposit); // this overshoots the amount if there's a remainder
+                    Percent::from_rational(1, deposits.len()).mul_ceil(remaining_deposit); // this overshoots the amount if there's a remainder
                 for deposit in &mut deposits {
                     let add = remaining_deposit.saturating_sub(deposit_per_collator);
                     deposit.1 += add;
@@ -113,10 +113,8 @@ impl<T: Config> Pallet<T> {
                     .total_counted
         );
 
-        let median_collator_balance = collators_and_counted_balances
-            [collators_and_counted_balances.len() / 2]
-            .1
-            .clone();
+        let median_collator_balance =
+            collators_and_counted_balances[collators_and_counted_balances.len() / 2].1;
 
         // build collator => deviation from mean map
         let mut underallocated_collators: Vec<_> =
@@ -162,7 +160,7 @@ impl<T: Config> Pallet<T> {
         );
         debug_assert!(
             underallocated_collators.len() < 2
-                || underallocated_collators[0].1.clone() >= underallocated_collators[1].1.clone()
+                || underallocated_collators[0].1 >= underallocated_collators[1].1
         );
         log::debug!(
             "Total Underallocated collators: {:?}",
@@ -186,7 +184,7 @@ impl<T: Config> Pallet<T> {
                 let info = pallet_parachain_staking::Pallet::<T>::candidate_info(account.clone())
                     .expect("is active collator, therefor it has collator info. qed");
                 let collator_proportion =
-                    Percent::from_rational(tokens_to_reach_mean.clone(), total_underallocation);
+                    Percent::from_rational(tokens_to_reach_mean, total_underallocation);
                 let to_reach_mean = collator_proportion.mul_ceil(deposit_to_distribute);
                 let to_deposit = to_reach_mean.min(remaining_deposit);
                 let our_stake = StakedCollators::<T>::get(account.clone());
@@ -311,7 +309,7 @@ impl<T: Config> Pallet<T> {
             apy_ordered_active_collators_we_are_staked_with.len()
         );
         for c in apy_ordered_active_collators_we_are_staked_with {
-            let our_stake = StakedCollators::<T>::get(c.clone()).clone();
+            let our_stake = StakedCollators::<T>::get(c.clone());
             log::debug!("Unstaking {:?} from active {:?}", our_stake, c);
             withdrawals.push(c);
             remaining_balance = remaining_balance.saturating_sub(our_stake);
@@ -331,16 +329,6 @@ impl<T: Config> Pallet<T> {
         }
         log::debug!("Withdrawals: {:?}", withdrawals.len());
         withdrawals
-    }
-
-    fn average_stake_per_collator() -> BalanceOf<T> {
-        let total_staked = pallet_parachain_staking::Pallet::<T>::staked(
-            pallet_parachain_staking::Pallet::<T>::round().current,
-        ); // XXX/TODO: pallet_parachain_staking::Pallet::<T>::Staked storage is only updated *at the beginning of a round* this is not suitable multi-transfers in the same block don't get recalculated
-           // this overshoots the amount if there's a remainder
-        Percent::from_rational(1, pallet_parachain_staking::Pallet::<T>::total_selected())
-            .mul_ceil(total_staked)
-            .into()
     }
 
     #[named]
@@ -377,7 +365,7 @@ impl<T: Config> Pallet<T> {
             pallet_parachain_staking::Pallet::<T>::delegate(
                 RawOrigin::Signed(Self::account_id()).into(),
                 collator.clone(),
-                amount.into(),
+                amount,
                 CANDIDATE_DELEGATION_COUNT,
                 DELEGATION_COUNT,
             )
@@ -395,7 +383,7 @@ impl<T: Config> Pallet<T> {
             let fee_estimate: BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(
                 &pallet_parachain_staking::Call::delegator_bond_more {
                     candidate: collator.clone(),
-                    more: amount.clone(),
+                    more: amount,
                 },
                 None::<u64>.into(),
             );
@@ -406,7 +394,7 @@ impl<T: Config> Pallet<T> {
             pallet_parachain_staking::Pallet::<T>::delegator_bond_more(
                 RawOrigin::Signed(Self::account_id()).into(),
                 collator.clone(),
-                amount.clone(),
+                amount,
             )
             .map_err(|e| {
                 log::error!(
@@ -437,7 +425,7 @@ impl<T: Config> Pallet<T> {
         };
         log::debug!(
             "Unstaking collator {:?} with balance {:?}",
-            some_collator.clone(),
+            some_collator,
             delegated_amount_to_be_unstaked.clone()
         );
         // Ensure the pallet has enough gas to pay for this
@@ -461,7 +449,7 @@ impl<T: Config> Pallet<T> {
 
         // Update bookkeeping
         RemainingUnstakingBalance::<T>::mutate(|bal| {
-            *bal = (*bal).saturating_add(delegated_amount_to_be_unstaked.into());
+            *bal = (*bal).saturating_add(delegated_amount_to_be_unstaked);
         });
         UnstakingCollators::<T>::mutate(|collators| {
             collators.push(UnstakingCollator {

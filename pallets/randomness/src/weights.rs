@@ -81,7 +81,7 @@ impl WeightInfo for () {
 	#[rustfmt::skip]
     fn set_babe_randomness_results() -> Weight {
         Weight::from_ref_time(28_446_000)
-			.saturating_add(RocksDbWeight::get().reads(4 as u64))
-			.saturating_add(RocksDbWeight::get().writes(3 as u64))
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 }

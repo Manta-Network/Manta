@@ -101,13 +101,11 @@ pub mod pallet {
     };
     pub use frame_system::WeightInfo;
     use frame_system::{pallet_prelude::*, RawOrigin};
-    use manta_primitives::constants::time::{DAYS, MINUTES};
+
     use pallet_parachain_staking::BalanceOf;
     use sp_core::U256;
     use sp_runtime::{
-        traits::{
-            AccountIdConversion, CheckedAdd, CheckedSub, Dispatchable, Hash, Saturating, Zero,
-        },
+        traits::{AccountIdConversion, CheckedAdd, CheckedSub, Dispatchable, Saturating, Zero},
         ArithmeticError, DispatchResult,
     };
     use sp_std::prelude::*;
@@ -307,6 +305,7 @@ pub mod pallet {
         /// # Arguments
         ///
         /// * `amount` - The amount of tokens to be deposited.
+        #[pallet::call_index(0)]
         #[pallet::weight(0)]
         pub fn deposit(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
             let caller_account = ensure_signed(origin)?;
@@ -322,7 +321,7 @@ pub mod pallet {
 
             // Transfer funds to pot
             <T as pallet_parachain_staking::Config>::Currency::transfer(
-                &caller_account.clone(),
+                &caller_account,
                 &Self::account_id(),
                 amount,
                 KeepAlive,
@@ -338,7 +337,7 @@ pub mod pallet {
             TotalPot::<T>::mutate(|balance| *balance += amount);
             SumOfDeposits::<T>::mutate(|balance| *balance += amount);
 
-            Self::deposit_event(Event::Deposited(caller_account.clone(), amount));
+            Self::deposit_event(Event::Deposited(caller_account, amount));
             Ok(())
         }
 
@@ -365,6 +364,7 @@ pub mod pallet {
         /// * It is too close to the drawing
         /// * The user has no or not enough active funds
         /// * There are any arithmetic underflows
+        #[pallet::call_index(1)]
         #[pallet::weight(0)]
         pub fn request_withdraw(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
             let caller = ensure_signed(origin)?;
@@ -468,6 +468,7 @@ pub mod pallet {
         /// # Errors
         ///
         /// CannotLookup: The caller has no unclaimed winnings.
+        #[pallet::call_index(2)]
         #[pallet::weight(0)]
         pub fn claim_my_winnings(origin: OriginFor<T>) -> DispatchResult {
             let caller = ensure_signed(origin)?;
@@ -497,7 +498,7 @@ pub mod pallet {
                         KeepAlive,
                     ) // NOTE: If the transfer fails, the TXN get rolled back and the winnings stay in the map for claiming later
                 }
-                None => Err(DispatchError::CannotLookup).into(),
+                None => Err(DispatchError::CannotLookup),
             }
         }
 
@@ -518,6 +519,7 @@ pub mod pallet {
         ///
         /// * BadOrigin: Caller is not ManageOrigin
         /// * TODO: Amount of tokens to be rebalanced would be too low.
+        #[pallet::call_index(3)]
         #[pallet::weight(0)]
         pub fn rebalance_stake(origin: OriginFor<T>) -> DispatchResult {
             T::ManageOrigin::ensure_origin(origin.clone())?;
@@ -548,6 +550,7 @@ pub mod pallet {
         /// If the lottery is already started, this function will fail.
         ///
         /// You can always learn what block the next drawing - if any - will happen by calling [`Self::next_drawing_at`]
+        #[pallet::call_index(4)]
         #[pallet::weight(0)]
         pub fn start_lottery(origin: OriginFor<T>) -> DispatchResult {
             T::ManageOrigin::ensure_origin(origin.clone())?;
@@ -594,6 +597,7 @@ pub mod pallet {
         /// * BadOrigin: Caller is not manager
         /// * LotteryNotStarted: Nothing to stop
         ///
+        #[pallet::call_index(5)]
         #[pallet::weight(0)]
         pub fn stop_lottery(origin: OriginFor<T>) -> DispatchResult {
             T::ManageOrigin::ensure_origin(origin.clone())?;
@@ -621,6 +625,7 @@ pub mod pallet {
         /// * ArithmeticError::Underflow: An underflow occurred when calculating the payout.
         /// * PotBalanceTooLow: The balance of the pot is too low.
         /// * NoWinnerFound: Nobody was selected as winner
+        #[pallet::call_index(6)]
         #[pallet::weight(0)]
         pub fn draw_lottery(origin: OriginFor<T>) -> DispatchResult {
             T::ManageOrigin::ensure_origin(origin.clone())?;
@@ -662,6 +667,7 @@ pub mod pallet {
         ///
         /// * BadOrigin: Caller is not ManageOrigin
         /// * errors defined by the do_process_matured_withdrawals function.
+        #[pallet::call_index(7)]
         #[pallet::weight(0)]
         pub fn process_matured_withdrawals(origin: OriginFor<T>) -> DispatchResult {
             log::trace!("process_matured_withdrawals");
@@ -684,6 +690,7 @@ pub mod pallet {
         ///
         /// * BadOrigin: Caller is not ManageOrigin
         /// * Fails if a lottery has not been stopped and a drawing is ongoing
+        #[pallet::call_index(8)]
         #[pallet::weight(0)]
         pub fn liquidate_lottery(origin: OriginFor<T>) -> DispatchResult {
             T::ManageOrigin::ensure_origin(origin.clone())?;
@@ -731,7 +738,7 @@ pub mod pallet {
             // Match random number to winner. We select a winning **balance** and then just add up accounts in the order they're stored until the sum of balance exceeds the winning amount
             // IMPORTANT: This order and active balances must be locked to modification after the random seed is created (relay BABE randomness, 2 epochs ago)
             let random = T::RandomnessSource::random(&[0u8, 1]);
-            let randomness_established_at_block = random.1;
+            let _randomness_established_at_block = random.1;
 
             // TODO: Ensure freezeout period started before the randomness was known to prevent manipulation of the winning set
             // ensure!(
@@ -747,7 +754,7 @@ pub mod pallet {
             let winning_number = as_number.low_u128();
             let winning_balance: BalanceOf<T> = BalanceOf::<T>::try_from(winning_number)
                 .map_err(|_| ArithmeticError::Overflow)?
-                % Self::total_pot().into();
+                % Self::total_pot();
 
             log::debug!(
                 "hash: {:?}, winning balance: {:?}",
@@ -838,7 +845,7 @@ pub mod pallet {
                     ){
                         Err(e) => {
                             log::error!("Collator finished unstaking timelock but could not be removed with error {:?}",e);
-                            return true;
+                            true
                         },
                         Ok(_) => {
                             // collator was unstaked
@@ -846,9 +853,9 @@ pub mod pallet {
                             SumOfDeposits::<T>::mutate(|balance| *balance = (*balance).saturating_sub(balance_to_unstake)); // XXX: Maybe checked_sub
                             log::debug!("Unstaked {:?} from collator {:?}",balance_to_unstake,collator.account.clone());
                             // don't retain this collator in the unstaking collators vec
-                            return false;
+                            false
                         },
-                    };
+                    }
             });
             if original_len != unstaking.len() {
                 log::debug!(
@@ -982,9 +989,7 @@ pub mod pallet {
                 }
                 Some(drawing) => {
                     let now = <frame_system::Pallet<T>>::block_number();
-                    now < drawing
-                        .saturating_sub(<T as Config>::DrawingFreezeout::get())
-                        .into()
+                    now < drawing.saturating_sub(<T as Config>::DrawingFreezeout::get())
                 }
             }
         }
