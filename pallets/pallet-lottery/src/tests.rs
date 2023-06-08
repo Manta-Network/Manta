@@ -26,8 +26,8 @@ use crate::{
     assert_tail_eq,
     mock::{
         roll_one_block, roll_to, roll_to_round_begin, roll_to_round_end, AccountId, Balance,
-        Balances, CollatorSelection, Event as MetaEvent, ExtBuilder, Lottery, Origin,
-        ParachainStaking, Test,
+        Balances, CollatorSelection, ExtBuilder, Lottery, ParachainStaking,
+        RuntimeOrigin as Origin, Test,
     },
     Error, Event,
 };

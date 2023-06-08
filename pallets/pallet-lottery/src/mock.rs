@@ -20,10 +20,12 @@ use core::marker::PhantomData;
 use crate as pallet_lottery;
 use crate::{pallet, Config};
 use calamari_runtime::currency::{mKMA, KMA};
-use frame_support::traits::{ConstU128, ConstU32, ConstU8};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Everything, GenesisBuild, LockIdentifier, OnFinalize, OnInitialize},
+    traits::{
+        ConstU128, ConstU32, ConstU8, Everything, GenesisBuild, LockIdentifier, OnFinalize,
+        OnInitialize,
+    },
     weights::Weight,
 };
 use frame_system::pallet_prelude::*;
@@ -31,9 +33,8 @@ use manta_primitives::types::{BlockNumber, Header};
 use pallet_parachain_staking::{InflationInfo, Range};
 use sp_core::H256;
 use sp_io;
-use sp_runtime::traits::Hash;
 use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
+    traits::{BlakeTwo256, Hash, IdentityLookup},
     Perbill, Percent,
 };
 
@@ -81,7 +82,7 @@ impl<T: Config> frame_support::traits::Randomness<T::Hash, BlockNumberFor<T>>
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
-    pub const MaximumBlockWeight: Weight = 1024;
+    pub const MaximumBlockWeight: u64 = 1024;
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::one();
     pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
@@ -89,16 +90,16 @@ parameter_types! {
 impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type DbWeight = ();
-    type Origin = Origin;
+    type RuntimeOrigin = RuntimeOrigin;
     type Index = u64;
     type BlockNumber = BlockNumber;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
     type PalletInfo = PalletInfo;
@@ -120,7 +121,7 @@ impl pallet_balances::Config for Test {
     type ReserveIdentifier = [u8; 4];
     type MaxLocks = ();
     type Balance = Balance;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
@@ -135,10 +136,9 @@ parameter_types! {
 
 impl pallet_preimage::Config for Test {
     type WeightInfo = calamari_runtime::weights::pallet_preimage::SubstrateWeight<Test>;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type ManagerOrigin = EnsureRoot<AccountId>;
-    type MaxSize = PreimageMaxSize;
     // The sum of the below 2 amounts will get reserved every time someone submits a preimage.
     // Their sum will be unreserved when the preimage is requested, i.e. when it is going to be used.
     type BaseDeposit = ConstU128<{ 1 * KMA }>;
@@ -162,17 +162,16 @@ parameter_types! {
     pub const NoPreimagePostponement: Option<u32> = Some(10);
 }
 impl pallet_scheduler::Config for Test {
-    type Event = Event;
-    type Origin = Origin;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
     type PalletsOrigin = OriginCaller;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type MaximumWeight = MaximumSchedulerWeight;
     type ScheduleOrigin = EnsureRoot<AccountId>;
     type MaxScheduledPerBlock = ConstU32<50>; // 50 scheduled calls at most in the queue for a single block.
     type WeightInfo = calamari_runtime::weights::pallet_scheduler::SubstrateWeight<Test>;
     type OriginPrivilegeCmp = OriginPrivilegeCmp;
-    type PreimageProvider = Preimage;
-    type NoPreimagePostponement = NoPreimagePostponement;
+    type Preimages = Preimage;
 }
 
 pub struct IsRegistered;
@@ -195,7 +194,7 @@ parameter_types! {
     pub const PotId: PalletId = PalletId(*b"PotStake");
 }
 impl manta_collator_selection::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type UpdateOrigin = EnsureRoot<AccountId>;
     type PotId = PotId;
@@ -218,7 +217,7 @@ parameter_types! {
     pub LeaveDelayRounds: BlockNumber = 1; // == 7 * DAYS / 6 * HOURS = 28
 }
 impl pallet_parachain_staking::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type BlockAuthor = BlockAuthor;
     type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
@@ -269,8 +268,7 @@ impl block_author::Config for Test {}
 
 use frame_support::PalletId;
 use frame_system::EnsureRoot;
-use manta_primitives::constants::time::MINUTES;
-use manta_primitives::constants::LOTTERY_PALLET_ID;
+use manta_primitives::constants::{time::MINUTES, LOTTERY_PALLET_ID};
 parameter_types! {
     pub const LotteryPotId: PalletId = LOTTERY_PALLET_ID;
     /// Time in blocks between lottery drawings
@@ -297,8 +295,8 @@ impl frame_support::traits::EstimateCallFee<pallet_parachain_staking::Call<Test>
     }
 }
 impl Config for Test {
-    type Call = Call;
-    type Event = Event;
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
     type Scheduler = Scheduler;
     type EstimateCallFee = MockEstimateFee;
     type RandomnessSource = TestRandomness<Test>;
@@ -441,7 +439,7 @@ pub(crate) fn roll_to_round_end(round: u32) -> u32 {
     roll_to(block)
 }
 
-pub(crate) fn last_event() -> Event {
+pub(crate) fn last_event() -> RuntimeEvent {
     System::events().pop().expect("Event expected").event
 }
 
@@ -450,7 +448,7 @@ pub(crate) fn events() -> Vec<pallet_parachain_staking::Event<Test>> {
         .into_iter()
         .map(|r| r.event)
         .filter_map(|e| {
-            if let Event::ParachainStaking(inner) = e {
+            if let RuntimeEvent::ParachainStaking(inner) = e {
                 Some(inner)
             } else {
                 None
