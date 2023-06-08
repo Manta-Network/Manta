@@ -121,7 +121,7 @@ impl<T: Config> Pallet<T> {
         // build collator => deviation from mean map
         let mut underallocated_collators: Vec<_> =
             collators_and_counted_balances[..collators_and_counted_balances.len() / 2].to_vec();
-        let mut underallocated_collators: Vec<_> = underallocated_collators
+        underallocated_collators = underallocated_collators
             .into_iter()
             .filter_map(|(collator, balance)| {
                 let underallocation = median_collator_balance.saturating_sub(balance);
@@ -136,7 +136,7 @@ impl<T: Config> Pallet<T> {
 
         // take up to 4 collators with the highest deficit ( stopping at mean )
         let num_collators_to_take = core::cmp::min(4, underallocated_collators.len());
-        let underallocated_collators = underallocated_collators[..num_collators_to_take].to_vec();
+        underallocated_collators = underallocated_collators[..num_collators_to_take].to_vec();
 
         debug_assert!(
             underallocated_collators.is_empty()
@@ -217,9 +217,8 @@ impl<T: Config> Pallet<T> {
         // fallback: just assign to a random active collator
         if !remaining_deposit.is_zero() {
             let active_collators = pallet_parachain_staking::Pallet::<T>::selected_candidates();
-            // TODO: Better randomness
             use sp_runtime::traits::SaturatedConversion;
-            let nonce: u128 = Self::total_pot().saturated_into();
+            let nonce: u128 = <frame_system::Pallet<T>>::block_number().saturated_into();
             let random = sp_core::U256::from_big_endian(
                 T::RandomnessSource::random(&nonce.to_be_bytes()).0.as_ref(),
             );
