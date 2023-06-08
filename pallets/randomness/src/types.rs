@@ -15,8 +15,10 @@
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{Config, Error, Pallet, RandomnessResults, RelayEpoch};
-use frame_support::pallet_prelude::*;
-use frame_support::traits::{Currency, ExistenceRequirement::KeepAlive};
+use frame_support::{
+    pallet_prelude::*,
+    traits::{Currency, ExistenceRequirement::KeepAlive},
+};
 use sp_runtime::traits::{CheckedAdd, CheckedSub, Saturating};
 use sp_std::vec::Vec;
 

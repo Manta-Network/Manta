@@ -23,8 +23,6 @@ use frame_support::{
     weights::Weight,
 };
 use nimbus_primitives::NimbusId;
-use pallet_evm::IdentityAddressMapping;
-use session_keys_primitives::VrfId;
 use sp_core::{H160, H256};
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
@@ -48,8 +46,7 @@ construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        AuthorMapping: pallet_author_mapping::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Randomness: pallet_randomness::{Pallet, Call, Storage, Event<T>, Inherent},
+        Randomness: pallet_randomness::{Pallet, Call, Storage, Inherent},
     }
 );
 
@@ -102,21 +99,10 @@ impl pallet_balances::Config for Test {
     type WeightInfo = ();
 }
 
-parameter_types! {
-    pub const DepositAmount: Balance = 100;
-}
-impl pallet_author_mapping::Config for Test {
-    type RuntimeEvent = RuntimeEvent;
-    type DepositCurrency = Balances;
-    type DepositAmount = DepositAmount;
-    type Keys = VrfId;
-    type WeightInfo = ();
-}
-
 pub struct BabeDataGetter;
 impl crate::GetBabeData<u64, Option<H256>> for BabeDataGetter {
     fn get_epoch_index() -> u64 {
-        1u64
+        10u64
     }
     fn get_epoch_randomness() -> Option<H256> {
         Some(H256::default())
@@ -130,63 +116,19 @@ parameter_types! {
     pub const MaxBlockDelay: u32 = 20;
 }
 impl Config for Test {
-    type RuntimeEvent = RuntimeEvent;
-    type AddressMapping = IdentityAddressMapping;
-    type Currency = Balances;
     type BabeDataGetter = BabeDataGetter;
-    type VrfKeyLookup = AuthorMapping;
-    type Deposit = Deposit;
-    type MaxRandomWords = MaxRandomWords;
-    type MinBlockDelay = MinBlockDelay;
-    type MaxBlockDelay = MaxBlockDelay;
-    type BlockExpirationDelay = MaxBlockDelay;
-    type EpochExpirationDelay = MaxBlockDelay;
-}
-
-pub(crate) fn events() -> Vec<pallet::Event<Test>> {
-    System::events()
-        .into_iter()
-        .map(|r| r.event)
-        .filter_map(|e| {
-            if let RuntimeEvent::Randomness(inner) = e {
-                Some(inner)
-            } else {
-                None
-            }
-        })
-        .collect::<Vec<_>>()
-}
-
-/// Panics if an event is not found in the system log of events
-#[macro_export]
-macro_rules! assert_event_emitted {
-    ($event:expr) => {
-        match &$event {
-            e => {
-                assert!(
-                    crate::mock::events().iter().find(|x| *x == e).is_some(),
-                    "Event {:?} was not found in events: \n {:?}",
-                    e,
-                    crate::mock::events()
-                );
-            }
-        }
-    };
 }
 
 /// Externality builder for pallet randomness mock runtime
 pub(crate) struct ExtBuilder {
     /// Balance amounts per AccountId
     balances: Vec<(AccountId, Balance)>,
-    /// AuthorId -> AccountId mappings
-    mappings: Vec<(NimbusId, AccountId)>,
 }
 
 impl Default for ExtBuilder {
     fn default() -> ExtBuilder {
         ExtBuilder {
             balances: Vec::new(),
-            mappings: Vec::new(),
         }
     }
 }
@@ -195,12 +137,6 @@ impl ExtBuilder {
     #[allow(dead_code)]
     pub(crate) fn with_balances(mut self, balances: Vec<(AccountId, Balance)>) -> Self {
         self.balances = balances;
-        self
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn with_mappings(mut self, mappings: Vec<(NimbusId, AccountId)>) -> Self {
-        self.mappings = mappings;
         self
     }
 
@@ -216,32 +152,8 @@ impl ExtBuilder {
         .assimilate_storage(&mut t)
         .expect("Pallet balances storage can be assimilated");
 
-        pallet_author_mapping::GenesisConfig::<Test> {
-            mappings: self.mappings,
-        }
-        .assimilate_storage(&mut t)
-        .expect("Pallet author mapping's storage can be assimilated");
-
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
         ext
-    }
-}
-
-pub const ALICE: H160 = H160::repeat_byte(0xAA);
-pub const BOB: H160 = H160::repeat_byte(0xBB);
-
-/// Helps test same effects for all 4 variants of RequestType
-pub fn build_default_request(
-    info: RequestType<Test>,
-) -> Request<BalanceOf<Test>, RequestType<Test>> {
-    Request {
-        refund_address: BOB,
-        contract_address: ALICE,
-        fee: 5,
-        gas_limit: 100u64,
-        num_words: 1u8,
-        salt: H256::default(),
-        info,
     }
 }

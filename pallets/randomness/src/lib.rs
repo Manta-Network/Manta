@@ -59,8 +59,7 @@ pub trait GetBabeData<EpochIndex, Randomness> {
 pub mod pallet {
     use super::*;
     use crate::weights::{SubstrateWeight, WeightInfo};
-    use frame_support::traits::ExistenceRequirement::KeepAlive;
-    use frame_support::{pallet_prelude::*, PalletId};
+    use frame_support::{pallet_prelude::*, traits::ExistenceRequirement::KeepAlive, PalletId};
     use frame_system::pallet_prelude::*;
     use nimbus_primitives::NimbusId;
     use session_key_primitives::inherent::{InherentError, INHERENT_IDENTIFIER};
