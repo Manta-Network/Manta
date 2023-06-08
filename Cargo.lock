@@ -1079,7 +1079,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-runtime"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "calamari-vesting",
  "cumulus-pallet-dmp-queue",
@@ -1174,7 +1174,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-vesting"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -2637,7 +2637,7 @@ dependencies = [
 
 [[package]]
 name = "dolphin-runtime"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -4175,7 +4175,7 @@ dependencies = [
 
 [[package]]
 name = "integration-tests"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "calamari-runtime",
  "calamari-vesting",
@@ -5309,7 +5309,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -5416,7 +5416,7 @@ dependencies = [
 
 [[package]]
 name = "manta-collator-selection"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5553,7 +5553,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5574,7 +5574,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -5607,6 +5607,7 @@ dependencies = [
  "pallet-balances",
  "pallet-collective",
  "pallet-democracy",
+ "pallet-manta-pay",
  "pallet-manta-sbt",
  "pallet-manta-support",
  "pallet-membership",
@@ -6537,7 +6538,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-manager"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6992,7 +6993,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-pay"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -7027,7 +7028,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-sbt"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -7066,7 +7067,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-support"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -7244,7 +7245,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-parachain-staking"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7593,7 +7594,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -9959,7 +9960,7 @@ dependencies = [
 
 [[package]]
 name = "runtime-common"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -11518,7 +11519,7 @@ dependencies = [
 
 [[package]]
 name = "session-key-primitives"
-version = "4.0.8"
+version = "4.1.0"
 dependencies = [
  "manta-primitives",
  "nimbus-primitives",
