@@ -60,13 +60,12 @@
 //! * [`Pallet::next_drawing_at`]: Block number where the next drawing will happen
 //! * [`Pallet::not_in_drawing_freezeout`]: False if deposits/withdrawals are currently frozen
 //! * [`Pallet::current_prize_pool`]: Token amount currently in the pallet the winner would get if the drawing was now
-//! Call these as
+//! Call these from a frontend as e.g.
 //! ```bash
 //!    curl http://localhost:9933 -H "Content-Type:application/json;charset=utf-8" -d '{"jsonrpc":"2.0","id":1,"method":"lottery_next_drawing_at","params": []}'
 //!    curl http://localhost:9933 -H "Content-Type:application/json;charset=utf-8" -d '{"jsonrpc":"2.0","id":1,"method":"lottery_current_prize_pool","params": []}'
 //!    curl http://localhost:9933 -H "Content-Type:application/json;charset=utf-8" -d '{"jsonrpc":"2.0","id":1,"method":"lottery_not_in_drawing_freezeout","params": []}'
 //! ```
-//!
 //!
 //! Please refer to [`Pallet`] for more documentation on each function.
 //! Furthermore, the storage items containing all relevant information about lottery state can be queried via e.g. the [polkadot.js API](https://polkadot.js.org/docs/api)
@@ -963,28 +962,29 @@ pub mod pallet {
                 );
             non_staked_funds.saturating_sub(Self::total_unclaimed_winnings())
         }
-        /// funds in the lottery pallet that are not needed/reserved for anything
+        /// funds in the lottery pallet that are not needed/reserved for anything and can be paid to the next winner
         pub fn current_prize_pool() -> BalanceOf<T> {
-            // let outstanding_withdrawal_requests = <WithdrawalRequestQueue<T>>::get()
-            // .iter()
-            // .map(|request| request.balance)
-            // .reduce(|acc, e| acc + e)
-            // .unwrap_or(0u32.into());
+            let outstanding_withdrawal_requests = <WithdrawalRequestQueue<T>>::get()
+                .iter()
+                .map(|request| request.balance)
+                .reduce(|acc, balance| acc + balance)
+                .unwrap_or(0u32.into());
 
-            Self::surplus_funds().saturating_sub(Self::gas_reserve())
-            // .saturating_sub(outstanding_withdrawal_requests)
+            Self::surplus_funds()
+                .saturating_sub(Self::gas_reserve())
+                .saturating_sub(outstanding_withdrawal_requests)
         }
         /// Returns if we're within the pre-drawing time where deposits/withdrawals are frozen
         pub fn not_in_drawing_freezeout() -> bool {
             match Self::next_drawing_at() {
+                None => {
+                    true // can't be frozen if lottery stopped
+                }
                 Some(drawing) => {
                     let now = <frame_system::Pallet<T>>::block_number();
                     now < drawing
                         .saturating_sub(<T as Config>::DrawingFreezeout::get())
                         .into()
-                }
-                None => {
-                    true // can't be frozen if lottery stopped
                 }
             }
         }

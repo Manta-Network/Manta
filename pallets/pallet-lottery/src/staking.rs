@@ -16,17 +16,16 @@
 
 use super::*;
 use codec::alloc::collections::BTreeSet;
-use frame_support::dispatch::RawOrigin;
-use frame_support::ensure;
-use frame_support::traits::EstimateCallFee;
-use frame_support::traits::Get;
-use frame_support::traits::Randomness;
+use frame_support::{
+    dispatch::RawOrigin,
+    ensure,
+    traits::{EstimateCallFee, Get, Randomness},
+};
 use pallet_parachain_staking::BalanceOf;
-use sp_runtime::traits::Saturating;
-use sp_runtime::traits::Zero;
-use sp_runtime::DispatchResult;
-use sp_runtime::PerThing;
-use sp_runtime::Percent;
+use sp_runtime::{
+    traits::{Saturating, Zero},
+    DispatchResult, PerThing, Percent,
+};
 use sp_std::{vec, vec::Vec};
 
 impl<T: Config> Pallet<T> {
