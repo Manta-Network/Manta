@@ -150,6 +150,13 @@ fn to_private_relay_signature_works() {
             None,
         )
         .unwrap();
+        let account_pair_2 = sr25519::Pair::from_string(
+            "bottom drive obey lake curtain smoke basket hold race lonely fit walk",
+            None,
+        )
+        .unwrap();
+
+
         let public_account: AccountId32 = account_pair.public().into();
         assert_ok!(MantaSBTPallet::reserve_sbt(
             MockOrigin::signed(ALICE),
@@ -164,10 +171,28 @@ fn to_private_relay_signature_works() {
             &post.proof,
             0,
         )));
+        let signature_2 = account_pair_2.sign(&keccak_256(&MantaSBTPallet::eip712_signable_message(
+            &post.proof,
+            0,
+        )));
+
         let signature_info = SignatureInfoOf::<Test> {
             sig: signature.into(),
             pub_key: account_pair.public().into(),
         };
+        // incorrect signature
+        let bad_signature_info = SignatureInfoOf::<Test> {
+            sig: signature_2.into(),
+            pub_key: account_pair.public().into(),
+        };
+
+        // bad signature fails
+        assert_noop!(MantaSBTPallet::to_private(
+            MockOrigin::signed(ALICE),
+            Some(bad_signature_info),
+            Box::new(post.clone()),
+            bvec![0]
+        ), Error::<Test>::BadSignature);
 
         // have alice relay `account_pair`
         assert_ok!(MantaSBTPallet::to_private(
