@@ -36,7 +36,7 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use manta_primitives::types::PoolId;
 use orml_traits::MultiCurrency;
-use sp_runtime::SaturatedConversion;
+use sp_runtime::{traits::One, SaturatedConversion};
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
 pub mod gauge;
@@ -325,11 +325,11 @@ pub mod pallet {
             tokens_proportion: Vec<(CurrencyIdOf<T>, Perbill)>,
             basic_rewards: Vec<(CurrencyIdOf<T>, BalanceOf<T>)>,
             gauge_init: Option<GaugeInitType<T>>,
-            min_deposit_to_start: BalanceOf<T>,
+            #[pallet::compact] min_deposit_to_start: BalanceOf<T>,
             #[pallet::compact] after_block_to_start: BlockNumberFor<T>,
             #[pallet::compact] withdraw_limit_time: BlockNumberFor<T>,
             #[pallet::compact] claim_limit_time: BlockNumberFor<T>,
-            withdraw_limit_count: u8,
+            #[pallet::compact] withdraw_limit_count: u8,
         ) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 
@@ -374,7 +374,9 @@ pub mod pallet {
 
             PoolInfos::<T>::insert(pid, &pool_info);
             PoolNextId::<T>::mutate(|id| -> DispatchResult {
-                *id = id.checked_add(1).ok_or(ArithmeticError::Overflow)?;
+                *id = id
+                    .checked_add(One::one())
+                    .ok_or(ArithmeticError::Overflow)?;
                 Ok(())
             })?;
 
@@ -420,7 +422,7 @@ pub mod pallet {
         pub fn deposit(
             origin: OriginFor<T>,
             pid: PoolId,
-            add_value: BalanceOf<T>,
+            #[pallet::compact] add_value: BalanceOf<T>,
             gauge_info: Option<(BalanceOf<T>, BlockNumberFor<T>)>,
         ) -> DispatchResult {
             let exchanger = ensure_signed(origin)?;

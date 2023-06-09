@@ -140,7 +140,9 @@ where
 
         GaugePoolInfos::<T>::insert(gid, &gauge_pool_info);
         GaugePoolNextId::<T>::mutate(|id| -> DispatchResult {
-            *id = id.checked_add(1).ok_or(ArithmeticError::Overflow)?;
+            *id = id
+                .checked_add(One::one())
+                .ok_or(ArithmeticError::Overflow)?;
             Ok(())
         })?;
         Ok(())
