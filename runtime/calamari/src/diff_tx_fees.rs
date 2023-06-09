@@ -112,14 +112,15 @@ fn diff_tx_fees() {
                         let tx_fee_with_decimal = Multiplier::from_str(&_tx_fee_with_decimal.to_string()).unwrap();
                         let last_tx_fee = Multiplier::from_str(&found.tx_fee_with_decimal).unwrap();
                         let fluctuation = {
-                            let diff_value = tx_fee_with_decimal.saturating_sub(last_tx_fee);
+                            let diff_value = tx_fee_with_decimal.saturating_sub(last_tx_fee).div(last_tx_fee);
                             if diff_value < Multiplier::zero() {
                                 Percent::from_float(diff_value.neg().to_float())
                             } else {
                                 Percent::from_float(diff_value.to_float())
                             }
                         };
-                        assert!(fluctuation <= TX_FEE_FLUCTUATION, "The tx fee fluctuation for the extrinsic {extrinsic_name} is {fluctuation:?}, bigger than {TX_FEE_FLUCTUATION:?}.");
+                        let _multiplier = found.fee_multiplier;
+                        assert!(fluctuation <= TX_FEE_FLUCTUATION, "The tx fee fluctuation for the extrinsic {extrinsic_name} is {fluctuation:?}, bigger than {TX_FEE_FLUCTUATION:?} with multiplier {_multiplier}.");
                     }
                     None => panic!("The extrinsic {pallet_name}.{extrinsic_name} is missing from current tx fees list, please add it to latest csv file."),
                 }
@@ -1166,7 +1167,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
     {
         assert_eq!(
             crate::RuntimeCall::get_call_names("AssetManager").len(),
-            7,
+            8,
             "Please update new extrinsic here."
         );
         // register_asset
@@ -1262,6 +1263,22 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         calamari_runtime_calls.push((
             "pallet_asset_manager",
             "update_outgoing_filtered_assets",
+            dispatch_info,
+            call_len,
+        ));
+
+        // register_lp_asset
+        let call = crate::RuntimeCall::AssetManager(
+            pallet_asset_manager::Call::register_lp_asset {
+                asset_0: 1,
+                asset_1: 2,
+                metadata: AssetRegistryMetadata::testing_default(),
+            },
+        );
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_asset_manager",
+            "register_lp_asset",
             dispatch_info,
             call_len,
         ));
