@@ -156,7 +156,6 @@ fn to_private_relay_signature_works() {
         )
         .unwrap();
 
-
         let public_account: AccountId32 = account_pair.public().into();
         assert_ok!(MantaSBTPallet::reserve_sbt(
             MockOrigin::signed(ALICE),
@@ -171,10 +170,9 @@ fn to_private_relay_signature_works() {
             &post.proof,
             0,
         )));
-        let signature_2 = account_pair_2.sign(&keccak_256(&MantaSBTPallet::eip712_signable_message(
-            &post.proof,
-            0,
-        )));
+        let signature_2 = account_pair_2.sign(&keccak_256(
+            &MantaSBTPallet::eip712_signable_message(&post.proof, 0),
+        ));
 
         let signature_info = SignatureInfoOf::<Test> {
             sig: signature.into(),
@@ -187,12 +185,15 @@ fn to_private_relay_signature_works() {
         };
 
         // bad signature fails
-        assert_noop!(MantaSBTPallet::to_private(
-            MockOrigin::signed(ALICE),
-            Some(bad_signature_info),
-            Box::new(post.clone()),
-            bvec![0]
-        ), Error::<Test>::BadSignature);
+        assert_noop!(
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                Some(bad_signature_info),
+                Box::new(post.clone()),
+                bvec![0]
+            ),
+            Error::<Test>::BadSignature
+        );
 
         // have alice relay `account_pair`
         assert_ok!(MantaSBTPallet::to_private(
