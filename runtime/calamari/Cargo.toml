@@ -159,10 +159,12 @@ runtime-benchmarks = [
   'pallet-asset-manager/runtime-benchmarks',
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
   "pallet-randomness/runtime-benchmarks",
+  "pallet-lottery/runtime-benchmarks",
   'cumulus-pallet-parachain-system/runtime-benchmarks',
   'pallet-manta-pay/runtime-benchmarks',
   'pallet-xcm-benchmarks/runtime-benchmarks',
   'pallet-manta-sbt/runtime-benchmarks',
+  'pallet-lottery/runtime-benchmarks',
 ]
 try-runtime = [
   'frame-try-runtime',
