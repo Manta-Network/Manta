@@ -5594,6 +5594,8 @@ dependencies = [
  "hex-literal",
  "log",
  "manta-collator-selection",
+ "manta-farming",
+ "manta-farming-rpc-runtime-api",
  "manta-primitives",
  "nimbus-primitives",
  "orml-traits",
@@ -5655,6 +5657,8 @@ dependencies = [
  "xcm-builder",
  "xcm-executor",
  "xcm-simulator",
+ "zenlink-protocol",
+ "zenlink-protocol-runtime-api",
 ]
 
 [[package]]
