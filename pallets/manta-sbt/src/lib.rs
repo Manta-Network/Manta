@@ -817,7 +817,7 @@ pub mod pallet {
         /// SBT only allows `ToPrivate` Transactions
         NoSenderLedger,
 
-        /// Incorrect EVM based signature
+        /// Crypto Signature was not valid
         BadSignature,
 
         /// Eth account is not allowlisted for free mint, can also be caused by an incorrect signature (recovers an invalid account)
