@@ -248,6 +248,10 @@ pub mod pallet {
     #[pallet::storage]
     pub(super) type AllowlistAccount<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
 
+    /// Account that can reserve `AssetId` for free
+    #[pallet::storage]
+    pub(super) type FreeReserveAccount<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
+
     /// Allowlist for Evm Accounts
     #[pallet::storage]
     pub(super) type EvmAccountAllowlist<T: Config> = StorageDoubleMap<
@@ -378,9 +382,9 @@ pub mod pallet {
             // Use reservee account, if None then use account whom signed transaction
             let reserve_account = reservee.unwrap_or(who.clone());
 
-            let allowlist_account = AllowlistAccount::<T>::get();
+            let free_account = FreeReserveAccount::<T>::get();
             // check if account is allowlist account... if it is can do operation for free
-            if allowlist_account.as_ref() != Some(&who) {
+            if free_account.as_ref() != Some(&who) {
                 // Charges fee to tx caller to reserve AssetIds
                 <T as pallet::Config>::Currency::transfer(
                     &who,
@@ -594,6 +598,21 @@ pub mod pallet {
             });
             Ok(())
         }
+
+        /// Sets the privileged allowlist account. Requires `AdminOrigin`
+        #[pallet::call_index(7)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::change_allowlist_account())]
+        #[transactional]
+        pub fn change_free_reserve_account(
+            origin: OriginFor<T>,
+            account: Option<T::AccountId>,
+        ) -> DispatchResult {
+            T::AdminOrigin::ensure_origin(origin)?;
+
+            FreeReserveAccount::<T>::set(account.clone());
+            Self::deposit_event(Event::<T>::ChangeFreeReserveAccount { account });
+            Ok(())
+        }
     }
 
     /// Event
@@ -660,6 +679,9 @@ pub mod pallet {
             end_time: Option<Moment<T>>,
             /// Name of mint
             mint_name: Vec<u8>,
+        },
+        ChangeFreeReserveAccount {
+            account: Option<T::AccountId>,
         },
     }
 

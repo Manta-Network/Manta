@@ -18,8 +18,8 @@
 
 use crate::{
     mock::{new_test_ext, Balances, MantaSBTPallet, RuntimeOrigin as MockOrigin, Test, Timestamp},
-    AllowlistAccount, DispatchError, Error, EvmAccountAllowlist, EvmAddress, MintId,
-    MintIdRegistry, MintStatus, ReservedIds, SbtMetadataV2, SignatureInfoOf, MANTA_MINT_ID,
+    AllowlistAccount, DispatchError, Error, EvmAccountAllowlist, EvmAddress, FreeReserveAccount,
+    MintId, MintIdRegistry, MintStatus, ReservedIds, SbtMetadataV2, SignatureInfoOf, MANTA_MINT_ID,
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use manta_crypto::{
@@ -251,7 +251,7 @@ fn allowlist_account_reserves_works() {
         // reserving AssetId was not free
         assert_eq!(Balances::free_balance(&ALICE), 999999999999000);
 
-        assert_ok!(MantaSBTPallet::change_allowlist_account(
+        assert_ok!(MantaSBTPallet::change_free_reserve_account(
             MockOrigin::root(),
             Some(ALICE)
         ));
@@ -535,6 +535,28 @@ fn change_allowlist_account_works() {
             None
         ));
         assert_eq!(AllowlistAccount::<Test>::get(), None);
+    })
+}
+
+#[test]
+fn change_free_reserve_account_works() {
+    new_test_ext().execute_with(|| {
+        assert_noop!(
+            MantaSBTPallet::change_free_reserve_account(MockOrigin::signed(ALICE), Some(ALICE)),
+            DispatchError::BadOrigin
+        );
+        assert_eq!(FreeReserveAccount::<Test>::get(), None);
+
+        assert_ok!(MantaSBTPallet::change_free_reserve_account(
+            MockOrigin::root(),
+            Some(ALICE)
+        ));
+        assert_eq!(FreeReserveAccount::<Test>::get().unwrap(), ALICE);
+        assert_ok!(MantaSBTPallet::change_free_reserve_account(
+            MockOrigin::root(),
+            None
+        ));
+        assert_eq!(FreeReserveAccount::<Test>::get(), None);
     })
 }
 
