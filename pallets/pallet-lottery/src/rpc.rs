@@ -23,8 +23,6 @@ use jsonrpsee::{
     proc_macros::rpc,
     types::error::{CallError, ErrorObject},
 };
-use manta_primitives::types::BlockNumber;
-use pallet_parachain_staking::BalanceOf;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block};
