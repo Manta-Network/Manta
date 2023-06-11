@@ -9,11 +9,9 @@ codec = { version = '3.1.2', default-features = false, features = ['derive'], pa
 function_name = "0.3"
 jsonrpsee = { version = "0.16.2", features = ["server", "macros"], optional = true }
 log = { version = "0.4.0", default-features = false }
-rand = { version = "0.8.5", default-features = false, optional = true }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 
 # Substrate dependencies
-frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37", default-features = false, optional = true }
 frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 sp-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
@@ -29,6 +27,10 @@ manta-primitives = { path = "../../primitives/manta", default-features = false }
 pallet-parachain-staking = { path = '../parachain-staking', default-features = false }
 runtime-common = { path = "../../runtime/common", default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
+
+# Benchmarking dependencies
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37", default-features = false, optional = true }
+rand = { version = "0.8.5", default-features = false, optional = true }
 
 [dev-dependencies]
 calamari-runtime = { path = "../../runtime/calamari", default-features = false }
