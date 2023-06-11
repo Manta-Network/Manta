@@ -58,7 +58,7 @@ pub mod weights;
 
 #[cfg(any(test, feature = "runtime-benchmarks"))]
 #[allow(clippy::all)]
-mod benchmarks;
+pub mod benchmarks;
 #[cfg(test)]
 #[allow(clippy::all)]
 mod mock;

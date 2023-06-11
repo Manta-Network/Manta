@@ -164,7 +164,6 @@ runtime-benchmarks = [
   'pallet-manta-pay/runtime-benchmarks',
   'pallet-xcm-benchmarks/runtime-benchmarks',
   'pallet-manta-sbt/runtime-benchmarks',
-  'pallet-lottery/runtime-benchmarks',
 ]
 try-runtime = [
   'frame-try-runtime',

@@ -83,6 +83,9 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(any(test, feature = "runtime-benchmarks"))]
+mod benchmarks;
+
 pub mod weights;
 
 pub use pallet::*;
@@ -195,6 +198,7 @@ pub mod pallet {
     pub(super) type RebalanceInProgress<T: Config> = StorageValue<_, bool, ValueQuery>;
 
     #[pallet::storage]
+    #[pallet::getter(fn active_balance_per_user)]
     pub(super) type ActiveBalancePerUser<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, ValueQuery>;
 

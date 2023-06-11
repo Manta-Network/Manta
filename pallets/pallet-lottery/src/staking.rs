@@ -217,9 +217,15 @@ impl<T: Config> Pallet<T> {
             let active_collators = pallet_parachain_staking::Pallet::<T>::selected_candidates();
             use sp_runtime::traits::SaturatedConversion;
             let nonce: u128 = <frame_system::Pallet<T>>::block_number().saturated_into();
-            let random = sp_core::U256::from_big_endian(
-                T::RandomnessSource::random(&nonce.to_be_bytes()).0.as_ref(),
-            );
+            let random = if cfg!(feature = "runtime-benchmarks") {
+                use rand::{Rng, SeedableRng};
+                let mut rng = rand::rngs::StdRng::seed_from_u64(nonce as u64);
+                rng.gen::<u128>().into()
+            } else {
+                sp_core::U256::from_big_endian(
+                    T::RandomnessSource::random(&nonce.to_be_bytes()).0.as_ref(),
+                )
+            };
             let random_index: usize = random.low_u64() as usize % active_collators.len();
             if let Some(random_collator) = active_collators.get(random_index) {
                 deposits.push((random_collator.clone(), remaining_deposit));
