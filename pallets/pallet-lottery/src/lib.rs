@@ -225,14 +225,15 @@ pub mod pallet {
     pub(super) type RemainingUnstakingBalance<T: Config> =
         StorageValue<_, BalanceOf<T>, ValueQuery>;
 
-    #[derive(Clone, Encode, Decode, TypeInfo)]
-    pub(super) struct Request<AccountId, BlockNumber, Balance> {
-        user: AccountId,
-        block: BlockNumber,
-        balance: Balance,
+    #[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo)]
+    pub struct Request<AccountId, BlockNumber, Balance> {
+        pub user: AccountId,
+        pub block: BlockNumber,
+        pub balance: Balance,
     }
 
     #[pallet::storage]
+    #[pallet::getter(fn withdrawal_request_queue)]
     pub(super) type WithdrawalRequestQueue<T: Config> =
         StorageValue<_, Vec<Request<T::AccountId, T::BlockNumber, BalanceOf<T>>>, ValueQuery>;
 
@@ -403,8 +404,8 @@ pub mod pallet {
                             .checked_sub(&amount)
                             .ok_or(Error::<T>::ArithmeticUnderflow)?
                         {
-                            x if x.is_zero() => None,
-                            x => Some(x),
+                            new_balance if new_balance.is_zero() => None,
+                            new_balance => Some(new_balance),
                         };
                         TotalPot::<T>::try_mutate(|pot| {
                             (*pot)

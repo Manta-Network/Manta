@@ -17,7 +17,7 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 //! Benchmarking
-use crate::{Call, Config, Pallet};
+use crate::{Call, Config, Pallet, Request};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, vec, Zero};
 use frame_support::{
     assert_ok,
@@ -54,6 +54,13 @@ fn roll_to_and_author<T: Config>(round_delay: u32, author: T::AccountId) {
     }
 }
 
+fn fund_lottery_account<T: Config>(bal: BalanceOf<T>) {
+    <T as pallet_parachain_staking::Config>::Currency::deposit_creating(
+        &Pallet::<T>::account_id(),
+        bal,
+    );
+}
+
 const USER_SEED: u32 = 999666;
 benchmarks! {
     // USER DISPATCHABLES
@@ -62,6 +69,7 @@ benchmarks! {
         let x in 0..10_000; // other users that have already deposited to the lottery previously
         let y in 0..MAX_COLLATOR_COUNT; // registered collators
 
+        fund_lottery_account::<T>(Pallet::<T>::gas_reserve());
         let min_delegator_bond = <<T as pallet_parachain_staking::Config>::MinDelegatorStk as Get<BalanceOf<T>>>::get();
         let original_collator_count = Staking::<T>::candidate_pool().len() as u32;
         let deposit_amount: BalanceOf<T> = min_delegator_bond * 10_000u32.into();
@@ -78,7 +86,6 @@ benchmarks! {
             ));
         collator_seed+=1;
         }
-        let (caller, _) = create_funded_user::<T>("caller", USER_SEED, deposit_amount);
         assert_eq!(Staking::<T>::candidate_pool().len() as u32, original_collator_count + y);
 
         let original_staked_amount = Staking::<T>::total();
@@ -86,27 +93,65 @@ benchmarks! {
             let (depositor, _) = create_funded_user::<T>("depositor", USER_SEED-1-x, deposit_amount);
             Pallet::<T>::deposit(RawOrigin::Signed(depositor).into(), deposit_amount);
         }
+        let (caller, _) = create_funded_user::<T>("caller", USER_SEED, deposit_amount);
     }: _(RawOrigin::Signed(caller.clone()), deposit_amount)
     verify {
-        assert_eq!(Pallet::<T>::total_pot(), deposit_amount.saturating_mul((x+1).into()));
         assert_eq!(Pallet::<T>::active_balance_per_user(caller), deposit_amount);
+        assert_eq!(Pallet::<T>::total_pot(), deposit_amount.saturating_mul((x+1).into()));
         assert_eq!(Staking::<T>::total(), original_staked_amount + deposit_amount.saturating_mul((x+1).into()));
     }
 
-    // request_withdraw{
-    //     let inflation_range: Range<Perbill> = Range {
-    //         min: Perbill::from_perthousand(1),
-    //         ideal: Perbill::from_perthousand(2),
-    //         max: Perbill::from_perthousand(3),
-    //     };
+    request_withdraw{
+        let x in 0..10_000; // other users that have already deposited to the lottery previously
+        let y in 0..MAX_COLLATOR_COUNT; // registered collators
 
-    // }: _(RawOrigin::Root, inflation_range)
-    // verify {
-    //     // assert_eq!(Pallet::<T>::inflation_config().annual, inflation_range);
-    // }
+        fund_lottery_account::<T>(Pallet::<T>::gas_reserve());
+        let min_delegator_bond = <<T as pallet_parachain_staking::Config>::MinDelegatorStk as Get<BalanceOf<T>>>::get();
+        let original_collator_count = Staking::<T>::candidate_pool().len() as u32;
+        let deposit_amount: BalanceOf<T> = min_delegator_bond * 10_000u32.into();
+        let mut collator_seed: u32 = 444;
+        // fill collators
+        for _ in 0..y
+        {
+            assert_ok!(create_funded_collator::<T>(
+                "collator",
+                collator_seed,
+                Zero::zero(),
+                true,
+                original_collator_count + y
+            ));
+        collator_seed+=1;
+        }
+        assert_eq!(Staking::<T>::candidate_pool().len() as u32, original_collator_count + y);
+
+        let original_staked_amount = Staking::<T>::total();
+        for prior_user in 0..x{
+            let (depositor, _) = create_funded_user::<T>("depositor", USER_SEED-1-x, deposit_amount);
+            Pallet::<T>::deposit(RawOrigin::Signed(depositor).into(), deposit_amount);
+        }
+
+        let (caller, _) = create_funded_user::<T>("caller", USER_SEED, deposit_amount);
+        Pallet::<T>::deposit(RawOrigin::Signed(caller.clone()).into(), deposit_amount);
+        assert_eq!(Pallet::<T>::active_balance_per_user(caller.clone()), deposit_amount);
+    }: _(RawOrigin::Signed(caller.clone()), deposit_amount)
+    verify {
+        assert!(Pallet::<T>::active_balance_per_user(caller.clone()).is_zero());
+        let now = <frame_system::Pallet<T>>::block_number();
+        let should_be_request = Request {
+            user: caller.clone(),
+            block: now,
+            balance: deposit_amount,
+        };
+        let mut request_queue = Pallet::<T>::withdrawal_request_queue();
+        assert_eq!(request_queue.len(),1usize);
+        assert_eq!(request_queue.pop().unwrap(), should_be_request);
+    }
 
     // claim_my_winnings {
-    //     let parachain_bond_account: T::AccountId = account("TEST", 0u32, USER_SEED);
+        // let x in 0..10_000; // other users that have already deposited to the lottery previously
+        // let y in 0..MAX_COLLATOR_COUNT; // registered collators
+
+        // fund_lottery_account::<T>(Pallet::<T>::gas_reserve());
     // }: _(RawOrigin::Root, parachain_bond_account.clone())
     // verify {
     //     // assert_eq!(Pallet::<T>::parachain_bond_info().account, parachain_bond_account);
@@ -205,12 +250,12 @@ mod tests {
             assert_ok!(Pallet::<Test>::test_benchmark_deposit());
         });
     }
-    // #[test]
-    // fn bench_request_withdraw() {
-    //     new_test_ext().execute_with(|| {
-    //         assert_ok!(Pallet::<Test>::test_benchmark_request_withdraw());
-    //     });
-    // }
+    #[test]
+    fn bench_request_withdraw() {
+        new_test_ext().execute_with(|| {
+            assert_ok!(Pallet::<Test>::test_benchmark_request_withdraw());
+        });
+    }
     // #[test]
     // fn bench_claim_my_winnings() {
     //     new_test_ext().execute_with(|| {
