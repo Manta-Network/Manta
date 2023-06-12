@@ -381,6 +381,11 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
             // Use reservee account, if None then use account whom signed transaction
             let reserve_account = reservee.unwrap_or(who.clone());
+            // ensure account does not have any `AssetId` already reserved
+            ensure!(
+                !ReservedIds::<T>::contains_key(&reserve_account),
+                Error::<T>::AssetIdsAlreadyReserved
+            );
 
             let free_account = FreeReserveAccount::<T>::get();
             // check if account is allowlist account... if it is can do operation for free
@@ -394,11 +399,6 @@ pub mod pallet {
                 )?;
             }
 
-            // ensure account does not have any `AssetId` already reserved
-            ensure!(
-                !ReservedIds::<T>::contains_key(&reserve_account),
-                Error::<T>::AssetIdsAlreadyReserved
-            );
             // Reserves uniques AssetIds to be used later to mint SBTs
             let asset_id_range: Vec<StandardAssetId> = (0..T::MintsPerReserve::get())
                 .map(|_| Self::next_sbt_id_and_increment())
