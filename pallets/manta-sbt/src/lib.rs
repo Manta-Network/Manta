@@ -613,6 +613,25 @@ pub mod pallet {
             Self::deposit_event(Event::<T>::ChangeFreeReserveAccount { account });
             Ok(())
         }
+
+        /// Remove allowlist evm account. Requires `AdminOrigin`
+        #[pallet::call_index(8)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::change_allowlist_account())]
+        #[transactional]
+        pub fn remove_allowlist_evm_account(
+            origin: OriginFor<T>,
+            mint_id: MintId,
+            evm_address: EvmAddress,
+        ) -> DispatchResult {
+            T::AdminOrigin::ensure_origin(origin)?;
+
+            EvmAccountAllowlist::<T>::remove(mint_id, evm_address);
+            Self::deposit_event(Event::<T>::RemoveAllowlistEvmAddress {
+                address: evm_address,
+                mint_id,
+            });
+            Ok(())
+        }
     }
 
     /// Event
@@ -645,6 +664,13 @@ pub mod pallet {
             mint_id: MintId,
             /// AssetId that is reserved for above Eth address
             asset_id: StandardAssetId,
+        },
+        /// Evm Address is removed from allowlist
+        RemoveAllowlistEvmAddress {
+            /// Eth Address that is now allowlisted to mint an SBT
+            address: EvmAddress,
+            /// An integer that corresponds to mint type
+            mint_id: MintId,
         },
         /// Sbt is minted using Allowlisted Eth account
         MintSbtEvm {

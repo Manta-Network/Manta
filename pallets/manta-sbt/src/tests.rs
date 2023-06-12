@@ -633,6 +633,25 @@ fn allowlist_account_works() {
             ),
             Error::<Test>::NotAllowlistAccount,
         );
+
+        assert_noop!(
+            MantaSBTPallet::remove_allowlist_evm_account(
+                MockOrigin::signed(ALICE),
+                bab_id,
+                EvmAddress::default(),
+            ),
+            DispatchError::BadOrigin
+        );
+
+        assert_ok!(MantaSBTPallet::remove_allowlist_evm_account(
+            MockOrigin::root(),
+            bab_id,
+            EvmAddress::default(),
+        ),);
+        assert!(!EvmAccountAllowlist::<Test>::contains_key(
+            bab_id,
+            EvmAddress::default()
+        ));
     })
 }
 
