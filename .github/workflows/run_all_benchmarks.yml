@@ -89,12 +89,13 @@ jobs:
           ${{ github.workspace }}/target/production/manta build-spec --chain $CHAIN_SPEC --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
       - name: append manta-pay storage
         run: |
-          wget -P ${{ github.workspace }}/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
-          cd ${{ github.workspace }}/Manta/tests
+          wget -P ${{ github.workspace }}/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
+          cd ${{ github.workspace }}/tests
           yarn install
           yarn
           node append_storage.js
-          CHAIN_SPEC=${{ github.workspace }}/Manta/tests/data/fork.json
+          CHAIN_SPEC=${{ github.workspace }}/tests/data/fork.json
+          echo $CHAIN_SPEC
       - name: stop sccache server
         run: sccache --stop-server || true
       - if: ${{ env.SNAPSHOT_URL == '' }}
