@@ -599,7 +599,7 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Sets the privileged allowlist account. Requires `AdminOrigin`
+        /// Sets the privileged reserve account. Requires `AdminOrigin`
         #[pallet::call_index(7)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::change_allowlist_account())]
         #[transactional]
@@ -1176,7 +1176,6 @@ where
     }
 
     /// Wrap `<Bytes>` and `</Bytes>` to [u8; 32] array.
-    /// signRaw() will wrap
     #[inline]
     fn wrap_msg_with_bytes(msg: [u8; 32]) -> Vec<u8> {
         let mut wrap_msg: Vec<u8> = Vec::new();
