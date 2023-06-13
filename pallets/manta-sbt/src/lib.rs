@@ -1168,9 +1168,22 @@ where
         let msg = Self::eip712_signable_message(proof, Zero::zero());
         let msg_hash = keccak_256(msg.as_slice());
 
+        let wrap_msg = Self::wrap_msg_with_bytes(msg_hash);
+
         sig_info
             .sig
-            .verify(msg_hash.as_ref(), &sig_info.pub_key.clone().into_account())
+            .verify(wrap_msg.as_ref(), &sig_info.pub_key.clone().into_account())
+    }
+
+    /// Wrap `<Bytes>` and `</Bytes>` to [u8; 32] array.
+    /// signRaw() will wrap
+    #[inline]
+    fn wrap_msg_with_bytes(msg: [u8; 32]) -> Vec<u8> {
+        let mut wrap_msg: Vec<u8> = Vec::new();
+        wrap_msg.extend("<Bytes>".as_bytes());
+        wrap_msg.extend_from_slice(&msg);
+        wrap_msg.extend("</Bytes>".as_bytes());
+        wrap_msg
     }
 
     /// Returns an Ethereum public key derived from an Ethereum secret key.

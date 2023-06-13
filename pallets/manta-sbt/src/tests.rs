@@ -166,20 +166,26 @@ fn to_private_relay_signature_works() {
         let id = field_from_id(ReservedIds::<Test>::get(public_account).unwrap().0);
         let post = sample_to_private(id, value, &mut rng);
 
-        let signature = account_pair.sign(&keccak_256(&MantaSBTPallet::eip712_signable_message(
-            &post.proof,
-            0,
-        )));
-        let signature_2 = account_pair_2.sign(&keccak_256(
-            &MantaSBTPallet::eip712_signable_message(&post.proof, 0),
-        ));
+        let msg_hash = keccak_256(&MantaSBTPallet::eip712_signable_message(&post.proof, 0));
+        let wrap_msg: Vec<u8> = MantaSBTPallet::wrap_msg_with_bytes(msg_hash);
+
+        // with bytes wrapped
+        let signature = account_pair.sign(wrap_msg.as_ref());
+        // without bytes wrapped
+        let signature1 = account_pair.sign(msg_hash.as_ref());
+        // wrong account
+        let signature_2 = account_pair_2.sign(msg_hash.as_ref());
 
         let signature_info = SignatureInfoOf::<Test> {
             sig: signature.into(),
             pub_key: account_pair.public().into(),
         };
+        let bad_signature_info1 = SignatureInfoOf::<Test> {
+            sig: signature1.into(),
+            pub_key: account_pair.public().into(),
+        };
         // incorrect signature
-        let bad_signature_info = SignatureInfoOf::<Test> {
+        let bad_signature_info2 = SignatureInfoOf::<Test> {
             sig: signature_2.into(),
             pub_key: account_pair.public().into(),
         };
@@ -188,7 +194,17 @@ fn to_private_relay_signature_works() {
         assert_noop!(
             MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
-                Some(bad_signature_info),
+                Some(bad_signature_info1),
+                Box::new(post.clone()),
+                bvec![0]
+            ),
+            Error::<Test>::BadSignature
+        );
+        // bad signature fails
+        assert_noop!(
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                Some(bad_signature_info2),
                 Box::new(post.clone()),
                 bvec![0]
             ),
