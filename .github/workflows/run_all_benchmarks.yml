@@ -72,7 +72,7 @@ jobs:
           curl -s https://deb.nodesource.com/setup_16.x | sudo bash
           sudo apt install nodejs -y
           node -v
-          npm install --global yarn
+          sudo npm install --global yarn
           yarn -v
       - name: build benchmarking binary
         env:
