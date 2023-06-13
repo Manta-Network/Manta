@@ -270,6 +270,7 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::CouncilMembership(_)
             | RuntimeCall::TechnicalMembership(_)
             | RuntimeCall::Scheduler(_)
+            | RuntimeCall::Sudo(_)
             | RuntimeCall::CalamariVesting(_)
             | RuntimeCall::Session(_) // User must be able to set their session key when applying for a collator
             | RuntimeCall::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
@@ -817,6 +818,11 @@ impl manta_farming::Config for Runtime {
     type WeightInfo = weights::manta_farming::SubstrateWeight<Runtime>;
 }
 
+impl pallet_sudo::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -874,6 +880,8 @@ construct_runtime!(
         Utility: pallet_utility::{Pallet, Call, Event} = 40,
         Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
         // 42 was occupied by pallet-sudo, we should discuss it if another pallet takes 42 in the future.
+
+        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
 
         // Assets management
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,

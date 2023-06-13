@@ -52,6 +52,7 @@ pallet-multisig = { git = 'https://github.com/paritytech/substrate.git', default
 pallet-preimage = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 pallet-session = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
+pallet-sudo = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 pallet-transaction-payment-rpc-runtime-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
@@ -241,6 +242,7 @@ std = [
   'pallet-transaction-payment-rpc-runtime-api/std',
   'pallet-timestamp/std',
   'pallet-session/std',
+  'pallet-sudo/std',
   'sp-application-crypto/std',
   'pallet-xcm/std',
   'pallet-transaction-payment/std',

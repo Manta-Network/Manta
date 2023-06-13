@@ -158,10 +158,11 @@ pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
 
 fn calamari_dev_genesis(
     invulnerables: Vec<(AccountId, SessionKeys)>,
-
     delegations: Vec<(AccountId, AccountId, Balance)>,
     endowed_accounts: Vec<AccountId>,
 ) -> GenesisConfig {
+    let root_key = invulnerables.first().unwrap().clone().0;
+
     GenesisConfig {
         system: calamari_runtime::SystemConfig {
             code: calamari_runtime::WASM_BINARY
@@ -182,6 +183,9 @@ fn calamari_dev_genesis(
         // no need to pass anything to aura, in fact it will panic if we do. Session will take care
         // of this.
         aura: Default::default(),
+        sudo: calamari_runtime::SudoConfig {
+            key: Some(root_key),
+        },
         parachain_staking: ParachainStakingConfig {
             candidates: invulnerables
                 .iter()
