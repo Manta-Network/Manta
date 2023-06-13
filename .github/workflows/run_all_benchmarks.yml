@@ -69,9 +69,10 @@ jobs:
           rustup target add wasm32-unknown-unknown
       - name: init nodejs && yarn
         run: |
-          scurl -s https://deb.nodesource.com/setup_16.x | sudo bash
+          curl -s https://deb.nodesource.com/setup_16.x | sudo bash
           sudo apt install nodejs -y
           node -v
+          npm install --global yarn
           yarn -v
       - name: build benchmarking binary
         env:
