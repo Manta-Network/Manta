@@ -84,8 +84,8 @@ jobs:
         run: |
           ${{ github.workspace }}/target/production/manta build-spec --chain $CHAIN_SPEC --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
       - name: append manta-pay storage
-        - uses: actions/checkout@v2
-        - uses: borales/actions-yarn@v3.0.0
+        uses: actions/checkout@v2
+        uses: borales/actions-yarn@v3.0.0
         run: |
           wget -P ${{ github.workspace }}/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
           cd ${{ github.workspace }}/Manta/tests
