@@ -29,8 +29,6 @@ use manta_primitives::{
 };
 use scale_codec::Decode;
 
-// mod precomputed_coins;
-
 pub const INITIAL_VALUE: u128 = 1_000_000_000_000_000_000_000u128;
 
 const MINTS_OFFSET: usize = 2;
@@ -42,8 +40,7 @@ const TRANSFER_SIZE: usize = 1291;
 const RECLAIMS_OFFSET: usize = 4;
 const RECLAIM_SIZE: usize = 1001;
 
-// 14000 coins have been inserted into the chain spec,
-// so here, it start from 14000.
+// 14000 iterations of mint, mint, mint, transfer, mint, mint, reclaim
 const TOTAL_ITERATIONS: usize = 14000;
 
 /// Asserts that the last event that has occurred is the same as `event`.

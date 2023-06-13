@@ -83,7 +83,7 @@ jobs:
         run: |
           source ${HOME}/.cargo/env
           RUSTC_BOOTSTRAP=1 cargo build --profile production --features runtime-benchmarks --verbose
-      - id: create-chainspec
+      - name: create-chainspec
         run: |
           ${{ github.workspace }}/target/production/manta build-spec --chain $CHAIN_SPEC --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
       - name: append manta-pay storage
