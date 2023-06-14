@@ -197,12 +197,12 @@ impl WeightInfo for () {
 	fn change_free_reserve_account() -> Weight {
 		// Minimum execution time: 18_545 nanoseconds.
 		Weight::from_ref_time(19_347_000)
-			.saturating_add(T::DbWeight::get().writes(1))
+			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: MantaSbt EvmAccountAllowlist (r:0 w:1)
 	fn remove_allowlist_evm_account() -> Weight {
 		// Minimum execution time: 17_677 nanoseconds.
 		Weight::from_ref_time(18_596_000)
-			.saturating_add(T::DbWeight::get().writes(1))
+			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 }
