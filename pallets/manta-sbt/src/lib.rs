@@ -324,18 +324,25 @@ pub mod pallet {
         #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::to_private())]
         #[transactional]
+        #[allow(clippy::too_many_arguments)]
         pub fn to_private(
             origin: OriginFor<T>,
+            mint_id: Option<MintId>,
+            chain_id: Option<u64>,
             signature: Option<SignatureInfoOf<T>>,
             post: Box<TransferPost>,
             metadata: BoundedVec<u8, T::SbtMetadataBound>,
         ) -> DispatchResultWithPostInfo {
             let mut minting_account = ensure_signed(origin)?;
+            let mint_id = mint_id.unwrap_or(MANTA_MINT_ID);
+            let chain_id = chain_id.unwrap_or(Zero::zero());
+
+            Self::check_mint_time(mint_id)?;
 
             if let Some(sig) = signature {
                 // check that signature is valid
                 ensure!(
-                    Self::verify_crypto_sig(&sig, &post.proof),
+                    Self::verify_crypto_sig(&sig, &post.proof, chain_id),
                     Error::<T>::BadSignature
                 );
                 // set verified signature account as the minting_account
@@ -349,7 +356,7 @@ pub mod pallet {
             Self::check_post_shape(&post, start_id)?;
 
             let sbt_metadata = MetadataV2::<T::SbtMetadataBound> {
-                mint_id: MANTA_MINT_ID,
+                mint_id,
                 collection_id: None,
                 item_id: None,
                 extra: Some(metadata),
@@ -431,9 +438,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            let chain_info =
-                MintIdRegistry::<T>::get(mint_id).ok_or(Error::<T>::MintNotAvailable)?;
-            Self::check_mint_time(&chain_info)?;
+            Self::check_mint_time(mint_id)?;
 
             let allowlist_account =
                 AllowlistAccount::<T>::get().ok_or(Error::<T>::NotAllowlistAccount)?;
@@ -475,11 +480,8 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            let chain_info =
-                MintIdRegistry::<T>::get(mint_id).ok_or(Error::<T>::MintNotAvailable)?;
-
             // check that mint type is within time window
-            Self::check_mint_time(&chain_info)?;
+            Self::check_mint_time(mint_id)?;
 
             let address = Self::verify_eip712_signature(&post.proof, &eth_signature, chain_id)
                 .ok_or(Error::<T>::BadSignature)?;
@@ -1140,14 +1142,14 @@ where
 
     /// Checks that mint type is available to mint within time window defined in `MintRegistrar`
     #[inline]
-    fn check_mint_time(
-        mint_chain_info: &RegisteredMint<Moment<T>, T::RegistryBound>,
-    ) -> DispatchResult {
-        let current_time = T::Now::now();
+    fn check_mint_time(mint_id: MintId) -> DispatchResult {
+        let mint_chain_info =
+            MintIdRegistry::<T>::get(mint_id).ok_or(Error::<T>::MintNotAvailable)?;
 
         let (start_time, end_time) = (mint_chain_info.start_time, mint_chain_info.end_time);
 
         // checks that current time falls within bounds
+        let current_time = T::Now::now();
         if start_time > current_time {
             return Err(Error::<T>::MintNotAvailable.into());
         } else {
@@ -1163,9 +1165,9 @@ where
 
     /// Signature Verification using substrate crypto library in `sp_core::crypto`
     #[inline]
-    fn verify_crypto_sig(sig_info: &SignatureInfoOf<T>, proof: &Proof) -> bool {
+    fn verify_crypto_sig(sig_info: &SignatureInfoOf<T>, proof: &Proof, chain_id: u64) -> bool {
         // Eip712 msg with chain_id of zero
-        let msg = Self::eip712_signable_message(proof, Zero::zero());
+        let msg = Self::eip712_signable_message(proof, chain_id);
         let msg_hash = keccak_256(msg.as_slice());
 
         let wrap_msg = Self::wrap_msg_with_bytes(msg_hash);
