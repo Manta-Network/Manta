@@ -100,39 +100,56 @@ where
     .unwrap()
 }
 
-/// Initializes a test by funding accounts and reserving_sbt, also set mintInfo for mintId=0.
+/// Initializes a test by funding accounts, reserving_sbt, set mintInfo for mintId=0.
 #[inline]
-fn initialize_test() {
+fn initialize_test(reserve_sbt: bool) {
     let mint_chain_info = RegisteredMint {
         mint_name: bvec![0],
         start_time: 0,
         end_time: None,
     };
     MintIdRegistry::<Test>::insert(0, mint_chain_info);
-    assert_ok!(Balances::set_balance(
-        MockOrigin::root(),
-        ALICE,
-        1_000_000_000_000_000,
-        0
-    ));
-    assert_ok!(MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None));
+
+    if reserve_sbt {
+        assert_ok!(Balances::set_balance(
+            MockOrigin::root(),
+            ALICE,
+            1_000_000_000_000_000,
+            0
+        ));
+        assert_ok!(MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None));
+    }
 }
 
-/// Initializes a test by funding accounts, also set mintInfo for mintId=0.
-#[inline]
-fn initialize_test_wt_reserve() {
-    let mint_chain_info = RegisteredMint {
-        mint_name: bvec![0],
-        start_time: 0,
-        end_time: None,
-    };
-    MintIdRegistry::<Test>::insert(0, mint_chain_info);
-    assert_ok!(Balances::set_balance(
-        MockOrigin::root(),
-        ALICE,
-        1_000_000_000_000_000,
-        0
-    ));
+/// Test that to_private mint is not available if mint info is not added.
+#[test]
+fn to_private_mint_not_available() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        assert_ok!(Balances::set_balance(
+            MockOrigin::root(),
+            ALICE,
+            1_000_000_000_000_000,
+            0
+        ));
+        assert_ok!(MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None));
+
+        let value = 1;
+        let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
+        let post = sample_to_private(id, value, &mut rng);
+
+        assert_noop!(
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                None,
+                None,
+                None,
+                Box::new(post),
+                bvec![0]
+            ),
+            Error::<Test>::MintNotAvailable,
+        );
+    });
 }
 
 /// Tests that single to_private tx works
@@ -140,7 +157,8 @@ fn initialize_test_wt_reserve() {
 fn to_private_should_work() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        initialize_test();
+        initialize_test(true);
+
         let value = 1;
         let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
 
@@ -184,26 +202,8 @@ fn to_private_should_work() {
 fn to_private_relay_signature_works() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        let mint_chain_info = RegisteredMint {
-            mint_name: bvec![0],
-            start_time: 0,
-            end_time: None,
-        };
-        // Manual add mintInfo with mintId=0
-        MintIdRegistry::<Test>::insert(0, mint_chain_info);
-        // new mintInfo with mintId = 1
-        assert_ok!(MantaSBTPallet::new_mint_info(
-            MockOrigin::root(),
-            0,
-            None,
-            bvec![]
-        ));
-        assert_ok!(Balances::set_balance(
-            MockOrigin::root(),
-            ALICE,
-            1_000_000_000_000_000,
-            0
-        ));
+        initialize_test(false);
+
         let account_pair = sr25519::Pair::from_string(
             "endorse doctor arch helmet master dragon wild favorite property mercy vault maze",
             None,
@@ -214,15 +214,21 @@ fn to_private_relay_signature_works() {
             None,
         )
         .unwrap();
-
         let public_account: AccountId32 = account_pair.public().into();
+
+        assert_ok!(Balances::set_balance(
+            MockOrigin::root(),
+            ALICE,
+            1_000_000_000_000_000,
+            0
+        ));
         assert_ok!(MantaSBTPallet::reserve_sbt(
             MockOrigin::signed(ALICE),
             Some(public_account.clone())
         ));
 
         let value = 1;
-        let id = field_from_id(ReservedIds::<Test>::get(public_account).unwrap().0);
+        let id = field_from_id(ReservedIds::<Test>::get(public_account.clone()).unwrap().0);
         let post = sample_to_private(id, value, &mut rng);
 
         let msg_hash = keccak_256(&MantaSBTPallet::eip712_signable_message(&post.proof, 0));
@@ -288,6 +294,47 @@ fn to_private_relay_signature_works() {
             SbtMetadataV2::<Test>::get(1).unwrap().mint_id,
             MANTA_MINT_ID
         );
+
+        let id = field_from_id(ReservedIds::<Test>::get(public_account).unwrap().0);
+        let post = sample_to_private(id, value, &mut rng);
+
+        // chain id set to 1.
+        let msg_hash = keccak_256(&MantaSBTPallet::eip712_signable_message(&post.proof, 1));
+        let wrap_msg: Vec<u8> = MantaSBTPallet::wrap_msg_with_bytes(msg_hash);
+
+        // with bytes wrapped
+        let signature = account_pair.sign(wrap_msg.as_ref());
+        let signature_info = SignatureInfoOf::<Test> {
+            sig: signature.into(),
+            pub_key: account_pair.public().into(),
+        };
+        // bad signature cause of mismatch of chainId
+        assert_noop!(
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                None,
+                None,
+                Some(signature_info.clone()),
+                Box::new(post.clone()),
+                bvec![0]
+            ),
+            Error::<Test>::BadSignature
+        );
+        // new mintInfo with mintId = 1
+        assert_ok!(MantaSBTPallet::new_mint_info(
+            MockOrigin::root(),
+            0,
+            None,
+            bvec![]
+        ));
+        assert_ok!(MantaSBTPallet::to_private(
+            MockOrigin::signed(ALICE),
+            Some(1),
+            Some(1),
+            Some(signature_info),
+            Box::new(post),
+            bvec![0]
+        ));
     });
 }
 
@@ -296,7 +343,7 @@ fn to_private_relay_signature_works() {
 fn max_reserved_to_private_works() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        initialize_test();
+        initialize_test(true);
         let value = 1;
         let mints_per_reserve = <Test as crate::pallet::Config>::MintsPerReserve::get();
         for _ in 0..mints_per_reserve {
@@ -318,7 +365,7 @@ fn max_reserved_to_private_works() {
 #[test]
 fn overwrite_asset_id_fails() {
     new_test_ext().execute_with(|| {
-        initialize_test();
+        initialize_test(true);
         // second reserve_id fails
         assert_noop!(
             MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None),
@@ -330,7 +377,7 @@ fn overwrite_asset_id_fails() {
 #[test]
 fn allowlist_account_reserves_works() {
     new_test_ext().execute_with(|| {
-        initialize_test();
+        initialize_test(true);
         // reserving AssetId was not free
         assert_eq!(Balances::free_balance(&ALICE), 999999999999000);
 
@@ -367,7 +414,7 @@ fn allowlist_account_reserves_works() {
 fn overflow_reserved_ids_fails() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        initialize_test();
+        initialize_test(true);
         let value = 1;
         let mints_per_reserve: u16 = <Test as crate::pallet::Config>::MintsPerReserve::get();
         for i in 0..mints_per_reserve + 1 {
@@ -395,7 +442,7 @@ fn overflow_reserved_ids_fails() {
 fn not_reserved_fails() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        initialize_test_wt_reserve();
+        initialize_test(false);
         let value = 1;
         let id = field_from_id(10);
         let post = sample_to_private(id, value, &mut rng);
@@ -418,7 +465,7 @@ fn not_reserved_fails() {
 fn private_transfer_fails() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        initialize_test();
+        initialize_test(true);
         let value = 1;
         let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
 
@@ -461,7 +508,7 @@ fn private_transfer_fails() {
 fn to_public_fails() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        initialize_test();
+        initialize_test(true);
         let value = 1;
         let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
 
@@ -506,7 +553,7 @@ fn wrong_asset_id_fails() {
     let mut rng = OsRng;
 
     new_test_ext().execute_with(|| {
-        initialize_test();
+        initialize_test(true);
         let asset_id = field_from_id(10);
         let value = 1;
 
@@ -528,7 +575,7 @@ fn wrong_asset_id_fails() {
 fn only_value_of_one_allowed() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        initialize_test();
+        initialize_test(true);
         let value = 10;
         let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
 
