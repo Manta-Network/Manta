@@ -52,7 +52,7 @@ pub trait WeightInfo {
     fn allowlist_evm_account() -> Weight;
     fn set_mint_chain_info() -> Weight;
     fn mint_sbt_eth() -> Weight;
-	fn change_free_reserve_account() -> Weight;
+    fn change_free_reserve_account() -> Weight;
     fn remove_allowlist_evm_account() -> Weight;
 }
 
