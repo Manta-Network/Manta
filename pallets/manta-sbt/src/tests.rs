@@ -101,16 +101,14 @@ where
 
 /// Initializes a test by funding accounts, reserving_sbt, set mintInfo for mintId=0.
 #[inline]
-fn initialize_test(reserve_sbt: bool) {
-    if reserve_sbt {
-        assert_ok!(Balances::set_balance(
-            MockOrigin::root(),
-            ALICE,
-            1_000_000_000_000_000,
-            0
-        ));
-        assert_ok!(MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None));
-    }
+fn initialize_test() {
+    assert_ok!(Balances::set_balance(
+        MockOrigin::root(),
+        ALICE,
+        1_000_000_000_000_000,
+        0
+    ));
+    assert_ok!(MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None));
 }
 
 /// Test that to_private mint is not available if mint info is not added.
@@ -149,7 +147,7 @@ fn to_private_mint_not_available() {
 fn to_private_should_work() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        initialize_test(true);
+        initialize_test();
 
         let value = 1;
         let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
@@ -195,8 +193,6 @@ fn to_private_should_work() {
 fn to_private_relay_signature_works() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        initialize_test(false);
-
         let account_pair = sr25519::Pair::from_string(
             "endorse doctor arch helmet master dragon wild favorite property mercy vault maze",
             None,
@@ -353,7 +349,7 @@ fn to_private_relay_signature_works() {
 fn max_reserved_to_private_works() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        initialize_test(true);
+        initialize_test();
         let value = 1;
         let mints_per_reserve = <Test as crate::pallet::Config>::MintsPerReserve::get();
         for _ in 0..mints_per_reserve {
@@ -375,7 +371,7 @@ fn max_reserved_to_private_works() {
 #[test]
 fn overwrite_asset_id_fails() {
     new_test_ext().execute_with(|| {
-        initialize_test(true);
+        initialize_test();
         // second reserve_id fails
         assert_noop!(
             MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None),
@@ -387,7 +383,7 @@ fn overwrite_asset_id_fails() {
 #[test]
 fn allowlist_account_reserves_works() {
     new_test_ext().execute_with(|| {
-        initialize_test(true);
+        initialize_test();
         // reserving AssetId was not free
         assert_eq!(Balances::free_balance(&ALICE), 999999999999000);
 
@@ -424,7 +420,7 @@ fn allowlist_account_reserves_works() {
 fn overflow_reserved_ids_fails() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        initialize_test(true);
+        initialize_test();
         let value = 1;
         let mints_per_reserve: u16 = <Test as crate::pallet::Config>::MintsPerReserve::get();
         for i in 0..mints_per_reserve + 1 {
@@ -452,7 +448,6 @@ fn overflow_reserved_ids_fails() {
 fn not_reserved_fails() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        initialize_test(false);
         let value = 1;
         let id = field_from_id(10);
         let post = sample_to_private(id, value, &mut rng);
@@ -475,7 +470,7 @@ fn not_reserved_fails() {
 fn private_transfer_fails() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        initialize_test(true);
+        initialize_test();
         let value = 1;
         let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
 
@@ -518,7 +513,7 @@ fn private_transfer_fails() {
 fn to_public_fails() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        initialize_test(true);
+        initialize_test();
         let value = 1;
         let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
 
@@ -563,7 +558,7 @@ fn wrong_asset_id_fails() {
     let mut rng = OsRng;
 
     new_test_ext().execute_with(|| {
-        initialize_test(true);
+        initialize_test();
         let asset_id = field_from_id(10);
         let value = 1;
 
@@ -585,7 +580,7 @@ fn wrong_asset_id_fails() {
 fn only_value_of_one_allowed() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        initialize_test(true);
+        initialize_test();
         let value = 10;
         let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
 
