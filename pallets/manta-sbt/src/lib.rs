@@ -274,6 +274,10 @@ pub mod pallet {
         OptionQuery,
     >;
 
+    /// Allows mint type to be public
+    #[pallet::storage]
+    pub(super) type PublicMintList<T: Config> = StorageMap<_, Blake2_128Concat, MintId, ()>;
+
     /// SBT Metadata maps `StandardAsset` to the corresponding SBT metadata
     ///
     /// Metadata is raw bytes that correspond to an image
@@ -338,6 +342,7 @@ pub mod pallet {
             let chain_id = chain_id.unwrap_or(Zero::zero());
 
             Self::check_mint_time(mint_id)?;
+            Self::check_mint_is_public(mint_id)?;
 
             if let Some(sig) = signature {
                 // check that signature is valid
@@ -540,6 +545,7 @@ pub mod pallet {
             start_time: Moment<T>,
             end_time: Option<Moment<T>>,
             mint_name: BoundedVec<u8, T::RegistryBound>,
+            public: bool,
         ) -> DispatchResult {
             T::AdminOrigin::ensure_origin(origin)?;
 
@@ -560,6 +566,9 @@ pub mod pallet {
                 }
                 Ok(())
             })?;
+            if public {
+                PublicMintList::<T>::insert(mint_id, ());
+            }
 
             Self::deposit_event(Event::<T>::UpdateMintInfo {
                 mint_id,
@@ -577,6 +586,7 @@ pub mod pallet {
             start_time: Moment<T>,
             end_time: Option<Moment<T>>,
             mint_name: BoundedVec<u8, T::RegistryBound>,
+            public: bool,
         ) -> DispatchResult {
             T::AdminOrigin::ensure_origin(origin)?;
 
@@ -591,6 +601,12 @@ pub mod pallet {
             let mint_id = Self::next_mint_id_and_increment()?;
 
             MintIdRegistry::<T>::insert(mint_id, mint_chain_info);
+            // add or remove from `PublicMintList`
+            if public {
+                PublicMintList::<T>::insert(mint_id, ());
+            } else {
+                PublicMintList::<T>::remove(mint_id);
+            }
 
             Self::deposit_event(Event::<T>::NewMintInfo {
                 start_time,
@@ -893,6 +909,9 @@ pub mod pallet {
 
         /// Already has unused AssetIds reserved
         AssetIdsAlreadyReserved,
+
+        /// Mint type is not public, only permissioned accounts can use this mint
+        MintNotPublic,
     }
 }
 
@@ -1143,22 +1162,37 @@ where
     /// Checks that mint type is available to mint within time window defined in `MintRegistrar`
     #[inline]
     fn check_mint_time(mint_id: MintId) -> DispatchResult {
-        let mint_chain_info =
-            MintIdRegistry::<T>::get(mint_id).ok_or(Error::<T>::MintNotAvailable)?;
+        // skip check if it is native mint with id of 0
+        if mint_id != MANTA_MINT_ID {
+            let mint_chain_info =
+                MintIdRegistry::<T>::get(mint_id).ok_or(Error::<T>::MintNotAvailable)?;
 
-        let (start_time, end_time) = (mint_chain_info.start_time, mint_chain_info.end_time);
+            let (start_time, end_time) = (mint_chain_info.start_time, mint_chain_info.end_time);
 
-        // checks that current time falls within bounds
-        let current_time = T::Now::now();
-        if start_time > current_time {
-            return Err(Error::<T>::MintNotAvailable.into());
-        } else {
-            // Checks if end time is Some and then compares it to current time. A value of None corresponds to no ending time
-            if let Some(time) = end_time {
-                if time < current_time {
-                    return Err(Error::<T>::MintNotAvailable.into());
+            // checks that current time falls within bounds
+            let current_time = T::Now::now();
+            if start_time > current_time {
+                return Err(Error::<T>::MintNotAvailable.into());
+            } else {
+                // Checks if end time is Some and then compares it to current time. A value of None corresponds to no ending time
+                if let Some(time) = end_time {
+                    if time < current_time {
+                        return Err(Error::<T>::MintNotAvailable.into());
+                    }
                 }
             }
+        }
+        Ok(())
+    }
+
+    #[inline]
+    fn check_mint_is_public(mint_id: MintId) -> DispatchResult {
+        // mint id of 0 is always public
+        if mint_id != MANTA_MINT_ID {
+            ensure!(
+                PublicMintList::<T>::contains_key(mint_id),
+                Error::<T>::MintNotPublic
+            );
         }
         Ok(())
     }
