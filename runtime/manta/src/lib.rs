@@ -354,7 +354,8 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    pub const TransactionLengthToFeeCoeff: Balance = 40 * mMANTA;
+    // 3,670,016 * 40 * 1_000_000_000_000_000 = 1.4680064e+23
+    pub const TransactionLengthToFeeCoeff: Balance = 10 * uMANTA; //10_000_000
     pub const WeightToFeeCoeff: Balance = 50_000_000;
 }
 
