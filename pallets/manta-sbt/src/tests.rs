@@ -19,7 +19,8 @@
 use crate::{
     mock::{new_test_ext, Balances, MantaSBTPallet, RuntimeOrigin as MockOrigin, Test, Timestamp},
     AllowlistAccount, DispatchError, Error, EvmAccountAllowlist, EvmAddress, FreeReserveAccount,
-    MintId, MintIdRegistry, MintStatus, ReservedIds, SbtMetadataV2, SignatureInfoOf, MANTA_MINT_ID,
+    MintId, MintIdRegistry, MintStatus, RegisteredMint, ReservedIds, SbtMetadataV2,
+    SignatureInfoOf, MANTA_MINT_ID,
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use manta_crypto::{
@@ -99,9 +100,15 @@ where
     .unwrap()
 }
 
-/// Initializes a test by funding accounts and reserving_sbt
+/// Initializes a test by funding accounts and reserving_sbt, also set mintInfo for mintId=0.
 #[inline]
 fn initialize_test() {
+    let mint_chain_info = RegisteredMint {
+        mint_name: bvec![0],
+        start_time: 0,
+        end_time: None,
+    };
+    MintIdRegistry::<Test>::insert(0, mint_chain_info);
     assert_ok!(Balances::set_balance(
         MockOrigin::root(),
         ALICE,
@@ -109,6 +116,23 @@ fn initialize_test() {
         0
     ));
     assert_ok!(MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None));
+}
+
+/// Initializes a test by funding accounts, also set mintInfo for mintId=0.
+#[inline]
+fn initialize_test_wt_reserve() {
+    let mint_chain_info = RegisteredMint {
+        mint_name: bvec![0],
+        start_time: 0,
+        end_time: None,
+    };
+    MintIdRegistry::<Test>::insert(0, mint_chain_info);
+    assert_ok!(Balances::set_balance(
+        MockOrigin::root(),
+        ALICE,
+        1_000_000_000_000_000,
+        0
+    ));
 }
 
 /// Tests that single to_private tx works
@@ -124,6 +148,8 @@ fn to_private_should_work() {
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
             None,
+            None,
+            None,
             Box::new(post),
             bvec![0]
         ));
@@ -132,6 +158,25 @@ fn to_private_should_work() {
             SbtMetadataV2::<Test>::get(1).unwrap().mint_id,
             MANTA_MINT_ID
         );
+
+        assert_ok!(MantaSBTPallet::new_mint_info(
+            MockOrigin::root(),
+            0,
+            None,
+            bvec![]
+        ));
+        let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
+        let post = sample_to_private(id, value, &mut rng);
+        assert_ok!(MantaSBTPallet::to_private(
+            MockOrigin::signed(ALICE),
+            Some(1),
+            None,
+            None,
+            Box::new(post),
+            bvec![0]
+        ));
+        assert_eq!(SbtMetadataV2::<Test>::get(2).unwrap().extra, Some(bvec![0]));
+        assert_eq!(SbtMetadataV2::<Test>::get(2).unwrap().mint_id, 1);
     });
 }
 
@@ -139,6 +184,20 @@ fn to_private_should_work() {
 fn to_private_relay_signature_works() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
+        let mint_chain_info = RegisteredMint {
+            mint_name: bvec![0],
+            start_time: 0,
+            end_time: None,
+        };
+        // Manual add mintInfo with mintId=0
+        MintIdRegistry::<Test>::insert(0, mint_chain_info);
+        // new mintInfo with mintId = 1
+        assert_ok!(MantaSBTPallet::new_mint_info(
+            MockOrigin::root(),
+            0,
+            None,
+            bvec![]
+        ));
         assert_ok!(Balances::set_balance(
             MockOrigin::root(),
             ALICE,
@@ -194,6 +253,8 @@ fn to_private_relay_signature_works() {
         assert_noop!(
             MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
+                None,
+                None,
                 Some(bad_signature_info1),
                 Box::new(post.clone()),
                 bvec![0]
@@ -204,6 +265,8 @@ fn to_private_relay_signature_works() {
         assert_noop!(
             MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
+                None,
+                None,
                 Some(bad_signature_info2),
                 Box::new(post.clone()),
                 bvec![0]
@@ -214,6 +277,8 @@ fn to_private_relay_signature_works() {
         // have alice relay `account_pair`
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
+            None,
+            None,
             Some(signature_info),
             Box::new(post),
             bvec![0]
@@ -239,6 +304,8 @@ fn max_reserved_to_private_works() {
             let post = sample_to_private(id, value, &mut rng);
             assert_ok!(MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
+                None,
+                None,
                 None,
                 Box::new(post),
                 bvec![0]
@@ -311,6 +378,8 @@ fn overflow_reserved_ids_fails() {
                 assert_ok!(MantaSBTPallet::to_private(
                     MockOrigin::signed(ALICE),
                     None,
+                    None,
+                    None,
                     Box::new(post),
                     bvec![0]
                 ));
@@ -326,11 +395,19 @@ fn overflow_reserved_ids_fails() {
 fn not_reserved_fails() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
+        initialize_test_wt_reserve();
         let value = 1;
         let id = field_from_id(10);
         let post = sample_to_private(id, value, &mut rng);
         assert_noop!(
-            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), None, Box::new(post), bvec![0]),
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                None,
+                None,
+                None,
+                Box::new(post),
+                bvec![0]
+            ),
             Error::<Test>::NotReserved
         );
     });
@@ -348,6 +425,8 @@ fn private_transfer_fails() {
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
             None,
+            None,
+            None,
             Box::new(sample_to_private(id, value, &mut rng)),
             bvec![]
         ));
@@ -364,7 +443,14 @@ fn private_transfer_fails() {
 
         let post = PalletTransferPost::try_from(private_transfer).unwrap();
         assert_noop!(
-            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), None, Box::new(post), bvec![]),
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                None,
+                None,
+                None,
+                Box::new(post),
+                bvec![]
+            ),
             Error::<Test>::InvalidShape
         );
     });
@@ -381,6 +467,8 @@ fn to_public_fails() {
 
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
+            None,
+            None,
             None,
             Box::new(sample_to_private(id, value, &mut rng)),
             bvec![]
@@ -399,7 +487,14 @@ fn to_public_fails() {
 
         let post = PalletTransferPost::try_from(private_transfer).unwrap();
         assert_noop!(
-            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), None, Box::new(post), bvec![]),
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                None,
+                None,
+                None,
+                Box::new(post),
+                bvec![]
+            ),
             Error::<Test>::InvalidShape
         );
     });
@@ -418,6 +513,8 @@ fn wrong_asset_id_fails() {
         assert_noop!(
             MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
+                None,
+                None,
                 None,
                 Box::new(sample_to_private(asset_id, value, &mut rng)),
                 bvec![]
@@ -438,6 +535,8 @@ fn only_value_of_one_allowed() {
         assert_noop!(
             MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
+                None,
+                None,
                 None,
                 Box::new(sample_to_private(id, value, &mut rng)),
                 bvec![]
