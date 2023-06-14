@@ -216,7 +216,7 @@ jobs:
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 20G
+          SCCACHE_CACHE_SIZE: 40G
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           RUSTC_BOOTSTRAP=1 cargo run --release --features runtime-benchmarks,try-runtime \
