@@ -299,7 +299,11 @@ fn to_private_relay_signature_works() {
         let post = sample_to_private(id, value, &mut rng);
 
         // chain id set to 1.
-        let msg_hash = keccak_256(&MantaSBTPallet::eip712_signable_message(&post.proof, 1));
+        let chain_id: u64 = 1;
+        let msg_hash = keccak_256(&MantaSBTPallet::eip712_signable_message(
+            &post.proof,
+            chain_id,
+        ));
         let wrap_msg: Vec<u8> = MantaSBTPallet::wrap_msg_with_bytes(msg_hash);
 
         // with bytes wrapped
@@ -320,6 +324,18 @@ fn to_private_relay_signature_works() {
             ),
             Error::<Test>::BadSignature
         );
+        let mint_id: u32 = 1;
+        assert_noop!(
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                Some(mint_id),
+                Some(chain_id),
+                Some(signature_info.clone()),
+                Box::new(post.clone()),
+                bvec![0]
+            ),
+            Error::<Test>::MintNotAvailable
+        );
         // new mintInfo with mintId = 1
         assert_ok!(MantaSBTPallet::new_mint_info(
             MockOrigin::root(),
@@ -329,8 +345,8 @@ fn to_private_relay_signature_works() {
         ));
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
-            Some(1),
-            Some(1),
+            Some(mint_id),
+            Some(chain_id),
             Some(signature_info),
             Box::new(post),
             bvec![0]
