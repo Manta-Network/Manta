@@ -55,7 +55,7 @@ use frame_system::{
     EnsureRoot,
 };
 use manta_primitives::{
-    constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
+    constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND, NAME_SERVICE_PALLET_ID},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
@@ -283,6 +283,7 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::MantaPay(_)
             | RuntimeCall::Preimage(_)
             | RuntimeCall::MantaSbt(_)
+            | RuntimeCall::NameService(_)
             | RuntimeCall::TransactionPause(_)
             | RuntimeCall::AssetManager(pallet_asset_manager::Call::update_outgoing_filtered_assets {..})
             | RuntimeCall::Utility(_) => true,
@@ -397,6 +398,16 @@ impl pallet_utility::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
+}
+
+parameter_types! {
+    pub const NameServicePalletId: PalletId = NAME_SERVICE_PALLET_ID;
+}
+
+impl pallet_name_service::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type PalletId = NameServicePalletId;
+    type RegisterWaitingPeriod = ConstU32<2>;
 }
 
 parameter_types! {
@@ -765,6 +776,7 @@ construct_runtime!(
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
         MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 48,
+        NameService: pallet_name_service::{Pallet, Call, Storage, Event<T>} = 49,
     }
 );
 
@@ -836,6 +848,7 @@ mod benches {
         [manta_collator_selection, CollatorSelection]
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
+        [pallet_name_service, NameService]
         [pallet_asset_manager, AssetManager]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]

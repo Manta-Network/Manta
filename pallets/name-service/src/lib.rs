@@ -73,7 +73,7 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         // type Call: Parameter;
 
@@ -108,7 +108,7 @@ pub mod pallet {
 
     ///
     #[pallet::storage]
-    #[pallet::getter(fn username_recrods)]
+    #[pallet::getter(fn username_records)]
     pub type UsernameRecords<T: Config> =
         StorageMap<_, Twox64Concat, Vec<u8>, NameRecord, OptionQuery>;
 
@@ -134,12 +134,12 @@ pub mod pallet {
         #[transactional]
         pub fn register(
             origin: OriginFor<T>,
-            username: T::Hash,
-            registrant: T::Hash,
+            username: Vec<u8>,
+            registrant: ZkAddressType,
         ) -> DispatchResult {
             let _origin = ensure_signed(origin)?;
 
-            Self::do_register(username, registrant)
+            Self::do_register(&username, registrant)
         }
 
         ///
@@ -156,6 +156,7 @@ pub mod pallet {
 
             Self::do_accept_register(&username, registrant, price)?;
 
+            // TODO: usernames as NFTs making them tradeble
             Self::mint_username_as_nft(&username);
 
             Ok(())
@@ -196,9 +197,9 @@ impl<T: Config> Pallet<T> {
     }
 
     ///
-    fn do_register(username: T::Hash, registrant: T::Hash) -> DispatchResult {
+    fn do_register(username: &Vec<u8>, registrant: ZkAddressType) -> DispatchResult {
         PendingRegister::<T>::insert(
-            (username, registrant),
+            (T::Hashing::hash_of(username), T::Hashing::hash_of(&registrant)),
             frame_system::Pallet::<T>::block_number()
                 .saturating_add(T::RegisterWaitingPeriod::get()),
         );
