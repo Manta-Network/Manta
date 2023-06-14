@@ -18,7 +18,6 @@
 
 use crate::{Call, Config, Pallet};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
-use frame_support::traits::Get;
 use frame_system::{EventRecord, RawOrigin};
 use manta_primitives::assets::{AssetConfig, TestingDefault, UnitsPerSecond};
 use xcm::latest::prelude::*;
