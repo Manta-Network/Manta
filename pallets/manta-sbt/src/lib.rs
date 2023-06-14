@@ -601,7 +601,7 @@ pub mod pallet {
 
         /// Sets the privileged reserve account. Requires `AdminOrigin`
         #[pallet::call_index(7)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::change_allowlist_account())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::change_free_reserve_account())]
         #[transactional]
         pub fn change_free_reserve_account(
             origin: OriginFor<T>,
@@ -616,7 +616,7 @@ pub mod pallet {
 
         /// Remove allowlist evm account. Requires `AdminOrigin`
         #[pallet::call_index(8)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::change_allowlist_account())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::remove_allowlist_evm_account())]
         #[transactional]
         pub fn remove_allowlist_evm_account(
             origin: OriginFor<T>,

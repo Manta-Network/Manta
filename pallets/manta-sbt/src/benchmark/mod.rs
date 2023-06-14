@@ -127,7 +127,6 @@ benchmarks! {
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
 
         let signature = MantaSBTPallet::<T>::eth_sign(&alice(), &mint_post.proof, 0);
-
     }: mint_sbt_eth(
         RawOrigin::Signed(caller),
         Box::new(mint_post),
@@ -137,6 +136,38 @@ benchmarks! {
         Some(0),
         Some(0),
         Some(vec![0].try_into().unwrap())
+    )
+
+    change_free_reserve_account {
+        let caller = whitelisted_caller();
+    }: change_allowlist_account(
+        RawOrigin::Root,
+        Some(caller)
+    )
+
+    remove_allowlist_evm_account {
+        let caller: T::AccountId = whitelisted_caller();
+        MantaSBTPallet::<T>::change_allowlist_account(
+            RawOrigin::Root.into(),
+            Some(caller.clone())
+        )?;
+        MantaSBTPallet::<T>::new_mint_info(
+            RawOrigin::Root.into(),
+            0_u32.into(),
+            None,
+            vec![].try_into().unwrap()
+        )?;
+        let bab_id = 1;
+
+        MantaSBTPallet::<T>::allowlist_evm_account(
+            RawOrigin::Signed(caller).into(),
+            bab_id,
+            H160::default()
+        )?;
+    }: remove_allowlist_evm_account(
+        RawOrigin::Root,
+        bab_id,
+        H160::default()
     )
 }
 
