@@ -43,7 +43,8 @@ benchmarks! {
             RawOrigin::Root.into(),
             0_u32.into(),
             None,
-            vec![].try_into().unwrap()
+            vec![].try_into().unwrap(),
+            true,
         )?;
         let bab_id = 1;
     }: to_private (
@@ -81,7 +82,8 @@ benchmarks! {
             RawOrigin::Root.into(),
             0_u32.into(),
             None,
-            vec![].try_into().unwrap()
+            vec![].try_into().unwrap(),
+            true
         )?;
         let bab_id = 1;
     }: allowlist_evm_account (
@@ -95,7 +97,8 @@ benchmarks! {
         RawOrigin::Root,
         5u32.into(),
         Some(10u32.into()),
-        vec![].try_into().unwrap()
+        vec![].try_into().unwrap(),
+        true
     )
 
     update_mint_info {
@@ -103,14 +106,16 @@ benchmarks! {
             RawOrigin::Root.into(),
             0_u32.into(),
             None,
-            vec![].try_into().unwrap()
+            vec![].try_into().unwrap(),
+            true,
         )?;
     }: update_mint_info (
         RawOrigin::Root,
         1,
         5u32.into(),
         None,
-        vec![].try_into().unwrap()
+        vec![].try_into().unwrap(),
+        false
     )
 
     mint_sbt_eth {
@@ -125,7 +130,8 @@ benchmarks! {
             RawOrigin::Root.into(),
             0_u32.into(),
             None,
-            vec![].try_into().unwrap()
+            vec![].try_into().unwrap(),
+            true,
         )?;
 
         MantaSBTPallet::<T>::allowlist_evm_account(
@@ -164,7 +170,8 @@ benchmarks! {
             RawOrigin::Root.into(),
             0_u32.into(),
             None,
-            vec![].try_into().unwrap()
+            vec![].try_into().unwrap(),
+            true
         )?;
         let bab_id = 1;
 

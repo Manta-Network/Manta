@@ -568,6 +568,8 @@ pub mod pallet {
             })?;
             if public {
                 PublicMintList::<T>::insert(mint_id, ());
+            } else {
+                PublicMintList::<T>::remove(mint_id);
             }
 
             Self::deposit_event(Event::<T>::UpdateMintInfo {
@@ -604,8 +606,6 @@ pub mod pallet {
             // add or remove from `PublicMintList`
             if public {
                 PublicMintList::<T>::insert(mint_id, ());
-            } else {
-                PublicMintList::<T>::remove(mint_id);
             }
 
             Self::deposit_event(Event::<T>::NewMintInfo {
