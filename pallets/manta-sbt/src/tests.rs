@@ -19,7 +19,8 @@
 use crate::{
     mock::{new_test_ext, Balances, MantaSBTPallet, RuntimeOrigin as MockOrigin, Test, Timestamp},
     AllowlistAccount, DispatchError, Error, EvmAccountAllowlist, EvmAddress, FreeReserveAccount,
-    MintId, MintIdRegistry, MintStatus, ReservedIds, SbtMetadataV2, SignatureInfoOf, MANTA_MINT_ID,
+    MintId, MintIdRegistry, MintStatus, RegisteredMint, ReservedIds, SbtMetadataV2,
+    SignatureInfoOf, MANTA_MINT_ID,
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use manta_crypto::{
@@ -99,9 +100,15 @@ where
     .unwrap()
 }
 
-/// Initializes a test by funding accounts and reserving_sbt
+/// Initializes a test by funding accounts and reserving_sbt, also set mintInfo for mintId=0.
 #[inline]
 fn initialize_test() {
+    let mint_chain_info = RegisteredMint {
+        mint_name: bvec![0],
+        start_time: 0,
+        end_time: None,
+    };
+    MintIdRegistry::<Test>::insert(0, mint_chain_info);
     assert_ok!(Balances::set_balance(
         MockOrigin::root(),
         ALICE,
@@ -109,11 +116,22 @@ fn initialize_test() {
         0
     ));
     assert_ok!(MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None));
-    assert_ok!(MantaSBTPallet::new_mint_info(
+}
+
+/// Initializes a test by funding accounts, also set mintInfo for mintId=0.
+#[inline]
+fn initialize_test_wt_reserve() {
+    let mint_chain_info = RegisteredMint {
+        mint_name: bvec![0],
+        start_time: 0,
+        end_time: None,
+    };
+    MintIdRegistry::<Test>::insert(0, mint_chain_info);
+    assert_ok!(Balances::set_balance(
         MockOrigin::root(),
-        0,
-        None,
-        bvec![]
+        ALICE,
+        1_000_000_000_000_000,
+        0
     ));
 }
 
@@ -141,6 +159,12 @@ fn to_private_should_work() {
             MANTA_MINT_ID
         );
 
+        assert_ok!(MantaSBTPallet::new_mint_info(
+            MockOrigin::root(),
+            0,
+            None,
+            bvec![]
+        ));
         let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
         let post = sample_to_private(id, value, &mut rng);
         assert_ok!(MantaSBTPallet::to_private(
@@ -160,6 +184,20 @@ fn to_private_should_work() {
 fn to_private_relay_signature_works() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
+        let mint_chain_info = RegisteredMint {
+            mint_name: bvec![0],
+            start_time: 0,
+            end_time: None,
+        };
+        // Manual add mintInfo with mintId=0
+        MintIdRegistry::<Test>::insert(0, mint_chain_info);
+        // new mintInfo with mintId = 1
+        assert_ok!(MantaSBTPallet::new_mint_info(
+            MockOrigin::root(),
+            0,
+            None,
+            bvec![]
+        ));
         assert_ok!(Balances::set_balance(
             MockOrigin::root(),
             ALICE,
@@ -357,6 +395,7 @@ fn overflow_reserved_ids_fails() {
 fn not_reserved_fails() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
+        initialize_test_wt_reserve();
         let value = 1;
         let id = field_from_id(10);
         let post = sample_to_private(id, value, &mut rng);

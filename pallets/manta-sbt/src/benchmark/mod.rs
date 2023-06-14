@@ -39,8 +39,17 @@ benchmarks! {
         <T as crate::Config>::Currency::make_free_balance_be(&caller, T::ReservePrice::get() * factor.into());
         Pallet::<T>::reserve_sbt(RawOrigin::Signed(caller.clone()).into(), None)?;
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
+        MantaSBTPallet::<T>::new_mint_info(
+            RawOrigin::Root.into(),
+            0_u32.into(),
+            None,
+            vec![].try_into().unwrap()
+        )?;
+        let bab_id = 1;
     }: to_private (
         RawOrigin::Signed(caller.clone()),
+        Some(bab_id),
+        None,
         None,
         Box::new(mint_post),
         vec![0].try_into().unwrap()
