@@ -21,7 +21,7 @@ use crate::{Call, Config, Pallet, Request};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, vec, Zero};
 use frame_support::{
     assert_ok,
-    traits::{tokens::fungible::Inspect, Currency, Get, OnFinalize, OnInitialize},
+    traits::{tokens::fungible::Inspect, Currency, EstimateCallFee, Get, OnFinalize, OnInitialize},
 };
 use frame_system::RawOrigin;
 use pallet_parachain_staking::{
@@ -37,13 +37,15 @@ use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 const MAX_COLLATOR_COUNT: u32 = 63;
 
 /// Run to end block and author
-fn roll_to_and_author<T: Config>(round_delay: u32, author: T::AccountId) {
-    let total_rounds = round_delay + 1u32;
+fn roll_rounds_and_author<T: Config>(rounds: u32) {
+    let total_rounds = rounds + 1u32;
     let round_length: T::BlockNumber = Staking::<T>::round().length.into();
     let mut now = <frame_system::Pallet<T>>::block_number() + 1u32.into();
     let end = Staking::<T>::round().first + (round_length * total_rounds.into());
     while now < end {
-        parachain_staking_on_finalize::<T>(author.clone());
+        let use_first_collator_to_author =
+            Staking::<T>::selected_candidates().first().unwrap().clone();
+        parachain_staking_on_finalize::<T>(use_first_collator_to_author.clone());
         <frame_system::Pallet<T>>::on_finalize(<frame_system::Pallet<T>>::block_number());
         <frame_system::Pallet<T>>::set_block_number(
             <frame_system::Pallet<T>>::block_number() + 1u32.into(),
@@ -61,6 +63,21 @@ fn fund_lottery_account<T: Config>(bal: BalanceOf<T>) {
     );
 }
 
+fn register_collators<T: Config>(number: u32) {
+    let original_collator_count = Staking::<T>::candidate_pool().len() as u32;
+    let mut collator_seed: u32 = 444;
+    for _ in 0..number {
+        assert_ok!(create_funded_collator::<T>(
+            "collator",
+            collator_seed,
+            Zero::zero(),
+            true,
+            original_collator_count + number
+        ));
+        collator_seed += 1;
+    }
+}
+
 const USER_SEED: u32 = 999666;
 benchmarks! {
     // USER DISPATCHABLES
@@ -73,25 +90,14 @@ benchmarks! {
         let min_delegator_bond = <<T as pallet_parachain_staking::Config>::MinDelegatorStk as Get<BalanceOf<T>>>::get();
         let original_collator_count = Staking::<T>::candidate_pool().len() as u32;
         let deposit_amount: BalanceOf<T> = min_delegator_bond * 10_000u32.into();
-        let mut collator_seed: u32 = 444;
         // fill collators
-        for _ in 0..y
-        {
-            assert_ok!(create_funded_collator::<T>(
-                "collator",
-                collator_seed,
-                Zero::zero(),
-                true,
-                original_collator_count + y
-            ));
-        collator_seed+=1;
-        }
+        register_collators::<T>(y);
         assert_eq!(Staking::<T>::candidate_pool().len() as u32, original_collator_count + y);
 
         let original_staked_amount = Staking::<T>::total();
         for prior_user in 0..x{
             let (depositor, _) = create_funded_user::<T>("depositor", USER_SEED-1-x, deposit_amount);
-            Pallet::<T>::deposit(RawOrigin::Signed(depositor).into(), deposit_amount);
+            assert_ok!(Pallet::<T>::deposit(RawOrigin::Signed(depositor).into(), deposit_amount));
         }
         let (caller, _) = create_funded_user::<T>("caller", USER_SEED, deposit_amount);
     }: _(RawOrigin::Signed(caller.clone()), deposit_amount)
@@ -109,29 +115,18 @@ benchmarks! {
         let min_delegator_bond = <<T as pallet_parachain_staking::Config>::MinDelegatorStk as Get<BalanceOf<T>>>::get();
         let original_collator_count = Staking::<T>::candidate_pool().len() as u32;
         let deposit_amount: BalanceOf<T> = min_delegator_bond * 10_000u32.into();
-        let mut collator_seed: u32 = 444;
         // fill collators
-        for _ in 0..y
-        {
-            assert_ok!(create_funded_collator::<T>(
-                "collator",
-                collator_seed,
-                Zero::zero(),
-                true,
-                original_collator_count + y
-            ));
-        collator_seed+=1;
-        }
+        register_collators::<T>(y);
         assert_eq!(Staking::<T>::candidate_pool().len() as u32, original_collator_count + y);
 
         let original_staked_amount = Staking::<T>::total();
         for prior_user in 0..x{
             let (depositor, _) = create_funded_user::<T>("depositor", USER_SEED-1-x, deposit_amount);
-            Pallet::<T>::deposit(RawOrigin::Signed(depositor).into(), deposit_amount);
+            assert_ok!(Pallet::<T>::deposit(RawOrigin::Signed(depositor).into(), deposit_amount));
         }
 
         let (caller, _) = create_funded_user::<T>("caller", USER_SEED, deposit_amount);
-        Pallet::<T>::deposit(RawOrigin::Signed(caller.clone()).into(), deposit_amount);
+        assert_ok!(Pallet::<T>::deposit(RawOrigin::Signed(caller.clone()).into(), deposit_amount));
         assert_eq!(Pallet::<T>::active_balance_per_user(caller.clone()), deposit_amount);
     }: _(RawOrigin::Signed(caller.clone()), deposit_amount)
     verify {
@@ -147,15 +142,39 @@ benchmarks! {
         assert_eq!(request_queue.pop().unwrap(), should_be_request);
     }
 
-    // claim_my_winnings {
+    claim_my_winnings {
         // let x in 0..10_000; // other users that have already deposited to the lottery previously
-        // let y in 0..MAX_COLLATOR_COUNT; // registered collators
+        let y in 0..MAX_COLLATOR_COUNT; // registered collators
 
-        // fund_lottery_account::<T>(Pallet::<T>::gas_reserve());
-    // }: _(RawOrigin::Root, parachain_bond_account.clone())
-    // verify {
-    //     // assert_eq!(Pallet::<T>::parachain_bond_info().account, parachain_bond_account);
-    // }
+        // NOTE: We fund 2x gas reserve to have 1x gas reserve to pay out as winnings
+        fund_lottery_account::<T>(Pallet::<T>::gas_reserve().saturating_add(Pallet::<T>::gas_reserve()));
+
+        let min_delegator_bond = <<T as pallet_parachain_staking::Config>::MinDelegatorStk as Get<BalanceOf<T>>>::get();
+        let original_collator_count = Staking::<T>::candidate_pool().len() as u32;
+        let deposit_amount: BalanceOf<T> = min_delegator_bond * 10_000u32.into();
+        // fill collators
+        register_collators::<T>(y);
+        assert_eq!(Staking::<T>::candidate_pool().len() as u32, original_collator_count + y);
+
+        let (caller, _) = create_funded_user::<T>("caller", USER_SEED, deposit_amount);
+        assert_ok!(Pallet::<T>::deposit(RawOrigin::Signed(caller.clone()).into(), deposit_amount));
+        assert_eq!(Pallet::<T>::active_balance_per_user(caller.clone()), deposit_amount);
+        roll_rounds_and_author::<T>(2);
+        assert_ok!(Pallet::<T>::draw_lottery(RawOrigin::Root.into()));
+        // should have won now
+        let unclaimed_winnings = Pallet::<T>::total_unclaimed_winnings();
+        let account_balance_before = <T as pallet_parachain_staking::Config>::Currency::free_balance(&caller.clone());
+        let fee_estimate  = T::EstimateCallFee::estimate_call_fee(&Call::<T>::claim_my_winnings {  }, None::<u64>.into());
+        assert!(!unclaimed_winnings.is_zero());
+        assert_eq!(unclaimed_winnings,Pallet::<T>::unclaimed_winnings_by_account(caller.clone()).unwrap());
+    }: _(RawOrigin::Signed(caller.clone()))
+    verify {
+        assert!(Pallet::<T>::total_unclaimed_winnings().is_zero());
+        let account_balance_after = <T as pallet_parachain_staking::Config>::Currency::free_balance(&caller.clone());
+        assert!(Pallet::<T>::unclaimed_winnings_by_account(caller.clone()).is_none());
+        assert!(account_balance_after >= account_balance_before + unclaimed_winnings - fee_estimate);
+        assert!(account_balance_after <= account_balance_before + unclaimed_winnings);
+    }
 
     // // ROOT DISPATCHABLES
 
@@ -166,7 +185,6 @@ benchmarks! {
     // }
 
     // start_lottery {
-    //     Pallet::<T>::set_blocks_per_round(RawOrigin::Root.into(), 100u32)?;
     // }: _(RawOrigin::Root, 100u32)
     // verify {
     //     assert_eq!(Pallet::<T>::total_selected(), 100u32);

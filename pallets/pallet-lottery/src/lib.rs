@@ -51,7 +51,7 @@
 //! ### Manager Dispatchable Functions
 //! * [`Call::start_lottery`]: Schedules periodic lottery drawings to occur each [`Config::DrawingInterval`]
 //! * [`Call::stop_lottery`]: Cancels the current drawing and stops scheduling new drawings
-//! * [`Call::draw_lottery`]: Immediately executes a lottery drawing
+//! * [`Call::draw_lottery`]: Immediately executes a lottery drawing ( can be called manually even if lottery is stopped )
 //! * [`Call::process_matured_withdrawals`]: Immediately transfer funds of all matured withdrawals to their respective owner's wallets
 //! * [`Call::liquidate_lottery`]: Unstakes all lottery funds and schedules [`Call::process_matured_withdrawals`] after the timelock period
 //! * [`Call::rebalance_stake`]: Immediately unstakes overweight collators (with low APY) for later restaking into underweight collators (with high APY)
@@ -134,9 +134,9 @@ pub mod pallet {
         type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
         /// Something that can estimate the cost of sending an extrinsic
         type EstimateCallFee: frame_support::traits::EstimateCallFee<
-            pallet_parachain_staking::Call<Self>,
-            BalanceOf<Self>,
-        >;
+                pallet_parachain_staking::Call<Self>,
+                BalanceOf<Self>,
+            > + frame_support::traits::EstimateCallFee<Call<Self>, BalanceOf<Self>>;
         /// Origin that can manage lottery parameters and start/stop drawings
         type ManageOrigin: EnsureOrigin<Self::RuntimeOrigin>;
         /// Overarching type of all pallets origins.
@@ -203,6 +203,7 @@ pub mod pallet {
         StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, ValueQuery>;
 
     #[pallet::storage]
+    #[pallet::getter(fn unclaimed_winnings_by_account)]
     pub(super) type UnclaimedWinningsByAccount<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, OptionQuery>;
 
@@ -742,17 +743,36 @@ pub mod pallet {
             }
             // Match random number to winner. We select a winning **balance** and then just add up accounts in the order they're stored until the sum of balance exceeds the winning amount
             // IMPORTANT: This order and active balances must be locked to modification after the random seed is created (relay BABE randomness, 2 epochs ago)
-            let random = T::RandomnessSource::random(&[0u8, 1]);
-            let _randomness_established_at_block = random.1;
+            let random: (T::Hash, BlockNumberFor<T>);
+            #[cfg(feature = "runtime-benchmarks")]
+            {
+                use rand::{Rng, RngCore, SeedableRng};
+                use sp_runtime::traits::Hash;
+                // XXX: Benchmarking randomness changes per block instead of per epoch
+                let mut rng = rand::rngs::StdRng::seed_from_u64(
+                    <frame_system::Pallet<T>>::block_number()
+                        .try_into()
+                        .unwrap_or(0u64),
+                );
+                let mut rnd = [0u8; 32];
+                rng.fill_bytes(&mut rnd);
+                let randomness = T::Hashing::hash(&rnd);
+                random = (randomness, <T as frame_system::Config>::BlockNumber::zero());
+            }
+            #[cfg(not(feature = "runtime-benchmarks"))]
+            {
+                random = T::RandomnessSource::random(&[0u8; 1]);
+            }
+            let randomness_established_at_block = random.1;
 
             // TODO: Ensure freezeout period started before the randomness was known to prevent manipulation of the winning set
-            // ensure!(
-            //     Self::next_drawing_at().is_some()
-            //         && randomness_established_at_block
-            //             .saturating_add(<T as Config>::DrawingFreezeout::get())
-            //             < Self::next_drawing_at().unwrap(),
-            //     Error::<T>::PalletMisconfigured
-            // );
+            #[cfg(not(feature = "runtime-benchmarks"))]
+            ensure!(
+                randomness_established_at_block
+                    .saturating_add(<T as Config>::DrawingFreezeout::get())
+                    < <frame_system::Pallet<T>>::block_number(),
+                Error::<T>::PalletMisconfigured
+            );
 
             let random_hash = random.0;
             let as_number = U256::from_big_endian(random_hash.as_ref());

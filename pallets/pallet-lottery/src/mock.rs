@@ -291,7 +291,17 @@ impl frame_support::traits::EstimateCallFee<pallet_parachain_staking::Call<Test>
         _call: &pallet_parachain_staking::Call<Test>,
         _post_info: frame_support::weights::PostDispatchInfo,
     ) -> BalanceOf<Test> {
-        10 * KMA
+        7 * KMA
+    }
+}
+impl frame_support::traits::EstimateCallFee<pallet::Call<Test>, BalanceOf<Test>>
+    for MockEstimateFee
+{
+    fn estimate_call_fee(
+        _call: &pallet::Call<Test>,
+        _post_info: frame_support::weights::PostDispatchInfo,
+    ) -> BalanceOf<Test> {
+        3 * KMA
     }
 }
 impl Config for Test {
