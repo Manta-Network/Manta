@@ -119,6 +119,7 @@ fn diff_tx_fees() {
                                 Percent::from_float(diff_value.to_float())
                             }
                         };
+                        dbg!(&fluctuation);
                         let _multiplier = found.fee_multiplier;
                         assert!(fluctuation <= TX_FEE_FLUCTUATION, "The tx fee fluctuation for the extrinsic {extrinsic_name} is {fluctuation:?}, bigger than {TX_FEE_FLUCTUATION:?} with multiplier {_multiplier}.");
                     }
@@ -1268,13 +1269,12 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         ));
 
         // register_lp_asset
-        let call = crate::RuntimeCall::AssetManager(
-            pallet_asset_manager::Call::register_lp_asset {
+        let call =
+            crate::RuntimeCall::AssetManager(pallet_asset_manager::Call::register_lp_asset {
                 asset_0: 1,
                 asset_1: 2,
                 metadata: AssetRegistryMetadata::testing_default(),
-            },
-        );
+            });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_asset_manager",
