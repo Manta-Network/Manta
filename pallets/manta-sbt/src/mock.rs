@@ -38,7 +38,7 @@ use manta_primitives::{
 use sp_core::H256;
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
-    AccountId32, DispatchResult,
+    AccountId32, DispatchResult, MultiSignature, MultiSigner,
 };
 use xcm::{
     prelude::{Parachain, X1},
@@ -149,6 +149,8 @@ impl crate::Config for Test {
     type AdminOrigin = EnsureRoot<AccountId32>;
     type Now = Timestamp;
     type RegistryBound = ConstU32<200>;
+    type Signature = MultiSignature;
+    type PublicKey = MultiSigner;
 }
 
 parameter_types! {
