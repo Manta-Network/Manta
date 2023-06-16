@@ -78,13 +78,12 @@ mod staking;
 pub mod rpc;
 pub mod runtime;
 
+#[cfg(any(test, feature = "runtime-benchmarks"))]
+mod benchmarks;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
-
-#[cfg(any(test, feature = "runtime-benchmarks"))]
-mod benchmarks;
 
 pub mod weights;
 
@@ -298,6 +297,7 @@ pub mod pallet {
         WithdrawBelowMinAmount,
         WithdrawAboveDeposit,
         NoDepositForAccount,
+        NoCollatorForDeposit,
         WithdrawFailed,
         ArithmeticUnderflow,
         PalletMisconfigured,
@@ -334,7 +334,12 @@ pub mod pallet {
             )?;
 
             // Attempt to stake them
-            for (some_collator, balance) in Self::calculate_deposit_distribution(amount) {
+            let collator_balance_pairs = Self::calculate_deposit_distribution(amount);
+            ensure!(
+                !collator_balance_pairs.is_empty(),
+                Error::<T>::NoCollatorForDeposit
+            );
+            for (some_collator, balance) in collator_balance_pairs {
                 Self::do_stake_one_collator(some_collator, balance)?;
             }
 
@@ -763,12 +768,10 @@ pub mod pallet {
             {
                 random = T::RandomnessSource::random(&[0u8; 1]);
             }
-            let randomness_established_at_block = random.1;
-
-            // TODO: Ensure freezeout period started before the randomness was known to prevent manipulation of the winning set
             #[cfg(not(feature = "runtime-benchmarks"))]
             ensure!(
-                randomness_established_at_block
+                random
+                    .1 // = randomness_established_at_block
                     .saturating_add(<T as Config>::DrawingFreezeout::get())
                     < <frame_system::Pallet<T>>::block_number(),
                 Error::<T>::PalletMisconfigured

@@ -83,7 +83,7 @@ benchmarks! {
     // USER DISPATCHABLES
 
     deposit {
-        let x in 0..10_000; // other users that have already deposited to the lottery previously
+        let x in 0..0; // other users that have already deposited to the lottery previously
         let y in 0..MAX_COLLATOR_COUNT; // registered collators
 
         fund_lottery_account::<T>(Pallet::<T>::gas_reserve());
@@ -93,6 +93,7 @@ benchmarks! {
         // fill collators
         register_collators::<T>(y);
         assert_eq!(Staking::<T>::candidate_pool().len() as u32, original_collator_count + y);
+        assert_eq!(Pallet::<T>::total_pot(), Zero::zero());
 
         let original_staked_amount = Staking::<T>::total();
         for prior_user in 0..x{
@@ -257,10 +258,37 @@ mod tests {
     use sp_io::TestExternalities;
 
     pub fn new_test_ext() -> TestExternalities {
-        let t = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
-            .unwrap();
-        TestExternalities::new(t)
+        crate::mock::ExtBuilder::default()
+            .with_balances(vec![
+                (1, 10_000_000_000_000_000_000u128.into()),
+                (2, 10_000_000_000_000_000_000u128.into()),
+                (3, 10_000_000_000_000_000_000u128.into()),
+                (4, 10_000_000_000_000_000_000u128.into()),
+                (5, 10_000_000_000_000_000_000u128.into()),
+            ])
+            .with_candidates(vec![
+                (1, 5_000_000_000_000_000_000u128.into()),
+                (2, 5_000_000_000_000_000_000u128.into()),
+                (3, 5_000_000_000_000_000_000u128.into()),
+                (4, 5_000_000_000_000_000_000u128.into()),
+                (5, 5_000_000_000_000_000_000u128.into()),
+            ])
+            .with_funded_lottery_account(10_000_000_000_000_000u128.into())
+            .with_inflation(Default::default())
+            // NOTE: using default (=0) inflation means the lottery will not generate income on round change
+            .build()
+    }
+    #[test]
+    fn parachain_staking_is_set_up_correctly() {
+        new_test_ext().execute_with(|| {
+            assert_eq!(Staking::<Test>::selected_candidates().len(), 5);
+            // assert_eq!(
+            //     <Test as pallet_parachain_staking::Config>::Currency::free_balance(
+            //         &Pallet::<Test>::account_id().clone()
+            //     ),
+            //     10_000_000_000_000_000u128.into()
+            // );
+        });
     }
     #[test]
     fn bench_deposit() {
@@ -274,12 +302,12 @@ mod tests {
             assert_ok!(Pallet::<Test>::test_benchmark_request_withdraw());
         });
     }
-    // #[test]
-    // fn bench_claim_my_winnings() {
-    //     new_test_ext().execute_with(|| {
-    //         assert_ok!(Pallet::<Test>::test_benchmark_claim_my_winnings());
-    //     });
-    // }
+    #[test]
+    fn bench_claim_my_winnings() {
+        new_test_ext().execute_with(|| {
+            assert_ok!(Pallet::<Test>::test_benchmark_claim_my_winnings());
+        });
+    }
     // #[test]
     // fn bench_rebalance_stake() {
     //     new_test_ext().execute_with(|| {

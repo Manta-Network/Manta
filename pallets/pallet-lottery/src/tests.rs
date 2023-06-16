@@ -14,13 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! # Staking Pallet Unit Tests
-//! The unit tests are organized by the call they test. The order matches the order
-//! of the calls in the `lib.rs`.
-//! 1. Root
-//! 2. Monetary Governance
-//! 3. Public (Collator, Nominator)
-//! 4. Miscellaneous Property-Based Tests
 use crate::{
     assert_eq_events, assert_eq_last_events, assert_event_emitted, assert_last_event,
     assert_tail_eq,
@@ -29,7 +22,7 @@ use crate::{
         Balances, CollatorSelection, ExtBuilder, Lottery, ParachainStaking,
         RuntimeOrigin as Origin, Test,
     },
-    Error, Event,
+    Config, Error, Event,
 };
 
 use frame_support::{assert_noop, assert_ok};
@@ -97,6 +90,43 @@ fn starting_funded_lottery_should_work() {
         .build()
         .execute_with(|| {
             assert_ok!(Lottery::start_lottery(RawOrigin::Root.into()));
+        });
+}
+#[test]
+fn depositing_and_withdrawing_in_freezeout_should_not_work() {
+    let balance = 300_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE.clone(), HIGH_BALANCE.clone()),
+            (BOB.clone(), HIGH_BALANCE),
+        ])
+        .with_candidates(vec![(BOB.clone(), balance)])
+        .with_funded_lottery_account(HIGH_BALANCE.clone())
+        .build()
+        .execute_with(|| {
+            assert!(HIGH_BALANCE > balance);
+            assert_ok!(Lottery::deposit(
+                Origin::signed(ALICE.clone()),
+                balance.clone()
+            ));
+            assert_eq!(Lottery::sum_of_deposits(), balance);
+            assert_eq!(Lottery::total_pot(), balance);
+            assert_ok!(Lottery::start_lottery(RawOrigin::Root.into(),));
+            assert!(Lottery::not_in_drawing_freezeout());
+            roll_to(
+                Lottery::next_drawing_at().unwrap() - <Test as Config>::DrawingFreezeout::get(),
+            );
+            assert!(!Lottery::not_in_drawing_freezeout());
+            assert_noop!(
+                Lottery::deposit(Origin::signed(ALICE.clone()), balance.clone()),
+                Error::<Test>::TooCloseToDrawing
+            );
+            assert_noop!(
+                Lottery::request_withdraw(Origin::signed(ALICE.clone()), balance.clone()),
+                Error::<Test>::TooCloseToDrawing
+            );
+            assert_eq!(Lottery::sum_of_deposits(), balance);
+            assert_eq!(Lottery::total_pot(), balance);
         });
 }
 #[test]

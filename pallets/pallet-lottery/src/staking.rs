@@ -85,7 +85,17 @@ impl<T: Config> Pallet<T> {
         // We only consider active collators for deposits
         // TODO: Also consider points / pointsAwarded to not stake to collators missing blocks
 
-        let top_collator_accounts = pallet_parachain_staking::Pallet::<T>::compute_top_candidates(); // XXX/TODO: This can select collators that are not joined but not yet active
+        let mut top_collator_accounts =
+            pallet_parachain_staking::Pallet::<T>::compute_top_candidates(); // XXX/TODO: This can select collators that are joined but not yet active
+        if top_collator_accounts.is_empty() {
+            // Use `SelectedCandidates` (should basically never happen)
+            log::warn!("Lottery falling back to selected candidates");
+            top_collator_accounts = pallet_parachain_staking::Pallet::<T>::selected_candidates();
+            if top_collator_accounts.is_empty() {
+                log::error!("Lottery found no collators to stake with");
+                return vec![];
+            }
+        }
         let mut collators_and_counted_balances: Vec<_> = top_collator_accounts
             .iter()
             .map(|collator| {
