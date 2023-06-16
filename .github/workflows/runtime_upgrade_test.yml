@@ -35,17 +35,6 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
     steps:
-      - name: init
-        run: |
-          sudo apt update
-          sudo apt install -y pkg-config libssl-dev protobuf-compiler
-          protoc --version
-          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
-          source ${HOME}/.cargo/env
-          rustup toolchain install stable
-          rustup default stable
-          rustup update
-          rustup target add wasm32-unknown-unknown
       - uses: actions/checkout@v2
       - name: cache target dir
         uses: actions/cache@v2
@@ -56,9 +45,10 @@ jobs:
             srtool-target-${{ env.RUNTIME }}
       - name: build runtime
         id: srtool-build
-        uses: chevdor/srtool-actions@v0.7.0
+        uses: chevdor/srtool-actions@v0.4.0
         with:
           image: paritytech/srtool
+          tag: 1.66.1
           chain: ${{ env.RUNTIME }}
       - name: persist srtool digest
         run: >
