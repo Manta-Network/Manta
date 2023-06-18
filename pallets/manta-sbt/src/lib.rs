@@ -72,7 +72,7 @@ use sha3::{Digest, Keccak256};
 use sp_core::{H160, H256, U256};
 use sp_io::{crypto::secp256k1_ecdsa_recover, hashing::keccak_256};
 use sp_runtime::{
-    traits::{AccountIdConversion, One, Zero},
+    traits::{AccountIdConversion, IdentifyAccount, One, Verify, Zero},
     ArithmeticError,
 };
 
@@ -160,8 +160,18 @@ pub struct MetadataV2<Bound: Get<u32>> {
     pub extra: Option<BoundedVec<u8, Bound>>,
 }
 
+/// Signature and Public key used for verification
+#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub struct SignatureInfo<S, P> {
+    sig: S,
+    pub_key: P,
+}
+
 /// Type for timestamp
 pub type Moment<T> = <<T as Config>::Now as Time>::Moment;
+
+/// `SignatureInfo` with generics defined for ease of use
+pub type SignatureInfoOf<T> = SignatureInfo<<T as Config>::Signature, <T as Config>::PublicKey>;
 
 /// MantaSBT Pallet
 #[frame_support::pallet]
@@ -193,6 +203,13 @@ pub mod pallet {
 
         /// Gets the current on-chain time
         type Now: Time;
+
+        /// A Signature can be verified with a specific `PublicKey`.
+        type Signature: Verify<Signer = Self::PublicKey> + Decode + Parameter;
+
+        /// A PublicKey can be converted into an `AccountId`. This is required by the
+        /// `Signature` type.
+        type PublicKey: IdentifyAccount<AccountId = Self::AccountId> + Decode + Parameter;
 
         /// Pallet ID
         #[pallet::constant]
@@ -231,6 +248,10 @@ pub mod pallet {
     #[pallet::storage]
     pub(super) type AllowlistAccount<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
 
+    /// Account that can reserve `AssetId` for free
+    #[pallet::storage]
+    pub(super) type FreeReserveAccount<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
+
     /// Allowlist for Evm Accounts
     #[pallet::storage]
     pub(super) type EvmAccountAllowlist<T: Config> = StorageDoubleMap<
@@ -252,6 +273,10 @@ pub mod pallet {
         RegisteredMint<Moment<T>, T::RegistryBound>,
         OptionQuery,
     >;
+
+    /// Allows mint type to be public
+    #[pallet::storage]
+    pub(super) type PublicMintList<T: Config> = StorageMap<_, Blake2_128Concat, MintId, ()>;
 
     /// SBT Metadata maps `StandardAsset` to the corresponding SBT metadata
     ///
@@ -299,23 +324,44 @@ pub mod pallet {
         /// Mints a zkSBT
         ///
         /// `TransferPost` is posted to private ledger and SBT metadata is stored onchain.
+        /// `signature` parameter can be used to relay a tx.
         #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::to_private())]
         #[transactional]
+        #[allow(clippy::too_many_arguments)]
         pub fn to_private(
-            who: OriginFor<T>,
+            origin: OriginFor<T>,
+            mint_id: Option<MintId>,
+            chain_id: Option<u64>,
+            signature: Option<SignatureInfoOf<T>>,
             post: Box<TransferPost>,
             metadata: BoundedVec<u8, T::SbtMetadataBound>,
         ) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(who)?;
+            let mut minting_account = ensure_signed(origin)?;
+            let mint_id = mint_id.unwrap_or(MANTA_MINT_ID);
+            let chain_id = chain_id.unwrap_or(Zero::zero());
 
-            let (start_id, end_id) = ReservedIds::<T>::get(&who).ok_or(Error::<T>::NotReserved)?;
+            Self::check_mint_time(mint_id)?;
+            Self::check_mint_is_public(mint_id)?;
+
+            if let Some(sig) = signature {
+                // check that signature is valid
+                ensure!(
+                    Self::verify_crypto_sig(&sig, &post.proof, chain_id),
+                    Error::<T>::BadSignature
+                );
+                // set verified signature account as the minting_account
+                minting_account = sig.pub_key.into_account();
+            }
+
+            let (start_id, end_id) =
+                ReservedIds::<T>::get(&minting_account).ok_or(Error::<T>::NotReserved)?;
 
             // Checks that it is indeed a to_private post with a value of 1 and has correct asset_id
             Self::check_post_shape(&post, start_id)?;
 
             let sbt_metadata = MetadataV2::<T::SbtMetadataBound> {
-                mint_id: MANTA_MINT_ID,
+                mint_id,
                 collection_id: None,
                 item_id: None,
                 extra: Some(metadata),
@@ -328,12 +374,12 @@ pub mod pallet {
 
             // If `ReservedIds` are all used remove from storage, otherwise increment the next `AssetId` to be used next time for minting SBT
             if increment_start_id > end_id {
-                ReservedIds::<T>::remove(&who)
+                ReservedIds::<T>::remove(&minting_account)
             } else {
-                ReservedIds::<T>::insert(&who, (increment_start_id, end_id))
+                ReservedIds::<T>::insert(&minting_account, (increment_start_id, end_id))
             }
 
-            Self::post_transaction(vec![who], *post)?;
+            Self::post_transaction(vec![minting_account], *post)?;
             Ok(().into())
         }
 
@@ -343,16 +389,27 @@ pub mod pallet {
         #[pallet::call_index(1)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::reserve_sbt())]
         #[transactional]
-        pub fn reserve_sbt(origin: OriginFor<T>) -> DispatchResult {
+        pub fn reserve_sbt(origin: OriginFor<T>, reservee: Option<T::AccountId>) -> DispatchResult {
             let who = ensure_signed(origin)?;
+            // Use reservee account, if None then use account whom signed transaction
+            let reserve_account = reservee.unwrap_or(who.clone());
+            // ensure account does not have any `AssetId` already reserved
+            ensure!(
+                !ReservedIds::<T>::contains_key(&reserve_account),
+                Error::<T>::AssetIdsAlreadyReserved
+            );
 
-            // Charges fee to reserve AssetIds
-            <T as pallet::Config>::Currency::transfer(
-                &who,
-                &Self::account_id(),
-                T::ReservePrice::get(),
-                ExistenceRequirement::KeepAlive,
-            )?;
+            let free_account = FreeReserveAccount::<T>::get();
+            // check if account is allowlist account... if it is can do operation for free
+            if free_account.as_ref() != Some(&who) {
+                // Charges fee to tx caller to reserve AssetIds
+                <T as pallet::Config>::Currency::transfer(
+                    &who,
+                    &Self::account_id(),
+                    T::ReservePrice::get(),
+                    ExistenceRequirement::KeepAlive,
+                )?;
+            }
 
             // Reserves uniques AssetIds to be used later to mint SBTs
             let asset_id_range: Vec<StandardAssetId> = (0..T::MintsPerReserve::get())
@@ -363,9 +420,10 @@ pub mod pallet {
             let start_id: StandardAssetId = *asset_id_range.first().ok_or(Error::<T>::ZeroMints)?;
             let stop_id: StandardAssetId = *asset_id_range.last().ok_or(Error::<T>::ZeroMints)?;
 
-            ReservedIds::<T>::insert(&who, (start_id, stop_id));
+            ReservedIds::<T>::insert(&reserve_account, (start_id, stop_id));
             Self::deposit_event(Event::<T>::SBTReserved {
                 who,
+                reserve_account,
                 start_id,
                 stop_id,
             });
@@ -385,9 +443,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            let chain_info =
-                MintIdRegistry::<T>::get(mint_id).ok_or(Error::<T>::MintNotAvailable)?;
-            Self::check_mint_time(&chain_info)?;
+            Self::check_mint_time(mint_id)?;
 
             let allowlist_account =
                 AllowlistAccount::<T>::get().ok_or(Error::<T>::NotAllowlistAccount)?;
@@ -429,11 +485,8 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            let chain_info =
-                MintIdRegistry::<T>::get(mint_id).ok_or(Error::<T>::MintNotAvailable)?;
-
             // check that mint type is within time window
-            Self::check_mint_time(&chain_info)?;
+            Self::check_mint_time(mint_id)?;
 
             let address = Self::verify_eip712_signature(&post.proof, &eth_signature, chain_id)
                 .ok_or(Error::<T>::BadSignature)?;
@@ -492,6 +545,7 @@ pub mod pallet {
             start_time: Moment<T>,
             end_time: Option<Moment<T>>,
             mint_name: BoundedVec<u8, T::RegistryBound>,
+            public: bool,
         ) -> DispatchResult {
             T::AdminOrigin::ensure_origin(origin)?;
 
@@ -512,6 +566,11 @@ pub mod pallet {
                 }
                 Ok(())
             })?;
+            if public {
+                PublicMintList::<T>::insert(mint_id, ());
+            } else {
+                PublicMintList::<T>::remove(mint_id);
+            }
 
             Self::deposit_event(Event::<T>::UpdateMintInfo {
                 mint_id,
@@ -529,6 +588,7 @@ pub mod pallet {
             start_time: Moment<T>,
             end_time: Option<Moment<T>>,
             mint_name: BoundedVec<u8, T::RegistryBound>,
+            public: bool,
         ) -> DispatchResult {
             T::AdminOrigin::ensure_origin(origin)?;
 
@@ -543,12 +603,50 @@ pub mod pallet {
             let mint_id = Self::next_mint_id_and_increment()?;
 
             MintIdRegistry::<T>::insert(mint_id, mint_chain_info);
+            // add or remove from `PublicMintList`
+            if public {
+                PublicMintList::<T>::insert(mint_id, ());
+            }
 
             Self::deposit_event(Event::<T>::NewMintInfo {
                 start_time,
                 end_time,
                 mint_id,
                 mint_name: mint_name.to_vec(),
+            });
+            Ok(())
+        }
+
+        /// Sets the privileged reserve account. Requires `AdminOrigin`
+        #[pallet::call_index(7)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::change_free_reserve_account())]
+        #[transactional]
+        pub fn change_free_reserve_account(
+            origin: OriginFor<T>,
+            account: Option<T::AccountId>,
+        ) -> DispatchResult {
+            T::AdminOrigin::ensure_origin(origin)?;
+
+            FreeReserveAccount::<T>::set(account.clone());
+            Self::deposit_event(Event::<T>::ChangeFreeReserveAccount { account });
+            Ok(())
+        }
+
+        /// Remove allowlist evm account. Requires `AdminOrigin`
+        #[pallet::call_index(8)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::remove_allowlist_evm_account())]
+        #[transactional]
+        pub fn remove_allowlist_evm_account(
+            origin: OriginFor<T>,
+            mint_id: MintId,
+            evm_address: EvmAddress,
+        ) -> DispatchResult {
+            T::AdminOrigin::ensure_origin(origin)?;
+
+            EvmAccountAllowlist::<T>::remove(mint_id, evm_address);
+            Self::deposit_event(Event::<T>::RemoveAllowlistEvmAddress {
+                address: evm_address,
+                mint_id,
             });
             Ok(())
         }
@@ -569,6 +667,8 @@ pub mod pallet {
         SBTReserved {
             /// Public Account reserving SBT mints
             who: T::AccountId,
+            /// Account which recieves reserved AssetIds, can be the same as the above account
+            reserve_account: T::AccountId,
             /// Start of `AssetIds` reserved for use on private ledger
             start_id: StandardAssetId,
             /// End of `AssetIds` reserved for use private ledger, does not include this value
@@ -582,6 +682,13 @@ pub mod pallet {
             mint_id: MintId,
             /// AssetId that is reserved for above Eth address
             asset_id: StandardAssetId,
+        },
+        /// Evm Address is removed from allowlist
+        RemoveAllowlistEvmAddress {
+            /// Eth Address that is now allowlisted to mint an SBT
+            address: EvmAddress,
+            /// An integer that corresponds to mint type
+            mint_id: MintId,
         },
         /// Sbt is minted using Allowlisted Eth account
         MintSbtEvm {
@@ -616,6 +723,9 @@ pub mod pallet {
             end_time: Option<Moment<T>>,
             /// Name of mint
             mint_name: Vec<u8>,
+        },
+        ChangeFreeReserveAccount {
+            account: Option<T::AccountId>,
         },
     }
 
@@ -773,7 +883,7 @@ pub mod pallet {
         /// SBT only allows `ToPrivate` Transactions
         NoSenderLedger,
 
-        /// Incorrect EVM based signature
+        /// Crypto Signature was not valid
         BadSignature,
 
         /// Eth account is not allowlisted for free mint, can also be caused by an incorrect signature (recovers an invalid account)
@@ -796,6 +906,12 @@ pub mod pallet {
 
         /// MintId does not exist, cannot update a nonexistent MintId
         InvalidMintId,
+
+        /// Already has unused AssetIds reserved
+        AssetIdsAlreadyReserved,
+
+        /// Mint type is not public, only permissioned accounts can use this mint
+        MintNotPublic,
     }
 }
 
@@ -1045,25 +1161,64 @@ where
 
     /// Checks that mint type is available to mint within time window defined in `MintRegistrar`
     #[inline]
-    fn check_mint_time(
-        mint_chain_info: &RegisteredMint<Moment<T>, T::RegistryBound>,
-    ) -> DispatchResult {
-        let current_time = T::Now::now();
+    fn check_mint_time(mint_id: MintId) -> DispatchResult {
+        // skip check if it is native mint with id of 0
+        if mint_id != MANTA_MINT_ID {
+            let mint_chain_info =
+                MintIdRegistry::<T>::get(mint_id).ok_or(Error::<T>::MintNotAvailable)?;
 
-        let (start_time, end_time) = (mint_chain_info.start_time, mint_chain_info.end_time);
+            let (start_time, end_time) = (mint_chain_info.start_time, mint_chain_info.end_time);
 
-        // checks that current time falls within bounds
-        if start_time > current_time {
-            return Err(Error::<T>::MintNotAvailable.into());
-        } else {
-            // Checks if end time is Some and then compares it to current time. A value of None corresponds to no ending time
-            if let Some(time) = end_time {
-                if time < current_time {
-                    return Err(Error::<T>::MintNotAvailable.into());
+            // checks that current time falls within bounds
+            let current_time = T::Now::now();
+            if start_time > current_time {
+                return Err(Error::<T>::MintNotAvailable.into());
+            } else {
+                // Checks if end time is Some and then compares it to current time. A value of None corresponds to no ending time
+                if let Some(time) = end_time {
+                    if time < current_time {
+                        return Err(Error::<T>::MintNotAvailable.into());
+                    }
                 }
             }
         }
         Ok(())
+    }
+
+    #[inline]
+    fn check_mint_is_public(mint_id: MintId) -> DispatchResult {
+        // mint id of 0 is always public
+        if mint_id != MANTA_MINT_ID {
+            ensure!(
+                PublicMintList::<T>::contains_key(mint_id),
+                Error::<T>::MintNotPublic
+            );
+        }
+        Ok(())
+    }
+
+    /// Signature Verification using substrate crypto library in `sp_core::crypto`
+    #[inline]
+    fn verify_crypto_sig(sig_info: &SignatureInfoOf<T>, proof: &Proof, chain_id: u64) -> bool {
+        // Eip712 msg with chain_id of zero
+        let msg = Self::eip712_signable_message(proof, chain_id);
+        let msg_hash = keccak_256(msg.as_slice());
+
+        let wrap_msg = Self::wrap_msg_with_bytes(msg_hash);
+
+        sig_info
+            .sig
+            .verify(wrap_msg.as_ref(), &sig_info.pub_key.clone().into_account())
+    }
+
+    /// Wrap `<Bytes>` and `</Bytes>` to [u8; 32] array.
+    #[inline]
+    fn wrap_msg_with_bytes(msg: [u8; 32]) -> Vec<u8> {
+        let mut wrap_msg: Vec<u8> = Vec::new();
+        wrap_msg.extend("<Bytes>".as_bytes());
+        wrap_msg.extend_from_slice(&msg);
+        wrap_msg.extend("</Bytes>".as_bytes());
+        wrap_msg
     }
 
     /// Returns an Ethereum public key derived from an Ethereum secret key.

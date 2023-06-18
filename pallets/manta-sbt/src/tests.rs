@@ -18,8 +18,8 @@
 
 use crate::{
     mock::{new_test_ext, Balances, MantaSBTPallet, RuntimeOrigin as MockOrigin, Test, Timestamp},
-    AllowlistAccount, DispatchError, Error, EvmAccountAllowlist, EvmAddress, MintId,
-    MintIdRegistry, MintStatus, ReservedIds, SbtMetadataV2, MANTA_MINT_ID,
+    AllowlistAccount, DispatchError, Error, EvmAccountAllowlist, EvmAddress, FreeReserveAccount,
+    MintId, MintIdRegistry, MintStatus, ReservedIds, SbtMetadataV2, SignatureInfoOf, MANTA_MINT_ID,
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use manta_crypto::{
@@ -37,7 +37,9 @@ use manta_pay::{
 use manta_support::manta_pay::{
     field_from_id, id_from_field, AssetId, AssetValue, TransferPost as PalletTransferPost,
 };
+use sp_core::{sr25519, Pair};
 use sp_io::hashing::keccak_256;
+use sp_runtime::AccountId32;
 
 /// UTXO Accumulator for Building Circuits
 type UtxoAccumulator =
@@ -97,7 +99,7 @@ where
     .unwrap()
 }
 
-/// Initializes a test by funding accounts and reserving_sbt
+/// Initializes a test by funding accounts, reserving_sbt, set mintInfo for mintId=0.
 #[inline]
 fn initialize_test() {
     assert_ok!(Balances::set_balance(
@@ -106,7 +108,38 @@ fn initialize_test() {
         1_000_000_000_000_000,
         0
     ));
-    assert_ok!(MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE)));
+    assert_ok!(MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None));
+}
+
+/// Test that to_private mint is not available if mint info is not added.
+#[test]
+fn to_private_mint_not_available() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        assert_ok!(Balances::set_balance(
+            MockOrigin::root(),
+            ALICE,
+            1_000_000_000_000_000,
+            0
+        ));
+        assert_ok!(MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None));
+
+        let value = 1;
+        let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
+        let post = sample_to_private(id, value, &mut rng);
+
+        assert_noop!(
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                Some(1),
+                None,
+                None,
+                Box::new(post),
+                bvec![0]
+            ),
+            Error::<Test>::MintNotAvailable,
+        );
+    });
 }
 
 /// Tests that single to_private tx works
@@ -115,12 +148,16 @@ fn to_private_should_work() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         initialize_test();
+
         let value = 1;
         let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
 
         let post = sample_to_private(id, value, &mut rng);
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
+            None,
+            None,
+            None,
             Box::new(post),
             bvec![0]
         ));
@@ -129,6 +166,181 @@ fn to_private_should_work() {
             SbtMetadataV2::<Test>::get(1).unwrap().mint_id,
             MANTA_MINT_ID
         );
+
+        assert_ok!(MantaSBTPallet::new_mint_info(
+            MockOrigin::root(),
+            0,
+            None,
+            bvec![],
+            true
+        ));
+        let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
+        let post = sample_to_private(id, value, &mut rng);
+        assert_ok!(MantaSBTPallet::to_private(
+            MockOrigin::signed(ALICE),
+            Some(1),
+            None,
+            None,
+            Box::new(post),
+            bvec![0]
+        ));
+        assert_eq!(SbtMetadataV2::<Test>::get(2).unwrap().extra, Some(bvec![0]));
+        assert_eq!(SbtMetadataV2::<Test>::get(2).unwrap().mint_id, 1);
+    });
+}
+
+#[test]
+fn to_private_relay_signature_works() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        let account_pair = sr25519::Pair::from_string(
+            "endorse doctor arch helmet master dragon wild favorite property mercy vault maze",
+            None,
+        )
+        .unwrap();
+        let account_pair_2 = sr25519::Pair::from_string(
+            "bottom drive obey lake curtain smoke basket hold race lonely fit walk",
+            None,
+        )
+        .unwrap();
+        let public_account: AccountId32 = account_pair.public().into();
+
+        assert_ok!(Balances::set_balance(
+            MockOrigin::root(),
+            ALICE,
+            1_000_000_000_000_000,
+            0
+        ));
+        assert_ok!(MantaSBTPallet::reserve_sbt(
+            MockOrigin::signed(ALICE),
+            Some(public_account.clone())
+        ));
+
+        let value = 1;
+        let id = field_from_id(ReservedIds::<Test>::get(public_account.clone()).unwrap().0);
+        let post = sample_to_private(id, value, &mut rng);
+
+        let msg_hash = keccak_256(&MantaSBTPallet::eip712_signable_message(&post.proof, 0));
+        let wrap_msg: Vec<u8> = MantaSBTPallet::wrap_msg_with_bytes(msg_hash);
+
+        // with bytes wrapped
+        let signature = account_pair.sign(wrap_msg.as_ref());
+        // without bytes wrapped
+        let signature1 = account_pair.sign(msg_hash.as_ref());
+        // wrong account
+        let signature_2 = account_pair_2.sign(msg_hash.as_ref());
+
+        let signature_info = SignatureInfoOf::<Test> {
+            sig: signature.into(),
+            pub_key: account_pair.public().into(),
+        };
+        let bad_signature_info1 = SignatureInfoOf::<Test> {
+            sig: signature1.into(),
+            pub_key: account_pair.public().into(),
+        };
+        // incorrect signature
+        let bad_signature_info2 = SignatureInfoOf::<Test> {
+            sig: signature_2.into(),
+            pub_key: account_pair.public().into(),
+        };
+
+        // bad signature fails
+        assert_noop!(
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                None,
+                None,
+                Some(bad_signature_info1),
+                Box::new(post.clone()),
+                bvec![0]
+            ),
+            Error::<Test>::BadSignature
+        );
+        // bad signature fails
+        assert_noop!(
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                None,
+                None,
+                Some(bad_signature_info2),
+                Box::new(post.clone()),
+                bvec![0]
+            ),
+            Error::<Test>::BadSignature
+        );
+
+        // have alice relay `account_pair`
+        assert_ok!(MantaSBTPallet::to_private(
+            MockOrigin::signed(ALICE),
+            None,
+            None,
+            Some(signature_info),
+            Box::new(post),
+            bvec![0]
+        ));
+        assert_eq!(SbtMetadataV2::<Test>::get(1).unwrap().extra, Some(bvec![0]));
+        assert_eq!(
+            SbtMetadataV2::<Test>::get(1).unwrap().mint_id,
+            MANTA_MINT_ID
+        );
+
+        let id = field_from_id(ReservedIds::<Test>::get(public_account).unwrap().0);
+        let post = sample_to_private(id, value, &mut rng);
+
+        // chain id set to 1.
+        let chain_id: u64 = 1;
+        let msg_hash = keccak_256(&MantaSBTPallet::eip712_signable_message(
+            &post.proof,
+            chain_id,
+        ));
+        let wrap_msg: Vec<u8> = MantaSBTPallet::wrap_msg_with_bytes(msg_hash);
+
+        // with bytes wrapped
+        let signature = account_pair.sign(wrap_msg.as_ref());
+        let signature_info = SignatureInfoOf::<Test> {
+            sig: signature.into(),
+            pub_key: account_pair.public().into(),
+        };
+        // bad signature cause of mismatch of chainId
+        assert_noop!(
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                None,
+                None,
+                Some(signature_info.clone()),
+                Box::new(post.clone()),
+                bvec![0]
+            ),
+            Error::<Test>::BadSignature
+        );
+        let mint_id: u32 = 1;
+        assert_noop!(
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                Some(mint_id),
+                Some(chain_id),
+                Some(signature_info.clone()),
+                Box::new(post.clone()),
+                bvec![0]
+            ),
+            Error::<Test>::MintNotAvailable
+        );
+        // new mintInfo with mintId = 1
+        assert_ok!(MantaSBTPallet::new_mint_info(
+            MockOrigin::root(),
+            0,
+            None,
+            bvec![],
+            true
+        ));
+        assert_ok!(MantaSBTPallet::to_private(
+            MockOrigin::signed(ALICE),
+            Some(mint_id),
+            Some(chain_id),
+            Some(signature_info),
+            Box::new(post),
+            bvec![0]
+        ));
     });
 }
 
@@ -145,10 +357,61 @@ fn max_reserved_to_private_works() {
             let post = sample_to_private(id, value, &mut rng);
             assert_ok!(MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
+                None,
+                None,
+                None,
                 Box::new(post),
                 bvec![0]
             ));
         }
+    });
+}
+
+/// Cannot call reserve_sbt if account already has AssetIds reserved
+#[test]
+fn overwrite_asset_id_fails() {
+    new_test_ext().execute_with(|| {
+        initialize_test();
+        // second reserve_id fails
+        assert_noop!(
+            MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None),
+            Error::<Test>::AssetIdsAlreadyReserved
+        );
+    });
+}
+
+#[test]
+fn allowlist_account_reserves_works() {
+    new_test_ext().execute_with(|| {
+        initialize_test();
+        // reserving AssetId was not free
+        assert_eq!(Balances::free_balance(&ALICE), 999999999999000);
+
+        assert_ok!(MantaSBTPallet::change_free_reserve_account(
+            MockOrigin::root(),
+            Some(ALICE)
+        ));
+        assert_ok!(MantaSBTPallet::reserve_sbt(
+            MockOrigin::signed(ALICE),
+            Some(BOB)
+        ));
+        assert!(ReservedIds::<Test>::get(BOB).is_some());
+        // balance remains the same as allowlist account is free
+        assert_eq!(Balances::free_balance(&ALICE), 999999999999000);
+
+        // allowlist account cannot overwrite reserved ids
+        assert_noop!(
+            MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None),
+            Error::<Test>::AssetIdsAlreadyReserved
+        );
+        assert_noop!(
+            MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), Some(ALICE)),
+            Error::<Test>::AssetIdsAlreadyReserved
+        );
+        assert_noop!(
+            MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), Some(BOB)),
+            Error::<Test>::AssetIdsAlreadyReserved
+        );
     });
 }
 
@@ -167,6 +430,9 @@ fn overflow_reserved_ids_fails() {
                 assert!(ReservedIds::<Test>::contains_key(ALICE));
                 assert_ok!(MantaSBTPallet::to_private(
                     MockOrigin::signed(ALICE),
+                    None,
+                    None,
+                    None,
                     Box::new(post),
                     bvec![0]
                 ));
@@ -186,7 +452,14 @@ fn not_reserved_fails() {
         let id = field_from_id(10);
         let post = sample_to_private(id, value, &mut rng);
         assert_noop!(
-            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), Box::new(post), bvec![0]),
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                None,
+                None,
+                None,
+                Box::new(post),
+                bvec![0]
+            ),
             Error::<Test>::NotReserved
         );
     });
@@ -203,6 +476,9 @@ fn private_transfer_fails() {
 
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
+            None,
+            None,
+            None,
             Box::new(sample_to_private(id, value, &mut rng)),
             bvec![]
         ));
@@ -219,7 +495,14 @@ fn private_transfer_fails() {
 
         let post = PalletTransferPost::try_from(private_transfer).unwrap();
         assert_noop!(
-            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), Box::new(post), bvec![]),
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                None,
+                None,
+                None,
+                Box::new(post),
+                bvec![]
+            ),
             Error::<Test>::InvalidShape
         );
     });
@@ -236,6 +519,9 @@ fn to_public_fails() {
 
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
+            None,
+            None,
+            None,
             Box::new(sample_to_private(id, value, &mut rng)),
             bvec![]
         ));
@@ -253,7 +539,14 @@ fn to_public_fails() {
 
         let post = PalletTransferPost::try_from(private_transfer).unwrap();
         assert_noop!(
-            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), Box::new(post), bvec![]),
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                None,
+                None,
+                None,
+                Box::new(post),
+                bvec![]
+            ),
             Error::<Test>::InvalidShape
         );
     });
@@ -272,6 +565,9 @@ fn wrong_asset_id_fails() {
         assert_noop!(
             MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
+                None,
+                None,
+                None,
                 Box::new(sample_to_private(asset_id, value, &mut rng)),
                 bvec![]
             ),
@@ -291,6 +587,9 @@ fn only_value_of_one_allowed() {
         assert_noop!(
             MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
+                None,
+                None,
+                None,
                 Box::new(sample_to_private(id, value, &mut rng)),
                 bvec![]
             ),
@@ -407,6 +706,28 @@ fn change_allowlist_account_works() {
 }
 
 #[test]
+fn change_free_reserve_account_works() {
+    new_test_ext().execute_with(|| {
+        assert_noop!(
+            MantaSBTPallet::change_free_reserve_account(MockOrigin::signed(ALICE), Some(ALICE)),
+            DispatchError::BadOrigin
+        );
+        assert_eq!(FreeReserveAccount::<Test>::get(), None);
+
+        assert_ok!(MantaSBTPallet::change_free_reserve_account(
+            MockOrigin::root(),
+            Some(ALICE)
+        ));
+        assert_eq!(FreeReserveAccount::<Test>::get().unwrap(), ALICE);
+        assert_ok!(MantaSBTPallet::change_free_reserve_account(
+            MockOrigin::root(),
+            None
+        ));
+        assert_eq!(FreeReserveAccount::<Test>::get(), None);
+    })
+}
+
+#[test]
 fn allowlist_account_works() {
     new_test_ext().execute_with(|| {
         let bab_id: MintId = 1;
@@ -422,7 +743,8 @@ fn allowlist_account_works() {
             MockOrigin::root(),
             5,
             None,
-            bvec![]
+            bvec![],
+            false
         ));
         Timestamp::set_timestamp(2);
         assert_noop!(
@@ -479,6 +801,25 @@ fn allowlist_account_works() {
             ),
             Error::<Test>::NotAllowlistAccount,
         );
+
+        assert_noop!(
+            MantaSBTPallet::remove_allowlist_evm_account(
+                MockOrigin::signed(ALICE),
+                bab_id,
+                EvmAddress::default(),
+            ),
+            DispatchError::BadOrigin
+        );
+
+        assert_ok!(MantaSBTPallet::remove_allowlist_evm_account(
+            MockOrigin::root(),
+            bab_id,
+            EvmAddress::default(),
+        ),);
+        assert!(!EvmAccountAllowlist::<Test>::contains_key(
+            bab_id,
+            EvmAddress::default()
+        ));
     })
 }
 
@@ -497,7 +838,8 @@ fn mint_sbt_eth_works() {
             MockOrigin::root(),
             0,
             None,
-            bvec![]
+            bvec![],
+            false
         ));
 
         let value = 1;
@@ -630,7 +972,8 @@ fn timestamp_range_fails() {
             MockOrigin::root(),
             0,
             None,
-            bvec![]
+            bvec![],
+            true
         ));
         Timestamp::set_timestamp(1);
         let alice_eth_account = MantaSBTPallet::eth_address(&alice_eth());
@@ -644,7 +987,8 @@ fn timestamp_range_fails() {
             bab_id,
             10,
             Some(20),
-            bvec![]
+            bvec![],
+            false
         ));
 
         let value = 1;
@@ -694,7 +1038,8 @@ fn timestamp_range_fails() {
             bab_id,
             10,
             None,
-            bvec![]
+            bvec![],
+            false
         ));
         assert_ok!(MantaSBTPallet::mint_sbt_eth(
             MockOrigin::signed(ALICE),
@@ -714,11 +1059,11 @@ fn new_mint_info_works() {
     new_test_ext().execute_with(|| {
         let bab_id = 1;
         assert_noop!(
-            MantaSBTPallet::new_mint_info(MockOrigin::signed(ALICE), 0, None, bvec![]),
+            MantaSBTPallet::new_mint_info(MockOrigin::signed(ALICE), 0, None, bvec![], true),
             DispatchError::BadOrigin
         );
         assert_noop!(
-            MantaSBTPallet::new_mint_info(MockOrigin::root(), 10, Some(5), bvec![]),
+            MantaSBTPallet::new_mint_info(MockOrigin::root(), 10, Some(5), bvec![], true),
             Error::<Test>::InvalidTimeRange
         );
 
@@ -726,7 +1071,8 @@ fn new_mint_info_works() {
             MockOrigin::root(),
             0,
             None,
-            bvec![]
+            bvec![],
+            true,
         ));
         let registered_mint = MintIdRegistry::<Test>::get(bab_id).unwrap();
         assert_eq!(registered_mint.start_time, 0);
@@ -740,7 +1086,14 @@ fn update_mint_info_works() {
     new_test_ext().execute_with(|| {
         let bab_id = 1;
         assert_noop!(
-            MantaSBTPallet::update_mint_info(MockOrigin::root(), bab_id, 10, Some(20), bvec![]),
+            MantaSBTPallet::update_mint_info(
+                MockOrigin::root(),
+                bab_id,
+                10,
+                Some(20),
+                bvec![],
+                true
+            ),
             Error::<Test>::InvalidMintId
         );
         assert_noop!(
@@ -749,7 +1102,8 @@ fn update_mint_info_works() {
                 bab_id,
                 10,
                 Some(20),
-                bvec![]
+                bvec![],
+                true
             ),
             DispatchError::BadOrigin
         );
@@ -758,10 +1112,18 @@ fn update_mint_info_works() {
             MockOrigin::root(),
             0,
             None,
-            bvec![]
+            bvec![],
+            true
         ));
         assert_noop!(
-            MantaSBTPallet::update_mint_info(MockOrigin::root(), bab_id, 10, Some(5), bvec![]),
+            MantaSBTPallet::update_mint_info(
+                MockOrigin::root(),
+                bab_id,
+                10,
+                Some(5),
+                bvec![],
+                true
+            ),
             Error::<Test>::InvalidTimeRange
         );
 
@@ -770,7 +1132,8 @@ fn update_mint_info_works() {
             bab_id,
             10,
             Some(20),
-            bvec![]
+            bvec![],
+            true,
         ));
     })
 }

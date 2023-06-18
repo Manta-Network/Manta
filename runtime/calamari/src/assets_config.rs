@@ -28,7 +28,7 @@ use manta_primitives::{
     constants::{
         ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL, MANTA_PAY_PALLET_ID, MANTA_SBT_PALLET_ID,
     },
-    types::{AccountId, Balance, CalamariAssetId},
+    types::{AccountId, Balance, CalamariAssetId, Signature, Signer},
 };
 
 use frame_support::{
@@ -211,5 +211,7 @@ impl pallet_manta_sbt::Config for Runtime {
         pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>,
     >;
     type Now = Timestamp;
+    type Signature = Signature;
+    type PublicKey = Signer;
     type WeightInfo = weights::pallet_manta_sbt::SubstrateWeight<Runtime>;
 }
