@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v4.2.0
+### Added
+- [\#1138](https://github.com/Manta-Network/Manta/pull/1138) Check manta and calamari lease expiration [MACA]
+- [\#1147](https://github.com/Manta-Network/Manta/pull/1147) Add Polkadot Signature Allowlist [MACA]
+
 ## v4.1.0
 ### Added
 - [\#1122](https://github.com/Manta-Network/Manta/pull/1122) dex amm [CA]
