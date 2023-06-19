@@ -68,7 +68,8 @@ use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint}
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use pallet_session::ShouldEndSession;
 use runtime_common::{
-    prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, MantaSlowAdjustingFeeUpdate,
+    prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight,
+    MantaSlowAdjustingFeeUpdate,
 };
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
