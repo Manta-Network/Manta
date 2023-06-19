@@ -202,27 +202,36 @@ jobs:
             sccache-
       - name: start sccache server
         run: sccache --start-server
-      - name: init
+      - name: build benchmarking binary
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          SCCACHE_CACHE_SIZE: 20G
+          SCCACHE_DIR: /home/runner/.cache/sccache
+          CARGO_TERM_COLOR: always
         run: |
-          sudo apt update
-          sudo apt install -y pkg-config libssl-dev protobuf-compiler
-          protoc --version
-          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
-          source ${HOME}/.cargo/env
-          rustup toolchain install nightly-2023-03-04
-          rustup default nightly-2023-03-04
-          rustup target add wasm32-unknown-unknown
+          RUSTC_BOOTSTRAP=1 cargo build --release --features runtime-benchmarks
+      - name: create-chainspec
+        run: |
+          ${{ github.workspace }}/target/release/manta build-spec --chain calamari-dev --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
+      - name: append manta-pay storage
+        run: |
+          wget -P ${{ github.workspace }}/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
+          cd ${{ github.workspace }}/tests
+          yarn install
+          yarn
+          node append_storage.js
       - name: Run live benchmarks test
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 40G
+          SCCACHE_CACHE_SIZE: 20G
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
-          RUSTC_BOOTSTRAP=1 cargo run --release --features runtime-benchmarks,try-runtime \
+          ${{ github.workspace }}/target/release/manta \
           benchmark \
             pallet \
-            --chain=calamari-dev \
+            --chain=${{ github.workspace }}/tests/data/fork.json \
             --pallet=* \
             --extrinsic=* \
             --repeat=1 \
