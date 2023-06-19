@@ -28,7 +28,7 @@ use manta_primitives::{
     constants::{
         ASSET_MANAGER_PALLET_ID, DOLPHIN_DECIMAL, MANTA_PAY_PALLET_ID, MANTA_SBT_PALLET_ID,
     },
-    types::{AccountId, Balance, DolphinAssetId},
+    types::{AccountId, Balance, DolphinAssetId, Signature, Signer},
 };
 
 use frame_support::{
@@ -221,5 +221,7 @@ impl pallet_manta_sbt::Config for Runtime {
     >;
     type Now = Timestamp;
     type RegistryBound = ConstU32<300>;
+    type Signature = Signature;
+    type PublicKey = Signer;
     type WeightInfo = ();
 }

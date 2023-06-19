@@ -7,7 +7,7 @@ license = 'GPL-3.0'
 name = 'pallet-manta-sbt'
 readme = 'README.md'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '4.1.0'
+version = '4.2.0'
 
 [[bin]]
 name = "precompute_coins"
@@ -24,6 +24,7 @@ runtime-benchmarks = [
   "frame-support/runtime-benchmarks",
   "frame-system/runtime-benchmarks",
   "manta-primitives/runtime-benchmarks",
+  "pallet-assets/runtime-benchmarks",
 ]
 
 try-runtime = [

@@ -53,6 +53,8 @@ pub trait WeightInfo {
     fn new_mint_info() -> Weight;
     fn update_mint_info() -> Weight;
     fn mint_sbt_eth() -> Weight;
+    fn change_free_reserve_account() -> Weight;
+    fn remove_allowlist_evm_account() -> Weight;
 }
 
 /// Weights for pallet_manta_sbt using the Substrate node and recommended hardware.
@@ -124,6 +126,18 @@ impl<T: frame_system::Config> pallet_manta_sbt::WeightInfo for SubstrateWeight<T
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(5))
 	}
+	// Storage: MantaSbt AllowlistAccount (r:0 w:1)
+	fn change_free_reserve_account() -> Weight {
+		// Minimum execution time: 18_545 nanoseconds.
+		Weight::from_ref_time(19_347_000)
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
+	// Storage: MantaSbt EvmAccountAllowlist (r:0 w:1)
+	fn remove_allowlist_evm_account() -> Weight {
+		// Minimum execution time: 17_677 nanoseconds.
+		Weight::from_ref_time(18_596_000)
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
 }
 
 // For backwards compatibility and tests
@@ -193,5 +207,17 @@ impl WeightInfo for () {
 		Weight::from_ref_time(39_419_457_000)
 			.saturating_add(RocksDbWeight::get().reads(6))
 			.saturating_add(RocksDbWeight::get().writes(5))
+	}
+	// Storage: MantaSbt AllowlistAccount (r:0 w:1)
+	fn change_free_reserve_account() -> Weight {
+		// Minimum execution time: 18_545 nanoseconds.
+		Weight::from_ref_time(19_347_000)
+			.saturating_add(RocksDbWeight::get().writes(1))
+	}
+	// Storage: MantaSbt EvmAccountAllowlist (r:0 w:1)
+	fn remove_allowlist_evm_account() -> Weight {
+		// Minimum execution time: 17_677 nanoseconds.
+		Weight::from_ref_time(18_596_000)
+			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 }
