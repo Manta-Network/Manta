@@ -21,9 +21,11 @@
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
 
+use core::future::Pending;
+
 use frame_support::{pallet_prelude::*, traits::Len, transactional};
 use frame_system::pallet_prelude::*;
-use manta_primitives::types::{Balance, BlockNumber};
+use manta_primitives::types::{Balance, BlockNumber, AccountId};
 use sp_runtime::{
     traits::{AccountIdConversion, Hash, Saturating},
     DispatchResult,
@@ -32,36 +34,15 @@ use sp_std::{prelude::*, vec::Vec};
 
 mod mock;
 mod tests;
-// pub mod weights;
+pub mod weights;
 
 pub use pallet::*;
-// pub use weights::WeightInfo;
-
-pub type ZkAddressType = [u8; 32];
+pub use weights::WeightInfo;
 
 pub type UserName = Vec<u8>;
 
 pub const NAME_MAX_LEN: usize = 63;
 pub const NAME_MIN_LEN: usize = 3;
-
-/// Username Record
-#[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, TypeInfo)]
-pub struct NameRecord {
-    pub registrant: ZkAddressType,
-    pub price: Balance,
-    pub status: Status,
-}
-
-/// Username Status
-#[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, TypeInfo)]
-pub enum Status {
-    /// The username isn't registered
-    AVAILABLE,
-    /// The username being registered, but not set as primary name
-    REGISTERED,
-    /// The username being set as primary name
-    TRANSFERABLE,
-}
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -75,17 +56,12 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-        // type Call: Parameter;
-
         /// Pallet ID
         type PalletId: Get<PalletId>;
 
         type RegisterWaitingPeriod: Get<Self::BlockNumber>;
 
-        // Asset Configuration
-        // type AssetConfig: AssetConfig<Self, AssetId = StandardAssetId, Balance = AssetValue>;
-
-        // type WeightInfo: WeightInfo;
+        //type WeightInfo: WeightInfo;
     }
 
     #[pallet::error]
@@ -98,6 +74,9 @@ pub mod pallet {
         RegisterTimeNotReach,
         /// Username invalid
         ValidationFailed,
+        /// Already Pending Register
+        AlreadyPendingRegister,
+
     }
 
     #[pallet::event]
@@ -110,13 +89,19 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn username_records)]
     pub type UsernameRecords<T: Config> =
-        StorageMap<_, Twox64Concat, Vec<u8>, NameRecord, OptionQuery>;
+        StorageMap<_, Twox64Concat, UserName, T::AccountId, OptionQuery>;
 
     ///
     #[pallet::storage]
     #[pallet::getter(fn pending_register)]
     pub type PendingRegister<T: Config> =
         StorageMap<_, Twox64Concat, (T::Hash, T::Hash), T::BlockNumber, OptionQuery>;
+
+    ///
+    #[pallet::storage]
+    #[pallet::getter(fn primary_records)]
+    pub type PrimaryRecords<T: Config> =
+        StorageMap<_, Twox64Concat, T::AccountId, UserName, OptionQuery>;
 
     #[pallet::pallet]
     #[pallet::without_storage_info]
@@ -135,11 +120,10 @@ pub mod pallet {
         pub fn register(
             origin: OriginFor<T>,
             username: Vec<u8>,
-            registrant: ZkAddressType,
         ) -> DispatchResult {
-            let _origin = ensure_signed(origin)?;
+            let who = ensure_signed(origin)?;
 
-            Self::do_register(&username, registrant)
+            Self::do_register(&username, who)
         }
 
         ///
@@ -149,16 +133,14 @@ pub mod pallet {
         pub fn accept_register(
             origin: OriginFor<T>,
             username: Vec<u8>,
-            registrant: ZkAddressType,
             price: Balance,
         ) -> DispatchResult {
-            let _origin = ensure_signed(origin)?;
+            let who = ensure_signed(origin)?;
 
-            Self::do_accept_register(&username, registrant, price)?;
+            Self::do_accept_register(&username, who, price)?;
 
             // TODO: usernames as NFTs making them tradeble
-            Self::mint_username_as_nft(&username);
-
+            // Self::mint_username_as_nft(&username);
             Ok(())
         }
 
@@ -179,7 +161,7 @@ pub mod pallet {
         pub fn transfer_to_username(
             origin: OriginFor<T>,
             username: Vec<u8>,
-            registrant: ZkAddressType,
+            registrant: T::AccountId,
             price: Balance,
         ) -> DispatchResult {
             let _origin = ensure_signed(origin)?;
@@ -197,7 +179,7 @@ impl<T: Config> Pallet<T> {
     }
 
     ///
-    fn do_register(username: &Vec<u8>, registrant: ZkAddressType) -> DispatchResult {
+    fn do_register(username: &Vec<u8>, registrant: T::AccountId) -> DispatchResult {
         PendingRegister::<T>::insert(
             (T::Hashing::hash_of(username), T::Hashing::hash_of(&registrant)),
             frame_system::Pallet::<T>::block_number()
@@ -209,7 +191,7 @@ impl<T: Config> Pallet<T> {
     ///
     fn do_accept_register(
         username: &Vec<u8>,
-        registrant: ZkAddressType,
+        registrant: T::AccountId,
         price: Balance,
     ) -> DispatchResult {
         ///
@@ -220,6 +202,12 @@ impl<T: Config> Pallet<T> {
             T::Hashing::hash_of(username),
             T::Hashing::hash_of(&registrant),
         );
+
+        ensure!(
+            PendingRegister::<T>::contains_key((hash_user, hash_address)),
+            Error::<T>::AlreadyPendingRegister
+        );
+
         let creation_block = PendingRegister::<T>::get((hash_user, hash_address))
             .ok_or(Error::<T>::NotRegistered)?;
         ensure!(
@@ -227,18 +215,15 @@ impl<T: Config> Pallet<T> {
             Error::<T>::RegisterTimeNotReach
         );
 
-        let record = NameRecord {
-            registrant,
-            price,
-            status: Status::REGISTERED,
-        };
-        UsernameRecords::<T>::insert(username, record);
+        //Move from pending into Records
+        PendingRegister::<T>::remove((hash_user, hash_address));
+        UsernameRecords::<T>::insert(username, registrant);
 
         Self::deposit_event(Event::NameRegistered);
         Ok(())
     }
 
-    fn mint_username_as_nft(username: &Vec<u8>) {}
+    //fn mint_username_as_nft(username: &Vec<u8>) {}
 }
 
 /// username validation

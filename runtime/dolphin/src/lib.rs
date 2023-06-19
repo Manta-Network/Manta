@@ -408,6 +408,7 @@ impl pallet_name_service::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type PalletId = NameServicePalletId;
     type RegisterWaitingPeriod = ConstU32<2>;
+    //type WeightInfo = weights::pallet_name_service::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {

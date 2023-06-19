@@ -2674,6 +2674,7 @@ dependencies = [
  "pallet-manta-support",
  "pallet-membership",
  "pallet-multisig",
+ "pallet-name-service",
  "pallet-preimage",
  "pallet-ranked-collective",
  "pallet-referenda",
@@ -7086,22 +7087,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-nis"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.37#6fa7fe1326ecaab9921c2c3888530ad679cfbb87"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "scale-info",
- "sp-arithmetic",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-name-service"
 version = "4.0.0-rc1"
 dependencies = [
@@ -7114,6 +7099,22 @@ dependencies = [
  "scale-info",
  "sp-core",
  "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-nis"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.37#6fa7fe1326ecaab9921c2c3888530ad679cfbb87"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-arithmetic",
+ "sp-core",
  "sp-runtime",
  "sp-std",
 ]
