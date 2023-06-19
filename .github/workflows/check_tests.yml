@@ -213,6 +213,11 @@ jobs:
           sudo apt update
           sudo apt install -y pkg-config libssl-dev protobuf-compiler
           protoc --version
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install nightly-2023-03-04
+          rustup default nightly-2023-03-04
+          rustup target add wasm32-unknown-unknown
           RUSTC_BOOTSTRAP=1 cargo build --release --features runtime-benchmarks
       - name: create-chainspec
         run: |
