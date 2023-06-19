@@ -210,6 +210,9 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
           CARGO_TERM_COLOR: always
         run: |
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          protoc --version
           RUSTC_BOOTSTRAP=1 cargo build --release --features runtime-benchmarks
       - name: create-chainspec
         run: |
