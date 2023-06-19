@@ -185,6 +185,12 @@ benchmarks! {
         bab_id,
         H160::default()
     )
+
+    set_next_sbt_id {
+    }: set_next_sbt_id(
+        RawOrigin::Root,
+        Some(100)
+    )
 }
 
 impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
