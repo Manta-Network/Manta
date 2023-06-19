@@ -652,7 +652,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(9)]
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_next_sbt_id())]
         #[transactional]
         pub fn set_next_sbt_id(
             origin: OriginFor<T>,
