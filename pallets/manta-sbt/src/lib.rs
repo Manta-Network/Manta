@@ -650,6 +650,20 @@ pub mod pallet {
             });
             Ok(())
         }
+
+        #[pallet::call_index(9)]
+        #[pallet::weight(0)]
+        #[transactional]
+        pub fn set_next_sbt_id(
+            origin: OriginFor<T>,
+            asset_id: Option<StandardAssetId>,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+
+            NextSbtId::<T>::set(asset_id);
+            Self::deposit_event(Event::<T>::SetNextSbtId { asset_id });
+            Ok(())
+        }
     }
 
     /// Event
@@ -726,6 +740,9 @@ pub mod pallet {
         },
         ChangeFreeReserveAccount {
             account: Option<T::AccountId>,
+        },
+        SetNextSbtId {
+            asset_id: Option<StandardAssetId>,
         },
     }
 

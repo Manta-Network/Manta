@@ -1137,3 +1137,23 @@ fn update_mint_info_works() {
         ));
     })
 }
+
+#[test]
+fn set_sbt_id_works() {
+    new_test_ext().execute_with(|| {
+        assert_noop!(
+            MantaSBTPallet::set_next_sbt_id(MockOrigin::signed(ALICE), Some(10)),
+            DispatchError::BadOrigin
+        );
+        assert_ok!(MantaSBTPallet::set_next_sbt_id(
+            MockOrigin::root(),
+            Some(1_000_000)
+        ));
+
+        initialize_test();
+        assert_eq!(
+            ReservedIds::<Test>::get(ALICE).unwrap(),
+            (1_000_000, 1_000_004)
+        );
+    })
+}
