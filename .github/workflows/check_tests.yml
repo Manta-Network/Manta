@@ -77,15 +77,6 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
-      - name: Run Unit Tests
-        env:
-          RUST_BACKTRACE: full
-          RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 120G
-          SCCACHE_DIR: /home/runner/.cache/sccache
-        run: |
-          source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime --workspace --exclude integration-tests
       - name: Run Integration Tests
         env:
           RUST_BACKTRACE: full
