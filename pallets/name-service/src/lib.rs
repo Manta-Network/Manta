@@ -21,16 +21,14 @@
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
 
-use core::future::Pending;
-
-use frame_support::{pallet_prelude::*, traits::Len, transactional};
+use frame_support::{pallet_prelude::*, transactional};
 use frame_system::pallet_prelude::*;
-use manta_primitives::types::{AccountId, Balance, BlockNumber};
+use manta_primitives::types::Balance;
 use sp_runtime::{
     traits::{AccountIdConversion, Hash, Saturating},
     DispatchResult,
 };
-use sp_std::{prelude::*, vec::Vec};
+use sp_std::{vec::Vec};
 
 mod mock;
 mod tests;
@@ -137,11 +135,10 @@ pub mod pallet {
         pub fn accept_register(
             origin: OriginFor<T>,
             username: UserName,
-            price: Balance,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            Self::do_accept_register(&username, who, price)?;
+            Self::do_accept_register(&username, who)?;
 
             Ok(())
         }
@@ -153,7 +150,7 @@ pub mod pallet {
         pub fn set_primary_name(origin: OriginFor<T>, username: UserName) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            Self::try_set_primary_name(username, who);
+            Self::try_set_primary_name(username, who)?;
 
             Ok(())
         }
@@ -165,7 +162,7 @@ pub mod pallet {
         pub fn cancel_pending_register(origin: OriginFor<T>, username: UserName) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            Self::try_cancel_pending_register(username, who);
+            Self::try_cancel_pending_register(username, who)?;
 
             Ok(())
         }
@@ -177,12 +174,12 @@ pub mod pallet {
         pub fn remove_register(origin: OriginFor<T>, username: UserName) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            Self::try_remove_register(username, who);
+            Self::try_remove_register(username, who)?;
 
             Ok(())
         }
 
-        ///
+        /// Transfer private to private
         #[pallet::call_index(5)]
         #[pallet::weight(1000)]
         #[transactional]
@@ -208,7 +205,7 @@ impl<T: Config> Pallet<T> {
 
     /// Queue username for regiser
     fn do_register(username: &UserName, registrant: T::AccountId) -> DispatchResult {
-        /// Username checks
+        // Username checks
         username_validation(username).ok_or(Error::<T>::InvalidUsernameFormat)?;
 
         let (hash_user, hash_address) = (
@@ -216,13 +213,13 @@ impl<T: Config> Pallet<T> {
             T::Hashing::hash_of(&registrant),
         );
 
-        /// Check if already Pending Register
+        // Check if already Pending Register
         ensure!(
             PendingRegister::<T>::contains_key((hash_user, hash_address)) == false,
             Error::<T>::AlreadyPendingRegister
         );
 
-        /// Check if already registered
+        // Check if already registered
         ensure!(
             UsernameRecords::<T>::contains_key(username) == false,
             Error::<T>::NameAlreadyRegistered
@@ -245,9 +242,8 @@ impl<T: Config> Pallet<T> {
     fn do_accept_register(
         username: &UserName,
         registrant: T::AccountId,
-        price: Balance,
     ) -> DispatchResult {
-        /// Username checks
+        // Username checks
         username_validation(username).ok_or(Error::<T>::InvalidUsernameFormat)?;
 
         let (hash_user, hash_address) = (
@@ -263,7 +259,7 @@ impl<T: Config> Pallet<T> {
             Error::<T>::RegisterTimeNotReached
         );
 
-        /// Move from pending into records
+        // Move from pending into records
         PendingRegister::<T>::remove((hash_user, hash_address));
         UsernameRecords::<T>::insert(username, registrant);
 
@@ -325,7 +321,7 @@ impl<T: Config> Pallet<T> {
 
         UsernameRecords::<T>::remove(&username);
 
-        /// check if the name we are removing is a primary name to keep storage synced
+        // check if the name we are removing is a primary name to keep storage synced
         if let Ok(primary_username) = PrimaryRecords::<T>::try_get(&registrant) {
             if primary_username == username {
                 PrimaryRecords::<T>::remove(&registrant);

@@ -55,7 +55,7 @@ use frame_system::{
     EnsureRoot,
 };
 use manta_primitives::{
-    constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
+    constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, NAME_SERVICE_PALLET_ID, WEIGHT_PER_SECOND},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
@@ -297,6 +297,7 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::Preimage(_)
             | RuntimeCall::MantaPay(_)
             | RuntimeCall::MantaSbt(_)
+            | RuntimeCall::NameService(_)
             | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..}
                 | orml_xtokens::Call::transfer_multicurrencies {..})
             | RuntimeCall::TransactionPause(_)
@@ -791,6 +792,17 @@ impl calamari_vesting::Config for Runtime {
     type WeightInfo = weights::calamari_vesting::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub const NameServicePalletId: PalletId = NAME_SERVICE_PALLET_ID;
+}
+
+impl pallet_name_service::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type PalletId = NameServicePalletId;
+    type RegisterWaitingPeriod = ConstU32<2>;
+    //type WeightInfo = weights::pallet_name_service::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -854,6 +866,7 @@ construct_runtime!(
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
         MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
+        NameService: pallet_name_service::{Pallet, Call, Storage, Event<T>} = 52,
 
         // Calamari stuff
         CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
