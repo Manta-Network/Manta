@@ -78,6 +78,8 @@ pub mod pallet {
         InvalidUsernameFormat,
         /// Already pending Register
         AlreadyPendingRegister,
+        /// Not Found (used in cases of canceling)
+        UsernameNotFound,
     }
 
     #[pallet::event]
@@ -85,21 +87,24 @@ pub mod pallet {
     pub enum Event<T: Config> {
         NameRegistered,
         NameQueuedForRegister,
+        NameSetAsPrimary,
+        RegisterCanceled,
+        RegisterRemoved,
     }
 
-    ///
+    /// All registered Names
     #[pallet::storage]
     #[pallet::getter(fn username_records)]
     pub type UsernameRecords<T: Config> =
         StorageMap<_, Twox64Concat, UserName, T::AccountId, OptionQuery>;
 
-    ///
+    /// Names pending to be registered with the given blocknumber(wait time)
     #[pallet::storage]
     #[pallet::getter(fn pending_register)]
     pub type PendingRegister<T: Config> =
         StorageMap<_, Twox64Concat, (T::Hash, T::Hash), T::BlockNumber, OptionQuery>;
 
-    ///
+    /// Primary Records, 1 AccountID may have only one primary name
     #[pallet::storage]
     #[pallet::getter(fn primary_records)]
     pub type PrimaryRecords<T: Config> =
@@ -153,11 +158,37 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
 
             Self::try_set_primary_name(username, who);
+
+            Ok(())
+        }
+
+        /// Cancel pending name for register
+        #[pallet::call_index(3)]
+        #[pallet::weight(1000)]
+        #[transactional]
+        pub fn cancel_pending_register(origin: OriginFor<T>, username: UserName) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            Self::try_cancel_pending_register(username, who);
+
+            Ok(())
+        }
+
+
+        /// Remove Already Registered Name
+        #[pallet::call_index(4)]
+        #[pallet::weight(1000)]
+        #[transactional]
+        pub fn remove_register(origin: OriginFor<T>, username: UserName) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            Self::try_remove_register(username, who);
+
             Ok(())
         }
 
         ///
-        #[pallet::call_index(3)]
+        #[pallet::call_index(5)]
         #[pallet::weight(1000)]
         #[transactional]
         pub fn transfer_to_username(
@@ -259,13 +290,51 @@ impl<T: Config> Pallet<T> {
             Error::<T>::NotOwned
         );
 
+        // check if we already have a primary
         if PrimaryRecords::<T>::contains_key(&registrant) {
-            PrimaryRecords::<T>::mutate(&registrant, |old_username| *old_username = username);
+            PrimaryRecords::<T>::mutate(&registrant, |old_username| *old_username = Some(username));
         } else {
             PrimaryRecords::<T>::insert(&registrant, username);
         }
 
-        Self::deposit_event(Event::NameRegistered);
+        Self::deposit_event(Event::NameSetAsPrimary);
+        Ok(())
+    }
+
+    fn try_cancel_pending_register(
+        username: UserName,
+        registrant: T::AccountId,
+    ) -> DispatchResult {
+
+        let (hash_user, hash_address) = (
+            T::Hashing::hash_of(username),
+            T::Hashing::hash_of(&registrant),
+        );
+
+        ensure!(PendingRegister::<T>::contains_key((hash_user, hash_address)),
+        Error::<T>::UserNameNotFound);
+
+        PendingRegister::<T>::remove((hash_user, hash_address));
+
+        Self::deposit_event(Event::RegisterCanceled);
+        Ok(())
+
+    }
+
+    fn try_remove_register(
+        username: UserName,
+        registrant: T::AccountId,
+    ) -> DispatchResult {
+
+        ensure!(UsernameRecords::<T>::contains_key(&username),
+        Error::<T>::NotRegistered);
+
+        ensure!(UsernameRecords::<T>::get(&username).unwrap() == registrant,
+        Error::<T>::NotOwned);
+
+        UsernameRecords::<T>::remove(&username);
+
+        Self::deposit_event(Event::RegisterRemoved);
         Ok(())
     }
 }
