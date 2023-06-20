@@ -28,7 +28,7 @@ use sp_runtime::{
     traits::{AccountIdConversion, Hash, Saturating},
     DispatchResult,
 };
-use sp_std::{vec::Vec};
+use sp_std::vec::Vec;
 
 mod mock;
 mod tests;
@@ -80,6 +80,8 @@ pub mod pallet {
         AlreadyPendingRegister,
         /// Not Found (used in cases of canceling)
         UsernameNotFound,
+        /// Username registered but is not primary (transfers)
+        UsernameNotPrimary,
     }
 
     #[pallet::event]
@@ -90,6 +92,7 @@ pub mod pallet {
         NameSetAsPrimary,
         RegisterCanceled,
         RegisterRemoved,
+        TransferSuccessful,
     }
 
     /// All registered Names
@@ -124,7 +127,11 @@ pub mod pallet {
         #[pallet::call_index(0)]
         #[pallet::weight(1000)]
         #[transactional]
-        pub fn register(origin: OriginFor<T>, username: UserName, registrant: ZkAddressType) -> DispatchResult {
+        pub fn register(
+            origin: OriginFor<T>,
+            username: UserName,
+            registrant: ZkAddressType,
+        ) -> DispatchResult {
             let _who = ensure_signed(origin)?;
 
             Self::do_register(&username, registrant)
@@ -137,7 +144,7 @@ pub mod pallet {
         pub fn accept_register(
             origin: OriginFor<T>,
             username: UserName,
-            registrant: ZkAddressType
+            registrant: ZkAddressType,
         ) -> DispatchResult {
             let _who = ensure_signed(origin)?;
 
@@ -150,7 +157,11 @@ pub mod pallet {
         #[pallet::call_index(2)]
         #[pallet::weight(1000)]
         #[transactional]
-        pub fn set_primary_name(origin: OriginFor<T>, username: UserName, registrant: ZkAddressType) -> DispatchResult {
+        pub fn set_primary_name(
+            origin: OriginFor<T>,
+            username: UserName,
+            registrant: ZkAddressType,
+        ) -> DispatchResult {
             let _who = ensure_signed(origin)?;
 
             Self::try_set_primary_name(username, registrant)?;
@@ -162,7 +173,11 @@ pub mod pallet {
         #[pallet::call_index(3)]
         #[pallet::weight(1000)]
         #[transactional]
-        pub fn cancel_pending_register(origin: OriginFor<T>, username: UserName, registrant: ZkAddressType) -> DispatchResult {
+        pub fn cancel_pending_register(
+            origin: OriginFor<T>,
+            username: UserName,
+            registrant: ZkAddressType,
+        ) -> DispatchResult {
             let _who = ensure_signed(origin)?;
 
             Self::try_cancel_pending_register(username, registrant)?;
@@ -174,7 +189,11 @@ pub mod pallet {
         #[pallet::call_index(4)]
         #[pallet::weight(1000)]
         #[transactional]
-        pub fn remove_register(origin: OriginFor<T>, username: UserName, registrant: ZkAddressType) -> DispatchResult {
+        pub fn remove_register(
+            origin: OriginFor<T>,
+            username: UserName,
+            registrant: ZkAddressType,
+        ) -> DispatchResult {
             let _who = ensure_signed(origin)?;
 
             Self::try_remove_register(username, registrant)?;
@@ -190,9 +209,10 @@ pub mod pallet {
             origin: OriginFor<T>,
             username: UserName,
             registrant: ZkAddressType,
-            price: Balance,
         ) -> DispatchResult {
             let _who = ensure_signed(origin)?;
+
+            Self::try_transfer_to_username(username, registrant);
 
             Ok(())
         }
@@ -242,10 +262,7 @@ impl<T: Config> Pallet<T> {
     }
 
     /// Finish Register after block time has passed
-    fn do_accept_register(
-        username: &UserName,
-        registrant: ZkAddressType,
-    ) -> DispatchResult {
+    fn do_accept_register(username: &UserName, registrant: ZkAddressType) -> DispatchResult {
         // Username checks
         username_validation(username).ok_or(Error::<T>::InvalidUsernameFormat)?;
 
@@ -294,7 +311,10 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    fn try_cancel_pending_register(username: UserName, registrant: ZkAddressType) -> DispatchResult {
+    fn try_cancel_pending_register(
+        username: UserName,
+        registrant: ZkAddressType,
+    ) -> DispatchResult {
         let (hash_user, hash_address) = (
             T::Hashing::hash_of(&username),
             T::Hashing::hash_of(&registrant),
