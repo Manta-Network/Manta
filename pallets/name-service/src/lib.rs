@@ -37,6 +37,8 @@ pub mod weights;
 pub use pallet::*;
 pub use weights::WeightInfo;
 
+pub type ZkAddressType = [u8; 32];
+
 pub type UserName = Vec<u8>;
 
 pub const NAME_MAX_LEN: usize = 63;
@@ -94,7 +96,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn username_records)]
     pub type UsernameRecords<T: Config> =
-        StorageMap<_, Twox64Concat, UserName, T::AccountId, OptionQuery>;
+        StorageMap<_, Twox64Concat, UserName, ZkAddressType, OptionQuery>;
 
     /// Names pending to be registered with the given blocknumber(wait time)
     #[pallet::storage]
@@ -106,7 +108,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn primary_records)]
     pub type PrimaryRecords<T: Config> =
-        StorageMap<_, Twox64Concat, T::AccountId, UserName, OptionQuery>;
+        StorageMap<_, Twox64Concat, ZkAddressType, UserName, OptionQuery>;
 
     #[pallet::pallet]
     #[pallet::without_storage_info]
@@ -122,10 +124,10 @@ pub mod pallet {
         #[pallet::call_index(0)]
         #[pallet::weight(1000)]
         #[transactional]
-        pub fn register(origin: OriginFor<T>, username: UserName) -> DispatchResult {
-            let who = ensure_signed(origin)?;
+        pub fn register(origin: OriginFor<T>, username: UserName, registrant: ZkAddressType) -> DispatchResult {
+            let _who = ensure_signed(origin)?;
 
-            Self::do_register(&username, who)
+            Self::do_register(&username, registrant)
         }
 
         /// After Pending Register has passed its block wait time, finish regiser
@@ -135,10 +137,11 @@ pub mod pallet {
         pub fn accept_register(
             origin: OriginFor<T>,
             username: UserName,
+            registrant: ZkAddressType
         ) -> DispatchResult {
-            let who = ensure_signed(origin)?;
+            let _who = ensure_signed(origin)?;
 
-            Self::do_accept_register(&username, who)?;
+            Self::do_accept_register(&username, registrant)?;
 
             Ok(())
         }
@@ -147,10 +150,10 @@ pub mod pallet {
         #[pallet::call_index(2)]
         #[pallet::weight(1000)]
         #[transactional]
-        pub fn set_primary_name(origin: OriginFor<T>, username: UserName) -> DispatchResult {
-            let who = ensure_signed(origin)?;
+        pub fn set_primary_name(origin: OriginFor<T>, username: UserName, registrant: ZkAddressType) -> DispatchResult {
+            let _who = ensure_signed(origin)?;
 
-            Self::try_set_primary_name(username, who)?;
+            Self::try_set_primary_name(username, registrant)?;
 
             Ok(())
         }
@@ -159,10 +162,10 @@ pub mod pallet {
         #[pallet::call_index(3)]
         #[pallet::weight(1000)]
         #[transactional]
-        pub fn cancel_pending_register(origin: OriginFor<T>, username: UserName) -> DispatchResult {
-            let who = ensure_signed(origin)?;
+        pub fn cancel_pending_register(origin: OriginFor<T>, username: UserName, registrant: ZkAddressType) -> DispatchResult {
+            let _who = ensure_signed(origin)?;
 
-            Self::try_cancel_pending_register(username, who)?;
+            Self::try_cancel_pending_register(username, registrant)?;
 
             Ok(())
         }
@@ -171,10 +174,10 @@ pub mod pallet {
         #[pallet::call_index(4)]
         #[pallet::weight(1000)]
         #[transactional]
-        pub fn remove_register(origin: OriginFor<T>, username: UserName) -> DispatchResult {
-            let who = ensure_signed(origin)?;
+        pub fn remove_register(origin: OriginFor<T>, username: UserName, registrant: ZkAddressType) -> DispatchResult {
+            let _who = ensure_signed(origin)?;
 
-            Self::try_remove_register(username, who)?;
+            Self::try_remove_register(username, registrant)?;
 
             Ok(())
         }
@@ -186,10 +189,10 @@ pub mod pallet {
         pub fn transfer_to_username(
             origin: OriginFor<T>,
             username: UserName,
-            registrant: T::AccountId,
+            registrant: ZkAddressType,
             price: Balance,
         ) -> DispatchResult {
-            let who = ensure_signed(origin)?;
+            let _who = ensure_signed(origin)?;
 
             Ok(())
         }
@@ -204,7 +207,7 @@ impl<T: Config> Pallet<T> {
     }
 
     /// Queue username for regiser
-    fn do_register(username: &UserName, registrant: T::AccountId) -> DispatchResult {
+    fn do_register(username: &UserName, registrant: ZkAddressType) -> DispatchResult {
         // Username checks
         username_validation(username).ok_or(Error::<T>::InvalidUsernameFormat)?;
 
@@ -241,7 +244,7 @@ impl<T: Config> Pallet<T> {
     /// Finish Register after block time has passed
     fn do_accept_register(
         username: &UserName,
-        registrant: T::AccountId,
+        registrant: ZkAddressType,
     ) -> DispatchResult {
         // Username checks
         username_validation(username).ok_or(Error::<T>::InvalidUsernameFormat)?;
@@ -268,7 +271,7 @@ impl<T: Config> Pallet<T> {
     }
 
     /// Set primary name if register and owned
-    fn try_set_primary_name(username: UserName, registrant: T::AccountId) -> DispatchResult {
+    fn try_set_primary_name(username: UserName, registrant: ZkAddressType) -> DispatchResult {
         //check if name is registered
         ensure!(
             UsernameRecords::<T>::contains_key(&username),
@@ -291,7 +294,7 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    fn try_cancel_pending_register(username: UserName, registrant: T::AccountId) -> DispatchResult {
+    fn try_cancel_pending_register(username: UserName, registrant: ZkAddressType) -> DispatchResult {
         let (hash_user, hash_address) = (
             T::Hashing::hash_of(&username),
             T::Hashing::hash_of(&registrant),
@@ -308,7 +311,7 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    fn try_remove_register(username: UserName, registrant: T::AccountId) -> DispatchResult {
+    fn try_remove_register(username: UserName, registrant: ZkAddressType) -> DispatchResult {
         ensure!(
             UsernameRecords::<T>::contains_key(&username),
             Error::<T>::NotRegistered
