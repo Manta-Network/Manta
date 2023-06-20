@@ -7088,7 +7088,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-name-service"
-version = "4.0.0-rc1"
+version = "4.2.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",

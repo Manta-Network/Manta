@@ -67,22 +67,24 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         /// Username exists
-        NameExists,
+        NameAlreadyRegistered,
         /// Username not registered
         NotRegistered,
+        /// Username not owned
+        NotOwned,
         /// The Registration time not reached
-        RegisterTimeNotReach,
+        RegisterTimeNotReached,
         /// Username invalid
-        ValidationFailed,
-        /// Already Pending Register
+        InvalidUsernameFormat,
+        /// Already pending Register
         AlreadyPendingRegister,
-
     }
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         NameRegistered,
+        NameQueuedForRegister,
     }
 
     ///
@@ -101,7 +103,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn primary_records)]
     pub type PrimaryRecords<T: Config> =
-        StorageMap<_, Twox64Concat, T::AccountId, UserName, OptionQuery>;
+        StorageMap<_, Twox64Concat, UserName, T::AccountId, OptionQuery>;
 
     #[pallet::pallet]
     #[pallet::without_storage_info]
@@ -113,44 +115,44 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        ///
+
+        /// Queue Username for Register if it has not been registered or queued yet
         #[pallet::call_index(0)]
         #[pallet::weight(1000)]
         #[transactional]
         pub fn register(
             origin: OriginFor<T>,
-            username: Vec<u8>,
+            username: UserName,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
             Self::do_register(&username, who)
         }
 
-        ///
+        /// After Pending Register has passed its block wait time, finish regiser
         #[pallet::call_index(1)]
         #[pallet::weight(1000)]
         #[transactional]
         pub fn accept_register(
             origin: OriginFor<T>,
-            username: Vec<u8>,
+            username: UserName,
             price: Balance,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
             Self::do_accept_register(&username, who, price)?;
 
-            // TODO: usernames as NFTs making them tradeble
-            // Self::mint_username_as_nft(&username);
             Ok(())
         }
 
-        ///
+        /// Set a registered and owned username as Primary
         #[pallet::call_index(2)]
         #[pallet::weight(1000)]
         #[transactional]
-        pub fn set_primary_name(origin: OriginFor<T>, username: Vec<u8>) -> DispatchResult {
-            let _origin = ensure_signed(origin)?;
+        pub fn set_primary_name(origin: OriginFor<T>, username: UserName) -> DispatchResult {
+            let who = ensure_signed(origin)?;
 
+            Self::try_set_primary_name(username, who);
             Ok(())
         }
 
@@ -160,11 +162,11 @@ pub mod pallet {
         #[transactional]
         pub fn transfer_to_username(
             origin: OriginFor<T>,
-            username: Vec<u8>,
+            username: UserName,
             registrant: T::AccountId,
             price: Balance,
         ) -> DispatchResult {
-            let _origin = ensure_signed(origin)?;
+            let who = ensure_signed(origin)?;
 
             Ok(())
         }
@@ -178,44 +180,61 @@ impl<T: Config> Pallet<T> {
         T::PalletId::get().into_account_truncating()
     }
 
-    ///
-    fn do_register(username: &Vec<u8>, registrant: T::AccountId) -> DispatchResult {
-        PendingRegister::<T>::insert(
-            (T::Hashing::hash_of(username), T::Hashing::hash_of(&registrant)),
-            frame_system::Pallet::<T>::block_number()
-                .saturating_add(T::RegisterWaitingPeriod::get()),
-        );
-        Ok(())
-    }
+    /// Queue username for regiser
+    fn do_register(username: &UserName, registrant: T::AccountId) -> DispatchResult {
+        /// Username checks
+        username_validation(username).ok_or(Error::<T>::InvalidUsernameFormat)?;
 
-    ///
-    fn do_accept_register(
-        username: &Vec<u8>,
-        registrant: T::AccountId,
-        price: Balance,
-    ) -> DispatchResult {
-        ///
-        username_validation(username).ok_or(Error::<T>::ValidationFailed)?;
-
-        ///
         let (hash_user, hash_address) = (
             T::Hashing::hash_of(username),
             T::Hashing::hash_of(&registrant),
         );
 
+        /// Check if already Pending Register
         ensure!(
-            PendingRegister::<T>::contains_key((hash_user, hash_address)),
+            PendingRegister::<T>::contains_key((hash_user, hash_address)) == false,
             Error::<T>::AlreadyPendingRegister
         );
 
+        /// Check if already registered
+        ensure!(
+            UsernameRecords::<T>::contains_key(username) == false,
+            Error::<T>::NameAlreadyRegistered
+        );
+
+        PendingRegister::<T>::insert(
+            (T::Hashing::hash_of(username), T::Hashing::hash_of(&registrant)),
+            frame_system::Pallet::<T>::block_number()
+                .saturating_add(T::RegisterWaitingPeriod::get()),
+        );
+
+        Self::deposit_event(Event::NameQueuedForRegister);
+        Ok(())
+    }
+
+    /// Finish Register after block time has passed
+    fn do_accept_register(
+        username: &UserName,
+        registrant: T::AccountId,
+        price: Balance,
+    ) -> DispatchResult {
+        /// Username checks
+        username_validation(username).ok_or(Error::<T>::InvalidUsernameFormat)?;
+
+        let (hash_user, hash_address) = (
+            T::Hashing::hash_of(username),
+            T::Hashing::hash_of(&registrant),
+        );
+
+        // check if block number has been passed
         let creation_block = PendingRegister::<T>::get((hash_user, hash_address))
             .ok_or(Error::<T>::NotRegistered)?;
         ensure!(
             frame_system::Pallet::<T>::block_number() > creation_block,
-            Error::<T>::RegisterTimeNotReach
+            Error::<T>::RegisterTimeNotReached
         );
 
-        //Move from pending into Records
+        /// Move from pending into records
         PendingRegister::<T>::remove((hash_user, hash_address));
         UsernameRecords::<T>::insert(username, registrant);
 
@@ -223,6 +242,32 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
+    /// Set primary name if register and owned
+    fn try_set_primary_name(
+        username: UserName,
+        registrant: T::AccountId,
+    ) -> DispatchResult {
+
+        //check if name is registered
+        ensure!(
+            UsernameRecords::<T>::contains_key(&username),
+            Error::<T>::NotRegistered
+        );
+        // check if its owned (can unwrap because of previous checks for the key)
+        ensure!(
+            UsernameRecords::<T>::get(&username).unwrap() == registrant,
+            Error::<T>::NotOwned
+        );
+
+        if PrimaryRecords::<T>::contains_key(&username) {
+
+        } else {
+
+        }
+
+        Self::deposit_event(Event::NameRegistered);
+        Ok(())
+    }
     //fn mint_username_as_nft(username: &Vec<u8>) {}
 }
 
