@@ -108,7 +108,6 @@ xcm = { git = "https://github.com/paritytech/polkadot.git", branch = "release-v0
 
 # Self dependencies
 calamari-runtime = { path = '../runtime/calamari' }
-dolphin-runtime = { path = '../runtime/dolphin' }
 manta-primitives = { path = '../primitives/manta' }
 manta-runtime = { path = '../runtime/manta' }
 pallet-manta-pay = { path = '../pallets/manta-pay', features = ["rpc", "runtime"] }

@@ -213,8 +213,8 @@ parameter_types! {
         VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
         metadata: AssetStorageMetadata {
-            name: b"Dolphin".to_vec(),
-            symbol: b"DOL".to_vec(),
+            name: b"Calamari".to_vec(),
+            symbol: b"KMA".to_vec(),
             decimals: 18,
             is_frozen: false,
         },
