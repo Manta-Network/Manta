@@ -16,6 +16,7 @@ scale-info = { version = "2.1.2", default-features = false, features = ["derive"
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false }
 
+manta-support = { package = "pallet-manta-support", path = "../manta-support", default-features = false }
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 
 [dev-dependencies]
@@ -29,7 +30,9 @@ runtime-benchmarks = [
   "frame-benchmarking",
   'frame-support/runtime-benchmarks',
   'frame-system/runtime-benchmarks',
+  "manta-primitives/runtime-benchmarks",
 ]
+
 std = [
   "scale-info/std",
   "sp-runtime/std",
@@ -40,4 +43,5 @@ std = [
 ]
 try-runtime = [
   "frame-support/try-runtime",
+  "frame-system/try-runtime",
 ]

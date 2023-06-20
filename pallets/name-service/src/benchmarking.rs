@@ -19,40 +19,85 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
-use crate::Pallet as NameService;
-use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
-use frame_system::{EventRecord, RawOrigin};
 
-pub fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
+use crate::{Call, Config, Event, Pallet};
+use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use frame_system::{EventRecord, RawOrigin};
+use pallet::*;
+use manta_support::manta_pay::AccountId;
+use sp_std::prelude::*;
+use sp_std::vec::Vec;
+use frame_support::traits::ConstU32;
+
+pub fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
     let events = frame_system::Pallet::<T>::events();
-    let system_event: <T as frame_system::Config>::Event = generic_event.into();
+    let system_event: <T as frame_system::Config>::RuntimeEvent = generic_event.into();
     let EventRecord { event, .. } = &events[events.len() - 1];
     assert_eq!(event, &system_event);
 }
 
 benchmarks! {
-    // Benchmark `pause_transaction` extrinsic:
-    pause_transaction {
-        let pallet_name = b"System".to_vec();
-        let function_name =  b"remark".to_vec();
-    }: pause_transaction(RawOrigin::Root, pallet_name.clone(), function_name.clone())
-    verify {
-        assert_last_event::<T>(
-            Event::NameServiced(pallet_name.clone(), function_name).into()
-        );
+    where_clause {  where T: Config,
+        T::AccountId: Into<AccountId>,}
+
+    register {
+        let caller: T::AccountId = whitelisted_caller();
+        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
+        let username = "BenchmarkName";
+    }: register(
+        RawOrigin::Signed(caller.clone()),
+        username.as_bytes().to_vec(),
+        caller.clone().into()
+    ) verify {
+        assert_last_event::<T>(Event::NameQueuedForRegister.into());
     }
 
-    // Benchmark `unpause_transaction` extrinsic:
-    unpause_transaction {
-        let origin: T::Origin = T::Origin::from(RawOrigin::Root);
-        let pallet_name = b"System".to_vec();
-        let function_name =  b"remark".to_vec();
-        NameService::<T>::pause_transaction(origin, pallet_name.clone(), function_name.clone())?;
-    }: unpause_transaction(RawOrigin::Root, pallet_name.clone(), function_name.clone())
-    verify {
-        assert_last_event::<T>(
-            Event::TransactionUnpaused(pallet_name, function_name).into()
-        );
+    accept_register {
+        let caller: T::AccountId = whitelisted_caller();
+        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
+        let username = "".as_bytes().to_vec();
+    }: accept_register(
+        RawOrigin::Signed(caller.clone()),
+        username,
+        caller.clone().into()
+    ) verify {
+        assert_last_event::<T>(Event::NameRegistered.into());
+    }
+
+    set_primary_name {
+        let caller: T::AccountId = whitelisted_caller();
+        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
+        let username = "BenchmarkName";
+    }: set_primary_name(
+        RawOrigin::Signed(caller.clone()),
+        username.as_bytes().to_vec(),
+        caller.clone().into()
+    ) verify {
+        assert_last_event::<T>(Event::NameSetAsPrimary.into());
+    }
+
+    cancel_pending_register {
+        let caller: T::AccountId = whitelisted_caller();
+        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
+        let username = "BenchmarkName";
+    }: cancel_pending_register(
+        RawOrigin::Signed(caller.clone()),
+        username.as_bytes().to_vec(),
+        caller.clone().into()
+    ) verify {
+        assert_last_event::<T>(Event::RegisterCanceled.into());
+    }
+
+    remove_register {
+        let caller: T::AccountId = whitelisted_caller();
+        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
+        let username = "BenchmarkName";
+    }: remove_register(
+        RawOrigin::Signed(caller.clone()),
+        username.as_bytes().to_vec(),
+        caller.clone().into()
+    ) verify {
+        assert_last_event::<T>(Event::RegisterRemoved.into());
     }
 }
 

@@ -163,6 +163,7 @@ runtime-benchmarks = [
   'pallet-manta-pay/runtime-benchmarks',
   'pallet-xcm-benchmarks/runtime-benchmarks',
   'pallet-manta-sbt/runtime-benchmarks',
+  'pallet-name-service/runtime-benchmarks',
   "zenlink-protocol/runtime-benchmarks",
 ]
 try-runtime = [
@@ -202,6 +203,7 @@ try-runtime = [
   'pallet-manta-pay/try-runtime',
   'calamari-vesting/try-runtime',
   'pallet-manta-sbt/try-runtime',
+  'pallet-name-service/try-runtime',
   "zenlink-protocol/try-runtime",
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.

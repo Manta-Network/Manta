@@ -7095,6 +7095,7 @@ dependencies = [
  "frame-system",
  "manta-primitives",
  "pallet-balances",
+ "pallet-manta-support",
  "parity-scale-codec",
  "scale-info",
  "sp-core",

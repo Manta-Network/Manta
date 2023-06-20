@@ -943,6 +943,7 @@ mod benches {
         [pallet_parachain_staking, ParachainStaking]
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
+        [pallet_name_service, NameService]
         // Dex
         [zenlink_protocol, ZenlinkProtocol]
         // XCM

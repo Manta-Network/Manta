@@ -18,12 +18,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::unused_unit)]
 
-// #[cfg(feature = "runtime-benchmarks")]
-// mod benchmarking;
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 
 use frame_support::{pallet_prelude::*, transactional};
 use frame_system::pallet_prelude::*;
-use manta_primitives::types::Balance;
 use sp_runtime::{
     traits::{AccountIdConversion, Hash, Saturating},
     DispatchResult,
@@ -48,7 +47,6 @@ pub const NAME_MIN_LEN: usize = 3;
 pub mod pallet {
     use super::*;
     use frame_support::{traits::StorageVersion, PalletId};
-    // use manta_primitives::assets::AssetConfig;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
@@ -197,22 +195,6 @@ pub mod pallet {
             let _who = ensure_signed(origin)?;
 
             Self::try_remove_register(username, registrant)?;
-
-            Ok(())
-        }
-
-        /// Transfer private to private
-        #[pallet::call_index(5)]
-        #[pallet::weight(1000)]
-        #[transactional]
-        pub fn transfer_to_username(
-            origin: OriginFor<T>,
-            username: UserName,
-            registrant: ZkAddressType,
-        ) -> DispatchResult {
-            let _who = ensure_signed(origin)?;
-
-            Self::try_transfer_to_username(username, registrant);
 
             Ok(())
         }
