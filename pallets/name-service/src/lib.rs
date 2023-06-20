@@ -25,7 +25,7 @@ use core::future::Pending;
 
 use frame_support::{pallet_prelude::*, traits::Len, transactional};
 use frame_system::pallet_prelude::*;
-use manta_primitives::types::{Balance, BlockNumber, AccountId};
+use manta_primitives::types::{AccountId, Balance, BlockNumber};
 use sp_runtime::{
     traits::{AccountIdConversion, Hash, Saturating},
     DispatchResult,
@@ -120,15 +120,11 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-
         /// Queue Username for Register if it has not been registered or queued yet
         #[pallet::call_index(0)]
         #[pallet::weight(1000)]
         #[transactional]
-        pub fn register(
-            origin: OriginFor<T>,
-            username: UserName,
-        ) -> DispatchResult {
+        pub fn register(origin: OriginFor<T>, username: UserName) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
             Self::do_register(&username, who)
@@ -173,7 +169,6 @@ pub mod pallet {
 
             Ok(())
         }
-
 
         /// Remove Already Registered Name
         #[pallet::call_index(4)]
@@ -234,7 +229,10 @@ impl<T: Config> Pallet<T> {
         );
 
         PendingRegister::<T>::insert(
-            (T::Hashing::hash_of(username), T::Hashing::hash_of(&registrant)),
+            (
+                T::Hashing::hash_of(username),
+                T::Hashing::hash_of(&registrant),
+            ),
             frame_system::Pallet::<T>::block_number()
                 .saturating_add(T::RegisterWaitingPeriod::get()),
         );
@@ -274,11 +272,7 @@ impl<T: Config> Pallet<T> {
     }
 
     /// Set primary name if register and owned
-    fn try_set_primary_name(
-        username: UserName,
-        registrant: T::AccountId,
-    ) -> DispatchResult {
-
+    fn try_set_primary_name(username: UserName, registrant: T::AccountId) -> DispatchResult {
         //check if name is registered
         ensure!(
             UsernameRecords::<T>::contains_key(&username),
@@ -301,41 +295,38 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    fn try_cancel_pending_register(
-        username: UserName,
-        registrant: T::AccountId,
-    ) -> DispatchResult {
-
+    fn try_cancel_pending_register(username: UserName, registrant: T::AccountId) -> DispatchResult {
         let (hash_user, hash_address) = (
             T::Hashing::hash_of(&username),
             T::Hashing::hash_of(&registrant),
         );
 
-        ensure!(PendingRegister::<T>::contains_key((hash_user, hash_address)),
-        Error::<T>::UsernameNotFound);
+        ensure!(
+            PendingRegister::<T>::contains_key((hash_user, hash_address)),
+            Error::<T>::UsernameNotFound
+        );
 
         PendingRegister::<T>::remove((hash_user, hash_address));
 
         Self::deposit_event(Event::RegisterCanceled);
         Ok(())
-
     }
 
-    fn try_remove_register(
-        username: UserName,
-        registrant: T::AccountId,
-    ) -> DispatchResult {
+    fn try_remove_register(username: UserName, registrant: T::AccountId) -> DispatchResult {
+        ensure!(
+            UsernameRecords::<T>::contains_key(&username),
+            Error::<T>::NotRegistered
+        );
 
-        ensure!(UsernameRecords::<T>::contains_key(&username),
-        Error::<T>::NotRegistered);
-
-        ensure!(UsernameRecords::<T>::get(&username).unwrap() == registrant,
-        Error::<T>::NotOwned);
+        ensure!(
+            UsernameRecords::<T>::get(&username).unwrap() == registrant,
+            Error::<T>::NotOwned
+        );
 
         UsernameRecords::<T>::remove(&username);
 
         /// check if the name we are removing is a primary name to keep storage synced
-        if let Ok(primary_username) = PrimaryRecords::<T>::try_get(&registrant){
+        if let Ok(primary_username) = PrimaryRecords::<T>::try_get(&registrant) {
             if primary_username == username {
                 PrimaryRecords::<T>::remove(&registrant);
             }

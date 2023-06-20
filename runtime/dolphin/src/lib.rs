@@ -55,7 +55,10 @@ use frame_system::{
     EnsureRoot,
 };
 use manta_primitives::{
-    constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND, NAME_SERVICE_PALLET_ID},
+    constants::{
+        time::*, RocksDbWeight, NAME_SERVICE_PALLET_ID, STAKING_PALLET_ID, TREASURY_PALLET_ID,
+        WEIGHT_PER_SECOND,
+    },
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
