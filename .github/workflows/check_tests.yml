@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [manta]
   push:
-    branches: [manta]
+    branches: [ghzlatarev/check-tests-ci]
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -73,6 +73,7 @@ jobs:
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
+          rustup update
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
