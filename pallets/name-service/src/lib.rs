@@ -307,12 +307,12 @@ impl<T: Config> Pallet<T> {
     ) -> DispatchResult {
 
         let (hash_user, hash_address) = (
-            T::Hashing::hash_of(username),
+            T::Hashing::hash_of(&username),
             T::Hashing::hash_of(&registrant),
         );
 
         ensure!(PendingRegister::<T>::contains_key((hash_user, hash_address)),
-        Error::<T>::UserNameNotFound);
+        Error::<T>::UsernameNotFound);
 
         PendingRegister::<T>::remove((hash_user, hash_address));
 
@@ -333,6 +333,13 @@ impl<T: Config> Pallet<T> {
         Error::<T>::NotOwned);
 
         UsernameRecords::<T>::remove(&username);
+
+        /// check if the name we are removing is a primary name to keep storage synced
+        if let Ok(primary_username) = PrimaryRecords::<T>::try_get(&registrant){
+            if primary_username == username {
+                PrimaryRecords::<T>::remove(&registrant);
+            }
+        }
 
         Self::deposit_event(Event::RegisterRemoved);
         Ok(())
