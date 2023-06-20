@@ -103,7 +103,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn primary_records)]
     pub type PrimaryRecords<T: Config> =
-        StorageMap<_, Twox64Concat, UserName, T::AccountId, OptionQuery>;
+        StorageMap<_, Twox64Concat, T::AccountId, UserName, OptionQuery>;
 
     #[pallet::pallet]
     #[pallet::without_storage_info]
@@ -259,16 +259,15 @@ impl<T: Config> Pallet<T> {
             Error::<T>::NotOwned
         );
 
-        if PrimaryRecords::<T>::contains_key(&username) {
-
+        if PrimaryRecords::<T>::contains_key(&registrant) {
+            PrimaryRecords::<T>::mutate(&registrant, |old_username| *old_username = username);
         } else {
-
+            PrimaryRecords::<T>::insert(&registrant, username);
         }
 
         Self::deposit_event(Event::NameRegistered);
         Ok(())
     }
-    //fn mint_username_as_nft(username: &Vec<u8>) {}
 }
 
 /// username validation
