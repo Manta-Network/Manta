@@ -20,11 +20,14 @@
 
 use super::*;
 use frame_support::{
-    construct_runtime, ord_parameter_types, parameter_types,
-    traits::{ConstU32, Everything, IsInVec},
+    PalletId, construct_runtime, ord_parameter_types, parameter_types,
+    traits::{Everything, ConstU32, IsInVec},
 };
 use frame_system::EnsureRoot;
-use manta_primitives::types::{Balance, BlockNumber, Header};
+use manta_primitives::{
+    types::{Balance, BlockNumber, Header},
+    constants::NAME_SERVICE_PALLET_ID,
+};
 
 use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
@@ -36,22 +39,22 @@ mod name_service {
 }
 
 impl frame_system::Config for Runtime {
-    type Origin = Origin;
+    type RuntimeOrigin = RuntimeOrigin;
     type Index = u64;
     type BlockNumber = BlockNumber;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = ConstU32<250>;
     type BlockWeights = ();
     type BlockLength = ();
     type Version = ();
     type PalletInfo = PalletInfo;
-    type AccountData = pallet_balances::AccountData<Balance>;
+    type AccountData = AccountId;
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type DbWeight = ();
@@ -63,32 +66,14 @@ impl frame_system::Config for Runtime {
 }
 
 parameter_types! {
-    pub const NativeTokenExistentialDeposit: Balance = 10;
-}
-
-impl pallet_balances::Config for Runtime {
-    type Balance = Balance;
-    type DustRemoval = ();
-    type Event = Event;
-    type ExistentialDeposit = NativeTokenExistentialDeposit;
-    type AccountStore = System;
-    type MaxLocks = ();
-    type MaxReserves = ConstU32<50>;
-    type ReserveIdentifier = ();
-    type WeightInfo = ();
-}
-
-ord_parameter_types! {
-    pub const One: AccountId = 1;
+    pub const NameServicePalletId: PalletId = NAME_SERVICE_PALLET_ID;
 }
 
 impl Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type RegisterWaitingPeriod = ConstU32<2>;
-    type MinNameLength = ConstU32<3>;
-    type MaxNameLength = ConstU32<10>;
-    // type Call = Call;
-    // type WeightInfo = ();
+    type PalletId = NameServicePalletId;
+    type WeightInfo = ();
 }
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
@@ -102,7 +87,6 @@ construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         NameService: name_service::{Pallet, Storage, Call, Event<T>},
-        Balances: pallet_balances::{Pallet, Storage, Call, Event<T>},
     }
 );
 
