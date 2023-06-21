@@ -67,7 +67,6 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
-          rustup default nightly-2023-01-01
       - name: build benchmarking binary
         env:
           RUST_BACKTRACE: full
