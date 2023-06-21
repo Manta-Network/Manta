@@ -301,6 +301,7 @@ pub mod pallet {
         WithdrawFailed,
         ArithmeticUnderflow,
         PalletMisconfigured,
+        NotImplemented,
         TODO,
     }
 
@@ -534,12 +535,15 @@ pub mod pallet {
         #[pallet::weight(0)]
         pub fn rebalance_stake(origin: OriginFor<T>) -> DispatchResult {
             T::ManageOrigin::ensure_origin(origin.clone())?;
+            Err(crate::pallet::DispatchError::Other(
+                Error::<T>::NotImplemented.into(),
+            ))
 
             // withdraw from overallocated collators, wait until funds unlock, re-allocate to underallocated collators
             // TODO: find some balancing algorithm that does this
 
             // Self::deposit_event(Event::StartedRebalance(amount));
-            Ok(())
+            // Ok(())
         }
 
         /// Starts the lottery by scheduling a [`Call::draw_lottery`] call
@@ -666,7 +670,6 @@ pub mod pallet {
 
             // unstake, pay out tokens due for withdrawals and restake excess funds // XXX: This might not work well with multiphase withdrawals
             Self::process_matured_withdrawals(origin)?;
-            Self::update_active_funds()?; // TODO: Figure out what to do with this
             Ok(())
         }
 
@@ -711,15 +714,19 @@ pub mod pallet {
                 Error::<T>::LotteryIsRunning
             );
 
+            Err(crate::pallet::DispatchError::Other(
+                Error::<T>::NotImplemented.into(),
+            ))
+
             // TODO: Unstake all collators, schedule return of all user deposits
             // for collator in collators_we_staked_to {
             //     do_unstake(collator);
             // }
             // TODO: Lock everything until this process is finished
 
-            // TODO: return user deposits and paying out winnings
+            // TODO: return user deposits and pay out winnings, deposit event
 
-            Ok(())
+            // Ok(())
         }
     }
 
@@ -731,11 +738,6 @@ pub mod pallet {
         /// Get an identifier for scheduling drawings from the `PotId`.
         fn lottery_schedule_id() -> Vec<u8> {
             T::LotteryPot::get().0.to_vec()
-        }
-
-        fn update_active_funds() -> DispatchResult {
-            log::trace!("update_active_funds");
-            Ok(())
         }
 
         fn select_winner(payout_for_winner: BalanceOf<T>) -> DispatchResult {

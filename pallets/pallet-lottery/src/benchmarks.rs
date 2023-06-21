@@ -229,13 +229,13 @@ benchmarks! {
         assert!(!unclaimed_winnings.is_zero());
     }
 
-    // process_matured_withdrawals {
-    // }: _()
-    // verify {
-    // }
+    process_matured_withdrawals {
+    }: _(RawOrigin::Root)
+    verify {
+    }
 
     // liquidate_lottery {
-    // }: _()
+    // }: _(RawOrigin::Root)
     // verify {
     // }
 }
