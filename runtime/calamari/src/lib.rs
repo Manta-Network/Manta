@@ -355,11 +355,6 @@ impl pallet_timestamp::Config for Runtime {
     type WeightInfo = weights::pallet_timestamp::SubstrateWeight<Runtime>;
 }
 
-pub type RootOrHalfCouncil = EitherOfDiverse<
-    EnsureRoot<AccountId>,
-    pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
->;
-
 /// Only callable after `set_validation_data` is called which forms this proof the same way
 fn relay_chain_state_proof() -> cumulus_pallet_parachain_system::RelayChainStateProof {
     use sp_core::Get;
@@ -426,7 +421,7 @@ impl pallet_lottery::Config for Runtime {
     type Scheduler = Scheduler;
     type EstimateCallFee = TransactionPayment;
     type RandomnessSource = Randomness;
-    type ManageOrigin = RootOrHalfCouncil;
+    type ManageOrigin = EnsureRootOrMoreThanHalfCouncil;
     type PalletsOrigin = OriginCaller;
     type LotteryPot = LotteryPotId;
     type DrawingInterval = DrawingInterval;
@@ -733,7 +728,7 @@ impl pallet_author_inherent::Config for Runtime {
     type CanAuthor = AuraAuthorFilter;
 }
 
-type ScheduleOrigin = RootOrHalfCouncil;
+type ScheduleOrigin = EnsureRootOrMoreThanHalfCouncil;
 /// Used the compare the privilege of an origin inside the scheduler.
 pub struct OriginPrivilegeCmp;
 impl PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
