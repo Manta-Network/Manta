@@ -307,9 +307,13 @@ impl<T: Config> Pallet<T> {
             T::Hashing::hash_of(&registrant),
         );
 
-        let pending_register_data = PendingRegister::<T>::get(hash_user).ok_or(Error::<T>::UsernameNotFound)?;
+        let pending_register_data =
+            PendingRegister::<T>::get(hash_user).ok_or(Error::<T>::UsernameNotFound)?;
 
-        ensure!(pending_register_data.0 == hash_address, Error::<T>::NotOwned);
+        ensure!(
+            pending_register_data.0 == hash_address,
+            Error::<T>::NotOwned
+        );
 
         PendingRegister::<T>::remove(hash_user);
 
