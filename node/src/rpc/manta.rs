@@ -14,12 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Common RPC Extensions
+//! Manta RPC Extensions
 
 use super::*;
+use pallet_manta_pay::{
+    rpc::{Pull, PullApiServer},
+    runtime::PullLedgerDiffApi,
+};
+use pallet_manta_sbt::{
+    rpc::{SBTPull, SBTPullApiServer},
+    runtime::SBTPullLedgerDiffApi,
+};
 
-/// Instantiate all RPC extensions for common nodes like calamari/manta.
-pub fn create_common_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, sc_service::Error>
+/// Instantiate all RPC extensions for manta.
+pub fn create_manta_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, sc_service::Error>
 where
     C: ProvideRuntimeApi<Block>
         + HeaderBackend<Block>
@@ -31,6 +39,8 @@ where
     C::Api: frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
     C::Api: BlockBuilder<Block>,
+    C::Api: PullLedgerDiffApi<Block>,
+    C::Api: SBTPullLedgerDiffApi<Block>,
     P: TransactionPool + Sync + Send + 'static,
 {
     use frame_rpc_system::{System, SystemApiServer};
@@ -47,7 +57,17 @@ where
         .merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
     module
-        .merge(TransactionPayment::new(client).into_rpc())
+        .merge(TransactionPayment::new(client.clone()).into_rpc())
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+
+    let manta_pay_rpc: jsonrpsee::RpcModule<Pull<Block, C>> = Pull::new(client.clone()).into_rpc();
+    module
+        .merge(manta_pay_rpc)
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+
+    let manta_sbt_rpc: jsonrpsee::RpcModule<SBTPull<Block, C>> = SBTPull::new(client).into_rpc();
+    module
+        .merge(manta_sbt_rpc)
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
     Ok(module)

@@ -1079,7 +1079,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-runtime"
-version = "4.0.8"
+version = "4.2.0"
 dependencies = [
  "calamari-vesting",
  "cumulus-pallet-dmp-queue",
@@ -1168,11 +1168,13 @@ dependencies = [
  "xcm-builder",
  "xcm-executor",
  "xcm-simulator",
+ "zenlink-protocol",
+ "zenlink-protocol-runtime-api",
 ]
 
 [[package]]
 name = "calamari-vesting"
-version = "4.0.8"
+version = "4.2.0"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -2635,7 +2637,7 @@ dependencies = [
 
 [[package]]
 name = "dolphin-runtime"
-version = "4.0.8"
+version = "4.2.0"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -4188,7 +4190,7 @@ dependencies = [
 
 [[package]]
 name = "integration-tests"
-version = "4.0.8"
+version = "4.2.0"
 dependencies = [
  "calamari-runtime",
  "calamari-vesting",
@@ -5322,7 +5324,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "4.0.8"
+version = "4.2.0"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -5406,6 +5408,9 @@ dependencies = [
  "tracing-core",
  "try-runtime-cli",
  "xcm",
+ "zenlink-protocol",
+ "zenlink-protocol-rpc",
+ "zenlink-protocol-runtime-api",
 ]
 
 [[package]]
@@ -5425,7 +5430,7 @@ dependencies = [
 
 [[package]]
 name = "manta-collator-selection"
-version = "4.0.8"
+version = "4.2.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5512,7 +5517,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "4.0.8"
+version = "4.2.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5532,7 +5537,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "4.0.8"
+version = "4.2.0"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -5565,6 +5570,9 @@ dependencies = [
  "pallet-balances",
  "pallet-collective",
  "pallet-democracy",
+ "pallet-manta-pay",
+ "pallet-manta-sbt",
+ "pallet-manta-support",
  "pallet-membership",
  "pallet-multisig",
  "pallet-parachain-staking",
@@ -6493,7 +6501,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-manager"
-version = "4.0.8"
+version = "4.2.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6984,7 +6992,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-pay"
-version = "4.0.8"
+version = "4.2.0"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -7019,7 +7027,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-sbt"
-version = "4.0.8"
+version = "4.2.0"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -7058,7 +7066,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-support"
-version = "4.0.8"
+version = "4.2.0"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -7236,7 +7244,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-parachain-staking"
-version = "4.0.8"
+version = "4.2.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7607,7 +7615,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "4.0.8"
+version = "4.2.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -9973,7 +9981,7 @@ dependencies = [
 
 [[package]]
 name = "runtime-common"
-version = "4.0.8"
+version = "4.2.0"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -11532,7 +11540,7 @@ dependencies = [
 
 [[package]]
 name = "session-key-primitives"
-version = "4.0.8"
+version = "4.2.0"
 dependencies = [
  "async-trait",
  "manta-primitives",
@@ -14865,6 +14873,52 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e17bb3549cc1321ae1296b9cdc2698e2b6cb1992adfa19a8c72e5b7a738f44cd"
 dependencies = [
  "time 0.3.20",
+]
+
+[[package]]
+name = "zenlink-protocol"
+version = "0.4.4"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#af453d294541b87033a6ee4e22ce5151c581acc1"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "orml-traits",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "zenlink-protocol-rpc"
+version = "0.4.4"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#af453d294541b87033a6ee4e22ce5151c581acc1"
+dependencies = [
+ "jsonrpsee",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-rpc",
+ "sp-runtime",
+ "zenlink-protocol",
+ "zenlink-protocol-runtime-api",
+]
+
+[[package]]
+name = "zenlink-protocol-runtime-api"
+version = "0.4.4"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#af453d294541b87033a6ee4e22ce5151c581acc1"
+dependencies = [
+ "parity-scale-codec",
+ "sp-api",
+ "sp-std",
+ "zenlink-protocol",
 ]
 
 [[package]]

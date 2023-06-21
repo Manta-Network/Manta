@@ -64,10 +64,12 @@ use manta_primitives::{
     constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
+use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use pallet_session::ShouldEndSession;
 use runtime_common::{
-    prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, SlowAdjustingFeeUpdate,
+    prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight,
+    MantaSlowAdjustingFeeUpdate,
 };
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
@@ -135,7 +137,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("manta"),
     impl_name: create_runtime_str!("manta"),
     authoring_version: 1,
-    spec_version: 4081,
+    spec_version: 4200,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -260,6 +262,8 @@ impl Contains<RuntimeCall> for MantaFilter {
             | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..})
             | RuntimeCall::Balances(_)
             | RuntimeCall::Preimage(_)
+            | RuntimeCall::MantaPay(_)
+            | RuntimeCall::MantaSbt(_)
             | RuntimeCall::TransactionPause(_)
             | RuntimeCall::AssetManager(pallet_asset_manager::Call::update_outgoing_filtered_assets {..})
             | RuntimeCall::Utility(_) => true,
@@ -351,7 +355,7 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    pub const TransactionLengthToFeeCoeff: Balance = 40 * mMANTA;
+    pub const TransactionLengthToFeeCoeff: Balance = 10 * uMANTA;
     pub const WeightToFeeCoeff: Balance = 50_000_000;
 }
 
@@ -359,7 +363,7 @@ impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
     type WeightToFee = ConstantMultiplier<Balance, WeightToFeeCoeff>;
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthToFeeCoeff>;
-    type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
+    type FeeMultiplierUpdate = MantaSlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<5>;
     type RuntimeEvent = RuntimeEvent;
 }
@@ -810,6 +814,8 @@ construct_runtime!(
         // Assets management
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
+        MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
+        MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
     }
 );
 
@@ -839,7 +845,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, Si
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = migrations::assets_genesis::AssetsGenesis<Runtime>;
+pub type OnRuntimeUpgradeHooks = ();
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
@@ -880,6 +886,8 @@ mod benches {
         [pallet_tx_pause, TransactionPause]
         [manta_collator_selection, CollatorSelection]
         [pallet_parachain_staking, ParachainStaking]
+        [pallet_manta_pay, MantaPay]
+        [pallet_manta_sbt, MantaSbt]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
     );
@@ -1011,6 +1019,22 @@ impl_runtime_apis! {
         }
     }
 
+    impl pallet_manta_pay::runtime::PullLedgerDiffApi<Block> for Runtime {
+        fn pull_ledger_diff(
+            checkpoint: RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> PullResponse {
+            MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
+        fn pull_ledger_total_count() -> [u8; 16] {
+            MantaPay::pull_ledger_total_count()
+        }
+        fn initial_pull(checkpoint: RawCheckpoint, max_receiver: u64) -> InitialSyncResponse {
+            MantaPay::initial_pull(checkpoint.into(), max_receiver)
+        }
+    }
+
     impl nimbus_primitives::NimbusApi<Block> for Runtime {
         fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool {
             let next_block_number = parent_header.number + 1;
@@ -1048,6 +1072,19 @@ impl_runtime_apis! {
                 // We're not changing rounds, `PotentialAuthors` is not changing, just use can_author
                 <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
             }
+        }
+    }
+
+    impl pallet_manta_sbt::runtime::SBTPullLedgerDiffApi<Block> for Runtime {
+        fn sbt_pull_ledger_diff(
+            checkpoint: RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> PullResponse {
+            MantaSbt::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
+        fn sbt_pull_ledger_total_count() -> [u8; 16] {
+            MantaSbt::pull_ledger_total_count()
         }
     }
 

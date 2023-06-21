@@ -29,6 +29,9 @@ use pallet_manta_sbt::{
     rpc::{SBTPull, SBTPullApiServer},
     runtime::SBTPullLedgerDiffApi,
 };
+use zenlink_protocol::AssetId as ZenlinkAssetId;
+use zenlink_protocol_rpc::{ZenlinkProtocol, ZenlinkProtocolApiServer};
+use zenlink_protocol_runtime_api::ZenlinkProtocolApi as ZenlinkProtocolRuntimeApi;
 
 /// Instantiate all RPC extensions for calamari.
 pub fn create_calamari_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, sc_service::Error>
@@ -46,6 +49,7 @@ where
     C::Api: PullLedgerDiffApi<Block>,
     C::Api: SBTPullLedgerDiffApi<Block>,
     C::Api: LotteryApi<Block>,
+    C::Api: ZenlinkProtocolRuntimeApi<Block, AccountId, ZenlinkAssetId>,
     P: TransactionPool + Sync + Send + 'static,
 {
     use frame_rpc_system::{System, SystemApiServer};
@@ -80,6 +84,10 @@ where
         Lottery::new(client.clone()).into_rpc();
     module
         .merge(lottery_rpc)
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+
+    module
+        .merge(ZenlinkProtocol::new(client).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
     Ok(module)
