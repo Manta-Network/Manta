@@ -34,7 +34,7 @@ pub enum RequestInfo {
     BabeEpoch(u64, u64),
 }
 
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 /// Raw randomness snapshot, the unique value for a `RequestType` in `RandomnessResults` map
 pub struct RandomnessResult<Hash> {
     /// Randomness once available

@@ -24,7 +24,7 @@ use crate::{
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, Zero};
 use frame_support::{
     dispatch::DispatchResult,
-    traits::{Currency, Get, OnInitialize},
+    traits::{Currency, OnInitialize},
 };
 use frame_system::RawOrigin;
 use nimbus_primitives::{digests::CompatibleDigestItem as NimbusDigest, NimbusId};

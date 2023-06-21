@@ -179,12 +179,6 @@ benchmarks! {
     }
 
     // ROOT DISPATCHABLES
-
-    // rebalance_stake {
-    // }: _()
-    // verify {
-    // }
-
     start_lottery {
                 fund_lottery_account::<T>(Pallet::<T>::gas_reserve());
     }: _(RawOrigin::Root)
@@ -233,6 +227,11 @@ benchmarks! {
     }: _(RawOrigin::Root)
     verify {
     }
+
+    // rebalance_stake {
+    // }: _()
+    // verify {
+    // }
 
     // liquidate_lottery {
     // }: _(RawOrigin::Root)

@@ -848,17 +848,16 @@ pub mod pallet {
                     // Recover funds locked in the collator
                     // There can only be one request per collator and it is always a full revoke_delegation call
                     let delegation_requests_against_this_collator = pallet_parachain_staking::Pallet::<T>::delegation_scheduled_requests(collator.account.clone());
-                    let balance_to_unstake;
-                    match delegation_requests_against_this_collator.iter().find(|request|request.delegator == Self::account_id()){
+                    let balance_to_unstake = match delegation_requests_against_this_collator.iter().find(|request|request.delegator == Self::account_id()){
                         Some(our_request) if matches!(our_request.action, pallet_parachain_staking::DelegationAction::Revoke(_)) => {
                             if T::BlockNumber::from(our_request.when_executable) > now {
-                                log::error!("Collator {:?} finished our unstaking timelock but not the pallet_parachain_staking one. leaving in queue",collator.account.clone());
+                                log::error!("Collator {:?} finished our unstaking timelock but not the pallet_parachain_staking one. leaving in queue", collator.account.clone());
                                 return true;
                             };
-                            balance_to_unstake = our_request.action.amount();
+                            our_request.action.amount()
                         }
                         _ => {
-                                log::error!( "Expected revoke_delegation request not found on collator {:?}. Leaving in withdraw queue",collator.account.clone() );
+                                log::error!( "Expected revoke_delegation request not found on collator {:?}. Leaving in withdraw queue", collator.account.clone() );
                                 return true;
                             }
                     };
