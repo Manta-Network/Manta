@@ -664,6 +664,67 @@ pub mod pallet {
             Self::deposit_event(Event::<T>::SetNextSbtId { asset_id });
             Ok(())
         }
+
+        #[pallet::call_index(10)]
+        #[pallet::weight(0)]
+        #[transactional]
+        #[allow(clippy::too_many_arguments)]
+        pub fn force_to_private(
+            origin: OriginFor<T>,
+            post: Box<TransferPost>,
+            mint_id: MintId,
+            metadata: BoundedVec<u8, T::SbtMetadataBound>,
+            minting_account: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            T::AdminOrigin::ensure_origin(origin)?;
+
+            let asset_id = id_from_field(post.asset_id.ok_or(Error::<T>::InvalidAssetId)?)
+                .ok_or(Error::<T>::InvalidAssetId)?;
+            Self::check_post_shape(&post, asset_id)?;
+            let sbt_metadata = MetadataV2::<T::SbtMetadataBound> {
+                mint_id,
+                collection_id: None,
+                item_id: None,
+                extra: Some(metadata),
+            };
+            SbtMetadataV2::<T>::insert(asset_id, sbt_metadata);
+            Self::post_transaction(vec![minting_account], *post)?;
+            Ok(Pays::No.into())
+        }
+
+        #[pallet::call_index(11)]
+        #[pallet::weight(0)]
+        #[transactional]
+        #[allow(clippy::too_many_arguments)]
+        pub fn force_mint_sbt_eth(
+            origin: OriginFor<T>,
+            post: Box<TransferPost>,
+            mint_id: MintId,
+            address: EvmAddress,
+            collection_id: Option<u128>,
+            item_id: Option<u128>,
+            metadata: BoundedVec<u8, T::SbtMetadataBound>,
+            minting_account: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            T::AdminOrigin::ensure_origin(origin)?;
+
+            let asset_id = id_from_field(post.asset_id.ok_or(Error::<T>::InvalidAssetId)?)
+                .ok_or(Error::<T>::InvalidAssetId)?;
+            Self::check_post_shape(&post, asset_id)?;
+            let sbt_metadata = MetadataV2::<T::SbtMetadataBound> {
+                mint_id,
+                collection_id,
+                item_id,
+                extra: Some(metadata),
+            };
+            SbtMetadataV2::<T>::insert(asset_id, sbt_metadata);
+
+            // manually insert address, note no signature check.
+            EvmAccountAllowlist::<T>::insert(mint_id, address, MintStatus::AlreadyMinted);
+
+            Self::post_transaction(vec![minting_account], *post)?;
+            Ok(Pays::No.into())
+        }
     }
 
     /// Event
