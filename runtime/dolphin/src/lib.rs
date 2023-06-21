@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Manta Parachain runtime.
+//! Dolphin Parachain Runtime
 
 #![allow(clippy::identity_op)] // keep e.g. 1 * DAYS for legibility
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -24,7 +24,6 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-pub use frame_support::traits::{Get, IsInVec};
 use manta_collator_selection::IdentityCollator;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -32,30 +31,25 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, Perbill, Percent, Permill,
+    ApplyExtrinsicResult, Perbill, Permill,
 };
-
 use sp_std::{cmp::Ordering, prelude::*};
+
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use cumulus_pallet_parachain_system::{
-    register_validate_block, CheckInherents, ParachainSetCode, RelayChainStateProof,
-    RelaychainBlockNumberProvider,
-};
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        ConstU128, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, NeverEnsureOrigin,
+        ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, IsInVec, NeverEnsureOrigin,
         PrivilegeCmp,
     },
     weights::{ConstantMultiplier, Weight},
     PalletId,
 };
-
 use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureRoot,
@@ -65,27 +59,20 @@ use manta_primitives::{
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
-pub use pallet_parachain_staking::{InflationInfo, Range};
-use pallet_session::ShouldEndSession;
 use runtime_common::{
-    prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight,
-    MantaSlowAdjustingFeeUpdate,
+    prod_or_fast, BlockExecutionWeight, BlockHashCount,
+    CalamariSlowAdjustingFeeUpdate as SlowAdjustingFeeUpdate, ExtrinsicBaseWeight,
 };
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
-#[cfg(feature = "runtime-benchmarks")]
-use xcm::latest::prelude::*;
-
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+use xcm::latest::prelude::*;
 
 pub mod assets_config;
 pub mod currency;
-pub mod fee;
 pub mod impls;
-pub mod migrations;
 mod nimbus_session_adapter;
-pub mod staking;
 pub mod xcm_config;
 
 use currency::*;
@@ -106,22 +93,25 @@ pub mod opaque {
     pub type Block = generic::Block<Header, UncheckedExtrinsic>;
     /// Opaque block identifier type.
     pub type BlockId = generic::BlockId<Block>;
+
     use nimbus_session_adapter::{AuthorInherentWithNoOpSession, VrfWithNoOpSession};
     impl_opaque_keys! {
         pub struct SessionKeys {
+            pub aura: Aura,
             pub nimbus: AuthorInherentWithNoOpSession<Runtime>,
             pub vrf: VrfWithNoOpSession,
         }
     }
     impl SessionKeys {
-        pub fn new(tuple: (NimbusId, VrfId)) -> SessionKeys {
-            let (nimbus, vrf) = tuple;
-            SessionKeys { nimbus, vrf }
+        pub fn new(tuple: (AuraId, NimbusId, VrfId)) -> SessionKeys {
+            let (aura, nimbus, vrf) = tuple;
+            SessionKeys { aura, nimbus, vrf }
         }
         /// Derives all collator keys from `seed` without checking that the `seed` is valid.
         #[cfg(feature = "std")]
         pub fn from_seed_unchecked(seed: &str) -> SessionKeys {
             Self::new((
+                session_key_primitives::util::unchecked_public_key::<AuraId>(seed),
                 session_key_primitives::util::unchecked_public_key::<NimbusId>(seed),
                 session_key_primitives::util::unchecked_public_key::<VrfId>(seed),
             ))
@@ -130,18 +120,18 @@ pub mod opaque {
 }
 
 // Weights used in the runtime.
-pub mod weights;
+mod weights;
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("manta"),
-    impl_name: create_runtime_str!("manta"),
-    authoring_version: 1,
+    spec_name: create_runtime_str!("dolphin"),
+    impl_name: create_runtime_str!("dolphin"),
+    authoring_version: 2,
     spec_version: 4200,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 3,
-    state_version: 1,
+    transaction_version: 8,
+    state_version: 0,
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -152,6 +142,7 @@ pub fn native_version() -> NativeVersion {
         can_author_with: Default::default(),
     }
 }
+
 /// We assume that ~10% of the block weight is consumed by `on_initialize` handlers. This is
 /// used to limit the maximal weight of a single extrinsic.
 pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
@@ -186,19 +177,37 @@ parameter_types! {
         })
         .avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
         .build_or_panic();
-    pub const SS58Prefix: u8 = manta_primitives::constants::MANTA_SS58PREFIX;
+    pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
+}
+
+parameter_types! {
+    pub NonPausablePallets: Vec<Vec<u8>> = vec![b"Democracy".to_vec(), b"Balances".to_vec(), b"Council".to_vec(), b"CouncilCollective".to_vec(), b"TechnicalCommittee".to_vec(), b"TechnicalCollective".to_vec()];
+}
+
+impl pallet_tx_pause::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type MaxCallNames = ConstU32<25>;
+    type PauseOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        pallet_collective::EnsureMembers<AccountId, TechnicalCollective, 2>,
+    >;
+    type UnpauseOrigin = EnsureRoot<AccountId>;
+    type NonPausablePallets = IsInVec<NonPausablePallets>;
+    type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
 // Don't allow permission-less asset creation.
-pub struct MantaFilter;
-impl Contains<RuntimeCall> for MantaFilter {
+pub struct BaseFilter;
+impl Contains<RuntimeCall> for BaseFilter {
     fn contains(call: &RuntimeCall) -> bool {
         if matches!(
             call,
             RuntimeCall::Timestamp(_) | RuntimeCall::ParachainSystem(_) | RuntimeCall::System(_)
         ) {
             // always allow core call
-            // pallet-timestamp and parachainSystem could not be filtered because they are used in communication between releychain and parachain.
+            // pallet-timestamp and parachainSystem could not be filtered because
+            // they are used in communication between relaychain and parachain.
             return true;
         }
 
@@ -210,73 +219,83 @@ impl Contains<RuntimeCall> for MantaFilter {
         #[allow(clippy::match_like_matches_macro)]
         // keep CallFilter with explicit true/false for documentation
         match call {
-            // Explicitly DISALLOWED calls ( Pallet user extrinsics we don't want used WITH REASONING )
+            // Explicitly DISALLOWED calls
+            | RuntimeCall::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
+                                    // are callable only by Root, and Root calls skip this whole filter.
+            // Currently, we filter `register_as_candidate` as this call is not yet ready for community.
+            | RuntimeCall::CollatorSelection( manta_collator_selection::Call::register_as_candidate{..})
+            // For now disallow public proposal workflows, treasury workflows,
+            // as well as external_propose and external_propose_majority.
+            // The following are filtered out:
+            | RuntimeCall::Democracy(
+                                pallet_democracy::Call::propose {..}
+                                | pallet_democracy::Call::second {..}
+                                | pallet_democracy::Call::cancel_proposal {..}
+                                | pallet_democracy::Call::clear_public_proposals {..}
+                                | pallet_democracy::Call::external_propose {..}
+                                | pallet_democracy::Call::external_propose_majority {..})
+            | RuntimeCall::Treasury(_) // Treasury calls are filtered while it is accumulating funds.
+            // Everything except transfer() is filtered out until it is practically needed:
+            | RuntimeCall::XTokens(
+                                orml_xtokens::Call::transfer_with_fee {..}
+                                | orml_xtokens::Call::transfer_multiasset {..}
+                                | orml_xtokens::Call::transfer_multiasset_with_fee {..}
+                                | orml_xtokens::Call::transfer_multiassets {..})
+            // Everything except transfer() is filtered out until it is practically needed:
+            | RuntimeCall::XcmpQueue(_) | RuntimeCall::PolkadotXcm(_) | RuntimeCall::DmpQueue(_) => false,
+
             // Explicitly ALLOWED calls
             | RuntimeCall::Authorship(_)
+            // Sudo also cannot be filtered because it is used in runtime upgrade.
+            | RuntimeCall::Sudo(_)
+            | RuntimeCall::Multisig(_)
             | RuntimeCall::Democracy(pallet_democracy::Call::vote {..}
-                | pallet_democracy::Call::emergency_cancel {..}
-                | pallet_democracy::Call::external_propose_default {..}
-                | pallet_democracy::Call::external_propose_majority {..}
-                | pallet_democracy::Call::external_propose {..}
-                | pallet_democracy::Call::fast_track  {..}
-                | pallet_democracy::Call::veto_external {..}
-                | pallet_democracy::Call::cancel_referendum {..}
-                | pallet_democracy::Call::delegate {..}
-                | pallet_democracy::Call::undelegate {..}
-                | pallet_democracy::Call::unlock {..}
-                | pallet_democracy::Call::remove_vote {..}
-                | pallet_democracy::Call::remove_other_vote {..}
-                | pallet_democracy::Call::blacklist {..})
+                                | pallet_democracy::Call::emergency_cancel {..}
+                                | pallet_democracy::Call::external_propose_default {..}
+                                | pallet_democracy::Call::fast_track  {..}
+                                | pallet_democracy::Call::veto_external {..}
+                                | pallet_democracy::Call::cancel_referendum {..}
+                                | pallet_democracy::Call::delegate {..}
+                                | pallet_democracy::Call::undelegate {..}
+                                | pallet_democracy::Call::unlock {..}
+                                | pallet_democracy::Call::remove_vote {..}
+                                | pallet_democracy::Call::remove_other_vote {..}
+                                | pallet_democracy::Call::blacklist {..})
             | RuntimeCall::Council(_)
             | RuntimeCall::TechnicalCommittee(_)
             | RuntimeCall::CouncilMembership(_)
             | RuntimeCall::TechnicalMembership(_)
             | RuntimeCall::Scheduler(_)
-            // Sudo also cannot be filtered because it is used in runtime upgrade.
-            | RuntimeCall::Sudo(_)
-            | RuntimeCall::Multisig(_)
-            | RuntimeCall::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
             | RuntimeCall::Session(_) // User must be able to set their session key when applying for a collator
-            | RuntimeCall::ParachainStaking(
-                // Collator extrinsics
-                pallet_parachain_staking::Call::join_candidates{..}
-                | pallet_parachain_staking::Call::schedule_leave_candidates{..}
-                | pallet_parachain_staking::Call::execute_leave_candidates{..}
-                | pallet_parachain_staking::Call::cancel_leave_candidates{..}
-                | pallet_parachain_staking::Call::go_offline{..}
-                | pallet_parachain_staking::Call::go_online{..}
-                | pallet_parachain_staking::Call::candidate_bond_more{..}
-                | pallet_parachain_staking::Call::schedule_candidate_bond_less{..}
-                | pallet_parachain_staking::Call::execute_candidate_bond_less{..}
-                | pallet_parachain_staking::Call::cancel_candidate_bond_less{..}
-                // Delegator extrinsics
-                | pallet_parachain_staking::Call::delegate{..}
-                | pallet_parachain_staking::Call::schedule_leave_delegators{..}
-                | pallet_parachain_staking::Call::execute_leave_delegators{..}
-                | pallet_parachain_staking::Call::cancel_leave_delegators{..}
-                | pallet_parachain_staking::Call::schedule_revoke_delegation{..}
-                | pallet_parachain_staking::Call::delegator_bond_more{..}
-                | pallet_parachain_staking::Call::schedule_delegator_bond_less{..}
-                | pallet_parachain_staking::Call::execute_delegation_request{..}
-                | pallet_parachain_staking::Call::cancel_delegation_request{..})
-            | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..})
+            | RuntimeCall::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
+            | RuntimeCall::CollatorSelection(
+                manta_collator_selection::Call::set_invulnerables{..}
+                | manta_collator_selection::Call::set_desired_candidates{..}
+                | manta_collator_selection::Call::set_candidacy_bond{..}
+                | manta_collator_selection::Call::set_eviction_baseline{..}
+                | manta_collator_selection::Call::set_eviction_tolerance{..}
+                | manta_collator_selection::Call::register_candidate{..}
+                | manta_collator_selection::Call::remove_collator{..}
+                | manta_collator_selection::Call::leave_intent{..})
             | RuntimeCall::Balances(_)
-            | RuntimeCall::Preimage(_)
+            | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..}
+                | orml_xtokens::Call::transfer_multicurrencies  {..})
             | RuntimeCall::MantaPay(_)
+            | RuntimeCall::Preimage(_)
             | RuntimeCall::MantaSbt(_)
             | RuntimeCall::TransactionPause(_)
             | RuntimeCall::AssetManager(pallet_asset_manager::Call::update_outgoing_filtered_assets {..})
             | RuntimeCall::Utility(_) => true,
 
             // DISALLOW anything else
-            | _ => false
+            _ => false,
         }
     }
 }
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
-    type BaseCallFilter = MantaFilter; // Customized Filter for Manta
+    type BaseCallFilter = BaseFilter; // Let filter activate.
     type BlockWeights = RuntimeBlockWeights;
     type BlockLength = RuntimeBlockLength;
     type AccountId = AccountId;
@@ -298,25 +317,8 @@ impl frame_system::Config for Runtime {
     type AccountData = pallet_balances::AccountData<Balance>;
     type SystemWeightInfo = weights::frame_system::SubstrateWeight<Runtime>;
     type SS58Prefix = SS58Prefix;
-    type OnSetCode = ParachainSetCode<Self>;
+    type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
     type MaxConsumers = ConstU32<16>;
-}
-
-parameter_types! {
-    pub NonPausablePallets: Vec<Vec<u8>> = vec![b"Democracy".to_vec(), b"Balances".to_vec(), b"Council".to_vec(), b"CouncilMembership".to_vec(), b"TechnicalCommittee".to_vec(), b"TechnicalMembership".to_vec()];
-}
-
-impl pallet_tx_pause::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-    type MaxCallNames = ConstU32<25>;
-    type PauseOrigin = EitherOfDiverse<
-        EnsureRoot<AccountId>,
-        pallet_collective::EnsureMembers<AccountId, TechnicalCollective, 2>,
-    >;
-    type UnpauseOrigin = EnsureRoot<AccountId>;
-    type NonPausablePallets = IsInVec<NonPausablePallets>;
-    type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -339,9 +341,8 @@ impl pallet_authorship::Config for Runtime {
 }
 
 parameter_types! {
-    pub const NativeTokenExistentialDeposit: u128 = 10 * cMANTA; // 0.1 MANTA
+    pub const NativeTokenExistentialDeposit: u128 = 10 * cDOL; // 0.1 DOL
 }
-
 impl pallet_balances::Config for Runtime {
     type MaxLocks = ConstU32<50>;
     type MaxReserves = ConstU32<50>;
@@ -355,15 +356,16 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    pub const TransactionLengthToFeeCoeff: Balance = 10 * uMANTA;
-    pub const WeightToFeeCoeff: Balance = 50_000_000;
+    /// Relay Chain `TransactionLengthToFeeCoeff` / 10
+    pub const TransactionLengthToFeeCoeff: Balance = mDOL / 100;
+    pub const WeightToFeeCoeff: Balance = 5_000;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
     type WeightToFee = ConstantMultiplier<Balance, WeightToFeeCoeff>;
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthToFeeCoeff>;
-    type FeeMultiplierUpdate = MantaSlowAdjustingFeeUpdate<Self>;
+    type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<5>;
     type RuntimeEvent = RuntimeEvent;
 }
@@ -397,204 +399,15 @@ impl pallet_sudo::Config for Runtime {
     type RuntimeCall = RuntimeCall;
 }
 
-impl pallet_aura_style_filter::Config for Runtime {
-    /// Nimbus filter pipeline (final) step 3:
-    /// Choose 1 collator from PotentialAuthors as eligible
-    /// for each slot in round-robin fashion
-    type PotentialAuthors = ParachainStaking;
-}
 parameter_types! {
-    /// Fixed percentage a collator takes off the top of due rewards
-    pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(10);
-    /// Default percent of inflation set aside for parachain bond every round
-    pub const DefaultParachainBondReservePercent: Percent = Percent::zero();
-    pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(6 * HOURS,15,"MANTA_DEFAULT_BLOCKS_PER_ROUND");
-    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(28,1,"MANTA_LEAVE_DELAY_ROUNDS"); // == 7 * DAYS / 6 * HOURS
-}
-impl pallet_parachain_staking::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type Currency = Balances;
-    type BlockAuthor = AuthorInherent;
-    type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
-    /// Minimum round length is 2 minutes (10 * 12 second block times)
-    type MinBlocksPerRound = ConstU32<10>;
-    /// Blocks per round
-    type DefaultBlocksPerRound = DefaultBlocksPerRound;
-    /// Rounds before the collator leaving the candidates request can be executed
-    type LeaveCandidatesDelay = LeaveDelayRounds;
-    /// Rounds before the candidate bond increase/decrease can be executed
-    type CandidateBondLessDelay = LeaveDelayRounds;
-    /// Rounds before the delegator exit can be executed
-    type LeaveDelegatorsDelay = LeaveDelayRounds;
-    /// Rounds before the delegator revocation can be executed
-    type RevokeDelegationDelay = LeaveDelayRounds;
-    /// Rounds before the delegator bond increase/decrease can be executed
-    type DelegationBondLessDelay = LeaveDelayRounds;
-    /// Rounds before the reward is paid
-    type RewardPaymentDelay = ConstU32<2>;
-    /// Minimum collators selected per round, default at genesis and minimum forever after
-    type MinSelectedCandidates = ConstU32<5>;
-    /// Maximum top delegations per candidate
-    type MaxTopDelegationsPerCandidate = ConstU32<100>;
-    /// Maximum bottom delegations per candidate
-    type MaxBottomDelegationsPerCandidate = ConstU32<50>;
-    /// Maximum delegations per delegator
-    type MaxDelegationsPerDelegator = ConstU32<25>;
-    type DefaultCollatorCommission = DefaultCollatorCommission;
-    type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
-    /// Minimum stake on a collator to be considered for block production
-    type MinCollatorStk = ConstU128<{ crate::staking::MIN_BOND_TO_BE_CONSIDERED_COLLATOR }>;
-    /// Minimum stake the collator runner must bond to register as collator candidate
-    type MinCandidateStk = ConstU128<{ crate::staking::NORMAL_COLLATOR_MINIMUM_STAKE }>;
-    /// WHITELIST: Minimum stake required for *a whitelisted* account to be a collator candidate
-    type MinWhitelistCandidateStk = ConstU128<{ crate::staking::EARLY_COLLATOR_MINIMUM_STAKE }>;
-    /// Smallest amount that can be delegated
-    type MinDelegation = ConstU128<{ 500 * MANTA }>;
-    /// Minimum stake required to be reserved to be a delegator
-    type MinDelegatorStk = ConstU128<{ 500 * MANTA }>;
-    type OnCollatorPayout = ();
-    type OnNewRound = ();
-    type WeightInfo = weights::pallet_parachain_staking::SubstrateWeight<Runtime>;
-}
-
-impl pallet_author_inherent::Config for Runtime {
-    // We start a new slot each time we see a new relay block.
-    type SlotBeacon = RelaychainBlockNumberProvider<Self>;
-    type AccountLookup = CollatorSelection;
-    type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
-    /// Nimbus filter pipeline step 1:
-    /// Filters out NimbusIds not registered as SessionKeys of some AccountId
-    type CanAuthor = AuraAuthorFilter;
-}
-
-parameter_types! {
-    pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
-        RuntimeBlockWeights::get().max_block;
-    pub const NoPreimagePostponement: Option<u32> = Some(10);
-}
-
-type ScheduleOrigin = EnsureRoot<AccountId>;
-/// Used the compare the privilege of an origin inside the scheduler.
-pub struct OriginPrivilegeCmp;
-impl PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
-    fn cmp_privilege(left: &OriginCaller, right: &OriginCaller) -> Option<Ordering> {
-        if left == right {
-            return Some(Ordering::Equal);
-        }
-
-        match (left, right) {
-            // Root is greater than anything.
-            (OriginCaller::system(frame_system::RawOrigin::Root), _) => Some(Ordering::Greater),
-            // Check which one has more yes votes.
-            (
-                OriginCaller::Council(pallet_collective::RawOrigin::Members(l_yes_votes, l_count)),
-                OriginCaller::Council(pallet_collective::RawOrigin::Members(r_yes_votes, r_count)),
-            ) => Some((l_yes_votes * r_count).cmp(&(r_yes_votes * l_count))),
-            // For every other origin we don't care, as they are not used for `ScheduleOrigin`.
-            _ => None,
-        }
-    }
-}
-
-impl pallet_scheduler::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeOrigin = RuntimeOrigin;
-    type PalletsOrigin = OriginCaller;
-    type RuntimeCall = RuntimeCall;
-    type MaximumWeight = MaximumSchedulerWeight;
-    type ScheduleOrigin = ScheduleOrigin;
-    type MaxScheduledPerBlock = ConstU32<50>; // 50 scheduled calls at most in the queue for a single block.
-    type WeightInfo = weights::pallet_scheduler::SubstrateWeight<Runtime>;
-    type OriginPrivilegeCmp = OriginPrivilegeCmp;
-    type Preimages = Preimage;
-}
-
-parameter_types! {
-    // Our NORMAL_DISPATCH_RATIO is 70% of the 5MB limit
-    // So anything more than 3.5MB doesn't make sense here
-    pub const PreimageMaxSize: u32 = 3584 * 1024;
-    pub const PreimageBaseDeposit: Balance = 40 * mMANTA;
-    // One cent: $10,000 / MB
-    pub const PreimageByteDeposit: Balance = 400 * uMANTA;
-}
-
-impl pallet_preimage::Config for Runtime {
-    type WeightInfo = weights::pallet_preimage::SubstrateWeight<Runtime>;
-    type RuntimeEvent = RuntimeEvent;
-    type Currency = Balances;
-    type ManagerOrigin = EnsureRoot<AccountId>;
-    type BaseDeposit = PreimageBaseDeposit;
-    type ByteDeposit = PreimageByteDeposit;
-}
-
-// NOTE: pallet_parachain_staking rounds are now used,
-// session rotation through pallet session no longer needed
-// but the pallet is used for SessionKeys storage
-pub struct NeverEndSession;
-impl ShouldEndSession<u32> for NeverEndSession {
-    fn should_end_session(_: u32) -> bool {
-        false
-    }
-}
-
-parameter_types! {
-    // Rotate collator's spot each 6 hours.
-    pub Period: u32 = prod_or_fast!(6 * HOURS, 2 * MINUTES, "MANTA_PERIOD");
-    pub const Offset: u32 = 0;
-}
-impl pallet_session::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type ValidatorId = <Self as frame_system::Config>::AccountId;
-    // we don't have stash and controller, thus we don't need the convert as well.
-    type ValidatorIdOf = IdentityCollator;
-    type ShouldEndSession = NeverEndSession;
-    type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
-    type SessionManager = ();
-    type SessionHandler =
-        <opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
-    type Keys = opaque::SessionKeys;
-    type WeightInfo = weights::pallet_session::SubstrateWeight<Runtime>;
-}
-
-impl pallet_aura::Config for Runtime {
-    type AuthorityId = AuraId;
-    type DisabledValidators = ();
-    type MaxAuthorities = ConstU32<100_000>;
-}
-
-parameter_types! {
-    // Pallet account for record rewards and give rewards to collator.
-    pub const PotId: PalletId = STAKING_PALLET_ID;
-}
-
-/// We allow root and the Relay Chain council to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
-
-impl manta_collator_selection::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type Currency = Balances;
-    type UpdateOrigin = CollatorSelectionUpdateOrigin;
-    type PotId = PotId;
-    type MaxCandidates = ConstU32<50>; // 50 candidates at most
-    type MaxInvulnerables = ConstU32<5>; // 5 invulnerables at most
-    type ValidatorId = <Self as frame_system::Config>::AccountId;
-    type ValidatorIdOf = IdentityCollator;
-    type AccountIdOf = IdentityCollator;
-    type ValidatorRegistration = Session;
-    type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
-    /// Nimbus filter pipeline step 2:
-    /// Filters collators not part of the current pallet_session::validators()
-    type CanAuthor = AuraAuthorFilter;
-}
-
-parameter_types! {
-    pub LaunchPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 5 * MINUTES, "MANTA_LAUNCH_PERIOD");
-    pub VotingPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 5 * MINUTES, "MANTA_VOTING_PERIOD");
-    pub FastTrackVotingPeriod: BlockNumber = prod_or_fast!(3 * HOURS, 2 * MINUTES, "MANTA_FAST_TRACK_VOTING_PERIOD");
+    pub LaunchPeriod: BlockNumber = prod_or_fast!(5 * MINUTES, 1 * MINUTES, "DOLPHIN_LAUNCHPERIOD");
+    pub VotingPeriod: BlockNumber = prod_or_fast!(5 * MINUTES, 1 * MINUTES, "DOLPHIN_VOTINGPERIOD");
+    pub FastTrackVotingPeriod: BlockNumber = prod_or_fast!(5 * MINUTES, 1 * MINUTES, "DOLPHIN_FASTTRACKVOTINGPERIOD");
     pub const InstantAllowed: bool = true;
-    pub const MinimumDeposit: Balance = 40 * MANTA;
-    pub EnactmentPeriod: BlockNumber = prod_or_fast!(1 * DAYS, 2 * MINUTES, "MANTA_ENACTMENTPERIOD");
-    pub CooloffPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 2 * MINUTES, "MANTA_COOLOFFPERIOD");
+    pub const MinimumDeposit: Balance = 20 * DOL;
+    pub EnactmentPeriod: BlockNumber = prod_or_fast!(5 * MINUTES, 1 * MINUTES, "DOLPHIN_ENACTMENTPERIOD");
+    pub CooloffPeriod: BlockNumber = prod_or_fast!(5 * MINUTES, 1 * MINUTES, "DOLPHIN_COOLOFFPERIOD");
+    pub const PreimageByteDeposit: Balance = deposit(0, 1);
 }
 
 impl pallet_democracy::Config for Runtime {
@@ -717,9 +530,9 @@ impl pallet_membership::Config<TechnicalMembershipInstance> for Runtime {
 
 parameter_types! {
     pub const ProposalBond: Permill = Permill::from_percent(1);
-    pub const ProposalBondMinimum: Balance = 30 * MANTA;
-    pub const ProposalBondMaximum: Balance = 500 * MANTA;
-    pub SpendPeriod: BlockNumber = prod_or_fast!(14 * DAYS, 2 * MINUTES, "MANTA_SPEND_PERIOD");
+    pub const ProposalBondMinimum: Balance = 500 * DOL;
+    pub const ProposalBondMaximum: Balance = 10_000 * DOL;
+    pub SpendPeriod: BlockNumber = prod_or_fast!(10 * MINUTES, 2 * MINUTES, "DOLPHIN_SPENDPERIOD");
     pub const Burn: Permill = Permill::from_percent(0);
     pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
 }
@@ -755,6 +568,141 @@ impl pallet_treasury::Config for Runtime {
     type SpendOrigin = NeverEnsureOrigin<Balance>;
 }
 
+impl pallet_aura_style_filter::Config for Runtime {
+    /// Nimbus filter pipeline (final) step 3:
+    /// Choose 1 collator from PotentialAuthors as eligible
+    /// for each slot in round-robin fashion
+    type PotentialAuthors = CollatorSelection;
+}
+
+impl pallet_author_inherent::Config for Runtime {
+    // We start a new slot each time we see a new relay block.
+    type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
+    type AccountLookup = CollatorSelection;
+    type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
+    /// Nimbus filter pipeline step 1:
+    /// Filters out NimbusIds not registered as SessionKeys of some AccountId
+    type CanAuthor = CollatorSelection;
+}
+
+parameter_types! {
+    pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
+        RuntimeBlockWeights::get().max_block;
+    pub const NoPreimagePostponement: Option<u32> = Some(10);
+}
+
+type ScheduleOrigin = EnsureRoot<AccountId>;
+/// Used the compare the privilege of an origin inside the scheduler.
+pub struct OriginPrivilegeCmp;
+impl PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
+    fn cmp_privilege(left: &OriginCaller, right: &OriginCaller) -> Option<Ordering> {
+        if left == right {
+            return Some(Ordering::Equal);
+        }
+
+        match (left, right) {
+            // Root is greater than anything.
+            (OriginCaller::system(frame_system::RawOrigin::Root), _) => Some(Ordering::Greater),
+            // Check which one has more yes votes.
+            (
+                OriginCaller::Council(pallet_collective::RawOrigin::Members(l_yes_votes, l_count)),
+                OriginCaller::Council(pallet_collective::RawOrigin::Members(r_yes_votes, r_count)),
+            ) => Some((l_yes_votes * r_count).cmp(&(r_yes_votes * l_count))),
+            // For every other origin we don't care, as they are not used for `ScheduleOrigin`.
+            _ => None,
+        }
+    }
+}
+
+impl pallet_scheduler::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
+    type PalletsOrigin = OriginCaller;
+    type RuntimeCall = RuntimeCall;
+    type MaximumWeight = MaximumSchedulerWeight;
+    type ScheduleOrigin = ScheduleOrigin;
+    type MaxScheduledPerBlock = ConstU32<50>; // 50 scheduled calls at most in the queue for a single block.
+    type WeightInfo = weights::pallet_scheduler::SubstrateWeight<Runtime>;
+    type OriginPrivilegeCmp = OriginPrivilegeCmp;
+    type Preimages = Preimage;
+}
+
+parameter_types! {
+    // Our NORMAL_DISPATCH_RATIO is 70% of the 5MB limit
+    // So anything more than 3.5MB doesn't make sense here
+    pub const PreimageMaxSize: u32 = 3584 * 1024;
+    pub const PreimageBaseDeposit: Balance = 1 * DOL;
+}
+
+impl pallet_preimage::Config for Runtime {
+    type WeightInfo = weights::pallet_preimage::SubstrateWeight<Runtime>;
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type ManagerOrigin = EnsureRoot<AccountId>;
+    // The sum of the below 2 amounts will get reserved every time someone submits a preimage.
+    // Their sum will be unreserved when the preimage is requested, i.e. when it is going to be used.
+    type BaseDeposit = PreimageBaseDeposit;
+    type ByteDeposit = PreimageByteDeposit;
+}
+
+parameter_types! {
+    // Rotate collator's spot each 6 hours.
+    pub Period: u32 = prod_or_fast!(6 * HOURS, 2 * MINUTES, "DOLPHIN_PERIOD");
+    pub const Offset: u32 = 0;
+}
+
+impl pallet_session::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type ValidatorId = <Self as frame_system::Config>::AccountId;
+    // we don't have stash and controller, thus we don't need the convert as well.
+    type ValidatorIdOf = IdentityCollator;
+    type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+    type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
+    type SessionManager = CollatorSelection;
+    type SessionHandler =
+        <opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
+    type Keys = opaque::SessionKeys;
+    type WeightInfo = weights::pallet_session::SubstrateWeight<Runtime>;
+}
+
+impl pallet_aura::Config for Runtime {
+    type AuthorityId = AuraId;
+    type DisabledValidators = ();
+    type MaxAuthorities = ConstU32<100_000>;
+}
+
+parameter_types! {
+    // Pallet account for record rewards and give rewards to collator.
+    pub const PotId: PalletId = STAKING_PALLET_ID;
+}
+
+parameter_types! {
+    pub const ExecutiveBody: BodyId = BodyId::Executive;
+}
+
+/// We allow root and the Relay Chain council to execute privileged collator selection operations.
+pub type CollatorSelectionUpdateOrigin = EitherOfDiverse<
+    EnsureRoot<AccountId>,
+    pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
+>;
+
+impl manta_collator_selection::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type UpdateOrigin = CollatorSelectionUpdateOrigin;
+    type PotId = PotId;
+    type MaxCandidates = ConstU32<50>; // 50 candidates at most
+    type MaxInvulnerables = ConstU32<5>; // 5 invulnerables at most
+    type ValidatorId = <Self as frame_system::Config>::AccountId;
+    type ValidatorIdOf = IdentityCollator;
+    type AccountIdOf = IdentityCollator;
+    type ValidatorRegistration = Session;
+    type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
+    /// Nimbus filter pipeline step 2:
+    /// Filters collators not part of the current pallet_session::validators()
+    type CanAuthor = AuraAuthorFilter;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -782,7 +730,6 @@ construct_runtime!(
         TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 17,
         TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
 
-        ParachainStaking: pallet_parachain_staking::{Pallet, Call, Storage, Event<T>, Config<T>} = 48,
         // Collator support.
         AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 60,
         AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage} = 63,
@@ -791,11 +738,14 @@ construct_runtime!(
         CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
+        // This used to be cumulus_pallet_aura_ext with idx = 24,
 
+        // Treasury
         Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>} = 26,
 
         // Preimage registry.
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 28,
+        // System scheduler.
         Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 29,
 
         // XCM helpers.
@@ -808,14 +758,13 @@ construct_runtime!(
         // Handy utilities.
         Utility: pallet_utility::{Pallet, Call, Event} = 40,
         Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
-        // Temporary
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
 
-        // Assets management
+        // Asset and Private Payment
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
-        MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
+        MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 48,
     }
 );
 
@@ -846,6 +795,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, Si
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
 pub type OnRuntimeUpgradeHooks = ();
+
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
@@ -865,29 +815,28 @@ mod benches {
     frame_benchmarking::define_benchmarks!(
         // Substrate pallets
         [pallet_balances, Balances]
-        [pallet_democracy, Democracy]
-        [pallet_collective, Council]
-        [pallet_membership, CouncilMembership]
         [pallet_multisig, Multisig]
         [frame_system, SystemBench::<Runtime>]
         [pallet_timestamp, Timestamp]
         [pallet_utility, Utility]
-        [pallet_preimage, Preimage]
+        [pallet_democracy, Democracy]
+        [pallet_collective, Council]
+        [pallet_membership, CouncilMembership]
         [pallet_treasury, Treasury]
-        [pallet_assets, Assets]
-        [pallet_asset_manager, AssetManager]
+        [pallet_preimage, Preimage]
         [pallet_scheduler, Scheduler]
+        [pallet_session, SessionBench::<Runtime>]
+        [pallet_assets, Assets]
         // XCM
         [cumulus_pallet_xcmp_queue, XcmpQueue]
         [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
         [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
-        [pallet_session, SessionBench::<Runtime>]
         // Manta pallets
         [pallet_tx_pause, TransactionPause]
         [manta_collator_selection, CollatorSelection]
-        [pallet_parachain_staking, ParachainStaking]
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
+        [pallet_asset_manager, AssetManager]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
     );
@@ -1035,46 +984,6 @@ impl_runtime_apis! {
         }
     }
 
-    impl nimbus_primitives::NimbusApi<Block> for Runtime {
-        fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool {
-            let next_block_number = parent_header.number + 1;
-            let slot = relay_parent;
-            // Because the staking solution calculates the next staking set at the beginning
-            // of the first block in the new round, the only way to accurately predict the
-            // authors is to compute the selection during prediction.
-            // NOTE: This logic must manually be kept in sync with the nimbus filter pipeline
-            if pallet_parachain_staking::Pallet::<Self>::round().should_update(next_block_number)
-            {
-                // lookup account from nimbusId
-                // mirrors logic in `pallet_author_inherent`
-                use nimbus_primitives::AccountLookup;
-                let account = match manta_collator_selection::Pallet::<Self>::lookup_account(&author) {
-                    Some(account) => account,
-                    // Authors whose account lookups fail will not be eligible
-                    None => {
-                        return false;
-                    }
-                };
-                // manually check aura eligibility (in the new round)
-                // mirrors logic in `aura_style_filter`
-                let truncated_half_slot = (slot >> 1) as usize;
-                let mut active: Vec<AccountId> = pallet_parachain_staking::Pallet::<Self>::compute_top_candidates();
-                if active.is_empty() {
-                    // `SelectedCandidates` remains unchanged from last round (fallback)
-                    active = pallet_parachain_staking::Pallet::<Self>::selected_candidates();
-                    if active.is_empty() {
-                        log::error!("NimbusApi::can_author found no valid authors");
-                        return false;
-                    }
-                }
-                account == active[truncated_half_slot % active.len()]
-            } else {
-                // We're not changing rounds, `PotentialAuthors` is not changing, just use can_author
-                <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
-            }
-        }
-    }
-
     impl pallet_manta_sbt::runtime::SBTPullLedgerDiffApi<Block> for Runtime {
         fn sbt_pull_ledger_diff(
             checkpoint: RawCheckpoint,
@@ -1085,6 +994,15 @@ impl_runtime_apis! {
         }
         fn sbt_pull_ledger_total_count() -> [u8; 16] {
             MantaSbt::pull_ledger_total_count()
+        }
+    }
+
+    impl nimbus_primitives::NimbusApi<Block> for Runtime {
+        fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool {
+            System::initialize(&(parent_header.number + 1), &parent_header.hash(), &parent_header.digest);
+
+            // And now the actual prediction call
+            <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
         }
     }
 
@@ -1120,6 +1038,7 @@ impl_runtime_apis! {
             list_benchmarks!(list, extra);
 
             let storage_info = AllPalletsWithSystem::storage_info();
+
             (list, storage_info)
         }
 
@@ -1138,15 +1057,15 @@ impl_runtime_apis! {
             use xcm_config::{LocationToAccountId, XcmExecutorConfig};
 
             parameter_types! {
-                pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = None;
+            pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = None;
                 pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = Some((
-                    DotLocation::get(),
+                    RocLocation::get(),
                     // Random amount for the benchmark.
-                    MultiAsset { fun: Fungible(1_000_000_000_000), id: Concrete(DotLocation::get()) },
+                    MultiAsset { fun: Fungible(1_000_000_000_000_000_000), id: Concrete(RocLocation::get()) },
                 ));
                 pub const CheckedAccount: Option<AccountId> = None;
-                pub const DotLocation: MultiLocation = MultiLocation::parent();
-                pub MantaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
+                pub const RocLocation: MultiLocation = MultiLocation::parent();
+                pub DolLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(2084)));
             }
 
             impl pallet_xcm_benchmarks::Config for Runtime {
@@ -1154,7 +1073,7 @@ impl_runtime_apis! {
                 type AccountIdConverter = LocationToAccountId;
 
                 fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
-                 Ok(DotLocation::get())
+                 Ok(RocLocation::get())
                 }
 
                 fn worst_case_holding() -> MultiAssets {
@@ -1177,8 +1096,8 @@ impl_runtime_apis! {
                         .collect::<Vec<_>>();
 
                         assets.push(MultiAsset{
-                            id: Concrete(MantaLocation::get()),
-                            fun: Fungible(1_000_000 * MANTA),
+                            id: Concrete(DolLocation::get()),
+                            fun: Fungible(1_000_000 * DOL),
                         });
                         assets.into()
                 }
@@ -1193,8 +1112,8 @@ impl_runtime_apis! {
 
                 fn get_multi_asset() -> MultiAsset {
                     MultiAsset {
-                        id: Concrete(MantaLocation::get()),
-                        fun: Fungible(1 * MANTA),
+                        id: Concrete(DolLocation::get()),
+                        fun: Fungible(1 * DOL),
                     }
                 }
             }
@@ -1207,16 +1126,16 @@ impl_runtime_apis! {
                 }
 
                 fn transact_origin() -> Result<MultiLocation, BenchmarkError> {
-                    Ok(DotLocation::get())
+                    Ok(RocLocation::get())
                 }
 
                 fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
-                    Ok(DotLocation::get())
+                    Ok(RocLocation::get())
                 }
 
                 fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
-                    let origin = MantaLocation::get();
-                    let assets: MultiAssets = (Concrete(MantaLocation::get()), 1_000 * MANTA).into();
+                    let origin = DolLocation::get();
+                    let assets: MultiAssets = (Concrete(DolLocation::get()), 1_000 * DOL).into();
                     let ticket = MultiLocation { parents: 0, interior: Here };
                     Ok((origin, ticket, assets))
                 }
@@ -1231,8 +1150,6 @@ impl_runtime_apis! {
                 hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a").to_vec().into(),
                 // Event Count
                 hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef70a98fdbe9ce6c55837576c60c7af3850").to_vec().into(),
-                // ParachainStaking Round
-                hex_literal::hex!("a686a3043d0adcf2fa655e57bc595a7813792e785168f725b60e2969c7fc2552").to_vec().into(),
                 // System Events
                 hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7").to_vec().into(),
                 // Treasury Account
@@ -1248,11 +1165,11 @@ impl_runtime_apis! {
     }
 }
 
-struct CheckInherentsStruct;
-impl CheckInherents<Block> for CheckInherentsStruct {
+struct CheckInherents;
+impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
     fn check_inherents(
         block: &Block,
-        relay_state_proof: &RelayChainStateProof,
+        relay_state_proof: &cumulus_pallet_parachain_system::RelayChainStateProof,
     ) -> sp_inherents::CheckInherentsResult {
         let relay_chain_slot = relay_state_proof
             .read_slot()
@@ -1270,10 +1187,8 @@ impl CheckInherents<Block> for CheckInherentsStruct {
     }
 }
 
-register_validate_block! {
+cumulus_pallet_parachain_system::register_validate_block! {
     Runtime = Runtime,
     BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
-    CheckInherents = CheckInherentsStruct,
+    CheckInherents = CheckInherents,
 }
-
-impl parachain_info::Config for Runtime {}
