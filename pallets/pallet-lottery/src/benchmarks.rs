@@ -78,12 +78,23 @@ fn register_collators<T: Config>(number: u32) {
     }
 }
 
-const USER_SEED: u32 = 999666;
+fn deposit_prior_users<T: Config>(number: u32, amount: BalanceOf<T>) {
+    for user in 0..number {
+        <frame_system::Pallet<T>>::set_block_number(user.into());
+        let (depositor, _) = create_funded_user::<T>("depositor", USER_SEED - 1 - user, amount);
+        assert_ok!(Pallet::<T>::deposit(
+            RawOrigin::Signed(depositor).into(),
+            amount
+        ));
+    }
+}
+
+const USER_SEED: u32 = 696969;
 benchmarks! {
     // USER DISPATCHABLES
 
     deposit {
-        let x in 0..0; // other users that have already deposited to the lottery previously
+        let x in 0u32..10_000u32; // other users that have already deposited to the lottery previously
         let y in 0..MAX_COLLATOR_COUNT; // registered collators
 
         fund_lottery_account::<T>(Pallet::<T>::gas_reserve());
@@ -96,10 +107,8 @@ benchmarks! {
         assert_eq!(Pallet::<T>::total_pot(), Zero::zero());
 
         let original_staked_amount = Staking::<T>::total();
-        for prior_user in 0..x{
-            let (depositor, _) = create_funded_user::<T>("depositor", USER_SEED-1-x, deposit_amount);
-            assert_ok!(Pallet::<T>::deposit(RawOrigin::Signed(depositor).into(), deposit_amount));
-        }
+        deposit_prior_users::<T>(x,deposit_amount);
+
         let (caller, _) = create_funded_user::<T>("caller", USER_SEED, deposit_amount);
     }: _(RawOrigin::Signed(caller.clone()), deposit_amount)
     verify {
@@ -121,10 +130,7 @@ benchmarks! {
         assert_eq!(Staking::<T>::candidate_pool().len() as u32, original_collator_count + y);
 
         let original_staked_amount = Staking::<T>::total();
-        for prior_user in 0..x{
-            let (depositor, _) = create_funded_user::<T>("depositor", USER_SEED-1-x, deposit_amount);
-            assert_ok!(Pallet::<T>::deposit(RawOrigin::Signed(depositor).into(), deposit_amount));
-        }
+        deposit_prior_users::<T>(x,deposit_amount);
 
         let (caller, _) = create_funded_user::<T>("caller", USER_SEED, deposit_amount);
         assert_ok!(Pallet::<T>::deposit(RawOrigin::Signed(caller.clone()).into(), deposit_amount));
@@ -177,7 +183,7 @@ benchmarks! {
         assert!(account_balance_after <= account_balance_before + unclaimed_winnings);
     }
 
-    // // ROOT DISPATCHABLES
+    // ROOT DISPATCHABLES
 
     // rebalance_stake {
     // }: _(RawOrigin::Root, Percent::from_percent(33))
@@ -185,69 +191,58 @@ benchmarks! {
     //     assert_eq!(Pallet::<T>::parachain_bond_info().percent, Percent::from_percent(33));
     // }
 
-    // start_lottery {
-    // }: _(RawOrigin::Root, 100u32)
-    // verify {
-    //     assert_eq!(Pallet::<T>::total_selected(), 100u32);
-    // }
+    start_lottery {
+                fund_lottery_account::<T>(Pallet::<T>::gas_reserve());
+    }: _(RawOrigin::Root)
+    verify {
+        assert!(Pallet::<T>::next_drawing_at().is_some());
+    }
 
-    // stop_lottery {}: _(RawOrigin::Root, Perbill::from_percent(33))
-    // verify {
-    //     assert_eq!(Pallet::<T>::collator_commission(), Perbill::from_percent(33));
-    // }
+    stop_lottery {
+                fund_lottery_account::<T>(Pallet::<T>::gas_reserve());
+        assert_ok!(Pallet::<T>::start_lottery(RawOrigin::Root.into()));
+    }: _(RawOrigin::Root)
+    verify {
+        assert!(Pallet::<T>::next_drawing_at().is_none());
+    }
 
-    // draw_lottery {}: _(RawOrigin::Root, 1200u32)
-    // verify {
-    //     // assert_eq!(Pallet::<T>::round().length, 1200u32);
-    // }
+    draw_lottery {
+        let x in 0..10_000; // other users that have already deposited to the lottery previously
+        let y in 0..MAX_COLLATOR_COUNT; // registered collators
+
+        // NOTE: We fund 2x gas reserve to have 1x gas reserve to pay out as winnings
+        fund_lottery_account::<T>(Pallet::<T>::gas_reserve().saturating_add(Pallet::<T>::gas_reserve()));
+
+        let min_delegator_bond = <<T as pallet_parachain_staking::Config>::MinDelegatorStk as Get<BalanceOf<T>>>::get();
+        let original_collator_count = Staking::<T>::candidate_pool().len() as u32;
+        let deposit_amount: BalanceOf<T> = min_delegator_bond * 10_000u32.into();
+        // fill collators
+        register_collators::<T>(y);
+        assert_eq!(Staking::<T>::candidate_pool().len() as u32, original_collator_count + y);
+
+        deposit_prior_users::<T>(x,deposit_amount);
+
+        let (caller, _) = create_funded_user::<T>("caller", USER_SEED, deposit_amount);
+        assert_ok!(Pallet::<T>::deposit(RawOrigin::Signed(caller.clone()).into(), deposit_amount));
+        assert_eq!(Pallet::<T>::active_balance_per_user(caller.clone()), deposit_amount);
+        // roll_rounds_and_author::<T>(2);
+    }: _(RawOrigin::Root)
+    verify {
+        // someone should have won now
+        let unclaimed_winnings = Pallet::<T>::total_unclaimed_winnings();
+        let account_balance_before = <T as pallet_parachain_staking::Config>::Currency::free_balance(&caller.clone());
+        let fee_estimate  = T::EstimateCallFee::estimate_call_fee(&Call::<T>::claim_my_winnings {  }, None::<u64>.into());
+        assert!(!unclaimed_winnings.is_zero());
+    }
 
     // process_matured_withdrawals {
-    //     let x in 3..1_000;
-    //     // Worst Case Complexity is insertion into an ordered list so \exists full list before call
-    //     let mut candidate_count = 1u32;
-    //     for i in 2..x {
-    //         let seed = USER_SEED - i;
-    //         let collator = create_funded_collator::<T>(
-    //             "collator",
-    //             seed,
-    //             0u32.into(),
-    //             true,
-    //             candidate_count
-    //         )?;
-    //         candidate_count += 1u32;
-    //     }
-    //     let (caller, min_candidate_stk) = create_funded_user::<T>("caller", USER_SEED, 0u32.into());
-    // }: _(RawOrigin::Signed(caller.clone()), min_candidate_stk, Pallet::<T>::total_selected() + candidate_count)
+    // }: _()
     // verify {
-    //     // assert!(Pallet::<T>::is_candidate(&caller));
     // }
 
     // liquidate_lottery {
-    //     let x in 3..1_000;
-    //     // Worst Case Complexity is removal from an ordered list so \exists full list before call
-    //     let mut candidate_count = 1u32;
-    //     for i in 2..x {
-    //         let seed = USER_SEED - i;
-    //         let collator = create_funded_collator::<T>(
-    //             "collator",
-    //             seed,
-    //             0u32.into(),
-    //             true,
-    //             candidate_count
-    //         )?;
-    //         candidate_count += 1u32;
-    //     }
-    //     let caller: T::AccountId = create_funded_collator::<T>(
-    //         "caller",
-    //         USER_SEED,
-    //         0u32.into(),
-    //         true,
-    //         candidate_count,
-    //     )?;
-    //     candidate_count += 1u32;
-    // }: _(RawOrigin::Signed(caller.clone()), Pallet::<T>::total_selected() + candidate_count)
+    // }: _()
     // verify {
-    //     // assert!(Pallet::<T>::candidate_info(&caller).unwrap().is_leaving());
     // }
 }
 
@@ -282,12 +277,6 @@ mod tests {
     fn parachain_staking_is_set_up_correctly() {
         new_test_ext().execute_with(|| {
             assert_eq!(Staking::<Test>::selected_candidates().len(), 5);
-            // assert_eq!(
-            //     <Test as pallet_parachain_staking::Config>::Currency::free_balance(
-            //         &Pallet::<Test>::account_id().clone()
-            //     ),
-            //     10_000_000_000_000_000u128.into()
-            // );
         });
     }
     #[test]
@@ -314,24 +303,24 @@ mod tests {
     //         assert_ok!(Pallet::<Test>::test_benchmark_rebalance_stake());
     //     });
     // }
-    // #[test]
-    // fn bench_start_lottery() {
-    //     new_test_ext().execute_with(|| {
-    //         assert_ok!(Pallet::<Test>::test_benchmark_start_lottery());
-    //     });
-    // }
-    // #[test]
-    // fn bench_stop_lottery() {
-    //     new_test_ext().execute_with(|| {
-    //         assert_ok!(Pallet::<Test>::test_benchmark_stop_lottery());
-    //     });
-    // }
-    // #[test]
-    // fn bench_draw_lottery() {
-    //     new_test_ext().execute_with(|| {
-    //         assert_ok!(Pallet::<Test>::test_benchmark_draw_lottery());
-    //     });
-    // }
+    #[test]
+    fn bench_start_lottery() {
+        new_test_ext().execute_with(|| {
+            assert_ok!(Pallet::<Test>::test_benchmark_start_lottery());
+        });
+    }
+    #[test]
+    fn bench_stop_lottery() {
+        new_test_ext().execute_with(|| {
+            assert_ok!(Pallet::<Test>::test_benchmark_stop_lottery());
+        });
+    }
+    #[test]
+    fn bench_draw_lottery() {
+        new_test_ext().execute_with(|| {
+            assert_ok!(Pallet::<Test>::test_benchmark_draw_lottery());
+        });
+    }
     // #[test]
     // fn bench_process_matured_withdrawals() {
     //     new_test_ext().execute_with(|| {

@@ -202,7 +202,7 @@ impl<T: Config> Pallet<T> {
                     && to_deposit + our_stake > info.lowest_top_delegation_amount
                 {
                     deposits.push((account.clone(), to_deposit));
-                    remaining_deposit -= to_deposit;
+                    remaining_deposit = remaining_deposit.saturating_sub(to_deposit);
                     log::debug!(
                         "Selected collator {:?} for deposit of {:?} token",
                         account.clone(),
@@ -222,25 +222,28 @@ impl<T: Config> Pallet<T> {
             deposits.push(underallocated_collators);
         }
 
-        // fallback: just assign to a random active collator
+        // fallback: just assign to a random active collator ( choose a different collator for each invocation )
         if !remaining_deposit.is_zero() {
             let active_collators = pallet_parachain_staking::Pallet::<T>::selected_candidates();
             use sp_runtime::traits::SaturatedConversion;
-            let nonce: u128 = <frame_system::Pallet<T>>::block_number().saturated_into();
-            let random: sp_core::U256;
+            let block_number = <frame_system::Pallet<T>>::block_number().saturated_into::<u128>();
+            let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index().unwrap_or_default();
+            let nonce: u128 = block_number ^ extrinsic_index as u128;
+            let randomness_output: sp_core::U256;
             #[cfg(feature = "runtime-benchmarks")]
             {
                 use rand::{Rng, SeedableRng};
                 let mut rng = rand::rngs::StdRng::seed_from_u64(nonce as u64);
-                random = rng.gen::<u128>().into();
+                randomness_output = rng.gen::<u128>().into();
             }
             #[cfg(not(feature = "runtime-benchmarks"))]
             {
-                random = sp_core::U256::from_big_endian(
+                randomness_output = sp_core::U256::from_big_endian(
                     T::RandomnessSource::random(&nonce.to_be_bytes()).0.as_ref(),
                 );
             }
-            let random_index: usize = random.low_u64() as usize % active_collators.len();
+            // NOTE: The following line introduces modulo bias, but since this is just a fallback it is accepted
+            let random_index: usize = randomness_output.low_u64() as usize % active_collators.len();
             if let Some(random_collator) = active_collators.get(random_index) {
                 deposits.push((random_collator.clone(), remaining_deposit));
                 log::warn!(

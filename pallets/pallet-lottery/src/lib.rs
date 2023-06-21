@@ -751,7 +751,7 @@ pub mod pallet {
             let random: (T::Hash, BlockNumberFor<T>);
             #[cfg(feature = "runtime-benchmarks")]
             {
-                use rand::{Rng, RngCore, SeedableRng};
+                use rand::{RngCore, SeedableRng};
                 use sp_runtime::traits::Hash;
                 // XXX: Benchmarking randomness changes per block instead of per epoch
                 let mut rng = rand::rngs::StdRng::seed_from_u64(
