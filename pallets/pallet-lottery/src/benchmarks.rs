@@ -18,23 +18,20 @@
 
 //! Benchmarking
 use crate::{Call, Config, Pallet, Request};
-use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, vec, Zero};
+use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, Zero};
 use frame_support::{
     assert_ok,
-    traits::{tokens::fungible::Inspect, Currency, EstimateCallFee, Get, OnFinalize, OnInitialize},
+    traits::{Currency, EstimateCallFee, Get, OnFinalize, OnInitialize},
 };
 use frame_system::RawOrigin;
 use pallet_parachain_staking::{
-    benchmarks::{
-        create_funded_collator, create_funded_user, min_candidate_stk,
-        parachain_staking_on_finalize,
-    },
+    benchmarks::{create_funded_collator, create_funded_user, parachain_staking_on_finalize},
     BalanceOf, Pallet as Staking,
 };
-use sp_runtime::{Perbill, Percent, Saturating};
-use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
+use sp_runtime::Saturating;
 
 const MAX_COLLATOR_COUNT: u32 = 63;
+const USER_SEED: u32 = 696969;
 
 /// Run to end block and author
 fn roll_rounds_and_author<T: Config>(rounds: u32) {
@@ -89,12 +86,11 @@ fn deposit_prior_users<T: Config>(number: u32, amount: BalanceOf<T>) {
     }
 }
 
-const USER_SEED: u32 = 696969;
 benchmarks! {
     // USER DISPATCHABLES
 
     deposit {
-        let x in 0u32..10_000u32; // other users that have already deposited to the lottery previously
+        let x in 0u32..1_000u32; // other users that have already deposited to the lottery previously
         let y in 0..MAX_COLLATOR_COUNT; // registered collators
 
         fund_lottery_account::<T>(Pallet::<T>::gas_reserve());
@@ -118,7 +114,7 @@ benchmarks! {
     }
 
     request_withdraw{
-        let x in 0..10_000; // other users that have already deposited to the lottery previously
+        let x in 0..1_000; // other users that have already deposited to the lottery previously
         let y in 0..MAX_COLLATOR_COUNT; // registered collators
 
         fund_lottery_account::<T>(Pallet::<T>::gas_reserve());
@@ -150,7 +146,6 @@ benchmarks! {
     }
 
     claim_my_winnings {
-        // let x in 0..10_000; // other users that have already deposited to the lottery previously
         let y in 0..MAX_COLLATOR_COUNT; // registered collators
 
         // NOTE: We fund 2x gas reserve to have 1x gas reserve to pay out as winnings
@@ -186,9 +181,8 @@ benchmarks! {
     // ROOT DISPATCHABLES
 
     // rebalance_stake {
-    // }: _(RawOrigin::Root, Percent::from_percent(33))
+    // }: _()
     // verify {
-    //     assert_eq!(Pallet::<T>::parachain_bond_info().percent, Percent::from_percent(33));
     // }
 
     start_lottery {
@@ -207,7 +201,7 @@ benchmarks! {
     }
 
     draw_lottery {
-        let x in 0..10_000; // other users that have already deposited to the lottery previously
+        let x in 0..1_000; // other users that have already deposited to the lottery previously
         let y in 0..MAX_COLLATOR_COUNT; // registered collators
 
         // NOTE: We fund 2x gas reserve to have 1x gas reserve to pay out as winnings
