@@ -97,14 +97,24 @@ jobs:
           curl -L -o $HOME/manta-old $REF_BINARY
           chmod +x $HOME/manta-old
           ls -ahl $HOME/
+      - name: Docker network
+        run: docker network create net-${{env.CHAIN}}
       - name: Start old node
         run: |
           echo Running on $CHAIN
-          $HOME/manta-old --chain=$CHAIN --port 30444 --base-path ./temp1 --ws-port 9944 -- --chain kusama &
+          docker run -d --rm --net=net-${{env.CHAIN}} \
+            --name old-node \
+            ubuntu:22.04 \
+            /bin/sh -c "chmod +x $HOME/manta-old && $HOME/manta-old \
+            --chain=$CHAIN --port 30444 --base-path ./temp1 --ws-port 9944 -- --chain kusama"
       - name: Start new node
         run: |
           echo Running on $CHAIN
-          target/release/manta --chain=$CHAIN --port 30555 --base-path ./temp2 --ws-port 9955 -- --chain kusama &
+          docker run -d --rm --net=net-${{env.CHAIN}} \
+            --name old-new \
+            ubuntu:22.04 \
+            /bin/sh -c "chmod +x target/release/manta && target/release/manta \
+            --chain=$CHAIN --port 30555 --base-path ./temp2 --ws-port 9955 -- --chain kusama"
       - name: Prepare output
         run: |
           VERSION=$(./target/release/manta --version)
@@ -115,10 +125,9 @@ jobs:
           echo "----------------------------------------------------------------------" >> output.txt
       - name: Pull polkadot-js-tools image
         run: docker pull wilwade/polkadot-js-tools
-
       - name: Compare the metadata
         run: |
-          CMD="docker run --pull always --network host wilwade/polkadot-js-tools metadata ws://localhost:9944 ws://localhost:9955"
+          CMD="docker run --pull always --net=net-${{env.CHAIN}} jacogr/polkadot-js-tools:0.55.3 metadata ws://old-node:9944 ws://new-node:9955"
           echo -e "Running:\n$CMD"
           $CMD >> output.txt
           sed -z -i 's/\n\n/\n/g' output.txt
