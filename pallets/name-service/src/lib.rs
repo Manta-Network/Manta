@@ -59,7 +59,7 @@ pub mod pallet {
 
         type RegisterWaitingPeriod: Get<Self::BlockNumber>;
 
-        //type WeightInfo: WeightInfo;
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::error]

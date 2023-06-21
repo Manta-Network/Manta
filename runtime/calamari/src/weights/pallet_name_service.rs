@@ -32,7 +32,7 @@
 // --steps=50
 // --repeat=20
 // --heap-pages=4096
-// --output=./pallets/name-service/src/weights.rs
+// --output=./runtime/calamari/src/weights/pallet_name_service.rs
 // --template=.github/resources/frame-weight-template.hbs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
@@ -55,7 +55,7 @@ pub trait WeightInfo {
 
 /// Weights for pallet_name_service using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
+impl<T: frame_system::Config> pallet_name_service::WeightInfo for SubstrateWeight<T> {
 	// Storage: NameService PendingRegister (r:1 w:1)
 	// Storage: NameService UsernameRecords (r:1 w:0)
 	fn register() -> Weight {
@@ -90,8 +90,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: NameService UsernameRecords (r:1 w:1)
 	// Storage: NameService PrimaryRecords (r:1 w:0)
 	fn remove_register() -> Weight {
-		// Minimum execution time: 23_000 nanoseconds.
-		Weight::from_ref_time(24_000_000)
+		// Minimum execution time: 24_000 nanoseconds.
+		Weight::from_ref_time(25_000_000)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -133,8 +133,8 @@ impl WeightInfo for () {
 	// Storage: NameService UsernameRecords (r:1 w:1)
 	// Storage: NameService PrimaryRecords (r:1 w:0)
 	fn remove_register() -> Weight {
-		// Minimum execution time: 23_000 nanoseconds.
-		Weight::from_ref_time(24_000_000)
+		// Minimum execution time: 24_000 nanoseconds.
+		Weight::from_ref_time(25_000_000)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}

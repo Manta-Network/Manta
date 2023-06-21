@@ -18,16 +18,11 @@
 
 #![cfg(feature = "runtime-benchmarks")]
 
-use super::*;
-
 use crate::{Call, Config, Event, Pallet};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::{EventRecord, RawOrigin};
-use pallet::*;
 use manta_support::manta_pay::AccountId;
 use sp_std::prelude::*;
-use sp_std::vec::Vec;
-use frame_support::traits::ConstU32;
 
 pub fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
     let events = frame_system::Pallet::<T>::events();
@@ -38,26 +33,33 @@ pub fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) 
 
 benchmarks! {
     where_clause {  where T: Config,
-        T::AccountId: Into<AccountId>,}
+        T::AccountId: Into<AccountId>
+    }
 
     register {
         let caller: T::AccountId = whitelisted_caller();
-        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
-        let username = "BenchmarkName";
+        let origin = RawOrigin::Signed(caller.clone());
+        let username = "test".as_bytes().to_vec();
     }: register(
-        RawOrigin::Signed(caller.clone()),
-        username.as_bytes().to_vec(),
-        caller.clone().into()
+        origin,
+        username,
+        caller.into()
     ) verify {
         assert_last_event::<T>(Event::NameQueuedForRegister.into());
     }
 
     accept_register {
         let caller: T::AccountId = whitelisted_caller();
-        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
-        let username = "".as_bytes().to_vec();
+        let origin = RawOrigin::Signed(caller.clone());
+        let username = "test".as_bytes().to_vec();
+
+        Pallet::<T>::register(origin.clone().into(), username.clone(), caller.clone().into())?;
+        // move blocknumber forward so pending register is available to move to records
+        let new_block: T::BlockNumber = 10u32.into();
+        frame_system::Pallet::<T>::set_block_number(new_block);
+
     }: accept_register(
-        RawOrigin::Signed(caller.clone()),
+        origin,
         username,
         caller.clone().into()
     ) verify {
@@ -66,36 +68,56 @@ benchmarks! {
 
     set_primary_name {
         let caller: T::AccountId = whitelisted_caller();
-        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
-        let username = "BenchmarkName";
+        let origin = RawOrigin::Signed(caller.clone());
+        let username = "test".as_bytes().to_vec();
+
+        Pallet::<T>::register(origin.clone().into(), username.clone(), caller.clone().into())?;
+        // move blocknumber forward so pending register is available to move to records
+        let new_block: T::BlockNumber = 10u32.into();
+        frame_system::Pallet::<T>::set_block_number(new_block);
+        Pallet::<T>::accept_register(origin.clone().into(), username.clone(), caller.clone().into())?;
+
     }: set_primary_name(
-        RawOrigin::Signed(caller.clone()),
-        username.as_bytes().to_vec(),
-        caller.clone().into()
+        origin,
+        username,
+        caller.into()
     ) verify {
         assert_last_event::<T>(Event::NameSetAsPrimary.into());
     }
 
     cancel_pending_register {
         let caller: T::AccountId = whitelisted_caller();
-        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
-        let username = "BenchmarkName";
+        let origin = RawOrigin::Signed(caller.clone());
+        let username = "test".as_bytes().to_vec();
+
+        Pallet::<T>::register(origin.clone().into(), username.clone(), caller.clone().into())?;
+        // move blocknumber forward so pending register is available to move to records
+        let new_block: T::BlockNumber = 10u32.into();
+        frame_system::Pallet::<T>::set_block_number(new_block);
+
     }: cancel_pending_register(
-        RawOrigin::Signed(caller.clone()),
-        username.as_bytes().to_vec(),
-        caller.clone().into()
+        origin,
+        username,
+        caller.into()
     ) verify {
         assert_last_event::<T>(Event::RegisterCanceled.into());
     }
 
     remove_register {
         let caller: T::AccountId = whitelisted_caller();
-        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
-        let username = "BenchmarkName";
+        let origin = RawOrigin::Signed(caller.clone());
+        let username = "test".as_bytes().to_vec();
+
+        Pallet::<T>::register(origin.clone().into(), username.clone(), caller.clone().into())?;
+        // move blocknumber forward so pending register is available to move to records
+        let new_block: T::BlockNumber = 10u32.into();
+        frame_system::Pallet::<T>::set_block_number(new_block);
+        Pallet::<T>::accept_register(origin.clone().into(), username.clone(), caller.clone().into())?;
+
     }: remove_register(
-        RawOrigin::Signed(caller.clone()),
-        username.as_bytes().to_vec(),
-        caller.clone().into()
+        origin,
+        username,
+        caller.into()
     ) verify {
         assert_last_event::<T>(Event::RegisterRemoved.into());
     }

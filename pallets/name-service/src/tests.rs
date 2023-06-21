@@ -14,14 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 //
-//! Unit tests for the transaction pause pallet.
+//! Unit tests for the Name Service.
 
 #![cfg(test)]
 
 use super::*;
+use crate::mock::{new_test_ext, NameService, RuntimeOrigin as MockOrigin};
 use frame_support::{assert_noop, assert_ok};
 use frame_system::RawOrigin;
-use mock::{Event, *};
+
+pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
 
 #[test]
-fn pause_transaction_work() {}
+fn register_should_work() {
+    NameService::register(MockOrigin::signed(ALICE), "test".as_bytes().to_vec(), ALICE);
+}
