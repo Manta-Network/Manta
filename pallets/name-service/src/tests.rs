@@ -21,7 +21,6 @@
 use super::*;
 use crate::mock::{NameService, RuntimeOrigin as MockOrigin, *};
 use frame_support::{assert_noop, assert_ok};
-use frame_system::RawOrigin;
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
 pub const BOB: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([1u8; 32]);
@@ -172,7 +171,7 @@ fn register_accept_should_fail() {
                 "test".as_bytes().to_vec(),
                 BOB.into()
             ),
-            Error::<Runtime>::NotRegistered
+            Error::<Runtime>::NotOwned
         );
     });
 }
@@ -224,7 +223,7 @@ fn cancel_register_should_fail() {
                 "test".as_bytes().to_vec(),
                 BOB.into()
             ),
-            Error::<Runtime>::UsernameNotFound
+            Error::<Runtime>::NotOwned
         );
         assert_noop!(
             NameService::cancel_pending_register(

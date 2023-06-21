@@ -40,11 +40,6 @@ pub type ZkAddressType = [u8; 32];
 
 pub type UserName = Vec<u8>;
 
-pub struct PendingRegisterData<T:Config> {
-    pub registrant: T::Hash,
-    pub wait: T::BlockNumber
-}
-
 pub const NAME_MAX_LEN: usize = 63;
 pub const NAME_MIN_LEN: usize = 3;
 
@@ -104,11 +99,11 @@ pub mod pallet {
     pub type UsernameRecords<T: Config> =
         StorageMap<_, Twox64Concat, UserName, ZkAddressType, OptionQuery>;
 
-    /// Names pending to be registered with the given blocknumber(wait time)
+    /// Names pending to be registered with the given blocknumber(wait time) [username,(registrant,blocknumber)]
     #[pallet::storage]
     #[pallet::getter(fn pending_register)]
     pub type PendingRegister<T: Config> =
-        StorageMap<_, Twox64Concat, (T::Hash, T::Hash), T::BlockNumber, OptionQuery>;
+        StorageMap<_, Twox64Concat, T::Hash, (T::Hash, T::BlockNumber), OptionQuery>;
 
     /// Primary Records, 1 AccountID may have only one primary name
     #[pallet::storage]
@@ -225,7 +220,7 @@ impl<T: Config> Pallet<T> {
 
         // Check if already Pending Register
         ensure!(
-            PendingRegister::<T>::contains_key((hash_user, hash_address)) == false,
+            PendingRegister::<T>::contains_key(hash_user) == false,
             Error::<T>::AlreadyPendingRegister
         );
 
@@ -236,12 +231,12 @@ impl<T: Config> Pallet<T> {
         );
 
         PendingRegister::<T>::insert(
+            hash_user,
             (
-                T::Hashing::hash_of(username),
-                T::Hashing::hash_of(&registrant),
+                hash_address,
+                frame_system::Pallet::<T>::block_number()
+                    .saturating_add(T::RegisterWaitingPeriod::get()),
             ),
-            frame_system::Pallet::<T>::block_number()
-                .saturating_add(T::RegisterWaitingPeriod::get()),
         );
 
         Self::deposit_event(Event::NameQueuedForRegister);
@@ -259,15 +254,20 @@ impl<T: Config> Pallet<T> {
         );
 
         // check if block number has been passed
-        let creation_block = PendingRegister::<T>::get((hash_user, hash_address))
-            .ok_or(Error::<T>::NotRegistered)?;
+        let pending_register_data =
+            PendingRegister::<T>::get(hash_user).ok_or(Error::<T>::UsernameNotFound)?;
         ensure!(
-            frame_system::Pallet::<T>::block_number() > creation_block,
+            frame_system::Pallet::<T>::block_number() > pending_register_data.1,
             Error::<T>::RegisterTimeNotReached
         );
 
+        ensure!(
+            pending_register_data.0 == hash_address,
+            Error::<T>::NotOwned
+        );
+
         // Move from pending into records
-        PendingRegister::<T>::remove((hash_user, hash_address));
+        PendingRegister::<T>::remove(hash_user);
         UsernameRecords::<T>::insert(username, registrant);
 
         Self::deposit_event(Event::NameRegistered);
@@ -307,12 +307,11 @@ impl<T: Config> Pallet<T> {
             T::Hashing::hash_of(&registrant),
         );
 
-        ensure!(
-            PendingRegister::<T>::contains_key((hash_user, hash_address)),
-            Error::<T>::UsernameNotFound
-        );
+        let pending_register_data = PendingRegister::<T>::get(hash_user).ok_or(Error::<T>::UsernameNotFound)?;
 
-        PendingRegister::<T>::remove((hash_user, hash_address));
+        ensure!(pending_register_data.0 == hash_address, Error::<T>::NotOwned);
+
+        PendingRegister::<T>::remove(hash_user);
 
         Self::deposit_event(Event::RegisterCanceled);
         Ok(())
