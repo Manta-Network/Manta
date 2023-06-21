@@ -20,13 +20,14 @@
 
 use super::*;
 use frame_support::{
-    PalletId, construct_runtime, ord_parameter_types, parameter_types,
-    traits::{Everything, ConstU32, IsInVec},
+    construct_runtime, ord_parameter_types, parameter_types,
+    traits::{ConstU32, Everything, IsInVec},
+    PalletId,
 };
 use frame_system::EnsureRoot;
 use manta_primitives::{
-    types::{Balance, BlockNumber, Header},
     constants::NAME_SERVICE_PALLET_ID,
+    types::{Balance, BlockNumber, Header},
 };
 
 use sp_core::H256;

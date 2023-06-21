@@ -40,6 +40,11 @@ pub type ZkAddressType = [u8; 32];
 
 pub type UserName = Vec<u8>;
 
+pub struct PendingRegisterData<T:Config> {
+    pub registrant: T::Hash,
+    pub wait: T::BlockNumber
+}
+
 pub const NAME_MAX_LEN: usize = 63;
 pub const NAME_MIN_LEN: usize = 3;
 
