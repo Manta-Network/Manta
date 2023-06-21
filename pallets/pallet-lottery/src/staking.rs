@@ -19,7 +19,7 @@ use codec::alloc::collections::BTreeSet;
 use frame_support::{
     dispatch::RawOrigin,
     ensure,
-    traits::{EstimateCallFee, Get},
+    traits::{EstimateCallFee, Get, Randomness},
 };
 use pallet_parachain_staking::BalanceOf;
 use sp_runtime::{
