@@ -21,10 +21,20 @@ set_primary_name -> Set registered/owned name as a primary name to be used for t
 cancel_pending_register -> cancel a pending register
 remove_register -> "unregister" a name, this would remove it from the primary, leaving the user without a primary
 
-## History
-
-Manta Network forked it in August 2022 to deploy staking on Calamari Network.
-
-Since January 2021, Moonbeam's team has maintained this Delegated Proof of Stake (DPoS) pallet designed specifically for parachains.
-
-Since April 2021, the development of this pallet has been supported by [a Web3 Foundation grant](https://github.com/w3f/Grants-Program/pull/389). The [first milestone](https://github.com/w3f/Grant-Milestone-Delivery/pull/218) was approved in June 2021.
+## Benchmark
+1. Compile Manta runtime using `runtime-benchmarks` feature
+```sh
+cargo build --release --features=runtime-benchmarks
+```
+2. Benchmark manta-pay related extrinsics
+```sh
+./target/release/manta benchmark \
+--chain=calamari-dev \
+--execution=Wasm \
+--wasm-execution=Compiled \
+--pallet=pallet_name_service \
+--extrinsic='*' \
+--steps=20 \
+--repeat=10 \
+--heap-pages=4096
+```
