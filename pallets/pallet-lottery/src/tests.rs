@@ -352,7 +352,7 @@ fn winner_distribution_should_be_equal_with_equal_deposits() {
             assert!(HIGH_BALANCE > balance);
             <Test as pallet_parachain_staking::Config>::Currency::make_free_balance_be(&Lottery::account_id(), Lottery::gas_reserve());
             // Deposit 50 users with equal deposits
-            const WINNING_AMT: u32 = 1_000;
+            const WINNING_AMT: u32 = 1;
             const NUMBER_OF_DRAWINGS: u32 = 10_000;
             const NUMBER_OF_USERS: u32 = 50;
             const USER_SEED: u32 = 696_969;
@@ -388,16 +388,14 @@ fn winner_distribution_should_be_equal_with_equal_deposits() {
             );
 
             // ensure every user has won > 190 times ( 200 optimum = NUMBER_OF_DRAWINGS/NUMBER_OF_USERS )
-            let mut winner_count = 0;
             let mut winners = vec![];
             for (user, user_winnings) in crate::UnclaimedWinningsByAccount::<Test>::iter() {
                 winners.push((user,user_winnings));
                 assert!(user_winnings >= (WINNING_AMT as f32 * NUMBER_OF_DRAWINGS as f32 / NUMBER_OF_USERS as f32 * 0.80) as u128);
-                winner_count += 1;
             }
             log::error!("{:?}",winners);
             assert_eq!(
-                winner_count,
+                winners.len(),
                 NUMBER_OF_USERS
             );
         });

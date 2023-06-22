@@ -793,9 +793,9 @@ pub mod pallet {
                 let number_to_start_rejecting_at: u128 = u128::max_value().saturating_sub(
                     u128::max_value() % max_winning_balance.saturated_into::<u128>(),
                 );
-                debug_assert!(
-                    number_to_start_rejecting_at <= max_winning_balance.saturated_into::<u128>()
-                );
+                debug_assert!((number_to_start_rejecting_at
+                    % max_winning_balance.saturated_into::<u128>())
+                .is_zero());
                 if winning_number.saturated_into::<u128>() < number_to_start_rejecting_at {
                     break;
                 } else {
