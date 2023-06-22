@@ -21,7 +21,11 @@
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-use frame_support::{pallet_prelude::*, transactional};
+use frame_support::{
+    pallet_prelude::*,
+    traits::{Currency, ExistenceRequirement, ReservableCurrency},
+    transactional,
+};
 use frame_system::pallet_prelude::*;
 use sp_runtime::{
     traits::{AccountIdConversion, Hash, Saturating},
@@ -43,6 +47,10 @@ pub type UserName = Vec<u8>;
 pub const NAME_MAX_LEN: usize = 63;
 pub const NAME_MIN_LEN: usize = 3;
 
+/// Type alias for currency balance.
+pub type BalanceOf<T> =
+    <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -57,7 +65,13 @@ pub mod pallet {
         /// Pallet ID
         type PalletId: Get<PalletId>;
 
+        type Currency: ReservableCurrency<Self::AccountId>;
+
+        #[pallet::constant]
         type RegisterWaitingPeriod: Get<Self::BlockNumber>;
+
+        #[pallet::constant]
+        type RegisterPrice: Get<BalanceOf<Self>>;
 
         type WeightInfo: WeightInfo;
     }
@@ -80,6 +94,8 @@ pub mod pallet {
         UsernameNotFound,
         /// Username registered but is not primary (transfers)
         UsernameNotPrimary,
+        /// Not enough balance for Register payment
+        InsufficientBalance,
     }
 
     #[pallet::event]
@@ -130,7 +146,14 @@ pub mod pallet {
             username: UserName,
             registrant: ZkAddressType,
         ) -> DispatchResult {
-            let _who = ensure_signed(origin)?;
+            let who = ensure_signed(origin)?;
+
+            <T as pallet::Config>::Currency::transfer(
+                &who,
+                &Self::account_id(),
+                T::RegisterPrice::get(),
+                ExistenceRequirement::KeepAlive,
+            )?;
 
             Self::do_register(&username, registrant)
         }

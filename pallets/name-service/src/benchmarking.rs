@@ -20,6 +20,7 @@
 
 use crate::{Call, Config, Event, Pallet};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use frame_support::traits::{Currency, Get};
 use frame_system::{EventRecord, RawOrigin};
 use manta_support::manta_pay::AccountId;
 use sp_std::prelude::*;
@@ -38,6 +39,8 @@ benchmarks! {
 
     register {
         let caller: T::AccountId = whitelisted_caller();
+        let factor = 1_000u32;
+        <T as crate::Config>::Currency::make_free_balance_be(&caller, T::RegisterPrice::get() * factor.into());
         let origin = RawOrigin::Signed(caller.clone());
         let username = "test".as_bytes().to_vec();
     }: register(
@@ -52,6 +55,9 @@ benchmarks! {
         let caller: T::AccountId = whitelisted_caller();
         let origin = RawOrigin::Signed(caller.clone());
         let username = "test".as_bytes().to_vec();
+
+        let factor = 1_000u32;
+        <T as crate::Config>::Currency::make_free_balance_be(&caller, T::RegisterPrice::get() * factor.into());
 
         Pallet::<T>::register(origin.clone().into(), username.clone(), caller.clone().into())?;
         // move blocknumber forward so pending register is available to move to records
@@ -70,6 +76,9 @@ benchmarks! {
         let caller: T::AccountId = whitelisted_caller();
         let origin = RawOrigin::Signed(caller.clone());
         let username = "test".as_bytes().to_vec();
+
+        let factor = 1_000u32;
+        <T as crate::Config>::Currency::make_free_balance_be(&caller, T::RegisterPrice::get() * factor.into());
 
         Pallet::<T>::register(origin.clone().into(), username.clone(), caller.clone().into())?;
         // move blocknumber forward so pending register is available to move to records
@@ -90,6 +99,9 @@ benchmarks! {
         let origin = RawOrigin::Signed(caller.clone());
         let username = "test".as_bytes().to_vec();
 
+        let factor = 1_000u32;
+        <T as crate::Config>::Currency::make_free_balance_be(&caller, T::RegisterPrice::get() * factor.into());
+
         Pallet::<T>::register(origin.clone().into(), username.clone(), caller.clone().into())?;
         // move blocknumber forward so pending register is available to move to records
         let new_block: T::BlockNumber = 10u32.into();
@@ -107,6 +119,9 @@ benchmarks! {
         let caller: T::AccountId = whitelisted_caller();
         let origin = RawOrigin::Signed(caller.clone());
         let username = "test".as_bytes().to_vec();
+
+        let factor = 1_000u32;
+        <T as crate::Config>::Currency::make_free_balance_be(&caller, T::RegisterPrice::get() * factor.into());
 
         Pallet::<T>::register(origin.clone().into(), username.clone(), caller.clone().into())?;
         // move blocknumber forward so pending register is available to move to records

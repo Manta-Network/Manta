@@ -801,8 +801,10 @@ parameter_types! {
 
 impl pallet_name_service::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
     type PalletId = NameServicePalletId;
     type RegisterWaitingPeriod = ConstU32<2>;
+    type RegisterPrice = ConstU128<{ 500 * KMA }>;
     type WeightInfo = weights::pallet_name_service::SubstrateWeight<Runtime>;
 }
 

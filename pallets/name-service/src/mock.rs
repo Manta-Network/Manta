@@ -21,7 +21,7 @@
 use super::*;
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU32, Everything},
+    traits::{ConstU128, ConstU32, Everything},
     PalletId,
 };
 use manta_primitives::{
@@ -67,12 +67,32 @@ impl frame_system::Config for Runtime {
 }
 
 parameter_types! {
+    pub ExistentialDeposit: Balance = 1;
+    pub const MaxLocks: u32 = 50;
+    pub const MaxReserves: u32 = 50;
+}
+
+impl pallet_balances::Config for Runtime {
+    type MaxLocks = MaxLocks;
+    type Balance = Balance;
+    type RuntimeEvent = RuntimeEvent;
+    type DustRemoval = ();
+    type ExistentialDeposit = ExistentialDeposit;
+    type AccountStore = System;
+    type WeightInfo = ();
+    type MaxReserves = MaxReserves;
+    type ReserveIdentifier = [u8; 8];
+}
+
+parameter_types! {
     pub const NameServicePalletId: PalletId = NAME_SERVICE_PALLET_ID;
 }
 
 impl Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
     type RegisterWaitingPeriod = ConstU32<2>;
+    type RegisterPrice = ConstU128<0>;
     type PalletId = NameServicePalletId;
     type WeightInfo = ();
 }
@@ -88,6 +108,7 @@ construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         NameService: name_service::{Pallet, Storage, Call, Event<T>},
+        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
     }
 );
 
