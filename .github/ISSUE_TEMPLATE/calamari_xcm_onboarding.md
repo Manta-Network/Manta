@@ -213,7 +213,7 @@ Name: Dolphin
 Symbol: DOL
 Decimals: 18
 Min Balance: 1
-Self sufficient: true
+Self-sufficient: true
 ```
 
 - Note: Calamari MultiLocation and metadata are different!
