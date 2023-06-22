@@ -1012,8 +1012,7 @@ pub mod pallet {
                 .iter()
                 .map(|request| request.balance)
                 .reduce(|acc, balance| acc + balance)
-                .unwrap_or(0u32.into());
-
+                .unwrap_or_else(|| 0u32.into());
             Self::surplus_funds()
                 .saturating_sub(Self::gas_reserve())
                 .saturating_sub(outstanding_withdrawal_requests)

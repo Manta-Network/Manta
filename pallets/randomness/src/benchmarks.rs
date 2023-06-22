@@ -21,21 +21,8 @@ use crate::{
     Call, Config, InherentIncluded, Pallet, RandomnessResult, RandomnessResults, RelayEpoch,
     RequestType,
 };
-use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, Zero};
-use frame_support::{
-    dispatch::DispatchResult,
-    traits::{Currency, OnInitialize},
-};
+use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
-use nimbus_primitives::{digests::CompatibleDigestItem as NimbusDigest, NimbusId};
-use parity_scale_codec::{alloc::string::ToString, Decode};
-use scale_info::prelude::string::String;
-use sp_core::{
-    crypto::{ByteArray, UncheckedFrom},
-    sr25519, H160, H256,
-};
-use sp_runtime::traits::One;
-use sp_std::{mem::size_of, vec};
 
 benchmarks! {
     // Benchmark for inherent included in every block
