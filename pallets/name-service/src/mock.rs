@@ -26,13 +26,14 @@ use frame_support::{
 };
 use manta_primitives::{
     constants::NAME_SERVICE_PALLET_ID,
-    types::{BlockNumber, Header},
+    types::{Balance, BlockNumber, Header},
 };
 
 use sp_core::H256;
-use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
-
-pub type AccountId = u128;
+use sp_runtime::{
+    traits::{BlakeTwo256, IdentityLookup},
+    AccountId32,
+};
 
 mod name_service {
     pub use super::super::*;
@@ -45,8 +46,8 @@ impl frame_system::Config for Runtime {
     type RuntimeCall = RuntimeCall;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type AccountId = AccountId;
-    type Lookup = IdentityLookup<AccountId>;
+    type AccountId = AccountId32;
+    type Lookup = IdentityLookup<AccountId32>;
     type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = ConstU32<250>;
@@ -54,7 +55,7 @@ impl frame_system::Config for Runtime {
     type BlockLength = ();
     type Version = ();
     type PalletInfo = PalletInfo;
-    type AccountData = AccountId;
+    type AccountData = pallet_balances::AccountData<Balance>;
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type DbWeight = ();

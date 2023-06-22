@@ -33,7 +33,7 @@ pub fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) 
 
 benchmarks! {
     where_clause {  where T: Config,
-        T::AccountId: Into<AccountId>
+        T::AccountId: From<AccountId> + Into<AccountId>,
     }
 
     register {
@@ -124,7 +124,7 @@ benchmarks! {
 }
 
 impl_benchmark_test_suite!(
-    NameService,
+    Pallet,
     crate::mock::ExtBuilder::default().build(),
     crate::mock::Runtime,
 );

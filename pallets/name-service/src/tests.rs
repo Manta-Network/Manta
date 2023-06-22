@@ -29,13 +29,13 @@ pub const BOB: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([1u8; 32])
 fn register_should_work() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(NameService::register(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into()
         ));
         System::set_block_number(5);
         assert_ok!(NameService::accept_register(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into()
         ));
@@ -46,18 +46,18 @@ fn register_should_work() {
 fn set_primary_should_work() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(NameService::register(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into()
         ));
         System::set_block_number(5);
         assert_ok!(NameService::accept_register(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into()
         ));
         assert_ok!(NameService::set_primary_name(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into()
         ));
@@ -68,12 +68,12 @@ fn set_primary_should_work() {
 fn cancel_register_should_work() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(NameService::register(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into()
         ));
         assert_ok!(NameService::cancel_pending_register(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into()
         ));
@@ -84,18 +84,18 @@ fn cancel_register_should_work() {
 fn remove_register_should_work() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(NameService::register(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into()
         ));
         System::set_block_number(5);
         assert_ok!(NameService::accept_register(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into()
         ));
         assert_ok!(NameService::remove_register(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into()
         ));
@@ -106,13 +106,13 @@ fn remove_register_should_work() {
 fn register_should_fail() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(NameService::register(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into(),
         ));
         assert_noop!(
             NameService::register(
-                MockOrigin::signed(0x0),
+                MockOrigin::signed([0u8; 32].into()),
                 "test".as_bytes().to_vec(),
                 ALICE.into()
             ),
@@ -120,7 +120,7 @@ fn register_should_fail() {
         );
         assert_noop!(
             NameService::register(
-                MockOrigin::signed(0x0),
+                MockOrigin::signed([0u8; 32].into()),
                 "!#".as_bytes().to_vec(),
                 ALICE.into()
             ),
@@ -128,7 +128,7 @@ fn register_should_fail() {
         );
         assert_noop!(
             NameService::accept_register(
-                MockOrigin::signed(0x0),
+                MockOrigin::signed([0u8; 32].into()),
                 "test".as_bytes().to_vec(),
                 ALICE.into()
             ),
@@ -141,13 +141,13 @@ fn register_should_fail() {
 fn register_time_should_fail() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(NameService::register(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into(),
         ));
         assert_noop!(
             NameService::accept_register(
-                MockOrigin::signed(0x0),
+                MockOrigin::signed([0u8; 32].into()),
                 "test".as_bytes().to_vec(),
                 ALICE.into()
             ),
@@ -160,14 +160,14 @@ fn register_time_should_fail() {
 fn register_accept_should_fail() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(NameService::register(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into(),
         ));
         System::set_block_number(5);
         assert_noop!(
             NameService::accept_register(
-                MockOrigin::signed(0x0),
+                MockOrigin::signed([0u8; 32].into()),
                 "test".as_bytes().to_vec(),
                 BOB.into()
             ),
@@ -180,19 +180,19 @@ fn register_accept_should_fail() {
 fn set_primary_should_fail() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(NameService::register(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into(),
         ));
         System::set_block_number(5);
         assert_ok!(NameService::accept_register(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into(),
         ));
         assert_noop!(
             NameService::set_primary_name(
-                MockOrigin::signed(0x0),
+                MockOrigin::signed([0u8; 32].into()),
                 "test".as_bytes().to_vec(),
                 BOB.into()
             ),
@@ -200,7 +200,7 @@ fn set_primary_should_fail() {
         );
         assert_noop!(
             NameService::set_primary_name(
-                MockOrigin::signed(0x0),
+                MockOrigin::signed([0u8; 32].into()),
                 "testtest".as_bytes().to_vec(),
                 ALICE.into()
             ),
@@ -213,13 +213,13 @@ fn set_primary_should_fail() {
 fn cancel_register_should_fail() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(NameService::register(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into(),
         ));
         assert_noop!(
             NameService::cancel_pending_register(
-                MockOrigin::signed(0x0),
+                MockOrigin::signed([0u8; 32].into()),
                 "test".as_bytes().to_vec(),
                 BOB.into()
             ),
@@ -227,7 +227,7 @@ fn cancel_register_should_fail() {
         );
         assert_noop!(
             NameService::cancel_pending_register(
-                MockOrigin::signed(0x0),
+                MockOrigin::signed([0u8; 32].into()),
                 "testtest".as_bytes().to_vec(),
                 ALICE.into()
             ),
@@ -240,19 +240,19 @@ fn cancel_register_should_fail() {
 fn remove_register_should_fail() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(NameService::register(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into(),
         ));
         System::set_block_number(5);
         assert_ok!(NameService::accept_register(
-            MockOrigin::signed(0x0),
+            MockOrigin::signed([0u8; 32].into()),
             "test".as_bytes().to_vec(),
             ALICE.into(),
         ));
         assert_noop!(
             NameService::remove_register(
-                MockOrigin::signed(0x0),
+                MockOrigin::signed([0u8; 32].into()),
                 "testtest".as_bytes().to_vec(),
                 ALICE.into()
             ),
@@ -260,7 +260,7 @@ fn remove_register_should_fail() {
         );
         assert_noop!(
             NameService::remove_register(
-                MockOrigin::signed(0x0),
+                MockOrigin::signed([0u8; 32].into()),
                 "test".as_bytes().to_vec(),
                 BOB.into()
             ),
