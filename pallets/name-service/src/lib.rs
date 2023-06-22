@@ -243,13 +243,13 @@ impl<T: Config> Pallet<T> {
 
         // Check if already Pending Register
         ensure!(
-            PendingRegister::<T>::contains_key(hash_user) == false,
+            !PendingRegister::<T>::contains_key(hash_user),
             Error::<T>::AlreadyPendingRegister
         );
 
         // Check if already registered
         ensure!(
-            UsernameRecords::<T>::contains_key(username) == false,
+            !UsernameRecords::<T>::contains_key(username),
             Error::<T>::NameAlreadyRegistered
         );
 
@@ -311,10 +311,10 @@ impl<T: Config> Pallet<T> {
         );
 
         // check if we already have a primary
-        if PrimaryRecords::<T>::contains_key(&registrant) {
-            PrimaryRecords::<T>::mutate(&registrant, |old_username| *old_username = Some(username));
+        if PrimaryRecords::<T>::contains_key(registrant) {
+            PrimaryRecords::<T>::mutate(registrant, |old_username| *old_username = Some(username));
         } else {
-            PrimaryRecords::<T>::insert(&registrant, username);
+            PrimaryRecords::<T>::insert(registrant, username);
         }
 
         Self::deposit_event(Event::NameSetAsPrimary);
@@ -358,9 +358,9 @@ impl<T: Config> Pallet<T> {
         UsernameRecords::<T>::remove(&username);
 
         // check if the name we are removing is a primary name to keep storage synced
-        if let Ok(primary_username) = PrimaryRecords::<T>::try_get(&registrant) {
+        if let Ok(primary_username) = PrimaryRecords::<T>::try_get(registrant) {
             if primary_username == username {
-                PrimaryRecords::<T>::remove(&registrant);
+                PrimaryRecords::<T>::remove(registrant);
             }
         }
 

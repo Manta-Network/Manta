@@ -67,7 +67,7 @@ benchmarks! {
     }: accept_register(
         origin,
         username,
-        caller.clone().into()
+        caller.into()
     ) verify {
         assert_last_event::<T>(Event::NameRegistered.into());
     }
