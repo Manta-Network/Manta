@@ -86,10 +86,12 @@ mod mock;
 mod tests;
 
 pub mod weights;
+pub use weights::WeightInfo;
 
 pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
+    use super::*;
     pub use ::function_name::named;
     use frame_support::{
         ensure, log,
@@ -101,9 +103,7 @@ pub mod pallet {
         },
         PalletId,
     };
-    pub use frame_system::WeightInfo;
     use frame_system::{pallet_prelude::*, RawOrigin};
-
     use pallet_parachain_staking::BalanceOf;
     use sp_core::U256;
     use sp_runtime::{
@@ -111,6 +111,7 @@ pub mod pallet {
         ArithmeticError, DispatchResult,
     };
     use sp_std::prelude::*;
+
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     pub type CallOf<T> = <T as Config>::RuntimeCall;
@@ -191,6 +192,10 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn total_pot)]
     pub(super) type TotalPot<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn total_users)]
+    pub(super) type TotalUsers<T: Config> = StorageValue<_, u32, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn is_rebalancing)]
@@ -313,7 +318,7 @@ pub mod pallet {
         ///
         /// * `amount` - The amount of tokens to be deposited.
         #[pallet::call_index(0)]
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as Config>::WeightInfo::deposit(Pallet::<T>::total_users(), pallet_parachain_staking::Pallet::<T>::selected_candidates().len() as u32))]
         pub fn deposit(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
             let caller_account = ensure_signed(origin)?;
 
@@ -347,8 +352,8 @@ pub mod pallet {
             // Add to active funds
             ActiveBalancePerUser::<T>::mutate(caller_account.clone(), |balance| *balance += amount);
             TotalPot::<T>::mutate(|balance| *balance += amount);
+            TotalUsers::<T>::mutate(|users| *users += 1);
             SumOfDeposits::<T>::mutate(|balance| *balance += amount);
-
             Self::deposit_event(Event::Deposited(caller_account, amount));
             Ok(())
         }
@@ -377,7 +382,7 @@ pub mod pallet {
         /// * The user has no or not enough active funds
         /// * There are any arithmetic underflows
         #[pallet::call_index(1)]
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as Config>::WeightInfo::request_withdraw(Pallet::<T>::total_users(), pallet_parachain_staking::Pallet::<T>::selected_candidates().len() as u32))]
         pub fn request_withdraw(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
             let caller = ensure_signed(origin)?;
 
@@ -411,7 +416,10 @@ pub mod pallet {
                             .checked_sub(&amount)
                             .ok_or(Error::<T>::ArithmeticUnderflow)?
                         {
-                            new_balance if new_balance.is_zero() => None,
+                            new_balance if new_balance.is_zero() => {
+                                TotalUsers::<T>::mutate(|users| *users -= 1);
+                                None
+                            }
                             new_balance => Some(new_balance),
                         };
                         TotalPot::<T>::try_mutate(|pot| {
@@ -481,7 +489,7 @@ pub mod pallet {
         ///
         /// CannotLookup: The caller has no unclaimed winnings.
         #[pallet::call_index(2)]
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as Config>::WeightInfo::claim_my_winnings(pallet_parachain_staking::Pallet::<T>::selected_candidates().len() as u32))]
         pub fn claim_my_winnings(origin: OriginFor<T>) -> DispatchResult {
             let caller = ensure_signed(origin)?;
             match UnclaimedWinningsByAccount::<T>::take(caller.clone()) {
@@ -566,7 +574,7 @@ pub mod pallet {
         ///
         /// You can always learn what block the next drawing - if any - will happen by calling [`Self::next_drawing_at`]
         #[pallet::call_index(4)]
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as Config>::WeightInfo::start_lottery())]
         pub fn start_lottery(origin: OriginFor<T>) -> DispatchResult {
             T::ManageOrigin::ensure_origin(origin.clone())?;
 
@@ -613,7 +621,7 @@ pub mod pallet {
         /// * LotteryNotStarted: Nothing to stop
         ///
         #[pallet::call_index(5)]
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as Config>::WeightInfo::stop_lottery())]
         pub fn stop_lottery(origin: OriginFor<T>) -> DispatchResult {
             T::ManageOrigin::ensure_origin(origin.clone())?;
 
@@ -641,7 +649,7 @@ pub mod pallet {
         /// * PotBalanceTooLow: The balance of the pot is too low.
         /// * NoWinnerFound: Nobody was selected as winner
         #[pallet::call_index(6)]
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as Config>::WeightInfo::draw_lottery(Pallet::<T>::total_users(), pallet_parachain_staking::Pallet::<T>::selected_candidates().len() as u32))]
         pub fn draw_lottery(origin: OriginFor<T>) -> DispatchResult {
             T::ManageOrigin::ensure_origin(origin.clone())?;
             let now = <frame_system::Pallet<T>>::block_number();
@@ -682,7 +690,7 @@ pub mod pallet {
         /// * BadOrigin: Caller is not ManageOrigin
         /// * errors defined by the do_process_matured_withdrawals function.
         #[pallet::call_index(7)]
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as Config>::WeightInfo::process_matured_withdrawals())]
         pub fn process_matured_withdrawals(origin: OriginFor<T>) -> DispatchResult {
             log::trace!("process_matured_withdrawals");
             T::ManageOrigin::ensure_origin(origin.clone())?;

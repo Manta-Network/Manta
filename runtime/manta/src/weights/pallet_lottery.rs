@@ -57,7 +57,7 @@ pub trait WeightInfo {
 
 /// Weights for pallet_lottery using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
+impl<T: frame_system::Config> pallet_lottery::WeightInfo for SubstrateWeight<T> {
 	// Storage: Lottery MinDeposit (r:1 w:0)
 	// Storage: Scheduler Lookup (r:1 w:0)
 	// Storage: System Account (r:2 w:2)

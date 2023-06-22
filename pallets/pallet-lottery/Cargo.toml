@@ -53,9 +53,9 @@ rpc = [
   "sp-blockchain",
 ]
 runtime-benchmarks = [
-  "frame-benchmarking/runtime-benchmarks",
-  "frame-support/runtime-benchmarks",
-  "pallet-parachain-staking/runtime-benchmarks",
+  'frame-benchmarking/runtime-benchmarks',
+  'frame-support/runtime-benchmarks',
+  'pallet-parachain-staking/runtime-benchmarks',
   'rand/std_rng',
 ]
 std = [

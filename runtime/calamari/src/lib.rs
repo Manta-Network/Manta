@@ -405,6 +405,7 @@ impl pallet_randomness::GetBabeData<u64, Option<Hash>> for BabeDataGetter {
 }
 impl pallet_randomness::Config for Runtime {
     type BabeDataGetter = BabeDataGetter;
+    type WeightInfo = weights::pallet_randomness::SubstrateWeight<Runtime>;
 }
 parameter_types! {
     pub const LotteryPotId: PalletId = LOTTERY_PALLET_ID;
@@ -427,7 +428,7 @@ impl pallet_lottery::Config for Runtime {
     type DrawingInterval = DrawingInterval;
     type DrawingFreezeout = DrawingFreezeout;
     type UnstakeLockTime = UnstakeLockTime;
-    type WeightInfo = ();
+    type WeightInfo = weights::pallet_lottery::SubstrateWeight<Runtime>;
 }
 impl pallet_authorship::Config for Runtime {
     type FindAuthor = AuthorInherent;

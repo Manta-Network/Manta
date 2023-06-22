@@ -37,6 +37,7 @@
 use frame_support::pallet;
 pub use pallet::*;
 use sp_std::vec::Vec;
+pub use weights::WeightInfo;
 
 #[cfg(any(test, feature = "runtime-benchmarks"))]
 mod benchmarks;
@@ -58,7 +59,6 @@ pub trait GetBabeData<EpochIndex, Randomness> {
 #[pallet]
 pub mod pallet {
     use super::*;
-    use crate::weights::{SubstrateWeight, WeightInfo};
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use session_key_primitives::inherent::{InherentError, INHERENT_IDENTIFIER};
@@ -73,6 +73,7 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         /// Get the BABE data from the runtime
         type BabeDataGetter: GetBabeData<u64, Option<Self::Hash>>;
+        type WeightInfo: WeightInfo;
     }
 
     #[pallet::error]
@@ -102,7 +103,7 @@ pub mod pallet {
         /// Populates `RandomnessResults` due this epoch with BABE epoch randomness
         #[pallet::call_index(0)]
         #[pallet::weight((
-			SubstrateWeight::<T>::set_babe_randomness_results(),
+            <T as Config>::WeightInfo::set_babe_randomness_results(),
 			DispatchClass::Mandatory
 		))]
         pub fn set_babe_randomness_results(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
