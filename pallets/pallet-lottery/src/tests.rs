@@ -20,12 +20,12 @@ use crate::{
     mock::{
         roll_one_block, roll_to, roll_to_round_begin, roll_to_round_end, AccountId, Balance,
         Balances, CollatorSelection, ExtBuilder, Lottery, ParachainStaking,
-        RuntimeOrigin as Origin, Test,
+        RuntimeOrigin as Origin, System, Test,
     },
     Config, Error, Event,
 };
 
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, traits::Currency};
 use frame_system::RawOrigin;
 use pallet_parachain_staking::{
     AtStake, Bond, CollatorStatus, DelegatorStatus, InflationInfo, Range, DELEGATOR_LOCK_ID,
@@ -335,5 +335,70 @@ fn unstaking_works_with_0_collators_left() {
             roll_to_round_begin(3);
             // by now the withdrawal should have happened by way of lottery drawing
             assert_eq!(Balances::free_balance(ALICE.clone()), HIGH_BALANCE);
+        });
+}
+
+#[test]
+fn winner_distribution_should_be_equal_with_equal_deposits() {
+    let balance = 500_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE.clone(), HIGH_BALANCE),
+            (BOB.clone(), HIGH_BALANCE),
+        ])
+        .with_candidates(vec![(BOB.clone(), balance)])
+        .build()
+        .execute_with(|| {
+            assert!(HIGH_BALANCE > balance);
+            <Test as pallet_parachain_staking::Config>::Currency::make_free_balance_be(&Lottery::account_id(), Lottery::gas_reserve());
+            // Deposit 50 users with equal deposits
+            const WINNING_AMT: u32 = 1_000;
+            const NUMBER_OF_DRAWINGS: u32 = 10_000;
+            const NUMBER_OF_USERS: u32 = 50;
+            const USER_SEED: u32 = 696_969;
+            let min_delegator_bond =
+                <<Test as pallet_parachain_staking::Config>::MinDelegatorStk as frame_support::traits::Get<pallet_parachain_staking::BalanceOf<Test>>>::get();
+            let deposit_amount: pallet_parachain_staking::BalanceOf<Test> = (min_delegator_bond * 10_000u128).into();
+            for user in 0..NUMBER_OF_USERS {
+                System::set_block_number(user.into());
+                let (depositor, _) =
+                    crate::mock::from_bench::create_funded_user::<Test>("depositor", USER_SEED - 1 - user, deposit_amount);
+                assert_ok!(Lottery::deposit(
+                    RawOrigin::Signed(depositor).into(),
+                    deposit_amount
+                ));
+            }
+            // loop 10000 times, starting from block 5000 to hopefully be outside of drawing freezeout
+            for x in 5_000..5_000+NUMBER_OF_DRAWINGS {
+                // advance block number to reseed RNG
+                System::set_block_number((NUMBER_OF_USERS + x).into());
+                // simulate accrued staking rewards
+                assert_ok!(Balances::mutate_account(
+                    &Lottery::account_id(),
+                    |acc| {
+                        acc.free = acc.free.saturating_add(WINNING_AMT.into());
+                    }
+                ));
+                // draw lottery
+                assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
+            }
+            assert_eq!(
+                Lottery::total_unclaimed_winnings(),
+                NUMBER_OF_DRAWINGS as u128 * WINNING_AMT as u128
+            );
+
+            // ensure every user has won > 190 times ( 200 optimum = NUMBER_OF_DRAWINGS/NUMBER_OF_USERS )
+            let mut winner_count = 0;
+            let mut winners = vec![];
+            for (user, user_winnings) in crate::UnclaimedWinningsByAccount::<Test>::iter() {
+                winners.push((user,user_winnings));
+                assert!(user_winnings >= (WINNING_AMT as f32 * NUMBER_OF_DRAWINGS as f32 / NUMBER_OF_USERS as f32 * 0.80) as u128);
+                winner_count += 1;
+            }
+            log::error!("{:?}",winners);
+            assert_eq!(
+                winner_count,
+                NUMBER_OF_USERS
+            );
         });
 }

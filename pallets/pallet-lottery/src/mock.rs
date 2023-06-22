@@ -23,7 +23,7 @@ use calamari_runtime::currency::{mKMA, KMA};
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU128, ConstU32, ConstU8, Everything, GenesisBuild, LockIdentifier, OnFinalize,
+        ConstU128, ConstU32, ConstU8, Everything, GenesisBuild, Get, LockIdentifier, OnFinalize,
         OnInitialize,
     },
     weights::Weight,
@@ -75,7 +75,8 @@ impl<T: Config> frame_support::traits::Randomness<T::Hash, BlockNumberFor<T>>
         OsRng.fill_bytes(&mut digest);
         digest.extend_from_slice(subject);
         let randomness = T::Hashing::hash(&digest);
-        let block_number = frame_system::Pallet::<T>::block_number();
+        // NOTE: Test randomness is always "fresh" assuming block_number is > DrawingFreezeout
+        let block_number = 0u32.into();
         (randomness, block_number)
     }
 }
@@ -408,6 +409,41 @@ impl ExtBuilder {
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
         ext
+    }
+}
+
+pub mod from_bench {
+    /// copied from frame benchmarking
+    use super::*;
+    use codec::{Decode, Encode};
+    use frame_support::{
+        dispatch::{DispatchError, DispatchErrorWithPostInfo},
+        pallet_prelude::*,
+        traits::{Get, StorageInfo},
+    };
+    // use serde::{Deserialize, Serialize};
+    use sp_io::hashing::blake2_256;
+    use sp_runtime::traits::TrailingZeroInput;
+    use sp_std::{prelude::Box, vec::Vec};
+    // use sp_storage::TrackedStorageKey;
+    pub fn account<AccountId: Decode>(name: &'static str, index: u32, seed: u32) -> AccountId {
+        let entropy = (name, index, seed).using_encoded(blake2_256);
+        Decode::decode(&mut TrailingZeroInput::new(entropy.as_ref()))
+            .expect("infinite length input; no invalid inputs for type; qed")
+    }
+    pub fn create_funded_user<T: Config>(
+        string: &'static str,
+        n: u32,
+        extra: BalanceOf<T>,
+    ) -> (T::AccountId, BalanceOf<T>) {
+        const SEED: u32 = 0;
+        let user = account(string, n, SEED);
+        let min_candidate_stk =
+            <<T as pallet_parachain_staking::Config>::MinCandidateStk as Get<BalanceOf<T>>>::get();
+        let total = min_candidate_stk + extra;
+        <T as pallet_parachain_staking::Config>::Currency::make_free_balance_be(&user, total);
+        <T as pallet_parachain_staking::Config>::Currency::issue(total);
+        (user, total)
     }
 }
 

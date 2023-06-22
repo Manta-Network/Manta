@@ -105,6 +105,7 @@ pub mod pallet {
     };
     use frame_system::{pallet_prelude::*, RawOrigin};
     use pallet_parachain_staking::BalanceOf;
+    use sp_arithmetic::traits::SaturatedConversion;
     use sp_core::U256;
     use sp_runtime::{
         traits::{AccountIdConversion, CheckedAdd, CheckedSub, Dispatchable, Saturating, Zero},
@@ -305,6 +306,7 @@ pub mod pallet {
         NoCollatorForDeposit,
         WithdrawFailed,
         ArithmeticUnderflow,
+        ArithmeticOverflow,
         PalletMisconfigured,
         NotImplemented,
         TODO,
@@ -747,7 +749,89 @@ pub mod pallet {
         fn lottery_schedule_id() -> Vec<u8> {
             T::LotteryPot::get().0.to_vec()
         }
-
+        fn select_winning_balance(
+            max_winning_balance: BalanceOf<T>,
+        ) -> Result<BalanceOf<T>, Error<T>> {
+            const MAX_NUMBER_OF_RESAMPLES: u8 = 3;
+            let mut winning_number = 0; // XXX: This shouldn't need initialization but the compiler doesn't get it
+            for n in 0u8..MAX_NUMBER_OF_RESAMPLES {
+                let random: (T::Hash, BlockNumberFor<T>);
+                #[cfg(feature = "runtime-benchmarks")]
+                {
+                    use rand::{RngCore, SeedableRng};
+                    use sp_runtime::traits::Hash;
+                    // XXX: Benchmarking randomness changes per block instead of per epoch
+                    let mut rng = rand::rngs::StdRng::seed_from_u64(
+                        <frame_system::Pallet<T>>::block_number()
+                            .try_into()
+                            .unwrap_or(n as u64),
+                    );
+                    let mut rnd = [0u8; 32];
+                    rng.fill_bytes(&mut rnd);
+                    let randomness = T::Hashing::hash(&rnd);
+                    random = (randomness, <T as frame_system::Config>::BlockNumber::zero());
+                }
+                #[cfg(not(feature = "runtime-benchmarks"))]
+                {
+                    random = T::RandomnessSource::random(&[n; 1]);
+                    ensure!(
+                        random
+                            .1 // = randomness_established_at_block
+                            .saturating_add(<T as Config>::DrawingFreezeout::get())
+                            < <frame_system::Pallet<T>>::block_number(),
+                        Error::<T>::PalletMisconfigured
+                    );
+                }
+                let random_hash = random.0;
+                let as_number = U256::from_big_endian(random_hash.as_ref());
+                winning_number = as_number.low_u128();
+                // naive application of the modulo operation can bias the result, reject and resample if the number is larger than the maximum divisor of user array length in the u128 number range
+                debug_assert_eq!(
+                    core::mem::size_of::<BalanceOf<T>>(),
+                    core::mem::size_of::<u128>()
+                );
+                let number_to_start_rejecting_at: u128 = u128::max_value().saturating_sub(
+                    u128::max_value() % max_winning_balance.saturated_into::<u128>(),
+                );
+                debug_assert!(
+                    number_to_start_rejecting_at <= max_winning_balance.saturated_into::<u128>()
+                );
+                if winning_number.saturated_into::<u128>() < number_to_start_rejecting_at {
+                    break;
+                } else {
+                    // sample must be rejected because it can't be safely modulo'd, retry with high u128
+                    winning_number = (as_number >> 128).low_u128();
+                    let number_to_start_rejecting_at: u128 = u128::max_value().saturating_sub(
+                        u128::max_value() % max_winning_balance.saturated_into::<u128>(),
+                    );
+                    debug_assert!(
+                        number_to_start_rejecting_at
+                            <= max_winning_balance.saturated_into::<u128>()
+                    );
+                    if winning_number.saturated_into::<u128>() < number_to_start_rejecting_at {
+                        break;
+                    }
+                    if n + 1 < MAX_NUMBER_OF_RESAMPLES {
+                        // if still not good, we need to re-request randomness with a changed nonce
+                        continue;
+                    } else {
+                        // we loop this up to 3 times (yielding 6 possible values) before giving up, printing a warning and accepting that the result was biased
+                        log::warn!("No unbiased random samples found after {:?} retries. using {:?} which will be subject to modulo bias",(n+1)*2,winning_number.clone());
+                        break;
+                    }
+                }
+            }
+            // no risk of modulo bias here unless we ran out of retries above
+            let winning_balance: BalanceOf<T> = BalanceOf::<T>::try_from(winning_number)
+                .map_err(|_| Error::<T>::ArithmeticOverflow)?
+                % max_winning_balance;
+            log::debug!(
+                "winning_number: {:?}, winning balance: {:?}",
+                winning_number,
+                winning_balance
+            );
+            Ok(winning_balance)
+        }
         fn select_winner(payout_for_winner: BalanceOf<T>) -> DispatchResult {
             if Self::total_pot().is_zero() {
                 log::warn!(
@@ -758,47 +842,7 @@ pub mod pallet {
             }
             // Match random number to winner. We select a winning **balance** and then just add up accounts in the order they're stored until the sum of balance exceeds the winning amount
             // IMPORTANT: This order and active balances must be locked to modification after the random seed is created (relay BABE randomness, 2 epochs ago)
-            let random: (T::Hash, BlockNumberFor<T>);
-            #[cfg(feature = "runtime-benchmarks")]
-            {
-                use rand::{RngCore, SeedableRng};
-                use sp_runtime::traits::Hash;
-                // XXX: Benchmarking randomness changes per block instead of per epoch
-                let mut rng = rand::rngs::StdRng::seed_from_u64(
-                    <frame_system::Pallet<T>>::block_number()
-                        .try_into()
-                        .unwrap_or(0u64),
-                );
-                let mut rnd = [0u8; 32];
-                rng.fill_bytes(&mut rnd);
-                let randomness = T::Hashing::hash(&rnd);
-                random = (randomness, <T as frame_system::Config>::BlockNumber::zero());
-            }
-            #[cfg(not(feature = "runtime-benchmarks"))]
-            {
-                random = T::RandomnessSource::random(&[0u8; 1]);
-            }
-            #[cfg(not(feature = "runtime-benchmarks"))]
-            ensure!(
-                random
-                    .1 // = randomness_established_at_block
-                    .saturating_add(<T as Config>::DrawingFreezeout::get())
-                    < <frame_system::Pallet<T>>::block_number(),
-                Error::<T>::PalletMisconfigured
-            );
-
-            let random_hash = random.0;
-            let as_number = U256::from_big_endian(random_hash.as_ref());
-            let winning_number = as_number.low_u128();
-            let winning_balance: BalanceOf<T> = BalanceOf::<T>::try_from(winning_number)
-                .map_err(|_| ArithmeticError::Overflow)?
-                % Self::total_pot();
-
-            log::debug!(
-                "hash: {:?}, winning balance: {:?}",
-                random_hash,
-                winning_balance
-            );
+            let winning_balance = Self::select_winning_balance(Self::total_pot())?;
             let mut winner: Option<T::AccountId> = None;
             let mut count: BalanceOf<T> = 0u32.into();
             for (account, balance) in ActiveBalancePerUser::<T>::iter() {
