@@ -123,7 +123,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Queue Username for Register if it has not been registered or queued yet
         #[pallet::call_index(0)]
-        #[pallet::weight(1000)]
+        #[pallet::weight(T::WeightInfo::register())]
         #[transactional]
         pub fn register(
             origin: OriginFor<T>,
@@ -137,7 +137,7 @@ pub mod pallet {
 
         /// After Pending Register has passed its block wait time, finish regiser
         #[pallet::call_index(1)]
-        #[pallet::weight(1000)]
+        #[pallet::weight(T::WeightInfo::accept_register())]
         #[transactional]
         pub fn accept_register(
             origin: OriginFor<T>,
@@ -153,7 +153,7 @@ pub mod pallet {
 
         /// Set a registered and owned username as Primary
         #[pallet::call_index(2)]
-        #[pallet::weight(1000)]
+        #[pallet::weight(T::WeightInfo::set_primary_name())]
         #[transactional]
         pub fn set_primary_name(
             origin: OriginFor<T>,
@@ -169,7 +169,7 @@ pub mod pallet {
 
         /// Cancel pending name for register
         #[pallet::call_index(3)]
-        #[pallet::weight(1000)]
+        #[pallet::weight(T::WeightInfo::cancel_pending_register())]
         #[transactional]
         pub fn cancel_pending_register(
             origin: OriginFor<T>,
@@ -185,7 +185,7 @@ pub mod pallet {
 
         /// Remove Already Registered Name
         #[pallet::call_index(4)]
-        #[pallet::weight(1000)]
+        #[pallet::weight(T::WeightInfo::remove_register())]
         #[transactional]
         pub fn remove_register(
             origin: OriginFor<T>,
