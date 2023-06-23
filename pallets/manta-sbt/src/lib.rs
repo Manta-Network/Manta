@@ -670,7 +670,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(10)]
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::force_to_private())]
         #[transactional]
         #[allow(clippy::too_many_arguments)]
         pub fn force_to_private(
@@ -705,7 +705,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(11)]
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::force_mint_sbt_eth())]
         #[transactional]
         #[allow(clippy::too_many_arguments)]
         pub fn force_mint_sbt_eth(
@@ -748,7 +748,7 @@ pub mod pallet {
 
         /// Sets the privileged reserve account. Requires `AdminOrigin`
         #[pallet::call_index(12)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::change_free_reserve_account())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::change_force_account())]
         #[transactional]
         pub fn change_force_account(
             origin: OriginFor<T>,
