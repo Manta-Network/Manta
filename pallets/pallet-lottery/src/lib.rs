@@ -960,7 +960,7 @@ pub mod pallet {
             for (collator, amount_to_stake) in
                 Self::calculate_deposit_distribution(stakable_balance)
             {
-                Self::do_stake_one_collator(collator.clone(), amount_to_stake.clone())?;
+                Self::do_stake_one_collator(collator.clone(), amount_to_stake)?;
                 TotalPot::<T>::mutate(|balance| *balance += amount_to_stake);
                 log::debug!(
                     "Rebalanced {:?} to collator {:?}",

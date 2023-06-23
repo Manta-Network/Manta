@@ -16,10 +16,12 @@
 
 use super::*;
 use codec::alloc::collections::BTreeSet;
+#[cfg(not(feature = "runtime-benchmarks"))]
+use frame_support::traits::Randomness;
 use frame_support::{
     dispatch::RawOrigin,
     ensure,
-    traits::{EstimateCallFee, Get, Randomness},
+    traits::{EstimateCallFee, Get},
 };
 use pallet_parachain_staking::BalanceOf;
 use sp_runtime::{

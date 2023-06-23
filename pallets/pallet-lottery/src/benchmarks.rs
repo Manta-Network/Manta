@@ -165,14 +165,14 @@ benchmarks! {
         assert_ok!(Pallet::<T>::draw_lottery(RawOrigin::Root.into()));
         // should have won now
         let unclaimed_winnings = Pallet::<T>::total_unclaimed_winnings();
-        let account_balance_before = <T as pallet_parachain_staking::Config>::Currency::free_balance(&caller.clone());
+        let account_balance_before = <T as pallet_parachain_staking::Config>::Currency::free_balance(&caller);
         let fee_estimate  = T::EstimateCallFee::estimate_call_fee(&Call::<T>::claim_my_winnings {  }, None::<u64>.into());
         assert!(!unclaimed_winnings.is_zero());
         assert_eq!(unclaimed_winnings,Pallet::<T>::unclaimed_winnings_by_account(caller.clone()).unwrap());
     }: _(RawOrigin::Signed(caller.clone()))
     verify {
         assert!(Pallet::<T>::total_unclaimed_winnings().is_zero());
-        let account_balance_after = <T as pallet_parachain_staking::Config>::Currency::free_balance(&caller.clone());
+        let account_balance_after = <T as pallet_parachain_staking::Config>::Currency::free_balance(&caller);
         assert!(Pallet::<T>::unclaimed_winnings_by_account(caller.clone()).is_none());
         assert!(account_balance_after >= account_balance_before + unclaimed_winnings - fee_estimate);
         assert!(account_balance_after <= account_balance_before + unclaimed_winnings);
@@ -218,8 +218,6 @@ benchmarks! {
     verify {
         // someone should have won now
         let unclaimed_winnings = Pallet::<T>::total_unclaimed_winnings();
-        let account_balance_before = <T as pallet_parachain_staking::Config>::Currency::free_balance(&caller.clone());
-        let fee_estimate  = T::EstimateCallFee::estimate_call_fee(&Call::<T>::claim_my_winnings {  }, None::<u64>.into());
         assert!(!unclaimed_winnings.is_zero());
     }
 
