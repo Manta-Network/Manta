@@ -191,6 +191,8 @@ try-runtime = [
   'pallet-manta-pay/try-runtime',
   'orml-xtokens/try-runtime',
   'pallet-manta-sbt/try-runtime',
+  'pallet-randomness/try-runtime',
+  'pallet-lottery/try-runtime',
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
