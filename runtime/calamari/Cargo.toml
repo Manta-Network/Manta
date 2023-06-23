@@ -208,6 +208,8 @@ try-runtime = [
   'calamari-vesting/try-runtime',
   'pallet-manta-sbt/try-runtime',
   "zenlink-protocol/try-runtime",
+  'pallet-randomness/try-runtime',
+  'pallet-lottery/try-runtime',
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
