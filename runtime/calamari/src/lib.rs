@@ -1149,10 +1149,10 @@ impl_runtime_apis! {
             Lottery::not_in_drawing_freezeout()
         }
         fn current_prize_pool() -> u128 {
-            Lottery::current_prize_pool().into()
+            Lottery::current_prize_pool()
         }
         fn next_drawing_at() -> Option<u128> {
-            Lottery::next_drawing_at().and_then(|x| Some(x as u128) )
+            Lottery::next_drawing_at().map(|x| x as u128)
         }
     }
 
