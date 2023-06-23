@@ -78,15 +78,17 @@ fn re_register_should_work() {
             "test".as_bytes().to_vec(),
             ALICE.into(),
         ));
-        assert!(crate::UsernameRecords::<Runtime>::contains_key("test".as_bytes().to_vec()));
-        assert_ok!(
-            NameService::remove_register(
-                MockOrigin::signed(ALICE),
-                "test".as_bytes().to_vec(),
-                ALICE.into()
-            )
-        );
-        assert!(!crate::UsernameRecords::<Runtime>::contains_key("test".as_bytes().to_vec()));
+        assert!(crate::UsernameRecords::<Runtime>::contains_key(
+            "test".as_bytes().to_vec()
+        ));
+        assert_ok!(NameService::remove_register(
+            MockOrigin::signed(ALICE),
+            "test".as_bytes().to_vec(),
+            ALICE.into()
+        ));
+        assert!(!crate::UsernameRecords::<Runtime>::contains_key(
+            "test".as_bytes().to_vec()
+        ));
         assert!(!crate::PendingRegister::<Runtime>::contains_key(
             <Runtime as frame_system::Config>::Hashing::hash_of(&"test".as_bytes().to_vec())
         ));
@@ -106,7 +108,9 @@ fn re_register_should_work() {
             "test".as_bytes().to_vec(),
             ALICE.into(),
         ));
-        assert!(crate::UsernameRecords::<Runtime>::contains_key("test".as_bytes().to_vec()));
+        assert!(crate::UsernameRecords::<Runtime>::contains_key(
+            "test".as_bytes().to_vec()
+        ));
     });
 }
 

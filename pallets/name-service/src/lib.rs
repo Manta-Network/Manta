@@ -299,7 +299,6 @@ impl<T: Config> Pallet<T> {
 
     /// Set primary name if register and owned
     fn try_set_primary_name(username: UserName, registrant: ZkAddressType) -> DispatchResult {
-
         // Username checks
         username_validation(&username).ok_or(Error::<T>::InvalidUsernameFormat)?;
 
