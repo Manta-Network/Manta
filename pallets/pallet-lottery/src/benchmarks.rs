@@ -212,7 +212,7 @@ benchmarks! {
 
         let (caller, _) = create_funded_user::<T>("caller", USER_SEED, deposit_amount);
         assert_ok!(Pallet::<T>::deposit(RawOrigin::Signed(caller.clone()).into(), deposit_amount));
-        assert_eq!(Pallet::<T>::active_balance_per_user(caller.clone()), deposit_amount);
+        assert_eq!(Pallet::<T>::active_balance_per_user(&caller), deposit_amount);
         // roll_rounds_and_author::<T>(2);
     }: _(RawOrigin::Root)
     verify {

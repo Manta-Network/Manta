@@ -13,9 +13,7 @@
 
 // You should have received a copy of the GNU General Public License
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
-use crate::{mock::*, *};
-use frame_support::{assert_noop, assert_ok};
-use sp_core::H256;
+use crate::mock::*;
 
 #[test]
 fn set_babe_randomness_results_is_mandatory() {

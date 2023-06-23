@@ -17,12 +17,7 @@
 //! A minimal runtime including the pallet-randomness pallet
 use super::*;
 use crate as pallet_randomness;
-use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{Everything, GenesisBuild},
-    weights::Weight,
-};
-use nimbus_primitives::NimbusId;
+use frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
 use sp_core::{H160, H256};
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
@@ -117,6 +112,7 @@ parameter_types! {
 }
 impl Config for Test {
     type BabeDataGetter = BabeDataGetter;
+    type WeightInfo = ();
 }
 
 /// Externality builder for pallet randomness mock runtime
