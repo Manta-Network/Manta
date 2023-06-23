@@ -688,7 +688,12 @@ pub mod pallet {
                 extra: Some(metadata),
             };
             SbtMetadataV2::<T>::insert(asset_id, sbt_metadata);
-            Self::post_transaction(vec![minting_account], *post)?;
+            Self::post_transaction(vec![minting_account.clone()], *post)?;
+
+            Self::deposit_event(Event::<T>::ForceToPrivate {
+                asset: asset_id,
+                source: minting_account,
+            });
             Ok(Pays::No.into())
         }
 
@@ -721,8 +726,13 @@ pub mod pallet {
 
             // manually insert address, note no signature check.
             EvmAccountAllowlist::<T>::insert(mint_id, address, MintStatus::AlreadyMinted);
-
             Self::post_transaction(vec![minting_account], *post)?;
+
+            Self::deposit_event(Event::<T>::ForceMintSbtEvm {
+                address,
+                mint_id,
+                asset_id,
+            });
             Ok(Pays::No.into())
         }
     }
@@ -804,6 +814,20 @@ pub mod pallet {
         },
         SetNextSbtId {
             asset_id: Option<StandardAssetId>,
+        },
+        ForceToPrivate {
+            /// AssetId on private leger
+            asset: StandardAssetId,
+            /// Source Account
+            source: T::AccountId,
+        },
+        ForceMintSbtEvm {
+            /// Eth Address that is used to mint sbt
+            address: EvmAddress,
+            /// An integer that corresponds to the mint type
+            mint_id: MintId,
+            /// AssetId of minted SBT
+            asset_id: StandardAssetId,
         },
     }
 
