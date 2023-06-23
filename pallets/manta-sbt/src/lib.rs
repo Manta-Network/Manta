@@ -252,6 +252,10 @@ pub mod pallet {
     #[pallet::storage]
     pub(super) type FreeReserveAccount<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
 
+    /// Account that can access to force calls
+    #[pallet::storage]
+    pub(super) type ForceAccount<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
+
     /// Allowlist for Evm Accounts
     #[pallet::storage]
     pub(super) type EvmAccountAllowlist<T: Config> = StorageDoubleMap<
@@ -676,7 +680,10 @@ pub mod pallet {
             metadata: BoundedVec<u8, T::SbtMetadataBound>,
             minting_account: T::AccountId,
         ) -> DispatchResultWithPostInfo {
-            T::AdminOrigin::ensure_origin(origin)?;
+            let who = ensure_signed(origin)?;
+
+            let force_account = ForceAccount::<T>::get().ok_or(Error::<T>::NotForceAccount)?;
+            ensure!(who == force_account, Error::<T>::NotForceAccount);
 
             let asset_id = id_from_field(post.asset_id.ok_or(Error::<T>::InvalidAssetId)?)
                 .ok_or(Error::<T>::InvalidAssetId)?;
@@ -711,7 +718,10 @@ pub mod pallet {
             metadata: BoundedVec<u8, T::SbtMetadataBound>,
             minting_account: T::AccountId,
         ) -> DispatchResultWithPostInfo {
-            T::AdminOrigin::ensure_origin(origin)?;
+            let who = ensure_signed(origin)?;
+
+            let force_account = ForceAccount::<T>::get().ok_or(Error::<T>::NotForceAccount)?;
+            ensure!(who == force_account, Error::<T>::NotForceAccount);
 
             let asset_id = id_from_field(post.asset_id.ok_or(Error::<T>::InvalidAssetId)?)
                 .ok_or(Error::<T>::InvalidAssetId)?;
@@ -734,6 +744,21 @@ pub mod pallet {
                 asset_id,
             });
             Ok(Pays::No.into())
+        }
+
+        /// Sets the privileged reserve account. Requires `AdminOrigin`
+        #[pallet::call_index(12)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::change_free_reserve_account())]
+        #[transactional]
+        pub fn change_force_account(
+            origin: OriginFor<T>,
+            account: Option<T::AccountId>,
+        ) -> DispatchResult {
+            T::AdminOrigin::ensure_origin(origin)?;
+
+            ForceAccount::<T>::set(account.clone());
+            Self::deposit_event(Event::<T>::ChangeForceAccount { account });
+            Ok(())
         }
     }
 
@@ -828,6 +853,9 @@ pub mod pallet {
             mint_id: MintId,
             /// AssetId of minted SBT
             asset_id: StandardAssetId,
+        },
+        ChangeForceAccount {
+            account: Option<T::AccountId>,
         },
     }
 
@@ -1014,6 +1042,9 @@ pub mod pallet {
 
         /// Mint type is not public, only permissioned accounts can use this mint
         MintNotPublic,
+
+        /// Account is not privileged account able to do force mints
+        NotForceAccount,
     }
 }
 
