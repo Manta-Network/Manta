@@ -375,7 +375,7 @@ impl<T: Config> Pallet<T> {
         } else {
             return Err(Error::<T>::NoCollatorForDeposit.into());
         };
-        let delegation_count = StakedCollators::<T>::iter_keys().collect::<Vec<_>>().len() as u32;
+        let delegation_count = StakedCollators::<T>::iter_keys().count() as u32;
 
         // If we're already delegated to this collator, we must call `delegate_more`
         if StakedCollators::<T>::get(&collator).is_zero() {
