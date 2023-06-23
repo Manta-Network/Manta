@@ -804,7 +804,8 @@ impl pallet_name_service::Config for Runtime {
     type Currency = Balances;
     type PalletId = NameServicePalletId;
     type RegisterWaitingPeriod = ConstU32<2>;
-    type RegisterPrice = ConstU128<{ 500 * KMA }>;
+    /// Register pricing around 5$ with current KMA/USD
+    type RegisterPrice = ConstU128<{ 3300 * KMA }>;
     type WeightInfo = weights::pallet_name_service::SubstrateWeight<Runtime>;
 }
 

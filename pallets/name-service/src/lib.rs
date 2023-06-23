@@ -299,6 +299,10 @@ impl<T: Config> Pallet<T> {
 
     /// Set primary name if register and owned
     fn try_set_primary_name(username: UserName, registrant: ZkAddressType) -> DispatchResult {
+
+        // Username checks
+        username_validation(&username).ok_or(Error::<T>::InvalidUsernameFormat)?;
+
         //check if name is registered
         ensure!(
             UsernameRecords::<T>::contains_key(&username),
@@ -325,6 +329,9 @@ impl<T: Config> Pallet<T> {
         username: UserName,
         registrant: ZkAddressType,
     ) -> DispatchResult {
+        // Username checks
+        username_validation(&username).ok_or(Error::<T>::InvalidUsernameFormat)?;
+
         let (hash_user, hash_address) = (
             T::Hashing::hash_of(&username),
             T::Hashing::hash_of(&registrant),
@@ -345,6 +352,9 @@ impl<T: Config> Pallet<T> {
     }
 
     fn try_remove_register(username: UserName, registrant: ZkAddressType) -> DispatchResult {
+        // Username checks
+        username_validation(&username).ok_or(Error::<T>::InvalidUsernameFormat)?;
+
         ensure!(
             UsernameRecords::<T>::contains_key(&username),
             Error::<T>::NotRegistered

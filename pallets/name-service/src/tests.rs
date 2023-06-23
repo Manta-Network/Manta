@@ -19,7 +19,7 @@
 #![cfg(test)]
 
 use super::*;
-use crate::mock::{NameService, RuntimeOrigin as MockOrigin, *};
+use crate::mock::{NameService, Runtime, RuntimeOrigin as MockOrigin, *};
 use frame_support::{assert_noop, assert_ok};
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
@@ -57,6 +57,56 @@ fn register_should_work() {
             "test".as_bytes().to_vec(),
             ALICE.into()
         ));
+    });
+}
+
+#[test]
+fn re_register_should_work() {
+    ExtBuilder::default().build().execute_with(|| {
+        initialize_test();
+        assert_ok!(NameService::register(
+            MockOrigin::signed(ALICE),
+            "test".as_bytes().to_vec(),
+            ALICE.into(),
+        ));
+        assert!(crate::PendingRegister::<Runtime>::contains_key(
+            <Runtime as frame_system::Config>::Hashing::hash_of(&"test".as_bytes().to_vec())
+        ));
+        System::set_block_number(5);
+        assert_ok!(NameService::accept_register(
+            MockOrigin::signed(ALICE),
+            "test".as_bytes().to_vec(),
+            ALICE.into(),
+        ));
+        assert!(crate::UsernameRecords::<Runtime>::contains_key("test".as_bytes().to_vec()));
+        assert_ok!(
+            NameService::remove_register(
+                MockOrigin::signed(ALICE),
+                "test".as_bytes().to_vec(),
+                ALICE.into()
+            )
+        );
+        assert!(!crate::UsernameRecords::<Runtime>::contains_key("test".as_bytes().to_vec()));
+        assert!(!crate::PendingRegister::<Runtime>::contains_key(
+            <Runtime as frame_system::Config>::Hashing::hash_of(&"test".as_bytes().to_vec())
+        ));
+
+        // test registering again
+        assert_ok!(NameService::register(
+            MockOrigin::signed(ALICE),
+            "test".as_bytes().to_vec(),
+            ALICE.into(),
+        ));
+        assert!(crate::PendingRegister::<Runtime>::contains_key(
+            <Runtime as frame_system::Config>::Hashing::hash_of(&"test".as_bytes().to_vec())
+        ));
+        System::set_block_number(10);
+        assert_ok!(NameService::accept_register(
+            MockOrigin::signed(ALICE),
+            "test".as_bytes().to_vec(),
+            ALICE.into(),
+        ));
+        assert!(crate::UsernameRecords::<Runtime>::contains_key("test".as_bytes().to_vec()));
     });
 }
 
