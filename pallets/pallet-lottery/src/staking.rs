@@ -57,9 +57,10 @@ impl<T: Config> Pallet<T> {
             let info = pallet_parachain_staking::Pallet::<T>::candidate_info(collator.clone())
                 .expect("is active collator, therefor it has collator info. qed");
             if staked < info.lowest_top_delegation_amount {
+                // TODO: Small optimization: sort collators ascending by missing amount so we get the largest amount of collators active before running out of funds
                 let deposit =
                     remaining_deposit.saturating_sub(info.lowest_top_delegation_amount - staked);
-                deposits.push((collator.clone(), deposit)); // TODO: Sort collators ascending by missing amount so we get the largest amount of collators active before running out of funds
+                deposits.push((collator.clone(), deposit));
                 remaining_deposit = remaining_deposit.saturating_sub(deposit);
                 if remaining_deposit.is_zero() {
                     break;
@@ -83,12 +84,12 @@ impl<T: Config> Pallet<T> {
 
         // second concern: We want to maximize staking APY earned, so we want to balance the staking pools with our deposits while conserving gas
         // We only consider active collators for deposits
-        // TODO: Also consider points / pointsAwarded to not stake to collators missing blocks
+        // TODO: Small optimization: Also consider points / pointsAwarded to not stake to collators missing blocks
 
         let mut top_collator_accounts =
-            pallet_parachain_staking::Pallet::<T>::compute_top_candidates(); // XXX/TODO: This can select collators that are joined but not yet active
+            pallet_parachain_staking::Pallet::<T>::compute_top_candidates(); // XXX: This can select collators that are joined but not yet active
         if top_collator_accounts.is_empty() {
-            // Use `SelectedCandidates` (should basically never happen)
+            // Use `SelectedCandidates` as fallback (should basically never happen)
             log::warn!("Lottery falling back to selected candidates");
             top_collator_accounts = pallet_parachain_staking::Pallet::<T>::selected_candidates();
             if top_collator_accounts.is_empty() {
@@ -364,10 +365,13 @@ impl<T: Config> Pallet<T> {
         if Self::surplus_funds().is_zero() {
             return Err(Error::<T>::PotBalanceTooLow.into());
         }
-
-        // TODO: Calculate these from current values
-        const CANDIDATE_DELEGATION_COUNT: u32 = 500;
-        const DELEGATION_COUNT: u32 = 500;
+        let candidate_delegation_count;
+        if let Some(info) = pallet_parachain_staking::Pallet::<T>::candidate_info(&collator) {
+            candidate_delegation_count = info.delegation_count;
+        } else {
+            return Err(Error::<T>::NoCollatorForDeposit.into());
+        };
+        let delegation_count = StakedCollators::<T>::iter_keys().collect::<Vec<_>>().len() as u32;
 
         // If we're already delegated to this collator, we must call `delegate_more`
         if StakedCollators::<T>::get(&collator).is_zero() {
@@ -376,8 +380,8 @@ impl<T: Config> Pallet<T> {
                 &pallet_parachain_staking::Call::delegate {
                     candidate: collator.clone(),
                     amount,
-                    candidate_delegation_count: CANDIDATE_DELEGATION_COUNT,
-                    delegation_count: DELEGATION_COUNT,
+                    candidate_delegation_count,
+                    delegation_count,
                 },
                 None::<u64>.into(),
             );
@@ -389,8 +393,8 @@ impl<T: Config> Pallet<T> {
                 RawOrigin::Signed(Self::account_id()).into(),
                 collator.clone(),
                 amount,
-                CANDIDATE_DELEGATION_COUNT,
-                DELEGATION_COUNT,
+                candidate_delegation_count,
+                delegation_count,
             )
             .map_err(|e| {
                 log::error!(
@@ -444,7 +448,7 @@ impl<T: Config> Pallet<T> {
         let delegated_amount_to_be_unstaked = StakedCollators::<T>::take(some_collator.clone());
         if delegated_amount_to_be_unstaked.is_zero() {
             log::error!("requested to unstake a collator that isn't staked");
-            return Err(Error::<T>::TODO.into());
+            return Err(Error::<T>::NoCollatorForWithdrawal.into());
         };
         log::debug!(
             "Unstaking collator {:?} with balance {:?}",

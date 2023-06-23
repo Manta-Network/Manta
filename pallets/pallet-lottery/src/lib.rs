@@ -304,12 +304,13 @@ pub mod pallet {
         WithdrawAboveDeposit,
         NoDepositForAccount,
         NoCollatorForDeposit,
+        NoCollatorForWithdrawal,
         WithdrawFailed,
         ArithmeticUnderflow,
         ArithmeticOverflow,
         PalletMisconfigured,
+        CouldNotSchedule,
         NotImplemented,
-        TODO,
     }
 
     #[pallet::call]
@@ -479,8 +480,6 @@ pub mod pallet {
                 })
             })?;
             // END UNSTAKING SECTION
-
-            // RAD: What happens if delegation_execute_scheduled_request fails?
             Self::deposit_event(Event::ScheduledWithdraw(caller, amount));
             Ok::<(), DispatchError>(())
         }
@@ -550,7 +549,7 @@ pub mod pallet {
             ))
 
             // withdraw from overallocated collators, wait until funds unlock, re-allocate to underallocated collators
-            // TODO: find some balancing algorithm that does this
+            // TODO: find some balancing algorithm that does this or just reuse the one we use for deposits
 
             // Self::deposit_event(Event::StartedRebalance(amount));
             // Ok(())
@@ -589,7 +588,8 @@ pub mod pallet {
             ensure!(
                 Self::surplus_funds() >= Self::gas_reserve(),
                 Error::<T>::PotBalanceBelowGasReserve
-            ); // XXX: If we seed more than gas_reserve, the excess will be paid out to the winner on the next drawing! This could be a feature for doping the winning balance
+            );
+            // NOTE: If more than gas_reserve is in the pallet, the full excess will be paid out to the winner of the next drawing! This is intended to dope the winning balance with extra rewards
 
             let drawing_interval = <T as Config>::DrawingInterval::get();
             ensure!(
@@ -600,12 +600,12 @@ pub mod pallet {
             T::Scheduler::schedule_named(
                 Self::lottery_schedule_id(),
                 DispatchTime::After(drawing_interval),
-                Some((drawing_interval, 99999u32)), // XXX: Seems scheduler has no way to schedule infinite amount
-                LOWEST_PRIORITY, // TODO: Maybe schedule only one and schedule the next drawing in `draw_lottery`
+                Some((drawing_interval, u32::MAX)), // XXX: Seems scheduler has no way to schedule infinite amount
+                LOWEST_PRIORITY,
                 frame_support::dispatch::RawOrigin::Root.into(),
                 MaybeHashed::Value(lottery_drawing_call),
             )
-            .map_err(|_| Error::<T>::TODO)?; // TODO: Error handling
+            .map_err(|_| Error::<T>::CouldNotSchedule)?;
 
             Self::deposit_event(Event::LotteryStarted(now + drawing_interval));
             Ok(())
@@ -677,8 +677,7 @@ pub mod pallet {
                 );
                 Self::select_winner(winning_claim)?;
             }
-
-            // unstake, pay out tokens due for withdrawals and restake excess funds // XXX: This might not work well with multiphase withdrawals
+            // unstake, pay out tokens due for withdrawals and restake excess funds
             Self::process_matured_withdrawals(origin)?;
             Ok(())
         }
@@ -696,7 +695,6 @@ pub mod pallet {
         pub fn process_matured_withdrawals(origin: OriginFor<T>) -> DispatchResult {
             log::trace!("process_matured_withdrawals");
             T::ManageOrigin::ensure_origin(origin.clone())?;
-            // TODO: these two fns share a duplicate a lot of code, refactor it into here
             Self::finish_unstaking_collators();
             Self::do_process_matured_withdrawals()?;
             Self::do_rebalance_remaining_funds()?;
@@ -930,8 +928,7 @@ pub mod pallet {
                         },
                         Ok(_) => {
                             // collator was unstaked
-                            // TODO: check if other bookkeeping needs updating
-                            SumOfDeposits::<T>::mutate(|balance| *balance = (*balance).saturating_sub(balance_to_unstake)); // XXX: Maybe checked_sub
+                            SumOfDeposits::<T>::mutate(|balance| *balance = (*balance).saturating_sub(balance_to_unstake));
                             log::debug!("Unstaked {:?} from collator {:?}",balance_to_unstake,collator.account.clone());
                             // don't retain this collator in the unstaking collators vec
                             false
@@ -952,19 +949,21 @@ pub mod pallet {
         fn do_rebalance_remaining_funds() -> DispatchResult {
             log::trace!(function_name!());
             // Only restake what isn't needed to service outstanding withdrawal requests
-
-            // TODO: If we have outstanding out-of-timelock withdrawal requests, do nothing
             let stakable_balance = Self::current_prize_pool();
             if stakable_balance.is_zero() {
                 log::debug!("Nothing to restake");
                 return Ok(());
             }
-
             for (collator, amount_to_stake) in
                 Self::calculate_deposit_distribution(stakable_balance)
             {
-                Self::do_stake_one_collator(collator, amount_to_stake)?;
+                Self::do_stake_one_collator(collator.clone(), amount_to_stake.clone())?;
                 TotalPot::<T>::mutate(|balance| *balance += amount_to_stake);
+                log::debug!(
+                    "Rebalanced {:?} to collator {:?}",
+                    amount_to_stake,
+                    collator
+                );
             }
             Ok(())
         }

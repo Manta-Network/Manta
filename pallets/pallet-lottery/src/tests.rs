@@ -395,7 +395,7 @@ fn winner_distribution_should_be_equal_with_equal_deposits() {
             }
             log::error!("{:?}",winners);
             assert_eq!(
-                winners.len(),
+                winners.len() as u32,
                 NUMBER_OF_USERS
             );
         });
