@@ -74,6 +74,11 @@ runtime-common = { path = '../common', features = ["test-helpers"] }
 session-key-primitives = { path = '../../primitives/session-keys' }
 
 [features]
+runtime-benchmarks = [
+  "pallet-conviction-voting/runtime-benchmarks",
+  "pallet-referenda/runtime-benchmarks",
+  "pallet-ranked-collective/runtime-benchmarks",
+]
 calamari = [
   "dep:calamari-runtime",
 ]
@@ -81,4 +86,3 @@ default = ["manta"]
 manta = [
   "dep:manta-runtime",
 ]
-runtime-benchmarks = []
