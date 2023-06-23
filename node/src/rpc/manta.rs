@@ -76,8 +76,7 @@ where
         .merge(manta_sbt_rpc)
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
-    let lottery_rpc: jsonrpsee::RpcModule<Lottery<Block, C>> =
-        Lottery::new(client.clone()).into_rpc();
+    let lottery_rpc: jsonrpsee::RpcModule<Lottery<Block, C>> = Lottery::new(client).into_rpc();
     module
         .merge(lottery_rpc)
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
