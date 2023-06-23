@@ -55,7 +55,7 @@ impl<T: Config> Pallet<T> {
         for collator in active_collators_we_are_staked_with {
             let staked = StakedCollators::<T>::get(collator.clone());
             let info = pallet_parachain_staking::Pallet::<T>::candidate_info(collator.clone())
-                .expect("is active collator, therefor it has collator info. qed");
+                .expect("is active collator, therefore it has collator info. qed");
             if staked < info.lowest_top_delegation_amount {
                 // TODO: Small optimization: sort collators ascending by missing amount so we get the largest amount of collators active before running out of funds
                 let deposit =
@@ -87,7 +87,7 @@ impl<T: Config> Pallet<T> {
         // TODO: Small optimization: Also consider points / pointsAwarded to not stake to collators missing blocks
 
         let mut top_collator_accounts =
-            pallet_parachain_staking::Pallet::<T>::compute_top_candidates(); // XXX: This can select collators that are joined but not yet active
+            pallet_parachain_staking::Pallet::<T>::compute_top_candidates(); // XXX: This can select collators that are joined but not yet producing blocks
         if top_collator_accounts.is_empty() {
             // Use `SelectedCandidates` as fallback (should basically never happen)
             log::warn!("Lottery falling back to selected candidates");
@@ -183,7 +183,7 @@ impl<T: Config> Pallet<T> {
                 .cloned()
                 .map(|a| a.1)
                 .reduce(|acc, balance| acc + balance)
-                .unwrap();
+                .expect("reduce returns None on empty iterator. we checked that `underallocated_collators` is not empty. qed");
             log::debug!(
                 "Underallocated tokens {:?} on selected collators: {:?}",
                 total_underallocation,
@@ -217,7 +217,9 @@ impl<T: Config> Pallet<T> {
         }
         // if we had to skip a collator above due to not getting into the top deposit, we just lump the rest into the collator with the lowest stake
         if !deposits.is_empty() && !remaining_deposit.is_zero() {
-            let mut underallocated_collators = deposits.pop().unwrap();
+            let mut underallocated_collators = deposits.pop().expect(
+                "we checked that deposits is not empty, therefore pop will return Some. qed",
+            );
             underallocated_collators.1 += remaining_deposit;
             remaining_deposit.set_zero();
             deposits.push(underallocated_collators);

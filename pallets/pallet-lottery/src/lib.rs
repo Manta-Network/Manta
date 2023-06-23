@@ -876,7 +876,10 @@ pub mod pallet {
                 payout_for_winner,
                 winner
             );
-            Self::deposit_event(Event::LotteryWinner(winner.unwrap(), payout_for_winner));
+            Self::deposit_event(Event::LotteryWinner(
+                winner.expect("We exited earlier if winner was None. qed"),
+                payout_for_winner,
+            ));
             Ok(())
         }
 
@@ -1051,14 +1054,14 @@ pub mod pallet {
         }
         /// funds in the lottery pallet that are not needed/reserved for anything and can be paid to the next winner
         pub fn current_prize_pool() -> BalanceOf<T> {
-            let outstanding_withdrawal_requests = <WithdrawalRequestQueue<T>>::get()
+            let outstanding_balance_to_withdraw = <WithdrawalRequestQueue<T>>::get()
                 .iter()
                 .map(|request| request.balance)
                 .reduce(|acc, balance| acc + balance)
                 .unwrap_or_else(|| 0u32.into());
             Self::surplus_funds()
                 .saturating_sub(Self::gas_reserve())
-                .saturating_sub(outstanding_withdrawal_requests)
+                .saturating_sub(outstanding_balance_to_withdraw)
         }
         /// Returns if we're within the pre-drawing time where deposits/withdrawals are frozen
         pub fn not_in_drawing_freezeout() -> bool {
