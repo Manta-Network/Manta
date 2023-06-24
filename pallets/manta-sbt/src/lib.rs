@@ -119,7 +119,11 @@ pub mod runtime;
 // One in encoded form, used to check that value input in `ToPrivate` post is one
 const ENCODED_ONE: [u8; 16] = 1u128.to_le_bytes();
 
+/// Permissionless mint id
 const MANTA_MINT_ID: MintId = 0;
+
+/// Hard cap of AssetIds availible for force mints
+const MAX_FORCE_ASSET_ID: StandardAssetId = 2_000_000;
 
 /// Type alias for currency balance.
 pub type BalanceOf<T> =
@@ -128,7 +132,7 @@ pub type BalanceOf<T> =
 /// Eth based address
 type EvmAddress = H160;
 
-/// A signature (a 512-bit value, plus 8 bits for recovery ID).
+/// A 512-bit value, plus 8 bits for recovery ID).
 pub type Eip712Signature = [u8; 65];
 
 /// Each mint type shall have a unique id
@@ -371,7 +375,7 @@ pub mod pallet {
                 extra: Some(metadata),
             };
 
-            SbtMetadataV2::<T>::insert(start_id, sbt_metadata);
+            Self::check_and_insert_metadata(start_id, sbt_metadata)?;
             let increment_start_id = start_id
                 .checked_add(One::one())
                 .ok_or(ArithmeticError::Overflow)?;
@@ -505,15 +509,13 @@ pub mod pallet {
             EvmAccountAllowlist::<T>::insert(mint_id, address, MintStatus::AlreadyMinted);
 
             Self::check_post_shape(&post, asset_id)?;
-
             let sbt_metadata = MetadataV2::<T::SbtMetadataBound> {
                 mint_id,
                 collection_id,
                 item_id,
                 extra: metadata,
             };
-
-            SbtMetadataV2::<T>::insert(asset_id, sbt_metadata);
+            Self::check_and_insert_metadata(asset_id, sbt_metadata)?;
 
             Self::post_transaction(vec![who], *post)?;
             Self::deposit_event(Event::<T>::MintSbtEvm {
@@ -694,7 +696,10 @@ pub mod pallet {
                 item_id: None,
                 extra: Some(metadata),
             };
-            SbtMetadataV2::<T>::insert(asset_id, sbt_metadata);
+
+            // check that asset id is below max allowed number
+            ensure!(asset_id < MAX_FORCE_ASSET_ID, Error::<T>::TooHighAssetId);
+            Self::check_and_insert_metadata(asset_id, sbt_metadata)?;
             Self::post_transaction(vec![minting_account.clone()], *post)?;
 
             Self::deposit_event(Event::<T>::ForceToPrivate {
@@ -732,7 +737,10 @@ pub mod pallet {
                 item_id,
                 extra: Some(metadata),
             };
-            SbtMetadataV2::<T>::insert(asset_id, sbt_metadata);
+
+            // check that asset id is below max allowed number
+            ensure!(asset_id < MAX_FORCE_ASSET_ID, Error::<T>::TooHighAssetId);
+            Self::check_and_insert_metadata(asset_id, sbt_metadata)?;
 
             // manually insert address, note no signature check.
             EvmAccountAllowlist::<T>::insert(mint_id, address, MintStatus::AlreadyMinted);
@@ -1045,6 +1053,12 @@ pub mod pallet {
 
         /// Account is not privileged account able to do force mints
         NotForceAccount,
+
+        /// Duplicate asset id
+        DuplicateAssetId,
+
+        /// Force call is trying to use asset id above the maximum
+        TooHighAssetId,
     }
 }
 
@@ -1352,6 +1366,20 @@ where
         wrap_msg.extend_from_slice(&msg);
         wrap_msg.extend("</Bytes>".as_bytes());
         wrap_msg
+    }
+
+    #[inline]
+    fn check_and_insert_metadata(
+        asset_id: StandardAssetId,
+        sbt_metadata: MetadataV2<T::SbtMetadataBound>,
+    ) -> DispatchResult {
+        // defensive check to ensure asset id is unique
+        ensure!(
+            !SbtMetadataV2::<T>::contains_key(asset_id),
+            Error::<T>::DuplicateAssetId
+        );
+        SbtMetadataV2::<T>::insert(asset_id, sbt_metadata);
+        Ok(())
     }
 
     /// Returns an Ethereum public key derived from an Ethereum secret key.
