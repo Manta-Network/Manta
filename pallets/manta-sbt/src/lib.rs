@@ -742,6 +742,11 @@ pub mod pallet {
             ensure!(asset_id < MAX_FORCE_ASSET_ID, Error::<T>::TooHighAssetId);
             Self::check_and_insert_metadata(asset_id, sbt_metadata)?;
 
+            // defensively check whether this key already exists
+            ensure!(
+                !EvmAccountAllowlist::<T>::contains_key(mint_id, address),
+                Error::<T>::AlreadyInAllowlist
+            );
             // manually insert address, note no signature check.
             EvmAccountAllowlist::<T>::insert(mint_id, address, MintStatus::AlreadyMinted);
             Self::post_transaction(vec![minting_account], *post)?;
