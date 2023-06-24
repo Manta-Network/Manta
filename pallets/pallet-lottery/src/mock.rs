@@ -19,13 +19,10 @@ use core::marker::PhantomData;
 
 use crate as pallet_lottery;
 use crate::{pallet, Config};
-use calamari_runtime::currency::{mKMA, KMA};
+use calamari_runtime::currency::KMA;
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{
-        ConstU128, ConstU32, ConstU8, Everything, GenesisBuild, Get, LockIdentifier, OnFinalize,
-        OnInitialize,
-    },
+    traits::{ConstU128, ConstU32, Everything, GenesisBuild, OnFinalize, OnInitialize},
     weights::Weight,
 };
 use frame_system::pallet_prelude::*;
@@ -142,8 +139,18 @@ impl pallet_preimage::Config for Test {
     type ManagerOrigin = EnsureRoot<AccountId>;
     // The sum of the below 2 amounts will get reserved every time someone submits a preimage.
     // Their sum will be unreserved when the preimage is requested, i.e. when it is going to be used.
-    type BaseDeposit = ConstU128<{ 1 * KMA }>;
-    type ByteDeposit = ConstU128<{ 1 * KMA }>;
+    type BaseDeposit = ConstU128<
+        {
+            /* 1 */
+            KMA
+        },
+    >;
+    type ByteDeposit = ConstU128<
+        {
+            /* 1 */
+            KMA
+        },
+    >;
 }
 use sp_std::cmp::Ordering;
 pub struct OriginPrivilegeCmp;
@@ -275,7 +282,7 @@ parameter_types! {
     /// Time in blocks between lottery drawings
     pub DrawingInterval: BlockNumber =  3 * MINUTES;
     /// Time in blocks *before* a drawing in which modifications of the win-eligble pool are prevented
-    pub DrawingFreezeout: BlockNumber = 1 * MINUTES;
+    pub DrawingFreezeout: BlockNumber = /*1*/ MINUTES;
     /// Time in blocks until a collator is done unstaking
     pub UnstakeLockTime: BlockNumber = LeaveDelayRounds::get() * DefaultBlocksPerRound::get();
 }
@@ -290,7 +297,7 @@ impl frame_support::traits::EstimateCallFee<pallet_parachain_staking::Call<Test>
 {
     fn estimate_call_fee(
         _call: &pallet_parachain_staking::Call<Test>,
-        _post_info: frame_support::weights::PostDispatchInfo,
+        _post_info: frame_support::dispatch::PostDispatchInfo,
     ) -> BalanceOf<Test> {
         7 * KMA
     }
@@ -300,7 +307,7 @@ impl frame_support::traits::EstimateCallFee<pallet::Call<Test>, BalanceOf<Test>>
 {
     fn estimate_call_fee(
         _call: &pallet::Call<Test>,
-        _post_info: frame_support::weights::PostDispatchInfo,
+        _post_info: frame_support::dispatch::PostDispatchInfo,
     ) -> BalanceOf<Test> {
         3 * KMA
     }
@@ -416,16 +423,9 @@ pub mod from_bench {
     /// copied from frame benchmarking
     use super::*;
     use codec::{Decode, Encode};
-    use frame_support::{
-        dispatch::{DispatchError, DispatchErrorWithPostInfo},
-        pallet_prelude::*,
-        traits::{Get, StorageInfo},
-    };
-    // use serde::{Deserialize, Serialize};
+    use frame_support::traits::Get;
     use sp_io::hashing::blake2_256;
     use sp_runtime::traits::TrailingZeroInput;
-    use sp_std::{prelude::Box, vec::Vec};
-    // use sp_storage::TrackedStorageKey;
     pub fn account<AccountId: Decode>(name: &'static str, index: u32, seed: u32) -> AccountId {
         let entropy = (name, index, seed).using_encoded(blake2_256);
         Decode::decode(&mut TrailingZeroInput::new(entropy.as_ref()))
@@ -487,20 +487,6 @@ pub(crate) fn roll_to_round_end(round: u32) -> u32 {
 
 pub(crate) fn last_event() -> RuntimeEvent {
     System::events().pop().expect("Event expected").event
-}
-
-pub(crate) fn events() -> Vec<pallet_parachain_staking::Event<Test>> {
-    System::events()
-        .into_iter()
-        .map(|r| r.event)
-        .filter_map(|e| {
-            if let RuntimeEvent::ParachainStaking(inner) = e {
-                Some(inner)
-            } else {
-                None
-            }
-        })
-        .collect::<Vec<_>>()
 }
 
 /// Assert input equal to the last event emitted
@@ -612,22 +598,6 @@ macro_rules! assert_event_not_emitted {
             }
         }
     };
-}
-
-// Same storage changes as ParachainStaking::on_finalize
-// pub(crate) fn set_author(round: u32, acc: u64, pts: u32) {
-//     <Points<Test>>::mutate(round, |p| *p += pts);
-//     <AwardedPts<Test>>::mutate(round, acc, |p| *p += pts);
-// }
-
-/// fn to query the lock amount
-pub(crate) fn query_lock_amount(account_id: u64, id: LockIdentifier) -> Option<Balance> {
-    for lock in Balances::locks(&account_id) {
-        if lock.id == id {
-            return Some(lock.amount);
-        }
-    }
-    None
 }
 
 #[frame_support::pallet]

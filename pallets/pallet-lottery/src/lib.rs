@@ -280,8 +280,8 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(fn deposit_event)]
     pub enum Event<T: Config> {
-        LotteryStarted(T::BlockNumber),
-        LotteryStopped(T::BlockNumber),
+        LotteryStarted,
+        LotteryStopped,
         LotteryWinner(T::AccountId, BalanceOf<T>),
         Deposited(T::AccountId, BalanceOf<T>),
         ScheduledWithdraw(T::AccountId, BalanceOf<T>),
@@ -578,8 +578,6 @@ pub mod pallet {
         #[pallet::weight(<T as Config>::WeightInfo::start_lottery())]
         pub fn start_lottery(origin: OriginFor<T>) -> DispatchResult {
             T::ManageOrigin::ensure_origin(origin.clone())?;
-
-            let now = <frame_system::Pallet<T>>::block_number();
             ensure!(
                 Self::next_drawing_at().is_none(),
                 Error::<T>::LotteryIsRunning
@@ -607,7 +605,7 @@ pub mod pallet {
             )
             .map_err(|_| Error::<T>::CouldNotSchedule)?;
 
-            Self::deposit_event(Event::LotteryStarted(now + drawing_interval));
+            Self::deposit_event(Event::LotteryStarted);
             Ok(())
         }
 
@@ -626,12 +624,9 @@ pub mod pallet {
         #[pallet::weight(<T as Config>::WeightInfo::stop_lottery())]
         pub fn stop_lottery(origin: OriginFor<T>) -> DispatchResult {
             T::ManageOrigin::ensure_origin(origin.clone())?;
-
             T::Scheduler::cancel_named(Self::lottery_schedule_id())
                 .map_err(|_| Error::<T>::LotteryNotStarted)?;
-
-            let now = <frame_system::Pallet<T>>::block_number();
-            Self::deposit_event(Event::LotteryStopped(now));
+            Self::deposit_event(Event::LotteryStopped);
             Ok(())
         }
 
