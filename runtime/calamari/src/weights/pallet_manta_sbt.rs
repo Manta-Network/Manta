@@ -55,8 +55,8 @@ pub trait WeightInfo {
     fn mint_sbt_eth() -> Weight;
     fn change_free_reserve_account() -> Weight;
     fn remove_allowlist_evm_account() -> Weight;
-	fn set_next_sbt_id() -> Weight;
-	fn force_to_private() -> Weight;
+    fn set_next_sbt_id() -> Weight;
+    fn force_to_private() -> Weight;
     fn force_mint_sbt_eth() -> Weight;
     fn change_force_account() -> Weight;
 }
