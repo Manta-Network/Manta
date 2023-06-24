@@ -60,7 +60,8 @@ use manta_primitives::{
 };
 use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
 use runtime_common::{
-    prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, SlowAdjustingFeeUpdate,
+    prod_or_fast, BlockExecutionWeight, BlockHashCount,
+    CalamariSlowAdjustingFeeUpdate as SlowAdjustingFeeUpdate, ExtrinsicBaseWeight,
 };
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
@@ -126,7 +127,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("dolphin"),
     impl_name: create_runtime_str!("dolphin"),
     authoring_version: 2,
-    spec_version: 4102,
+    spec_version: 4200,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 8,

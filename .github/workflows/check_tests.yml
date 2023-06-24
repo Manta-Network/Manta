@@ -14,8 +14,8 @@ env:
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
 jobs:
-  start-unit-test-checks:
-    timeout-minutes: 240
+  start-integration-test-checks:
+    timeout-minutes: 480
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -73,23 +73,15 @@ jobs:
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
+          rustup update
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
-      - name: Run Unit Tests
-        env:
-          RUST_BACKTRACE: full
-          RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 20G
-          SCCACHE_DIR: /home/runner/.cache/sccache
-        run: |
-          source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime --workspace --exclude integration-tests
       - name: Run Integration Tests
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 20G
+          SCCACHE_CACHE_SIZE: 120G
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
@@ -100,7 +92,7 @@ jobs:
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 20G
+          SCCACHE_CACHE_SIZE: 120G
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
@@ -132,9 +124,9 @@ jobs:
             await octokit.rest.issues.updateComment({ owner, repo, comment_id: existingComment.id, body: updatedComment });
       - name: stop sccache server
         run: sccache --stop-server || true
-  stop-unit-test-checks:
+  stop-integration-test-checks:
     timeout-minutes: 15
-    needs: start-unit-test-checks
+    needs: start-integration-test-checks
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
@@ -145,9 +137,9 @@ jobs:
           github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-unit-test-checks.outputs.aws-region }}
-          runner-label: ${{ needs.start-unit-test-checks.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-unit-test-checks.outputs.aws-instance-id }}
+          aws-region: ${{ needs.start-integration-test-checks.outputs.aws-region }}
+          runner-label: ${{ needs.start-integration-test-checks.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-integration-test-checks.outputs.aws-instance-id }}
       - name: discard stopper success/failure
         run: true
   start-benchmark-checks:
@@ -216,7 +208,7 @@ jobs:
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 20G
+          SCCACHE_CACHE_SIZE: 120G
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           RUSTC_BOOTSTRAP=1 cargo run --release --features runtime-benchmarks,try-runtime \
@@ -244,5 +236,96 @@ jobs:
           aws-region: ${{ needs.start-benchmark-checks.outputs.aws-region }}
           runner-label: ${{ needs.start-benchmark-checks.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-benchmark-checks.outputs.aws-instance-id }}
+      - name: discard stopper success/failure
+        run: true
+  start-unit-test-checks:
+    timeout-minutes: 480
+    runs-on: ubuntu-20.04
+    outputs:
+      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    steps:
+      - id: start-self-hosted-runner
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: start
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
+          aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
+          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
+      - uses: actions/checkout@v2
+      - name: install sccache
+        env:
+          SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
+          SCCACHE_VERSION: v0.2.15
+        run: |
+          SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
+          mkdir -p $HOME/.local/bin
+          curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
+          mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
+          chmod +x $HOME/.local/bin/sccache
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-
+      - name: cache sccache
+        uses: actions/cache@v2
+        continue-on-error: false
+        with:
+          path: /home/runner/.cache/sccache
+          key: sccache-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            sccache-
+      - name: start sccache server
+        run: sccache --start-server
+      - name: init
+        run: |
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          protoc --version
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup update
+          rustup toolchain install nightly-2023-03-03
+          rustup default nightly-2023-03-03
+          rustup target add wasm32-unknown-unknown
+      - name: Run Unit Tests
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          SCCACHE_CACHE_SIZE: 120G
+          SCCACHE_DIR: /home/runner/.cache/sccache
+        run: |
+          source ${HOME}/.cargo/env
+          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime --workspace --exclude integration-tests
+      - name: stop sccache server
+        run: sccache --stop-server || true
+  stop-unit-test-checks:
+    needs: start-unit-test-checks
+    runs-on: ubuntu-20.04
+    if: ${{ always() }}
+    steps:
+      - continue-on-error: true
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: stop
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.start-integration-test-checks.outputs.aws-region }}
+          runner-label: ${{ needs.start-integration-test-checks.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-integration-test-checks.outputs.aws-instance-id }}
       - name: discard stopper success/failure
         run: true
