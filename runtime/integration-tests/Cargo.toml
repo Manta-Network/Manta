@@ -81,4 +81,8 @@ default = ["manta"]
 manta = [
   "dep:manta-runtime",
 ]
-runtime-benchmarks = []
+runtime-benchmarks = [
+  "pallet-conviction-voting/runtime-benchmarks",
+  "pallet-referenda/runtime-benchmarks",
+  "pallet-ranked-collective/runtime-benchmarks",
+]
