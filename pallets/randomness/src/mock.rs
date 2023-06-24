@@ -116,17 +116,10 @@ impl Config for Test {
 }
 
 /// Externality builder for pallet randomness mock runtime
+#[derive(Default)]
 pub(crate) struct ExtBuilder {
     /// Balance amounts per AccountId
     balances: Vec<(AccountId, Balance)>,
-}
-
-impl Default for ExtBuilder {
-    fn default() -> ExtBuilder {
-        ExtBuilder {
-            balances: Vec::new(),
-        }
-    }
 }
 
 impl ExtBuilder {
