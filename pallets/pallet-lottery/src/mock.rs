@@ -29,7 +29,7 @@ use frame_system::pallet_prelude::*;
 use manta_primitives::types::{BlockNumber, Header};
 use pallet_parachain_staking::{InflationInfo, Range};
 use sp_core::H256;
-use sp_io;
+
 use sp_runtime::{
     traits::{BlakeTwo256, Hash, IdentityLookup},
     Perbill, Percent,
@@ -494,108 +494,7 @@ pub(crate) fn last_event() -> RuntimeEvent {
 macro_rules! assert_last_event {
     ($event:expr) => {
         match &$event {
-            e => assert_eq!(*e, crate::mock::last_event()),
-        }
-    };
-}
-
-/// Compares the system events with passed in events
-/// Prints highlighted diff iff assert_eq fails
-#[macro_export]
-macro_rules! assert_eq_events {
-    ($events:expr) => {
-        match &$events {
-            e => similar_asserts::assert_eq!(*e, crate::mock::events()),
-        }
-    };
-}
-
-/// Compares the last N system events with passed in events, where N is the length of events passed
-/// in.
-///
-/// Prints highlighted diff iff assert_eq fails.
-/// The last events from frame_system will be taken in order to match the number passed to this
-/// macro. If there are insufficient events from frame_system, they will still be compared; the
-/// output may or may not be helpful.
-///
-/// Examples:
-/// If frame_system has events [A, B, C, D, E] and events [C, D, E] are passed in, the result would
-/// be a successful match ([C, D, E] == [C, D, E]).
-///
-/// If frame_system has events [A, B, C, D] and events [B, C] are passed in, the result would be an
-/// error and a hopefully-useful diff will be printed between [C, D] and [B, C].
-///
-/// Note that events are filtered to only match parachain-staking (see events()).
-#[macro_export]
-macro_rules! assert_eq_last_events {
-    ($events:expr $(,)?) => {
-        assert_tail_eq!($events, crate::mock::events());
-    };
-    ($events:expr, $($arg:tt)*) => {
-        assert_tail_eq!($events, crate::mock::events(), $($arg)*);
-    };
-}
-
-/// Assert that one array is equal to the tail of the other. A more generic and testable version of
-/// assert_eq_last_events.
-#[macro_export]
-macro_rules! assert_tail_eq {
-    ($tail:expr, $arr:expr $(,)?) => {
-        if $tail.len() != 0 {
-            // 0-length always passes
-
-            if $tail.len() > $arr.len() {
-                similar_asserts::assert_eq!($tail, $arr); // will fail
-            }
-
-            let len_diff = $arr.len() - $tail.len();
-            similar_asserts::assert_eq!($tail, $arr[len_diff..]);
-        }
-    };
-    ($tail:expr, $arr:expr, $($arg:tt)*) => {
-        if $tail.len() != 0 {
-            // 0-length always passes
-
-            if $tail.len() > $arr.len() {
-                similar_asserts::assert_eq!($tail, $arr, $($arg)*); // will fail
-            }
-
-            let len_diff = $arr.len() - $tail.len();
-            similar_asserts::assert_eq!($tail, $arr[len_diff..], $($arg)*);
-        }
-    };
-}
-
-/// Panics if an event is not found in the system log of events
-#[macro_export]
-macro_rules! assert_event_emitted {
-    ($event:expr) => {
-        match &$event {
-            e => {
-                assert!(
-                    crate::mock::events().iter().find(|x| *x == e).is_some(),
-                    "Event {:?} was not found in events: \n {:?}",
-                    e,
-                    crate::mock::events()
-                );
-            }
-        }
-    };
-}
-
-/// Panics if an event is found in the system log of events
-#[macro_export]
-macro_rules! assert_event_not_emitted {
-    ($event:expr) => {
-        match &$event {
-            e => {
-                assert!(
-                    crate::mock::events().iter().find(|x| *x == e).is_none(),
-                    "Event {:?} was found in events: \n {:?}",
-                    e,
-                    crate::mock::events()
-                );
-            }
+            e => assert_eq!(*e, $crate::mock::last_event()),
         }
     };
 }
@@ -661,42 +560,4 @@ fn roll_to_round_end_works() {
         assert_eq!(System::block_number(), 44);
         assert_eq!(num_blocks, 15);
     });
-}
-
-#[test]
-fn assert_tail_eq_works() {
-    assert_tail_eq!(vec![1, 2], vec![0, 1, 2]);
-
-    assert_tail_eq!(vec![1], vec![1]);
-
-    assert_tail_eq!(
-        vec![0u32; 0], // 0 length array
-        vec![0u32; 1]  // 1-length array
-    );
-
-    assert_tail_eq!(vec![0u32, 0], vec![0u32, 0]);
-}
-
-#[test]
-#[should_panic]
-fn assert_tail_eq_panics_on_non_equal_tail() {
-    assert_tail_eq!(vec![2, 2], vec![0, 1, 2]);
-}
-
-#[test]
-#[should_panic]
-fn assert_tail_eq_panics_on_empty_arr() {
-    assert_tail_eq!(vec![2, 2], vec![0u32; 0]);
-}
-
-#[test]
-#[should_panic]
-fn assert_tail_eq_panics_on_longer_tail() {
-    assert_tail_eq!(vec![1, 2, 3], vec![1, 2]);
-}
-
-#[test]
-#[should_panic]
-fn assert_tail_eq_panics_on_unequal_elements_same_length_array() {
-    assert_tail_eq!(vec![1, 2, 3], vec![0, 1, 2]);
 }
