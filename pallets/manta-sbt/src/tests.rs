@@ -1228,7 +1228,7 @@ fn force_to_private_works() {
         assert_noop!(
             MantaSBTPallet::force_to_private(
                 MockOrigin::signed(ALICE),
-                Box::new(post.clone()),
+                Box::new(post),
                 0,
                 bvec![0],
                 ALICE,
