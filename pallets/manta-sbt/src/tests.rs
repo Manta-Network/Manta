@@ -20,7 +20,7 @@ use crate::{
     mock::{new_test_ext, Balances, MantaSBTPallet, RuntimeOrigin as MockOrigin, Test, Timestamp},
     AllowlistAccount, DispatchError, Error, EvmAccountAllowlist, EvmAddress, ForceAccount,
     FreeReserveAccount, MintId, MintIdRegistry, MintStatus, ReservedIds, SbtMetadataV2,
-    SignatureInfoOf, MANTA_MINT_ID, MAX_FORCE_ASSET_ID,
+    SignatureInfoOf, MANTA_MINT_ID,
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use manta_crypto::{
@@ -1187,7 +1187,8 @@ fn force_to_private_works() {
     new_test_ext().execute_with(|| {
         let value = 1;
         let id = field_from_id(1);
-        let max_id = field_from_id(MAX_FORCE_ASSET_ID);
+        let next_sbt = 1000;
+        let max_id = field_from_id(next_sbt);
 
         let post = sample_to_private(id, value, &mut rng);
         let max_post = sample_to_private(max_id, value, &mut rng);
@@ -1205,6 +1206,10 @@ fn force_to_private_works() {
         assert_ok!(MantaSBTPallet::change_force_account(
             MockOrigin::root(),
             Some(ALICE)
+        ));
+        assert_ok!(MantaSBTPallet::set_next_sbt_id(
+            MockOrigin::root(),
+            Some(next_sbt)
         ));
         assert_noop!(
             MantaSBTPallet::force_to_private(
@@ -1245,7 +1250,8 @@ fn force_mint_sbt_eth_works() {
         let value = 1;
         let id = field_from_id(1);
         let ten = field_from_id(10);
-        let max_id = field_from_id(MAX_FORCE_ASSET_ID);
+        let next_sbt = 1000;
+        let max_id = field_from_id(next_sbt);
 
         let post = sample_to_private(id, value, &mut rng);
         let ten_post = sample_to_private(ten, value, &mut rng);
@@ -1267,6 +1273,10 @@ fn force_mint_sbt_eth_works() {
         assert_ok!(MantaSBTPallet::change_force_account(
             MockOrigin::root(),
             Some(ALICE)
+        ));
+        assert_ok!(MantaSBTPallet::set_next_sbt_id(
+            MockOrigin::root(),
+            Some(next_sbt)
         ));
         assert_noop!(
             MantaSBTPallet::force_mint_sbt_eth(

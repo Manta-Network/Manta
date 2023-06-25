@@ -122,9 +122,6 @@ const ENCODED_ONE: [u8; 16] = 1u128.to_le_bytes();
 /// Permissionless mint id
 const MANTA_MINT_ID: MintId = 0;
 
-/// Hard cap of AssetIds availible for force mints
-const MAX_FORCE_ASSET_ID: StandardAssetId = 2_000_000;
-
 /// Type alias for currency balance.
 pub type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -697,8 +694,15 @@ pub mod pallet {
                 extra: Some(metadata),
             };
 
-            // check that asset id is below max allowed number
-            ensure!(asset_id < MAX_FORCE_ASSET_ID, Error::<T>::TooHighAssetId);
+            // check that asset id is below `NextSbtId`
+            if let Some(next_asset_it) = NextSbtId::<T>::get() {
+                // check that asset id is below max allowed number
+                ensure!(asset_id < next_asset_it, Error::<T>::TooHighAssetId);
+                Ok(())
+            } else {
+                Err(Error::<T>::TooHighAssetId)
+            }?;
+
             Self::check_and_insert_metadata(asset_id, sbt_metadata)?;
             Self::post_transaction(vec![minting_account.clone()], *post)?;
 
@@ -738,8 +742,14 @@ pub mod pallet {
                 extra: Some(metadata),
             };
 
-            // check that asset id is below max allowed number
-            ensure!(asset_id < MAX_FORCE_ASSET_ID, Error::<T>::TooHighAssetId);
+            // check that asset id is below `NextSbtId`
+            if let Some(next_asset_it) = NextSbtId::<T>::get() {
+                // check that asset id is below max allowed number
+                ensure!(asset_id < next_asset_it, Error::<T>::TooHighAssetId);
+                Ok(())
+            } else {
+                Err(Error::<T>::TooHighAssetId)
+            }?;
             Self::check_and_insert_metadata(asset_id, sbt_metadata)?;
 
             // defensively check whether this key already exists
