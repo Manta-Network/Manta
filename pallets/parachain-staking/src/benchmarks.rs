@@ -170,7 +170,7 @@ benchmarks! {
     // ROOT DISPATCHABLES
 
     set_total_selected {
-        Pallet::<T>::set_total_selected(RawOrigin::Root.into(), 100u32)?;
+        Pallet::<T>::set_blocks_per_round(RawOrigin::Root.into(), 100u32)?;
     }: _(RawOrigin::Root, 100u32)
     verify {
         assert_eq!(Pallet::<T>::total_selected(), 100u32);
