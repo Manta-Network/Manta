@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    benchmark::precomputed_coins::TO_PRIVATE, AccountId, Box, Call, Config, Pallet,
+    benchmark::precomputed_coins::TO_PRIVATE, AccountId, Box, Call, Config, EvmAddress, Pallet,
     Pallet as MantaSBTPallet, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, vec, whitelisted_caller};
@@ -184,6 +184,54 @@ benchmarks! {
         RawOrigin::Root,
         bab_id,
         H160::default()
+    )
+
+    set_next_sbt_id {
+    }: set_next_sbt_id(
+        RawOrigin::Root,
+        Some(100)
+    )
+
+    force_to_private {
+        let caller: T::AccountId = whitelisted_caller();
+        MantaSBTPallet::<T>::change_force_account(
+            RawOrigin::Root.into(),
+            Some(caller.clone())
+        )?;
+        MantaSBTPallet::<T>::set_next_sbt_id(RawOrigin::Root.into(), Some(100))?;
+        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
+    }: force_to_private(
+        RawOrigin::Signed(caller.clone()),
+        Box::new(mint_post),
+        0,
+        vec![].try_into().unwrap(),
+        caller.clone()
+    )
+
+    force_mint_sbt_eth {
+        let caller: T::AccountId = whitelisted_caller();
+        MantaSBTPallet::<T>::change_force_account(
+            RawOrigin::Root.into(),
+            Some(caller.clone())
+        )?;
+        MantaSBTPallet::<T>::set_next_sbt_id(RawOrigin::Root.into(), Some(100))?;
+        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
+    }: force_mint_sbt_eth(
+        RawOrigin::Signed(caller.clone()),
+        Box::new(mint_post),
+        0,
+        EvmAddress::default(),
+        None,
+        None,
+        vec![].try_into().unwrap(),
+        caller.clone()
+    )
+
+    change_force_account {
+        let caller = whitelisted_caller();
+    }: change_force_account(
+        RawOrigin::Root,
+        Some(caller)
     )
 }
 
