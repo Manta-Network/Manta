@@ -18,8 +18,9 @@
 
 use crate::{
     mock::{new_test_ext, Balances, MantaSBTPallet, RuntimeOrigin as MockOrigin, Test, Timestamp},
-    AllowlistAccount, DispatchError, Error, EvmAccountAllowlist, EvmAddress, FreeReserveAccount,
-    MintId, MintIdRegistry, MintStatus, ReservedIds, SbtMetadataV2, SignatureInfoOf, MANTA_MINT_ID,
+    AllowlistAccount, DispatchError, Error, EvmAccountAllowlist, EvmAddress, ForceAccount,
+    FreeReserveAccount, MintId, MintIdRegistry, MintStatus, ReservedIds, SbtMetadataV2,
+    SignatureInfoOf, MANTA_MINT_ID,
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use manta_crypto::{
@@ -1135,5 +1136,200 @@ fn update_mint_info_works() {
             bvec![],
             true,
         ));
+    })
+}
+
+#[test]
+fn set_sbt_id_works() {
+    new_test_ext().execute_with(|| {
+        assert_noop!(
+            MantaSBTPallet::set_next_sbt_id(MockOrigin::signed(ALICE), Some(10)),
+            DispatchError::BadOrigin
+        );
+        assert_ok!(MantaSBTPallet::set_next_sbt_id(
+            MockOrigin::root(),
+            Some(1_000_000)
+        ));
+
+        initialize_test();
+        assert_eq!(
+            ReservedIds::<Test>::get(ALICE).unwrap(),
+            (1_000_000, 1_000_004)
+        );
+    })
+}
+
+#[test]
+fn change_force_account_works() {
+    new_test_ext().execute_with(|| {
+        assert_noop!(
+            MantaSBTPallet::change_force_account(MockOrigin::signed(ALICE), Some(ALICE)),
+            DispatchError::BadOrigin
+        );
+        assert_eq!(ForceAccount::<Test>::get(), None);
+
+        assert_ok!(MantaSBTPallet::change_force_account(
+            MockOrigin::root(),
+            Some(ALICE)
+        ));
+        assert_eq!(ForceAccount::<Test>::get().unwrap(), ALICE);
+        assert_ok!(MantaSBTPallet::change_force_account(
+            MockOrigin::root(),
+            None
+        ));
+        assert_eq!(ForceAccount::<Test>::get(), None);
+    })
+}
+
+#[test]
+fn force_to_private_works() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        let value = 1;
+        let id = field_from_id(1);
+        let next_sbt = 1000;
+        let max_id = field_from_id(next_sbt);
+
+        let post = sample_to_private(id, value, &mut rng);
+        let max_post = sample_to_private(max_id, value, &mut rng);
+        assert_noop!(
+            MantaSBTPallet::force_to_private(
+                MockOrigin::signed(ALICE),
+                Box::new(post.clone()),
+                0,
+                bvec![0],
+                ALICE,
+            ),
+            Error::<Test>::NotForceAccount
+        );
+
+        assert_ok!(MantaSBTPallet::change_force_account(
+            MockOrigin::root(),
+            Some(ALICE)
+        ));
+        assert_ok!(MantaSBTPallet::set_next_sbt_id(
+            MockOrigin::root(),
+            Some(next_sbt)
+        ));
+        assert_noop!(
+            MantaSBTPallet::force_to_private(
+                MockOrigin::signed(ALICE),
+                Box::new(max_post),
+                0,
+                bvec![0],
+                ALICE,
+            ),
+            Error::<Test>::TooHighAssetId
+        );
+
+        assert_ok!(MantaSBTPallet::force_to_private(
+            MockOrigin::signed(ALICE),
+            Box::new(post.clone()),
+            0,
+            bvec![0],
+            ALICE,
+        ));
+        // duplicate post will not post twice
+        assert_noop!(
+            MantaSBTPallet::force_to_private(
+                MockOrigin::signed(ALICE),
+                Box::new(post),
+                0,
+                bvec![0],
+                ALICE,
+            ),
+            Error::<Test>::DuplicateAssetId
+        );
+    })
+}
+
+#[test]
+fn force_mint_sbt_eth_works() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        let value = 1;
+        let id = field_from_id(1);
+        let ten = field_from_id(10);
+        let next_sbt = 1000;
+        let max_id = field_from_id(next_sbt);
+
+        let post = sample_to_private(id, value, &mut rng);
+        let ten_post = sample_to_private(ten, value, &mut rng);
+        let max_post = sample_to_private(max_id, value, &mut rng);
+        assert_noop!(
+            MantaSBTPallet::force_mint_sbt_eth(
+                MockOrigin::signed(ALICE),
+                Box::new(post.clone()),
+                0,
+                EvmAddress::default(),
+                None,
+                None,
+                bvec![0],
+                ALICE,
+            ),
+            Error::<Test>::NotForceAccount
+        );
+
+        assert_ok!(MantaSBTPallet::change_force_account(
+            MockOrigin::root(),
+            Some(ALICE)
+        ));
+        assert_ok!(MantaSBTPallet::set_next_sbt_id(
+            MockOrigin::root(),
+            Some(next_sbt)
+        ));
+        assert_noop!(
+            MantaSBTPallet::force_mint_sbt_eth(
+                MockOrigin::signed(ALICE),
+                Box::new(max_post),
+                0,
+                EvmAddress::default(),
+                None,
+                None,
+                bvec![0],
+                ALICE,
+            ),
+            Error::<Test>::TooHighAssetId
+        );
+
+        assert_ok!(MantaSBTPallet::force_mint_sbt_eth(
+            MockOrigin::signed(ALICE),
+            Box::new(post.clone()),
+            0,
+            EvmAddress::default(),
+            None,
+            None,
+            bvec![0],
+            ALICE,
+        ));
+        // duplicate call fails
+        assert_noop!(
+            MantaSBTPallet::force_mint_sbt_eth(
+                MockOrigin::signed(ALICE),
+                Box::new(post),
+                0,
+                EvmAddress::default(),
+                None,
+                None,
+                bvec![0],
+                ALICE,
+            ),
+            Error::<Test>::DuplicateAssetId
+        );
+
+        // duplicate mint_id and eth address fails too
+        assert_noop!(
+            MantaSBTPallet::force_mint_sbt_eth(
+                MockOrigin::signed(ALICE),
+                Box::new(ten_post),
+                0,
+                EvmAddress::default(),
+                None,
+                None,
+                bvec![0],
+                ALICE,
+            ),
+            Error::<Test>::AlreadyInAllowlist
+        );
     })
 }

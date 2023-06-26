@@ -118,7 +118,7 @@ pub type FungibleLedgerError = assets::FungibleLedgerError<StandardAssetId, Asse
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use sp_runtime::traits::AccountIdConversion;
+    use sp_runtime::traits::{AccountIdConversion, Zero};
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
@@ -211,6 +211,13 @@ pub mod pallet {
                     && post.sink_accounts.is_empty(),
                 Error::<T>::InvalidShape
             );
+            if !post.receiver_posts[0].utxo.is_transparent {
+                ensure!(
+                    post.receiver_posts[0].utxo.public_asset == Asset::zero(),
+                    Error::<T>::UnrestrictedPublicAsset
+                );
+            }
+
             // Prevent ledger bloat from zero value transactions
             for source in post.sources.iter() {
                 ensure!(
@@ -236,6 +243,12 @@ pub mod pallet {
                     && post.sink_accounts.len() == 1,
                 Error::<T>::InvalidShape
             );
+            if !post.receiver_posts[0].utxo.is_transparent {
+                ensure!(
+                    post.receiver_posts[0].utxo.public_asset == Asset::zero(),
+                    Error::<T>::UnrestrictedPublicAsset
+                );
+            }
             for sink in post.sinks.iter() {
                 ensure!(asset_value_decode(*sink) > 0u128, Error::<T>::ZeroTransfer);
             }
@@ -270,6 +283,15 @@ pub mod pallet {
                     && post.sink_accounts.is_empty(),
                 Error::<T>::InvalidShape
             );
+            for post in post.receiver_posts.iter() {
+                if !post.utxo.is_transparent {
+                    ensure!(
+                        post.utxo.public_asset == Asset::zero(),
+                        Error::<T>::UnrestrictedPublicAsset
+                    );
+                }
+            }
+
             Self::post_transaction(Some(origin), vec![], vec![], post)
         }
 
@@ -371,6 +393,13 @@ pub mod pallet {
         ///
         /// An asset present in this transfer has already been spent.
         AssetSpent,
+
+        /// UnrestrictedPublicAsset
+        ///
+        /// The public asset of a receiver post utxo cannot be unrestricted,
+        /// Otherwise it gives a potential attacker control over the nullifier
+        /// value for no particular reason
+        UnrestrictedPublicAsset,
 
         /// Invalid UTXO Accumulator Output
         ///
