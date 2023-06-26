@@ -296,6 +296,11 @@ jobs:
         run: true
   start-congestion-test-checks:
     timeout-minutes: 480
+    strategy:
+      matrix:
+        runtime:
+          - name: manta-runtime
+          - name: calamari-runtime
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -315,37 +320,6 @@ jobs:
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
       - uses: actions/checkout@v2
-      - name: install sccache
-        env:
-          SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
-          SCCACHE_VERSION: v0.2.15
-        run: |
-          SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
-          mkdir -p $HOME/.local/bin
-          curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
-          mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
-          chmod +x $HOME/.local/bin/sccache
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-
-      - name: cache sccache
-        uses: actions/cache@v2
-        continue-on-error: false
-        with:
-          path: /home/runner/.cache/sccache
-          key: sccache-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            sccache-
-      - name: start sccache server
-        run: sccache --start-server
       - name: init
         run: |
           sudo apt update
@@ -359,14 +333,9 @@ jobs:
           rustup target add wasm32-unknown-unknown
       - name: Run congestion test (allowed to fail)
         id: congestion_test
-        env:
-          RUST_BACKTRACE: full
-          RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 120G
-          SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime --workspace --exclude integration-tests -- fee::multiplier_tests::multiplier_growth_simulator_and_congestion_budget_test
+          RUSTC_BOOTSTRAP=1 cargo test --package ${{ matrix.runtime.name }} --lib -- fee::multiplier_tests::multiplier_growth_simulator_and_congestion_budget_test --exact --nocapture --ignored
         continue-on-error: true
       - name: Comment on PR whether congestion test failed
         uses: actions/github-script@v6
@@ -378,7 +347,7 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             if (!number) return; // Ignore non-PR CI runs
-            const comment_text = "Congestion test: 1-day congestion cost (calamari)"
+            const comment_text = "Congestion test: 1-day congestion cost (${{ matrix.runtime.name }})"
             // find or create a comment in the PR
             const { data } = await octokit.rest.issues.listComments({ owner, repo, issue_number: number });
             let existingComment = data.find((comment) => comment.body.includes(comment_text));
@@ -392,8 +361,6 @@ jobs:
             const above = status === 'success' ? 'is above' : 'is NOT above';
             const updatedComment = `${statusIcon} ${comment_text} ${above} target_daily_congestion_cost_kma`;
             await octokit.rest.issues.updateComment({ owner, repo, comment_id: existingComment.id, body: updatedComment });
-      - name: stop sccache server
-        run: sccache --stop-server || true
   stop-congestion-test-checks:
     timeout-minutes: 15
     needs: start-congestion-test-checks
