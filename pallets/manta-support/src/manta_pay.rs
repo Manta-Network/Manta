@@ -17,6 +17,8 @@
 //! Type Definitions for Manta Pay
 
 use alloc::{boxed::Box, vec::Vec};
+use core::ops::Add;
+use frame_support::sp_runtime::traits::Zero;
 use manta_pay::{
     config::{
         self,
@@ -246,6 +248,34 @@ impl Asset {
     #[inline]
     pub fn new(id: AssetId, value: EncodedAssetValue) -> Self {
         Self { id, value }
+    }
+}
+
+impl Zero for Asset {
+    fn zero() -> Self {
+        Self {
+            id: [0u8; 32],
+            value: [0u8; 16],
+        }
+    }
+
+    fn is_zero(&self) -> bool {
+        let zero_asset = Self {
+            id: [0u8; 32],
+            value: [0u8; 16],
+        };
+        *self == zero_asset
+    }
+}
+
+impl Add for Asset {
+    type Output = Asset;
+
+    fn add(self, _rhs: Asset) -> Self::Output {
+        Self {
+            id: [0u8; 32],
+            value: [0u8; 16],
+        }
     }
 }
 
