@@ -320,37 +320,6 @@ jobs:
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
       - uses: actions/checkout@v2
-      - name: install sccache
-        env:
-          SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
-          SCCACHE_VERSION: v0.2.15
-        run: |
-          SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
-          mkdir -p $HOME/.local/bin
-          curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
-          mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
-          chmod +x $HOME/.local/bin/sccache
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-
-      - name: cache sccache
-        uses: actions/cache@v2
-        continue-on-error: false
-        with:
-          path: /home/runner/.cache/sccache
-          key: sccache-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            sccache-
-      - name: start sccache server
-        run: sccache --start-server
       - name: init
         run: |
           sudo apt update
@@ -397,8 +366,6 @@ jobs:
             const above = status === 'success' ? 'is above' : 'is NOT above';
             const updatedComment = `${statusIcon} ${comment_text} ${above} target_daily_congestion_cost_kma`;
             await octokit.rest.issues.updateComment({ owner, repo, comment_id: existingComment.id, body: updatedComment });
-      - name: stop sccache server
-        run: sccache --stop-server || true
   stop-congestion-test-checks:
     timeout-minutes: 15
     needs: start-congestion-test-checks
