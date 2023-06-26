@@ -198,6 +198,7 @@ benchmarks! {
             RawOrigin::Root.into(),
             Some(caller.clone())
         )?;
+        MantaSBTPallet::<T>::set_next_sbt_id(RawOrigin::Root.into(), Some(100))?;
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
     }: force_to_private(
         RawOrigin::Signed(caller.clone()),
@@ -213,6 +214,7 @@ benchmarks! {
             RawOrigin::Root.into(),
             Some(caller.clone())
         )?;
+        MantaSBTPallet::<T>::set_next_sbt_id(RawOrigin::Root.into(), Some(100))?;
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
     }: force_mint_sbt_eth(
         RawOrigin::Signed(caller.clone()),
