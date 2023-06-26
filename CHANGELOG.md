@@ -1,6 +1,9 @@
 # CHANGELOG
 
 ## v4.2.0-1
+### Added
+- [\#1166](https://github.com/Manta-Network/Manta/pull/1166) Add Force Calls for zkSBT [MACA]
+
 ### Changed
 - [\#1145](https://github.com/Manta-Network/Manta/pull/1145) Bump block fullness to 50% for calamari [CA]
 - [\#1127](https://github.com/Manta-Network/Manta/pull/1127) Add check that public asset is restricted [CA]
@@ -13,7 +16,6 @@
 ### Added
 - [\#1138](https://github.com/Manta-Network/Manta/pull/1138) Check manta and calamari lease expiration [MACA]
 - [\#1147](https://github.com/Manta-Network/Manta/pull/1147) Add Polkadot Signature Allowlist [MACA]
-- [\#1166](https://github.com/Manta-Network/Manta/pull/1166) Add Force Calls for zkSBT [MACA]
 
 ## v4.1.0
 ### Added
