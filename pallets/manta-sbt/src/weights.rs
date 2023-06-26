@@ -63,7 +63,7 @@ pub trait WeightInfo {
 
 /// Weights for pallet_manta_sbt using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> pallet_manta_sbt::WeightInfo for SubstrateWeight<T> {
+impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: MantaSbt MintIdRegistry (r:1 w:0)
 	// Storage: Timestamp Now (r:1 w:0)
 	// Storage: MantaSbt PublicMintList (r:1 w:0)
