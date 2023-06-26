@@ -333,11 +333,6 @@ jobs:
           rustup target add wasm32-unknown-unknown
       - name: Run congestion test (allowed to fail)
         id: congestion_test
-        env:
-          RUST_BACKTRACE: full
-          RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 120G
-          SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
           RUSTC_BOOTSTRAP=1 cargo test --package ${{ matrix.runtime.name }} --lib -- fee::multiplier_tests::multiplier_growth_simulator_and_congestion_budget_test --exact --nocapture --ignored
@@ -352,7 +347,7 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             if (!number) return; // Ignore non-PR CI runs
-            const comment_text = "Congestion test: 1-day congestion cost (calamari)"
+            const comment_text = "Congestion test: 1-day congestion cost (${{ matrix.runtime.name }})"
             // find or create a comment in the PR
             const { data } = await octokit.rest.issues.listComments({ owner, repo, issue_number: number });
             let existingComment = data.find((comment) => comment.body.includes(comment_text));
