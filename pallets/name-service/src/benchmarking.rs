@@ -21,15 +21,19 @@
 use crate::{Call, Config, Event, Pallet};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::traits::{Currency, Get};
-use frame_system::{EventRecord, RawOrigin};
+use frame_system::RawOrigin;
 use manta_support::manta_pay::AccountId;
+use sp_runtime::traits::Hash;
 use sp_std::prelude::*;
 
-pub fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
+#[inline]
+pub fn assert_last_event<T, E>(event: E)
+where
+    T: Config,
+    E: Into<<T as Config>::RuntimeEvent>,
+{
     let events = frame_system::Pallet::<T>::events();
-    let system_event: <T as frame_system::Config>::RuntimeEvent = generic_event.into();
-    let EventRecord { event, .. } = &events[events.len() - 1];
-    assert_eq!(event, &system_event);
+    assert_eq!(events[events.len() - 1].event, event.into().into());
 }
 
 benchmarks! {
@@ -45,10 +49,13 @@ benchmarks! {
         let username = "test".as_bytes().to_vec();
     }: register(
         origin,
-        username,
-        caller.into()
+        username.clone(),
+        caller.clone().into()
     ) verify {
-        assert_last_event::<T>(Event::NameQueuedForRegister.into());
+        assert_last_event::<T, _>(Event::NameQueuedForRegister {
+            hash_username: T::Hashing::hash_of(&username),
+            hash_owner: T::Hashing::hash_of(&caller.into()),
+        });
     }
 
     accept_register {
@@ -66,10 +73,13 @@ benchmarks! {
 
     }: accept_register(
         origin,
-        username,
-        caller.into()
+        username.clone(),
+        caller.clone().into()
     ) verify {
-        assert_last_event::<T>(Event::NameRegistered.into());
+        assert_last_event::<T, _>(Event::NameRegistered {
+            username,
+            owner: caller.into(),
+        });
     }
 
     set_primary_name {
@@ -88,10 +98,13 @@ benchmarks! {
 
     }: set_primary_name(
         origin,
-        username,
-        caller.into()
+        username.clone(),
+        caller.clone().into()
     ) verify {
-        assert_last_event::<T>(Event::NameSetAsPrimary.into());
+        assert_last_event::<T, _>(Event::NameSetAsPrimary {
+            owner: caller.into(),
+            username,
+        });
     }
 
     cancel_pending_register {
@@ -109,10 +122,13 @@ benchmarks! {
 
     }: cancel_pending_register(
         origin,
-        username,
-        caller.into()
+        username.clone(),
+        caller.clone().into()
     ) verify {
-        assert_last_event::<T>(Event::RegisterCanceled.into());
+        assert_last_event::<T, _>(Event::RegisterCanceled{
+            hash_username: T::Hashing::hash_of(&username),
+            hash_owner: T::Hashing::hash_of(&caller.into()),
+        });
     }
 
     remove_register {
@@ -131,10 +147,13 @@ benchmarks! {
 
     }: remove_register(
         origin,
-        username,
-        caller.into()
+        username.clone(),
+        caller.clone().into()
     ) verify {
-        assert_last_event::<T>(Event::RegisterRemoved.into());
+        assert_last_event::<T, _>(Event::RegisterRemoved {
+            username,
+            owner: caller.into(),
+        });
     }
 }
 

@@ -101,12 +101,26 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        NameRegistered,
-        NameQueuedForRegister,
-        NameSetAsPrimary,
-        RegisterCanceled,
-        RegisterRemoved,
-        TransferSuccessful,
+        NameRegistered {
+            username: UserName,
+            owner: ZkAddressType,
+        },
+        NameQueuedForRegister {
+            hash_username: T::Hash,
+            hash_owner: T::Hash,
+        },
+        NameSetAsPrimary {
+            owner: ZkAddressType,
+            username: UserName,
+        },
+        RegisterCanceled {
+            hash_username: T::Hash,
+            hash_owner: T::Hash,
+        },
+        RegisterRemoved {
+            username: UserName,
+            owner: ZkAddressType,
+        },
     }
 
     /// All registered Names
@@ -169,7 +183,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let _who = ensure_signed(origin)?;
 
-            Self::do_accept_register(&username, registrant)?;
+            Self::do_accept_register(username, registrant)?;
 
             Ok(())
         }
@@ -262,17 +276,20 @@ impl<T: Config> Pallet<T> {
             ),
         );
 
-        Self::deposit_event(Event::NameQueuedForRegister);
+        Self::deposit_event(Event::NameQueuedForRegister {
+            hash_username: hash_user,
+            hash_owner: hash_address,
+        });
         Ok(())
     }
 
     /// Finish Register after block time has passed
-    fn do_accept_register(username: &UserName, registrant: ZkAddressType) -> DispatchResult {
+    fn do_accept_register(username: UserName, registrant: ZkAddressType) -> DispatchResult {
         // Username checks
-        username_validation(username).ok_or(Error::<T>::InvalidUsernameFormat)?;
+        username_validation(&username).ok_or(Error::<T>::InvalidUsernameFormat)?;
 
         let (hash_user, hash_address) = (
-            T::Hashing::hash_of(username),
+            T::Hashing::hash_of(&username),
             T::Hashing::hash_of(&registrant),
         );
 
@@ -291,9 +308,12 @@ impl<T: Config> Pallet<T> {
 
         // Move from pending into records
         PendingRegister::<T>::remove(hash_user);
-        UsernameRecords::<T>::insert(username, registrant);
+        UsernameRecords::<T>::insert(&username, registrant);
 
-        Self::deposit_event(Event::NameRegistered);
+        Self::deposit_event(Event::NameRegistered {
+            username,
+            owner: registrant,
+        });
         Ok(())
     }
 
@@ -315,12 +335,17 @@ impl<T: Config> Pallet<T> {
 
         // check if we already have a primary
         if PrimaryRecords::<T>::contains_key(registrant) {
-            PrimaryRecords::<T>::mutate(registrant, |old_username| *old_username = Some(username));
+            PrimaryRecords::<T>::mutate(registrant, |old_username| {
+                *old_username = Some(username.clone())
+            });
         } else {
-            PrimaryRecords::<T>::insert(registrant, username);
+            PrimaryRecords::<T>::insert(registrant, &username);
         }
 
-        Self::deposit_event(Event::NameSetAsPrimary);
+        Self::deposit_event(Event::NameSetAsPrimary {
+            owner: registrant,
+            username,
+        });
         Ok(())
     }
 
@@ -346,7 +371,10 @@ impl<T: Config> Pallet<T> {
 
         PendingRegister::<T>::remove(hash_user);
 
-        Self::deposit_event(Event::RegisterCanceled);
+        Self::deposit_event(Event::RegisterCanceled {
+            hash_username: hash_user,
+            hash_owner: hash_address,
+        });
         Ok(())
     }
 
@@ -373,7 +401,10 @@ impl<T: Config> Pallet<T> {
             }
         }
 
-        Self::deposit_event(Event::RegisterRemoved);
+        Self::deposit_event(Event::RegisterRemoved {
+            username,
+            owner: registrant,
+        });
         Ok(())
     }
 }
