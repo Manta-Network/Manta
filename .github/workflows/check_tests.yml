@@ -296,6 +296,11 @@ jobs:
         run: true
   start-congestion-test-checks:
     timeout-minutes: 480
+    strategy:
+      matrix:
+        runtime:
+          - name: manta-runtime
+          - name: calamari-runtime
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -366,7 +371,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime --workspace --exclude integration-tests -- fee::multiplier_tests::multiplier_growth_simulator_and_congestion_budget_test
+          RUSTC_BOOTSTRAP=1 cargo test --package ${{ matrix.runtime.name }} --lib -- fee::multiplier_tests::multiplier_growth_simulator_and_congestion_budget_test --exact --nocapture --ignored
         continue-on-error: true
       - name: Comment on PR whether congestion test failed
         uses: actions/github-script@v6
