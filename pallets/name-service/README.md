@@ -9,17 +9,17 @@
 
 Implements Name Service
 
-Users can register usernames connected to their public key
-Only one registered username can be chosen as primary. Primary usernames can be used instead of keys to do transfers
+Users can register usernames connected to their public key.
+Only one registered username can be chosen as primary. Primary usernames can be used instead of keys to do transfers.
 
 ## Workflow
 
-Register -> Pending Register Storage containing block amount wait time
-accept_register -> Push the pending register name to the usernameRecords if the block number has been passed
-set_primary_name -> Set registered/owned name as a primary name to be used for transfers
+1. Register -> Pending Register Storage containing block amount wait time
+2. accept_register -> Push the pending register name to the usernameRecords if the block number has been passed
+3. set_primary_name -> Set registered/owned name as a primary name to be used for transfers
 
-cancel_pending_register -> cancel a pending register
-remove_register -> "unregister" a name, this would remove it from the primary, leaving the user without a primary
+* cancel_pending_register -> cancel a pending register
+* remove_register -> "unregister" a name, this would remove it from the primary, leaving the user without a primary
 
 ## Benchmark
 1. Compile Manta runtime using `runtime-benchmarks` feature
