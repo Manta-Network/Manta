@@ -17,6 +17,10 @@
 //! Manta RPC Extensions
 
 use super::*;
+use pallet_lottery::{
+    rpc::{Lottery, LotteryRpcServer},
+    runtime::LotteryApi,
+};
 use pallet_manta_pay::{
     rpc::{Pull, PullApiServer},
     runtime::PullLedgerDiffApi,
@@ -41,6 +45,7 @@ where
     C::Api: BlockBuilder<Block>,
     C::Api: PullLedgerDiffApi<Block>,
     C::Api: SBTPullLedgerDiffApi<Block>,
+    C::Api: LotteryApi<Block>,
     P: TransactionPool + Sync + Send + 'static,
 {
     use frame_rpc_system::{System, SystemApiServer};
@@ -65,9 +70,15 @@ where
         .merge(manta_pay_rpc)
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
-    let manta_sbt_rpc: jsonrpsee::RpcModule<SBTPull<Block, C>> = SBTPull::new(client).into_rpc();
+    let manta_sbt_rpc: jsonrpsee::RpcModule<SBTPull<Block, C>> =
+        SBTPull::new(client.clone()).into_rpc();
     module
         .merge(manta_sbt_rpc)
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+
+    let lottery_rpc: jsonrpsee::RpcModule<Lottery<Block, C>> = Lottery::new(client).into_rpc();
+    module
+        .merge(lottery_rpc)
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
     Ok(module)

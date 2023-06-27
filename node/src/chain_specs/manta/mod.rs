@@ -20,7 +20,8 @@ use super::*;
 use crate::command::MANTA_PARACHAIN_ID;
 use manta_runtime::{
     opaque::SessionKeys, staking::NORMAL_COLLATOR_MINIMUM_STAKE, CouncilConfig, DemocracyConfig,
-    GenesisConfig, ParachainStakingConfig, PolkadotXcmConfig, TechnicalCommitteeConfig,
+    GenesisConfig, LotteryConfig, ParachainStakingConfig, PolkadotXcmConfig,
+    TechnicalCommitteeConfig,
 };
 use sc_network_common::config::MultiaddrWithPeerId;
 
@@ -42,7 +43,7 @@ pub const POLKADOT_RELAYCHAIN_LOCAL_NET: &str = "polkadot-local";
 pub const POLKADOT_RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
 
 /// The default XCM version to set in genesis config.
-pub const SAFE_XCM_VERSION: u32 = 2;
+pub const MANTA_SAFE_XCM_VERSION: u32 = 2;
 
 /// Manta Chain Specification
 pub type MantaChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
@@ -125,6 +126,11 @@ fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
             delegations: vec![],
             inflation_config: manta_runtime::staking::inflation_config::<manta_runtime::Runtime>(),
         },
+        lottery: LotteryConfig {
+            min_deposit: 500 * MANTA,
+            min_withdraw: 10 * MANTA,
+            gas_reserve: 1_000 * MANTA,
+        },
         parachain_info: manta_runtime::ParachainInfoConfig {
             parachain_id: MANTA_PARACHAIN_ID.into(),
         },
@@ -147,7 +153,7 @@ fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
         },
         parachain_system: Default::default(),
         polkadot_xcm: PolkadotXcmConfig {
-            safe_xcm_version: Some(SAFE_XCM_VERSION),
+            safe_xcm_version: Some(MANTA_SAFE_XCM_VERSION),
         },
         asset_manager: Default::default(),
         democracy: DemocracyConfig::default(),

@@ -139,7 +139,7 @@ where
         }
     }
 
-    /// Buys weight for XCM execution. We always return the [`TooExpensive`](Error::TooExpensive)
+    /// Buys weight for XCM execution. We always return the [`TooExpensive`](XcmError::TooExpensive)
     /// error if this fails.
     #[inline]
     fn buy_weight(&mut self, weight: u64, payment: Assets) -> Result<Assets> {

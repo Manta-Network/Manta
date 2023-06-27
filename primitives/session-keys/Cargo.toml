@@ -7,6 +7,7 @@ name = "session-key-primitives"
 version = '4.2.0'
 
 [dependencies]
+async-trait = { version = "0.1", optional = true }
 manta-primitives = { path = "../manta", default-features = false }
 nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.8", default-features = false }
 parity-scale-codec = { version = "3.4.0", default-features = false, features = ["derive"] }
@@ -14,11 +15,13 @@ scale-info = { version = "2.1.2", default-features = false, features = ["derive"
 sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 sp-core = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+sp-inherents = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false }
 
 [features]
 default = ["std"]
 std = [
+  "async-trait",
   "manta-primitives/std",
   "nimbus-primitives/std",
   "parity-scale-codec/std",

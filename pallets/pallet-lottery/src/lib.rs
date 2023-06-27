@@ -1,0 +1,1074 @@
+// Copyright 2020-2023 Manta Network.
+// This file is part of Manta.
+//
+// Manta is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Manta is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Manta.  If not, see <http://www.gnu.org/licenses/>.
+
+//! # No-Loss-Lottery Module
+//!
+//! ## Overview
+//!
+//! This pallet implements a no-loss-lottery by taking user deposits, generating excess funds by staking funds with [`pallet_parachain_staking`]
+//! and periodically selects a winner from participating users weighted by their deposit amount to receive a claim to the
+//! accrued excess funds.
+//! Funds withdrawn from the the lottery are subject to a timelock determined by parachain-staking before they can be claimed.
+//!
+//! ### Lottery Rules
+//! 1. A drawing is scheduled to happen every [`Config::DrawingInterval`] blocks.
+//! 2. A designated manager can start & stop the drawings as well as rebalance the stake to improve the yield generated through staking
+//! 3. In order to prevent gaming of the lottery drawing mechanism, no modifications to this pallet are allowed [`Config::DrawingFreezeout`] blocks before a drawing
+//!     This is needed e.g. using BABE Randomness, where the randomness will be known a day before the scheduled drawing
+//! 4. Winnings must be claimed manually by the winner but there is no time limit for claiming winnings
+//! 5. Deposits are instantly staked by the pallet
+//! 6. Withdrawals must wait for a timelock imposed by [`pallet_parachain_staking`] and are paid out automatically (via scheduler) in the first lottery drawing after it expires
+//! 7. The [`Config::ManageOrigin`] must at the same time be allowed to use [`frame_support::traits::schedule::Named`] e.g. `ScheduleOrigin` in `pallet_scheduler`
+//!
+//! ## Dependencies
+//! 1. To enable fair winner selection, a fair and low-influience randomness provider implementing [`frame_support::traits::Randomness`], e.g. pallet_randomness
+//! 2. To schedule automatic drawings, a scheduling pallet implementing [`frame_support::traits::schedule::Named`], e.g. pallet_scheduler
+//! 3. To generate lottery revenue, [`pallet_parachain_staking`]
+//!
+//! ## Interface
+//!
+//! This pallet contains extrinsics callable by any user and a second set of extrinsic callable only by a *Lottery Manager* Origin
+//! configurable as [`Config::ManageOrigin`] in the [`Config`] struct of this pallet.
+//!
+//! ### User Dispatchable Functions
+//! * [`Call::deposit`]: Allows any user to deposit tokens into the lottery
+//! * [`Call::request_withdraw`]: Allows any user to request return of their deposited tokens to own wallet
+//! * [`Call::claim_my_winnings`]: Allows any user to transfer any accrued winnings into their wallet
+//!
+//! ### Manager Dispatchable Functions
+//! * [`Call::start_lottery`]: Schedules periodic lottery drawings to occur each [`Config::DrawingInterval`]
+//! * [`Call::stop_lottery`]: Cancels the current drawing and stops scheduling new drawings
+//! * [`Call::draw_lottery`]: Immediately executes a lottery drawing ( can be called manually even if lottery is stopped )
+//! * [`Call::process_matured_withdrawals`]: Immediately transfer funds of all matured withdrawals to their respective owner's wallets
+//! * [`Call::liquidate_lottery`]: Unstakes all lottery funds and schedules [`Call::process_matured_withdrawals`] after the timelock period
+//! * [`Call::rebalance_stake`]: Immediately unstakes overweight collators (with low APY) for later restaking into underweight collators (with high APY)
+//!
+//! ### Important state queries callable via RPC
+//! * [`Pallet::next_drawing_at`]: Block number where the next drawing will happen
+//! * [`Pallet::not_in_drawing_freezeout`]: False if deposits/withdrawals are currently frozen
+//! * [`Pallet::current_prize_pool`]: Token amount currently in the pallet the winner would get if the drawing was now
+//! Call these from a frontend as e.g.
+//! ```bash
+//!    curl http://localhost:9933 -H "Content-Type:application/json;charset=utf-8" -d '{"jsonrpc":"2.0","id":1,"method":"lottery_next_drawing_at","params": []}'
+//!    curl http://localhost:9933 -H "Content-Type:application/json;charset=utf-8" -d '{"jsonrpc":"2.0","id":1,"method":"lottery_current_prize_pool","params": []}'
+//!    curl http://localhost:9933 -H "Content-Type:application/json;charset=utf-8" -d '{"jsonrpc":"2.0","id":1,"method":"lottery_not_in_drawing_freezeout","params": []}'
+//! ```
+//!
+//! Please refer to [`Pallet`] for more documentation on each function.
+//! Furthermore, the storage items containing all relevant information about lottery state can be queried via e.g. the [polkadot.js API](https://polkadot.js.org/docs/api)
+
+#![cfg_attr(not(feature = "std"), no_std)]
+
+mod staking;
+
+#[cfg(feature = "rpc")]
+pub mod rpc;
+pub mod runtime;
+
+#[cfg(any(test, feature = "runtime-benchmarks"))]
+mod benchmarks;
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
+
+pub mod weights;
+pub use weights::WeightInfo;
+
+pub use pallet::*;
+#[frame_support::pallet]
+pub mod pallet {
+    use super::*;
+    pub use ::function_name::named;
+    use frame_support::{
+        ensure, log,
+        pallet_prelude::*,
+        traits::{
+            schedule::{v2::Named as ScheduleNamed, DispatchTime, MaybeHashed, LOWEST_PRIORITY},
+            ExistenceRequirement::KeepAlive,
+            *,
+        },
+        PalletId,
+    };
+    use frame_system::{pallet_prelude::*, RawOrigin};
+    use pallet_parachain_staking::BalanceOf;
+    use sp_arithmetic::traits::SaturatedConversion;
+    use sp_core::U256;
+    use sp_runtime::{
+        traits::{AccountIdConversion, CheckedAdd, CheckedSub, Dispatchable, Saturating, Zero},
+        ArithmeticError, DispatchResult,
+    };
+    use sp_std::prelude::*;
+
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
+    pub type CallOf<T> = <T as Config>::RuntimeCall;
+
+    #[pallet::config]
+    pub trait Config: frame_system::Config + pallet_parachain_staking::Config {
+        /// The aggregated `RuntimeCall` type.
+        type RuntimeCall: Parameter
+            + Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>
+            + From<Call<Self>>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        /// The Scheduler.
+        type Scheduler: ScheduleNamed<
+            Self::BlockNumber,
+            CallOf<Self>,
+            Self::PalletsOrigin,
+            Hash = Self::Hash,
+        >;
+        // Randomness source to use for determining lottery winner
+        type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
+        /// Something that can estimate the cost of sending an extrinsic
+        type EstimateCallFee: frame_support::traits::EstimateCallFee<
+                pallet_parachain_staking::Call<Self>,
+                BalanceOf<Self>,
+            > + frame_support::traits::EstimateCallFee<Call<Self>, BalanceOf<Self>>;
+        /// Origin that can manage lottery parameters and start/stop drawings
+        type ManageOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+        /// Overarching type of all pallets origins.
+        type PalletsOrigin: From<frame_system::RawOrigin<Self::AccountId>>;
+        /// Account Identifier from which the internal Pot is generated.
+        #[pallet::constant]
+        type LotteryPot: Get<PalletId>;
+        /// Time in blocks between lottery drawings
+        #[pallet::constant]
+        type DrawingInterval: Get<Self::BlockNumber>;
+        /// Time in blocks *before* a drawing in
+        /// Depending on the randomness source, the winner might be established before the drawing, this prevents modification of the eligible winning set after the winner
+        /// has been established but before it is selected by [`Call::draw_lottery`] which modifications of the win-eligble pool are prevented
+        #[pallet::constant]
+        type DrawingFreezeout: Get<Self::BlockNumber>;
+        /// Time in blocks until a collator is done unstaking
+        #[pallet::constant]
+        type UnstakeLockTime: Get<Self::BlockNumber>; // XXX: could maybe alculate this from staking LeaveDelayRounds * DefaultBlocksPerRound
+        /// Weight information for extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
+    }
+
+    #[pallet::pallet]
+    #[pallet::storage_version(STORAGE_VERSION)]
+    // #[pallet::generate_store(pub(super) trait Store)]
+    #[pallet::without_storage_info]
+    pub struct Pallet<T>(PhantomData<T>);
+
+    // Configurable (constant) storage items
+
+    /// NOTE: how much KMA to keep in the pallet for gas
+    /// This must be initialized at genesis, otherwise the pallet will run out of gas at the first drawing
+    #[pallet::storage]
+    #[pallet::getter(fn gas_reserve)]
+    pub(super) type GasReserve<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn min_deposit)]
+    pub(super) type MinDeposit<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn min_withdraw)]
+    pub(super) type MinWithdraw<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+
+    // Dynamic Storage Items
+
+    /// NOTE: sum of all user's deposits, to ensure balance never drops below
+    #[pallet::storage]
+    #[pallet::getter(fn sum_of_deposits)]
+    pub(super) type SumOfDeposits<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+
+    /// NOTE: the total pot is the total number of KMA eligible to win in the current drawing cycle
+    #[pallet::storage]
+    #[pallet::getter(fn total_pot)]
+    pub(super) type TotalPot<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn total_users)]
+    pub(super) type TotalUsers<T: Config> = StorageValue<_, u32, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn is_rebalancing)]
+    pub(super) type RebalanceInProgress<T: Config> = StorageValue<_, bool, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn active_balance_per_user)]
+    pub(super) type ActiveBalancePerUser<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn unclaimed_winnings_by_account)]
+    pub(super) type UnclaimedWinningsByAccount<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, OptionQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn total_unclaimed_winnings)]
+    pub(super) type TotalUnclaimedWinnings<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+
+    #[derive(Clone, Encode, Decode, TypeInfo)]
+    pub(super) struct UnstakingCollator<AccountId, BlockNumber> {
+        pub account: AccountId,
+        pub since: BlockNumber,
+    }
+
+    #[pallet::storage]
+    pub(super) type UnstakingCollators<T: Config> =
+        StorageValue<_, Vec<UnstakingCollator<T::AccountId, T::BlockNumber>>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn remaining_unstaking_balance)]
+    pub(super) type RemainingUnstakingBalance<T: Config> =
+        StorageValue<_, BalanceOf<T>, ValueQuery>;
+
+    #[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo)]
+    pub struct Request<AccountId, BlockNumber, Balance> {
+        pub user: AccountId,
+        pub block: BlockNumber,
+        pub balance: Balance,
+    }
+
+    #[pallet::storage]
+    #[pallet::getter(fn withdrawal_request_queue)]
+    pub(super) type WithdrawalRequestQueue<T: Config> =
+        StorageValue<_, Vec<Request<T::AccountId, T::BlockNumber, BalanceOf<T>>>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn staked_collators)]
+    pub(super) type StakedCollators<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, ValueQuery>;
+
+    #[pallet::genesis_config]
+    pub struct GenesisConfig<T: Config> {
+        /// amount of token to keep in the pot for paying gas fees
+        pub gas_reserve: BalanceOf<T>,
+        pub min_deposit: BalanceOf<T>,
+        pub min_withdraw: BalanceOf<T>,
+    }
+
+    #[cfg(feature = "std")]
+    impl<T: Config> Default for GenesisConfig<T> {
+        fn default() -> Self {
+            Self {
+                min_deposit: 1u32.into(),
+                min_withdraw: 1u32.into(),
+                gas_reserve: 10_000u32.into(),
+            }
+        }
+    }
+
+    #[pallet::genesis_build]
+    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+        #[inline]
+        fn build(&self) {
+            GasReserve::<T>::set(self.gas_reserve);
+            MinDeposit::<T>::set(self.min_deposit);
+            MinWithdraw::<T>::set(self.min_withdraw);
+        }
+    }
+
+    #[pallet::event]
+    #[pallet::generate_deposit(fn deposit_event)]
+    pub enum Event<T: Config> {
+        LotteryStarted,
+        LotteryStopped,
+        LotteryWinner(T::AccountId, BalanceOf<T>),
+        Deposited(T::AccountId, BalanceOf<T>),
+        ScheduledWithdraw(T::AccountId, BalanceOf<T>),
+        Withdrawn(T::AccountId, BalanceOf<T>),
+    }
+
+    #[pallet::error]
+    pub enum Error<T> {
+        LotteryNotStarted,
+        LotteryIsRunning,
+        LotteryNotScheduled,
+        TooEarlyForDrawing,
+        TooCloseToDrawing,
+        PotBalanceTooLow,
+        PotBalanceBelowGasReserve,
+        PotBalanceTooLowToPayTxFee,
+        NoWinnerFound,
+        DepositBelowMinAmount,
+        WithdrawBelowMinAmount,
+        WithdrawAboveDeposit,
+        NoDepositForAccount,
+        NoCollatorForDeposit,
+        NoCollatorForWithdrawal,
+        WithdrawFailed,
+        ArithmeticUnderflow,
+        ArithmeticOverflow,
+        PalletMisconfigured,
+        CouldNotSchedule,
+        NotImplemented,
+    }
+
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
+        /// Allows any user to deposit tokens into the lottery
+        ///
+        /// # Arguments
+        ///
+        /// * `amount` - The amount of tokens to be deposited.
+        #[pallet::call_index(0)]
+        #[pallet::weight(<T as Config>::WeightInfo::deposit(Pallet::<T>::total_users(), pallet_parachain_staking::Pallet::<T>::selected_candidates().len() as u32))]
+        pub fn deposit(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
+            let caller_account = ensure_signed(origin)?;
+
+            ensure!(
+                amount >= Self::min_deposit(),
+                Error::<T>::DepositBelowMinAmount
+            );
+            ensure!(
+                Self::not_in_drawing_freezeout(),
+                Error::<T>::TooCloseToDrawing
+            );
+
+            // Transfer funds to pot
+            <T as pallet_parachain_staking::Config>::Currency::transfer(
+                &caller_account,
+                &Self::account_id(),
+                amount,
+                KeepAlive,
+            )?;
+
+            // Attempt to stake them
+            let collator_balance_pairs = Self::calculate_deposit_distribution(amount);
+            ensure!(
+                !collator_balance_pairs.is_empty(),
+                Error::<T>::NoCollatorForDeposit
+            );
+            for (some_collator, balance) in collator_balance_pairs {
+                Self::do_stake_one_collator(some_collator, balance)?;
+            }
+
+            // Add to active funds
+            ActiveBalancePerUser::<T>::mutate(caller_account.clone(), |balance| *balance += amount);
+            TotalPot::<T>::mutate(|balance| *balance += amount);
+            TotalUsers::<T>::mutate(|users| *users += 1);
+            SumOfDeposits::<T>::mutate(|balance| *balance += amount);
+            Self::deposit_event(Event::Deposited(caller_account, amount));
+            Ok(())
+        }
+
+        /// Requests a withdrawal of `amount` from the caller's active funds.
+        ///
+        /// Withdrawal is not immediate as funds are subject to a timelock imposed by [`pallet_parachain_staking`]
+        /// It will be executed with the first [`Call::draw_lottery`] call after timelock expires
+        ///
+        /// Withdrawals can NOT be cancelled because they inflict ecomomic damage on the lottery through collator unstaking
+        /// and the user causing this damage must be subjected to economic consequences for doing so
+        ///
+        /// The withdrawal is paid from [`RemainingUnstakingBalance`]
+        /// If this balance is too low to handle the request, another collator is unstaked
+        ///
+        /// # Arguments
+        ///
+        /// * `amount` - the amount of funds to withdraw
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if:
+        /// * `amount` is below the minimum withdraw amount
+        /// * `amount` is larger than the user's total deposit
+        /// * It is too close to the drawing
+        /// * The user has no or not enough active funds
+        /// * There are any arithmetic underflows
+        #[pallet::call_index(1)]
+        #[pallet::weight(<T as Config>::WeightInfo::request_withdraw(Pallet::<T>::total_users(), pallet_parachain_staking::Pallet::<T>::selected_candidates().len() as u32))]
+        pub fn request_withdraw(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
+            let caller = ensure_signed(origin)?;
+
+            ensure!(
+                amount >= Self::min_withdraw(),
+                Error::<T>::WithdrawBelowMinAmount
+            );
+            ensure!(
+                Self::not_in_drawing_freezeout(),
+                Error::<T>::TooCloseToDrawing
+            );
+            let now = <frame_system::Pallet<T>>::block_number();
+            log::debug!("Requesting withdraw of {:?} tokens", amount);
+            // Ensure user has enough funds active and mark them as offboarding (remove from `ActiveFundsPerUser`)
+            ActiveBalancePerUser::<T>::try_mutate_exists(caller.clone(), |maybe_balance| {
+                match maybe_balance {
+                    None => Err(Error::<T>::NoDepositForAccount),
+                    Some(balance) => {
+                        // Withdraw only what's active
+                        ensure!(*balance >= amount, Error::<T>::WithdrawAboveDeposit);
+                        // Mark funds as offboarding
+                        WithdrawalRequestQueue::<T>::mutate(|withdraw_vec| {
+                            withdraw_vec.push(Request {
+                                user: caller.clone(),
+                                block: now,
+                                balance: amount,
+                            })
+                        });
+                        // store reduced balance
+                        *maybe_balance = match balance
+                            .checked_sub(&amount)
+                            .ok_or(Error::<T>::ArithmeticUnderflow)?
+                        {
+                            new_balance if new_balance.is_zero() => {
+                                TotalUsers::<T>::mutate(|users| *users -= 1);
+                                None
+                            }
+                            new_balance => Some(new_balance),
+                        };
+                        TotalPot::<T>::try_mutate(|pot| {
+                            (*pot)
+                                .checked_sub(&amount)
+                                .ok_or(Error::<T>::ArithmeticUnderflow)
+                        })?;
+                        Ok(())
+                    }
+                }
+            })?;
+
+            // Unstaking workflow
+            // 1. See if this withdrawal can be serviced with left-over balance from an already unstaking collator, if so deduct remaining balance and schedule the request
+            // 2. If it can't, find the collator with the smallest delegation that is able to handle this withdrawal request and fully unstake it
+            // 3. Add balance overshoot to "remaining balance" to handle further requests from
+
+            // If the withdrawal fits in the currently unstaking funds, do nothing else
+            RemainingUnstakingBalance::<T>::try_mutate(|remaining_balance| {
+                match (*remaining_balance).checked_sub(&amount){
+                    Some(subtracted) => {
+                        *remaining_balance = subtracted;
+                        Ok(())
+                    }
+                    _ => {
+                        Err("not enough left to handle this request from current unstaking funds")
+                    }
+                }
+            })
+            .or_else(|_| {
+                // Withdrawal needs extra collators to unstake to have enough funds to serve withdrawals, do it
+                let reserve = RemainingUnstakingBalance::<T>::get();
+                let mut remaining_to_withdraw = amount - reserve;
+
+                // unstake collators as necessary. This updates `RemainingUnstakingBalance`
+                for collator_to_unstake in Self::calculate_withdrawal_distribution(remaining_to_withdraw){
+                    let our_stake = StakedCollators::<T>::get(collator_to_unstake.clone());
+                    remaining_to_withdraw = remaining_to_withdraw.saturating_sub(our_stake);
+                    // If this fails, something weird is going on
+                    Self::do_unstake_collator(now,collator_to_unstake)?;
+                }
+                if !remaining_to_withdraw.is_zero() {
+                    log::error!("Somehow didn't manage to handle the requested balance. Have {:?} left over",remaining_to_withdraw);
+                }
+                RemainingUnstakingBalance::<T>::try_mutate(|remaining_balance| {
+                    match (*remaining_balance).checked_sub(&amount){
+                        Some(subtracted) => {
+                            *remaining_balance = subtracted;
+                            Ok(())
+                        }
+                        _ => {
+                            Err("not enough left to handle this request after unstaking additional collators")
+                        }
+                    }
+                })
+            })?;
+            // END UNSTAKING SECTION
+            Self::deposit_event(Event::ScheduledWithdraw(caller, amount));
+            Ok::<(), DispatchError>(())
+        }
+
+        /// Allows the caller to transfer any of the account's previously unclaimed winnings to his their wallet
+        ///
+        /// # Errors
+        ///
+        /// CannotLookup: The caller has no unclaimed winnings.
+        #[pallet::call_index(2)]
+        #[pallet::weight(<T as Config>::WeightInfo::claim_my_winnings(pallet_parachain_staking::Pallet::<T>::selected_candidates().len() as u32))]
+        pub fn claim_my_winnings(origin: OriginFor<T>) -> DispatchResult {
+            let caller = ensure_signed(origin)?;
+            match UnclaimedWinningsByAccount::<T>::take(caller.clone()) {
+                Some(winnings) => {
+                    // Never pay out winnings if it would reduce pallet funds below total number of user's deposits
+                    let all_funds_in_pallet =
+                        <T as pallet_parachain_staking::Config>::Currency::total_balance(
+                            &Self::account_id(),
+                        );
+                    ensure!(
+                        all_funds_in_pallet.saturating_sub(winnings) >= Self::sum_of_deposits(),
+                        Error::<T>::PotBalanceTooLow
+                    );
+
+                    TotalUnclaimedWinnings::<T>::try_mutate(|old| {
+                        *old = (*old)
+                            .checked_sub(&winnings)
+                            .ok_or(ArithmeticError::Underflow)?;
+                        Ok::<(), ArithmeticError>(())
+                    })?;
+
+                    <T as pallet_parachain_staking::Config>::Currency::transfer(
+                        &Self::account_id(),
+                        &caller,
+                        winnings,
+                        KeepAlive,
+                    ) // NOTE: If the transfer fails, the TXN get rolled back and the winnings stay in the map for claiming later
+                }
+                None => Err(DispatchError::CannotLookup),
+            }
+        }
+
+        /// Maximizes staking APY and thus accrued winnings by removing staked tokens from overallocated/inactive
+        /// collators and adding to underallocated ones.
+        ///
+        /// Can only be called by the account set as [`Config::ManageOrigin`]
+        ///
+        /// This function should be called when the pallet's staked tokens are staked with overweight collators
+        /// or collators that became inactive or left the staking set.
+        /// This will withdraw the tokens from overallocated and inactive collators and wait until the funds are unlocked,
+        /// then re-allocate them to underallocated collators.
+        ///
+        /// Note that this operation can run in parallel with a drawing, but it will reduce the staking revenue
+        /// generated in that drawing by the amount of funds being rebalanced.
+        ///
+        /// # Errors
+        ///
+        /// * BadOrigin: Caller is not ManageOrigin
+        /// * TODO: Amount of tokens to be rebalanced would be too low.
+        #[pallet::call_index(3)]
+        #[pallet::weight(0)]
+        pub fn rebalance_stake(origin: OriginFor<T>) -> DispatchResult {
+            T::ManageOrigin::ensure_origin(origin.clone())?;
+            Err(crate::pallet::DispatchError::Other(
+                Error::<T>::NotImplemented.into(),
+            ))
+
+            // withdraw from overallocated collators, wait until funds unlock, re-allocate to underallocated collators
+            // TODO: find some balancing algorithm that does this or just reuse the one we use for deposits
+
+            // Self::deposit_event(Event::StartedRebalance(amount));
+            // Ok(())
+        }
+
+        /// Starts the lottery by scheduling a [`Call::draw_lottery`] call
+        ///
+        /// Can only be called by the account set as [`Config::ManageOrigin`]
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if:
+        /// * BadOrigin: Caller is not ManageOrigin
+        /// * The pallet does not have enough funds to pay for gas fees for at least the first drawing.
+        /// * The drawing interval is zero or negative.
+        /// * The Scheduler implementation failed to schedule the [`Call::draw_lottery`] call.
+        ///
+        /// # Details
+        ///
+        /// This function schedules a [`Call::draw_lottery`] call with a delay specified by the [`Config::DrawingInterval`] configuration
+        /// using [`frame_support::traits::schedule::Named`] with the lottery pallet's pallet ID configured with [`Config::LotteryPot`] as identifier.
+        /// If the lottery is already started, this function will fail.
+        ///
+        /// You can always learn what block the next drawing - if any - will happen by calling [`Self::next_drawing_at`]
+        #[pallet::call_index(4)]
+        #[pallet::weight(<T as Config>::WeightInfo::start_lottery())]
+        pub fn start_lottery(origin: OriginFor<T>) -> DispatchResult {
+            T::ManageOrigin::ensure_origin(origin.clone())?;
+            ensure!(
+                Self::next_drawing_at().is_none(),
+                Error::<T>::LotteryIsRunning
+            );
+            // Pallet has enough funds to pay gas fees for at least the first drawing
+            ensure!(
+                Self::surplus_funds() >= Self::gas_reserve(),
+                Error::<T>::PotBalanceBelowGasReserve
+            );
+            // NOTE: If more than gas_reserve is in the pallet, the full excess will be paid out to the winner of the next drawing! This is intended to dope the winning balance with extra rewards
+
+            let drawing_interval = <T as Config>::DrawingInterval::get();
+            ensure!(
+                drawing_interval > 0u32.into(),
+                Error::<T>::PalletMisconfigured
+            );
+            let lottery_drawing_call: CallOf<T> = Call::draw_lottery {}.into();
+            T::Scheduler::schedule_named(
+                Self::lottery_schedule_id(),
+                DispatchTime::After(drawing_interval),
+                Some((drawing_interval, u32::MAX)), // XXX: Seems scheduler has no way to schedule infinite amount
+                LOWEST_PRIORITY,
+                frame_support::dispatch::RawOrigin::Root.into(),
+                MaybeHashed::Value(lottery_drawing_call),
+            )
+            .map_err(|_| Error::<T>::CouldNotSchedule)?;
+
+            Self::deposit_event(Event::LotteryStarted);
+            Ok(())
+        }
+
+        /// Stops the ongoing lottery and cancels the scheduled and any future drawings.
+        ///
+        /// This function cancels the scheduled drawing and cleans up bookkeeping.
+        ///
+        /// Can only be called by the account set as [`Config::ManageOrigin`]
+        ///
+        /// # Errors
+        ///
+        /// * BadOrigin: Caller is not manager
+        /// * LotteryNotStarted: Nothing to stop
+        ///
+        #[pallet::call_index(5)]
+        #[pallet::weight(<T as Config>::WeightInfo::stop_lottery())]
+        pub fn stop_lottery(origin: OriginFor<T>) -> DispatchResult {
+            T::ManageOrigin::ensure_origin(origin.clone())?;
+            T::Scheduler::cancel_named(Self::lottery_schedule_id())
+                .map_err(|_| Error::<T>::LotteryNotStarted)?;
+            Self::deposit_event(Event::LotteryStopped);
+            Ok(())
+        }
+
+        /// Draws a lottery winner and allows them to claim their winnings later. Only the [`Config::ManageOrigin`] can execute this function.
+        ///
+        /// Can only be called by the account set as [`Config::ManageOrigin`]
+        ///
+        /// # Errors
+        ///
+        /// ## Operational
+        /// * BadOrigin: Caller is not ManageOrigin
+        /// * TooEarlyForDrawing: The lottery is not ready for drawing yet.
+        /// * PotBalanceBelowGasReserve: The balance of the pot is below the gas reserve so no winner will be paid out
+        ///
+        /// ## Fatal
+        /// * ArithmeticError::Underflow: An underflow occurred when calculating the payout.
+        /// * PotBalanceTooLow: The balance of the pot is too low.
+        /// * NoWinnerFound: Nobody was selected as winner
+        #[pallet::call_index(6)]
+        #[pallet::weight(<T as Config>::WeightInfo::draw_lottery(Pallet::<T>::total_users(), pallet_parachain_staking::Pallet::<T>::selected_candidates().len() as u32))]
+        pub fn draw_lottery(origin: OriginFor<T>) -> DispatchResult {
+            T::ManageOrigin::ensure_origin(origin.clone())?;
+            let now = <frame_system::Pallet<T>>::block_number();
+            log::trace!("Drawing lottery called at block {:?}", now.clone());
+            let total_funds_in_pallet =
+                <T as pallet_parachain_staking::Config>::Currency::total_balance(
+                    &Self::account_id(),
+                );
+            let winning_claim = Self::current_prize_pool();
+            log::debug!(
+                "total funds: {:?}, surplus funds/winner payout: {:?}",
+                total_funds_in_pallet.clone(),
+                winning_claim.clone()
+            );
+            if !winning_claim.is_zero() {
+                ensure!(
+                    // Prevent granting funds to a user that would have to be paid from deposit money (we're a casino, not a bank)
+                    total_funds_in_pallet
+                        .saturating_sub(winning_claim)
+                        .saturating_sub(Self::total_unclaimed_winnings())
+                        >= Self::sum_of_deposits(),
+                    Error::<T>::PotBalanceTooLow
+                );
+                Self::select_winner(winning_claim)?;
+            }
+            // unstake, pay out tokens due for withdrawals and restake excess funds
+            Self::process_matured_withdrawals(origin)?;
+            Ok(())
+        }
+
+        /// This function transfers all withdrawals to user's wallets that are payable from unstaked collators whose timelock expired
+        ///
+        /// Can only be called by the account set as [`Config::ManageOrigin`]
+        ///
+        /// # Errors
+        ///
+        /// * BadOrigin: Caller is not ManageOrigin
+        /// * errors defined by the do_process_matured_withdrawals function.
+        #[pallet::call_index(7)]
+        #[pallet::weight(<T as Config>::WeightInfo::process_matured_withdrawals())]
+        pub fn process_matured_withdrawals(origin: OriginFor<T>) -> DispatchResult {
+            log::trace!("process_matured_withdrawals");
+            T::ManageOrigin::ensure_origin(origin.clone())?;
+            Self::finish_unstaking_collators();
+            Self::do_process_matured_withdrawals()?;
+            Self::do_rebalance_remaining_funds()?;
+            Ok(())
+        }
+
+        /// Liquidates all funds held in the lottery pallet, unstaking collators, returning user deposits and paying out winnings
+        ///
+        /// Can only be called by the account set as [`Config::ManageOrigin`]
+        ///
+        /// Due to staking timelock, this schedules the payout of user deposits after timelock has expired.
+        /// NOTE: TODO: Any interaction with this pallet is disallowed while a liquidation is ongoing
+        ///
+        /// # Errors
+        ///
+        /// * BadOrigin: Caller is not ManageOrigin
+        /// * Fails if a lottery has not been stopped and a drawing is ongoing
+        #[pallet::call_index(8)]
+        #[pallet::weight(0)]
+        pub fn liquidate_lottery(origin: OriginFor<T>) -> DispatchResult {
+            T::ManageOrigin::ensure_origin(origin.clone())?;
+
+            ensure!(
+                Self::next_drawing_at().is_none(),
+                Error::<T>::LotteryIsRunning
+            );
+
+            Err(crate::pallet::DispatchError::Other(
+                Error::<T>::NotImplemented.into(),
+            ))
+
+            // TODO: Unstake all collators, schedule return of all user deposits
+            // for collator in collators_we_staked_to {
+            //     do_unstake(collator);
+            // }
+            // TODO: Lock everything until this process is finished
+
+            // TODO: return user deposits and pay out winnings, deposit event
+
+            // Ok(())
+        }
+    }
+
+    impl<T: Config> Pallet<T> {
+        /// Get a unique, inaccessible account id from the `PotId`.
+        pub(crate) fn account_id() -> T::AccountId {
+            T::LotteryPot::get().into_account_truncating()
+        }
+        /// Get an identifier for scheduling drawings from the `PotId`.
+        fn lottery_schedule_id() -> Vec<u8> {
+            T::LotteryPot::get().0.to_vec()
+        }
+        fn select_winning_balance(
+            max_winning_balance: BalanceOf<T>,
+        ) -> Result<BalanceOf<T>, Error<T>> {
+            const MAX_NUMBER_OF_RESAMPLES: u8 = 3;
+            let mut winning_number = 0; // XXX: This shouldn't need initialization but the compiler doesn't get it
+            for n in 0u8..MAX_NUMBER_OF_RESAMPLES {
+                let random: (T::Hash, BlockNumberFor<T>);
+                #[cfg(feature = "runtime-benchmarks")]
+                {
+                    use rand::{RngCore, SeedableRng};
+                    use sp_runtime::traits::Hash;
+                    // XXX: Benchmarking randomness changes per block instead of per epoch
+                    let mut rng = rand::rngs::StdRng::seed_from_u64(
+                        <frame_system::Pallet<T>>::block_number()
+                            .try_into()
+                            .unwrap_or(n as u64),
+                    );
+                    let mut rnd = [0u8; 32];
+                    rng.fill_bytes(&mut rnd);
+                    let randomness = T::Hashing::hash(&rnd);
+                    random = (randomness, <T as frame_system::Config>::BlockNumber::zero());
+                }
+                #[cfg(not(feature = "runtime-benchmarks"))]
+                {
+                    random = T::RandomnessSource::random(&[n; 1]);
+                    ensure!(
+                        random
+                            .1 // = randomness_established_at_block
+                            .saturating_add(<T as Config>::DrawingFreezeout::get())
+                            < <frame_system::Pallet<T>>::block_number(),
+                        Error::<T>::PalletMisconfigured
+                    );
+                }
+                let random_hash = random.0;
+                let as_number = U256::from_big_endian(random_hash.as_ref());
+                winning_number = as_number.low_u128();
+                // naive application of the modulo operation can bias the result, reject and resample if the number is larger than the maximum divisor of user array length in the u128 number range
+                debug_assert_eq!(
+                    core::mem::size_of::<BalanceOf<T>>(),
+                    core::mem::size_of::<u128>()
+                );
+                let number_to_start_rejecting_at: u128 = u128::max_value().saturating_sub(
+                    u128::max_value() % max_winning_balance.saturated_into::<u128>(),
+                );
+                debug_assert!((number_to_start_rejecting_at
+                    % max_winning_balance.saturated_into::<u128>())
+                .is_zero());
+                if winning_number.saturated_into::<u128>() < number_to_start_rejecting_at {
+                    break;
+                } else {
+                    // sample must be rejected because it can't be safely modulo'd, retry with high u128
+                    winning_number = (as_number >> 128).low_u128();
+                    let number_to_start_rejecting_at: u128 = u128::max_value().saturating_sub(
+                        u128::max_value() % max_winning_balance.saturated_into::<u128>(),
+                    );
+                    debug_assert!(
+                        number_to_start_rejecting_at
+                            <= max_winning_balance.saturated_into::<u128>()
+                    );
+                    if winning_number.saturated_into::<u128>() < number_to_start_rejecting_at {
+                        break;
+                    }
+                    if n + 1 < MAX_NUMBER_OF_RESAMPLES {
+                        // if still not good, we need to re-request randomness with a changed nonce
+                        continue;
+                    } else {
+                        // we loop this up to 3 times (yielding 6 possible values) before giving up, printing a warning and accepting that the result was biased
+                        log::warn!("No unbiased random samples found after {:?} retries. using {:?} which will be subject to modulo bias",(n+1)*2,winning_number.clone());
+                        break;
+                    }
+                }
+            }
+            // no risk of modulo bias here unless we ran out of retries above
+            let winning_balance: BalanceOf<T> = BalanceOf::<T>::try_from(winning_number)
+                .map_err(|_| Error::<T>::ArithmeticOverflow)?
+                % max_winning_balance;
+            log::debug!(
+                "winning_number: {:?}, winning balance: {:?}",
+                winning_number,
+                winning_balance
+            );
+            Ok(winning_balance)
+        }
+        fn select_winner(payout_for_winner: BalanceOf<T>) -> DispatchResult {
+            if Self::total_pot().is_zero() {
+                log::warn!(
+                    "No funds eligible for drawing at block {:?} ",
+                    <frame_system::Pallet<T>>::block_number()
+                );
+                return Ok(());
+            }
+            // Match random number to winner. We select a winning **balance** and then just add up accounts in the order they're stored until the sum of balance exceeds the winning amount
+            // IMPORTANT: This order and active balances must be locked to modification after the random seed is created (relay BABE randomness, 2 epochs ago)
+            let winning_balance = Self::select_winning_balance(Self::total_pot())?;
+            let mut winner: Option<T::AccountId> = None;
+            let mut count: BalanceOf<T> = 0u32.into();
+            for (account, balance) in ActiveBalancePerUser::<T>::iter() {
+                count += balance;
+                if count >= winning_balance {
+                    winner = Some(account);
+                    break;
+                }
+            }
+            // Should be impossible: If no winner was selected, return Error
+            ensure!(winner.is_some(), Error::<T>::NoWinnerFound);
+
+            // Allow winner to manually claim their winnings later
+            UnclaimedWinningsByAccount::<T>::mutate(
+                winner
+                    .clone()
+                    .expect("we checked a winner exists before. qed"),
+                |maybe_balance| match *maybe_balance {
+                    Some(balance) => {
+                        (*maybe_balance) = Some(balance.saturating_add(payout_for_winner))
+                    }
+                    None => (*maybe_balance) = Some(payout_for_winner),
+                },
+            );
+            TotalUnclaimedWinnings::<T>::try_mutate(|old| {
+                *old = (*old)
+                    .checked_add(&payout_for_winner)
+                    .ok_or(ArithmeticError::Overflow)?;
+                Ok::<(), ArithmeticError>(())
+            })?;
+            log::debug!(
+                "winning of {:?} added to claim for account {:?}",
+                payout_for_winner,
+                winner
+            );
+            Self::deposit_event(Event::LotteryWinner(
+                winner.expect("We exited earlier if winner was None. qed"),
+                payout_for_winner,
+            ));
+            Ok(())
+        }
+
+        /// Unstake any collators we can unstake
+        /// This is infallible, if any step fails we just leave the collator in the request queue
+        fn finish_unstaking_collators() {
+            let now = <frame_system::Pallet<T>>::block_number();
+            let mut unstaking = UnstakingCollators::<T>::get();
+            let original_len = unstaking.len();
+            if unstaking.is_empty() {
+                return;
+            };
+            // Unstake what we can (false), leave the rest (true)
+            unstaking.retain(|collator|{
+                    // Leave collators that are not finished unstaking alone
+                    if collator.since + <T as Config>::UnstakeLockTime::get() > now {
+                        return true;
+                    };
+                    // Recover funds locked in the collator
+                    // There can only be one request per collator and it is always a full revoke_delegation call
+                    let delegation_requests_against_this_collator = pallet_parachain_staking::Pallet::<T>::delegation_scheduled_requests(collator.account.clone());
+                    let balance_to_unstake = match delegation_requests_against_this_collator.iter().find(|request|request.delegator == Self::account_id()){
+                        Some(our_request) if matches!(our_request.action, pallet_parachain_staking::DelegationAction::Revoke(_)) => {
+                            if T::BlockNumber::from(our_request.when_executable) > now {
+                                log::error!("Collator {:?} finished our unstaking timelock but not the pallet_parachain_staking one. leaving in queue", collator.account.clone());
+                                return true;
+                            };
+                            our_request.action.amount()
+                        }
+                        _ => {
+                                log::error!( "Expected revoke_delegation request not found on collator {:?}. Leaving in withdraw queue", collator.account.clone() );
+                                return true;
+                            }
+                    };
+                    // Ensure the pallet has enough gas to pay for this
+                    let fee_estimate : BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(&pallet_parachain_staking::Call::execute_delegation_request { delegator: Self::account_id() , candidate: collator.account.clone()  }, None::<u64>.into());
+                    if Self::surplus_funds() <= fee_estimate{
+                        log::warn!("could not finish unstaking delegation because the pallet is out of funds to pay TX fees. Skipping");
+                        return true;
+                    };
+                    match pallet_parachain_staking::Pallet::<T>::execute_delegation_request(
+                        RawOrigin::Signed(Self::account_id()).into(),
+                        Self::account_id(),
+                        collator.account.clone(),
+                    ){
+                        Err(e) => {
+                            log::error!("Collator finished unstaking timelock but could not be removed with error {:?}",e);
+                            true
+                        },
+                        Ok(_) => {
+                            // collator was unstaked
+                            SumOfDeposits::<T>::mutate(|balance| *balance = (*balance).saturating_sub(balance_to_unstake));
+                            log::debug!("Unstaked {:?} from collator {:?}",balance_to_unstake,collator.account.clone());
+                            // don't retain this collator in the unstaking collators vec
+                            false
+                        },
+                    }
+            });
+            if original_len != unstaking.len() {
+                log::debug!(
+                    "Finished unstaking {:?} out of {:?} requests",
+                    original_len - unstaking.len(),
+                    original_len
+                );
+                UnstakingCollators::<T>::put(unstaking);
+            }
+        }
+
+        #[named]
+        fn do_rebalance_remaining_funds() -> DispatchResult {
+            log::trace!(function_name!());
+            // Only restake what isn't needed to service outstanding withdrawal requests
+            let stakable_balance = Self::current_prize_pool();
+            if stakable_balance.is_zero() {
+                log::debug!("Nothing to restake");
+                return Ok(());
+            }
+            for (collator, amount_to_stake) in
+                Self::calculate_deposit_distribution(stakable_balance)
+            {
+                Self::do_stake_one_collator(collator.clone(), amount_to_stake)?;
+                TotalPot::<T>::mutate(|balance| *balance += amount_to_stake);
+                log::debug!(
+                    "Rebalanced {:?} to collator {:?}",
+                    amount_to_stake,
+                    collator
+                );
+            }
+            Ok(())
+        }
+
+        /// This fn schedules a single shot payout of all matured withdrawals
+        /// Main usage: Automatic execution in the course of a drawing
+        /// It can also be manually invoke by T::ManageOrigin to reprocess withdrawals that
+        /// previously failed, e.g. due to the pallet running out of gas funds
+        /// A withdrawal is considered "matured" if its staking timelock expired
+        #[named]
+        fn do_process_matured_withdrawals() -> DispatchResult {
+            log::trace!(function_name!());
+            if <WithdrawalRequestQueue<T>>::get().is_empty() {
+                return Ok(()); // nothing to do
+            }
+            let funds_available_to_withdraw = Self::surplus_funds();
+            log::debug!(
+                "Withdrawable funds: {:?}",
+                funds_available_to_withdraw.clone()
+            );
+            if funds_available_to_withdraw.is_zero() {
+                return Ok(()); // nothing to do
+            }
+            let now = <frame_system::Pallet<T>>::block_number();
+            // Pay down the list from top (oldest) to bottom until we've paid out everyone or run out of available funds
+            <WithdrawalRequestQueue<T>>::mutate(|request_vec| -> Result<(), DispatchError> {
+                let mut left_overs: Vec<Request<_, _, _>> = Vec::new();
+                for request in request_vec.iter() {
+                    // Don't pay anyone still timelocked
+                    if now < request.block + <T as Config>::UnstakeLockTime::get() {
+                        left_overs.push((*request).clone());
+                        continue;
+                    }
+                    // stop paying people if we've run out of free funds.
+                    // The assumption is the collators serving these requests will
+                    // finish unstaking next round ( next lottery drawing )
+                    if request.balance > funds_available_to_withdraw {
+                        left_overs.push((*request).clone());
+                        continue;
+                    }
+                    // we know we can pay this out, do it
+                    <SumOfDeposits<T>>::mutate(|sum| (*sum).saturating_sub(request.balance));
+                    log::debug!(
+                        "Transferring {:?} to {:?}",
+                        request.balance.clone(),
+                        request.user.clone()
+                    );
+                    <T as pallet_parachain_staking::Config>::Currency::transfer(
+                        &Self::account_id(),
+                        &request.user,
+                        request.balance,
+                        KeepAlive,
+                    )?;
+                }
+                log::debug!(
+                    "Have {:?} requests left over after transfers",
+                    left_overs.len()
+                );
+                // Update T::WithdrawalRequestQueue if we paid at least one guy
+                if left_overs.len() != (*request_vec).len() {
+                    request_vec.clear();
+                    for c in left_overs {
+                        request_vec.push(c);
+                    }
+                }
+                Ok(())
+            })?;
+            Ok(())
+        }
+    }
+
+    impl<T: Config> Pallet<T> {
+        // public getters for lottery state
+        /// Returns the block the next drawing will execute, if any
+        pub fn next_drawing_at() -> Option<T::BlockNumber> {
+            T::Scheduler::next_dispatch_time(Self::lottery_schedule_id()).ok()
+        }
+        /// funds in the lottery that are not staked or assigned to previous winners ( can be used to pay TX fees )
+        pub(crate) fn surplus_funds() -> BalanceOf<T> {
+            let non_staked_funds =
+                pallet_parachain_staking::Pallet::<T>::get_delegator_stakable_free_balance(
+                    &Self::account_id(),
+                );
+            non_staked_funds.saturating_sub(Self::total_unclaimed_winnings())
+        }
+        /// funds in the lottery pallet that are not needed/reserved for anything and can be paid to the next winner
+        pub fn current_prize_pool() -> BalanceOf<T> {
+            let outstanding_balance_to_withdraw = <WithdrawalRequestQueue<T>>::get()
+                .iter()
+                .map(|request| request.balance)
+                .reduce(|acc, balance| acc + balance)
+                .unwrap_or_else(|| 0u32.into());
+            Self::surplus_funds()
+                .saturating_sub(Self::gas_reserve())
+                .saturating_sub(outstanding_balance_to_withdraw)
+        }
+        /// Returns if we're within the pre-drawing time where deposits/withdrawals are frozen
+        pub fn not_in_drawing_freezeout() -> bool {
+            match Self::next_drawing_at() {
+                None => {
+                    true // can't be frozen if lottery stopped
+                }
+                Some(drawing) => {
+                    let now = <frame_system::Pallet<T>>::block_number();
+                    now < drawing.saturating_sub(<T as Config>::DrawingFreezeout::get())
+                }
+            }
+        }
+    }
+}
