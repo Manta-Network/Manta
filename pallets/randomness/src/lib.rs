@@ -172,17 +172,7 @@ pub mod pallet {
 
     // Randomness trait
     impl<T: Config> frame_support::traits::Randomness<T::Hash, BlockNumberFor<T>> for Pallet<T> {
-        /// Uses the vrf output of previous block to generate a random seed. The provided `subject`
-        /// must have the property to uniquely generate different randomness given the same vrf
-        /// output (e.g. relay block number).
-        ///
-        /// In our case the `subject` is provided via Nimbus and consists of three parts:
-        ///       1. Constant string *b"filter" - to identify author-slot-filter pallet
-        ///       2. First 2 bytes of index.to_le_bytes() when selecting the ith eligible author
-        ///       3. First 4 bytes of slot_number.to_be_bytes()
-        ///
-        /// Note: This needs to be updated when asynchronous backing is in effect,
-        ///       as it will be unsafe.
+        /// Uses the BABE randomness to generate a random seed.
         fn random(subject: &[u8]) -> (T::Hash, BlockNumberFor<T>) {
             let relay_epoch_index = <RelayEpoch<T>>::get();
             let randomness_output =
@@ -194,8 +184,11 @@ pub mod pallet {
             digest.extend_from_slice(randomness_output.as_ref());
             digest.extend_from_slice(subject);
             let randomness = T::Hashing::hash(digest.as_slice());
-            let block_number = frame_system::Pallet::<T>::block_number(); // TODO: Randomness Established at start of Epoch!
-            (randomness, block_number)
+            // TODO: Randomness Established at start of Epoch! This is nontrivial to implement
+            // because we need to map the start-of-epoch relayblock to its matching parablock
+            // in its current form block_number is meaningless and should not be relied upon
+            let randomness_established_at: <T as Config>::BlockNumber = 0u32.into();
+            (randomness, randomness_established_at)
         }
     }
 }
