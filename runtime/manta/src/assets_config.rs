@@ -200,7 +200,7 @@ impl pallet_manta_sbt::Config for Runtime {
     type PalletId = MantaSbtPalletId;
     type Currency = Balances;
     type MintsPerReserve = ConstU16<5>;
-    type ReservePrice = ConstU128<{ 100_000 * MANTA }>;
+    type ReservePrice = ConstU128<{ 50 * MANTA }>;
     type SbtMetadataBound = ConstU32<300>;
     type RegistryBound = ConstU32<300>;
     type AdminOrigin = EitherOfDiverse<
