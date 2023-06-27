@@ -349,3 +349,99 @@ fn remove_register_should_fail() {
         );
     });
 }
+
+#[test]
+fn username_format_test() {
+    ExtBuilder::default().build().execute_with(|| {
+        initialize_test();
+        // 3 char test
+        assert_ok!(NameService::register(
+            MockOrigin::signed(ALICE),
+            "two".as_bytes().to_vec(),
+            ALICE.into()
+        ));
+        // 64 char test
+        assert_ok!(NameService::register(
+            MockOrigin::signed(ALICE),
+            "bLuuXKxxOpqCsTvSglVeQvEbYoNVeswqbLuuXKxxOpqCsTvSglVeQvEbYoNVeswq"
+                .as_bytes()
+                .to_vec(),
+            ALICE.into()
+        ));
+        // allowed special and numerics
+        assert_ok!(NameService::register(
+            MockOrigin::signed(ALICE),
+            "test_test.123".as_bytes().to_vec(),
+            ALICE.into()
+        ));
+        assert_ok!(NameService::register(
+            MockOrigin::signed(ALICE),
+            "test123".as_bytes().to_vec(),
+            ALICE.into()
+        ));
+        // test invalid formats
+        // starting special signs
+        assert_noop!(
+            NameService::register(
+                MockOrigin::signed(ALICE),
+                ".test".as_bytes().to_vec(),
+                ALICE.into()
+            ),
+            Error::<Runtime>::InvalidUsernameFormat
+        );
+        assert_noop!(
+            NameService::register(
+                MockOrigin::signed(ALICE),
+                "_test".as_bytes().to_vec(),
+                ALICE.into()
+            ),
+            Error::<Runtime>::InvalidUsernameFormat
+        );
+        // starting numbers
+        assert_noop!(
+            NameService::register(
+                MockOrigin::signed(ALICE),
+                "1test".as_bytes().to_vec(),
+                ALICE.into()
+            ),
+            Error::<Runtime>::InvalidUsernameFormat
+        );
+        // ending with special character
+        assert_noop!(
+            NameService::register(
+                MockOrigin::signed(ALICE),
+                "test.".as_bytes().to_vec(),
+                ALICE.into()
+            ),
+            Error::<Runtime>::InvalidUsernameFormat
+        );
+        assert_noop!(
+            NameService::register(
+                MockOrigin::signed(ALICE),
+                "test_".as_bytes().to_vec(),
+                ALICE.into()
+            ),
+            Error::<Runtime>::InvalidUsernameFormat
+        );
+        // too short
+        assert_noop!(
+            NameService::register(
+                MockOrigin::signed(ALICE),
+                "ab".as_bytes().to_vec(),
+                ALICE.into()
+            ),
+            Error::<Runtime>::InvalidUsernameFormat
+        );
+        // too long 65+
+        assert_noop!(
+            NameService::register(
+                MockOrigin::signed(ALICE),
+                "bLuuXKxxOpqCsTvSglVeQvEbYoNVeswqbLuuXKxxOpqCsTvSglVeQvEbYoNVeswqa"
+                    .as_bytes()
+                    .to_vec(),
+                ALICE.into()
+            ),
+            Error::<Runtime>::InvalidUsernameFormat
+        );
+    });
+}

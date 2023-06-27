@@ -45,7 +45,7 @@ pub type ZkAddressType = [u8; 32];
 
 pub type UserName = Vec<u8>;
 
-pub const NAME_MAX_LEN: usize = 63;
+pub const NAME_MAX_LEN: usize = 64;
 pub const NAME_MIN_LEN: usize = 3;
 
 /// Type alias for currency balance.
@@ -412,6 +412,10 @@ impl<T: Config> Pallet<T> {
 
 /// username validation
 fn username_validation(username: &Vec<u8>) -> Option<()> {
+    if !(NAME_MIN_LEN..=NAME_MAX_LEN).contains(&username.len()) {
+        return None;
+    }
+
     let username_format: Matcher0<_> = regex!(br"[a-zA-Z][-a-zA-Z0-9\._]*[a-zA-Z0-9]");
     if username_format.is_match(username.as_slice()) {
         return Some(());
