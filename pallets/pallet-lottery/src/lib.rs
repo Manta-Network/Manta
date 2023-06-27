@@ -763,12 +763,12 @@ pub mod pallet {
                     rng.fill_bytes(&mut rnd);
                     let randomness = T::Hashing::hash(&rnd);
                     random = (randomness, <T as frame_system::Config>::BlockNumber::zero());
-                    log::debug("select-winner using randomness {:?}", random);
+                    log::debug!("select-winner using randomness {:?}", random);
                 }
                 #[cfg(not(feature = "runtime-benchmarks"))]
                 {
                     random = T::RandomnessSource::random(&[n; 1]);
-                    log::debug("select-winner using randomness {:?}", random);
+                    log::debug!("select-winner using randomness {:?}", random);
                     // TODO: The following check needs a change to pallet randomness but is static,
                     //       so this can be done manually on deployment of the pallet
                     // ensure!(
