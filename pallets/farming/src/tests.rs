@@ -125,14 +125,14 @@ fn claim() {
                 100
             ));
 
-            assert_ok!(Farming::force_retire_pool(
+            assert_ok!(Farming::retire_pool(
                 RuntimeOrigin::signed(ALICE),
                 pid
             ));
             assert_eq!(Assets::balance(KSM, &ALICE), 5000); // 3000 + 1000 + 1000
             Farming::on_initialize(0);
             assert_err!(
-                Farming::force_retire_pool(RuntimeOrigin::signed(ALICE), pid),
+                Farming::retire_pool(RuntimeOrigin::signed(ALICE), pid),
                 Error::<Runtime>::InvalidPoolState
             );
         });
@@ -387,7 +387,7 @@ fn retire() {
 
             assert_ok!(Farming::set_retire_limit(RuntimeOrigin::signed(ALICE), 10));
             System::set_block_number(System::block_number() + 1000);
-            assert_ok!(Farming::force_retire_pool(
+            assert_ok!(Farming::retire_pool(
                 RuntimeOrigin::signed(ALICE),
                 pid
             ));
@@ -411,7 +411,7 @@ fn reset() {
             assert_eq!(Assets::balance(KSM, &ALICE), 2918);
             assert_ok!(Farming::close_pool(RuntimeOrigin::signed(ALICE), pid));
             assert_ok!(Farming::set_retire_limit(RuntimeOrigin::signed(ALICE), 10));
-            assert_ok!(Farming::force_retire_pool(
+            assert_ok!(Farming::retire_pool(
                 RuntimeOrigin::signed(ALICE),
                 pid
             ));

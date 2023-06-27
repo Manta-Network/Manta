@@ -17,12 +17,11 @@
 use crate::*;
 use codec::HasCompact;
 use scale_info::TypeInfo;
-use sp_core::U256;
 use sp_runtime::{
-    traits::{CheckedAdd, Saturating, UniqueSaturatedInto, Zero},
-    RuntimeDebug, SaturatedConversion,
+    traits::{Saturating, Zero},
+    RuntimeDebug,
 };
-use sp_std::{borrow::ToOwned, collections::btree_map::BTreeMap, prelude::*};
+use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct ShareInfo<BalanceOf: HasCompact, CurrencyIdOf: Ord, BlockNumberFor, AccountIdOf> {
@@ -132,7 +131,7 @@ pub enum Action {
     Deposit,
     Withdraw,
     Claim,
-    ForceRetirePool,
+    RetirePool,
     ClosePool,
     ResetPool,
     KillPool,
@@ -149,8 +148,8 @@ impl PoolState {
                     || state == PoolState::Dead
             }
             Action::Claim => state == PoolState::Ongoing || state == PoolState::Dead,
-            Action::ForceRetirePool => state == PoolState::Dead,
             Action::ClosePool => state == PoolState::Ongoing,
+            Action::RetirePool => state == PoolState::Dead,
             Action::ResetPool => state == PoolState::Retired,
             Action::KillPool => state == PoolState::Retired || state == PoolState::UnCharged,
             Action::EditPool => {
@@ -164,31 +163,6 @@ impl PoolState {
 }
 
 impl<T: Config> Pallet<T> {
-    pub fn accumulate_reward(
-        pool: PoolId,
-        reward_currency: CurrencyIdOf<T>,
-        reward_increment: BalanceOf<T>,
-    ) -> DispatchResult {
-        if reward_increment.is_zero() {
-            return Ok(());
-        }
-        PoolInfos::<T>::mutate_exists(pool, |maybe_pool_info| -> DispatchResult {
-            let pool_info = maybe_pool_info
-                .as_mut()
-                .ok_or(Error::<T>::PoolDoesNotExist)?;
-
-            pool_info
-                .rewards
-                .entry(reward_currency)
-                .and_modify(|(total_reward, _)| {
-                    *total_reward = total_reward.saturating_add(reward_increment);
-                })
-                .or_insert((reward_increment, Zero::zero()));
-
-            Ok(())
-        })
-    }
-
     pub fn add_share(
         who: &T::AccountId,
         pid: PoolId,
@@ -199,27 +173,25 @@ impl<T: Config> Pallet<T> {
             return;
         }
 
+        // update pool total share
         let initial_total_shares = pool_info.total_shares;
         pool_info.total_shares = pool_info.total_shares.saturating_add(add_amount);
 
+        // update user share
+        let n: BlockNumberFor<T> = frame_system::Pallet::<T>::block_number();
+        let mut share_info = SharesAndWithdrawnRewards::<T>::get(pid, who)
+            .unwrap_or_else(|| ShareInfo::new(who.clone(), n));
+        share_info.share = share_info.share.saturating_add(add_amount);
+
         let mut withdrawn_inflation = Vec::<(CurrencyIdOf<T>, BalanceOf<T>)>::new();
 
+        // update pool rewards
         pool_info.rewards.iter_mut().for_each(
             |(reward_currency, (total_reward, total_withdrawn_reward))| {
                 let reward_inflation = if initial_total_shares.is_zero() {
                     Zero::zero()
                 } else {
-                    U256::from(add_amount.to_owned().saturated_into::<u128>())
-                        .saturating_mul(total_reward.to_owned().saturated_into::<u128>().into())
-                        .checked_div(
-                            initial_total_shares
-                                .to_owned()
-                                .saturated_into::<u128>()
-                                .into(),
-                        )
-                        .unwrap_or_default()
-                        .as_u128()
-                        .saturated_into()
+                    Self::get_reward_inflation(add_amount, total_reward, initial_total_shares)
                 };
                 *total_reward = total_reward.saturating_add(reward_inflation);
                 *total_withdrawn_reward = total_withdrawn_reward.saturating_add(reward_inflation);
@@ -228,12 +200,7 @@ impl<T: Config> Pallet<T> {
             },
         );
 
-        let current_block_number: BlockNumberFor<T> = frame_system::Pallet::<T>::block_number();
-
-        let mut share_info = SharesAndWithdrawnRewards::<T>::get(pid, who)
-            .unwrap_or_else(|| ShareInfo::new(who.clone(), current_block_number));
-        share_info.share = share_info.share.saturating_add(add_amount);
-        // update withdrawn inflation for each reward currency
+        // update withdrawn inflation for each reward currency of user share
         withdrawn_inflation
             .into_iter()
             .for_each(|(reward_currency, reward_inflation)| {
@@ -245,6 +212,7 @@ impl<T: Config> Pallet<T> {
                     })
                     .or_insert(reward_inflation);
             });
+
         SharesAndWithdrawnRewards::<T>::insert(pid, who, share_info);
         PoolInfos::<T>::insert(pid, pool_info);
     }
@@ -265,7 +233,7 @@ impl<T: Config> Pallet<T> {
         Self::claim_rewards(who, pool)?;
 
         SharesAndWithdrawnRewards::<T>::mutate(pool, who, |share_info_old| -> DispatchResult {
-            let current_block_number: BlockNumberFor<T> = frame_system::Pallet::<T>::block_number();
+            let n: BlockNumberFor<T> = frame_system::Pallet::<T>::block_number();
             if let Some(mut share_info) = share_info_old.take() {
                 let remove_amount;
                 if let Some(remove_amount_input) = remove_amount_input {
@@ -273,7 +241,6 @@ impl<T: Config> Pallet<T> {
                 } else {
                     remove_amount = share_info.share;
                 }
-
                 if remove_amount.is_zero() {
                     return Ok(());
                 }
@@ -285,24 +252,16 @@ impl<T: Config> Pallet<T> {
 
                     share_info
                         .withdraw_list
-                        .push((current_block_number + withdraw_limit_time, remove_amount));
-
-                    let removing_share = U256::from(remove_amount.saturated_into::<u128>());
+                        .push((n + withdraw_limit_time, remove_amount));
 
                     pool_info.total_shares = pool_info.total_shares.saturating_sub(remove_amount);
 
                     // update withdrawn rewards for each reward currency
                     share_info.withdrawn_rewards.iter_mut().try_for_each(
                         |(reward_currency, withdrawn_reward)| -> DispatchResult {
-                            let withdrawn_reward_to_remove: BalanceOf<T> = removing_share
-                                .saturating_mul(
-                                    withdrawn_reward.to_owned().saturated_into::<u128>().into(),
-                                )
-                                .checked_div(share_info.share.saturated_into::<u128>().into())
-                                .unwrap_or_default()
-                                .as_u128()
-                                .saturated_into();
-
+                            let withdrawn_reward_to_remove = Self::get_reward_inflation(
+                                remove_amount,withdrawn_reward,share_info.share
+                            );
                             if withdrawn_reward_to_remove.is_zero() {
                                 return Ok(());
                             }
@@ -341,8 +300,7 @@ impl<T: Config> Pallet<T> {
             pool,
             who,
             |maybe_share_withdrawn| -> DispatchResult {
-                let current_block_number: BlockNumberFor<T> =
-                    frame_system::Pallet::<T>::block_number();
+                let n: BlockNumberFor<T> = frame_system::Pallet::<T>::block_number();
                 if let Some(share_info) = maybe_share_withdrawn {
                     if share_info.share.is_zero() {
                         return Ok(());
@@ -353,30 +311,11 @@ impl<T: Config> Pallet<T> {
                             .as_mut()
                             .ok_or(Error::<T>::PoolDoesNotExist)?;
 
-                        let total_shares =
-                            U256::from(pool_info.total_shares.to_owned().saturated_into::<u128>());
+                        let total_shares = pool_info.total_shares;
                         pool_info.rewards.iter_mut().try_for_each(
 							|(reward_currency, (total_reward, total_withdrawn_reward))|  -> DispatchResult {
-								let withdrawn_reward = share_info
-									.withdrawn_rewards
-									.get(reward_currency)
-									.copied()
-									.unwrap_or_default();
-
-								let total_reward_proportion: BalanceOf<T> = U256::from(
-									share_info.share.to_owned().saturated_into::<u128>(),
-								)
-								.saturating_mul(U256::from(
-									total_reward.to_owned().saturated_into::<u128>(),
-								))
-								.checked_div(total_shares)
-								.unwrap_or_default()
-								.as_u128()
-								.unique_saturated_into();
-
-								let reward_to_withdraw = total_reward_proportion
-									.saturating_sub(withdrawn_reward)
-									.min(total_reward.saturating_sub(*total_withdrawn_reward));
+                                let (withdrawn_reward, reward_to_withdraw) = Self::get_reward_amount(
+                                    share_info, total_reward, total_withdrawn_reward, total_shares, reward_currency)?;
 
 								if reward_to_withdraw.is_zero() {
 									return Ok(());
@@ -389,30 +328,12 @@ impl<T: Config> Pallet<T> {
 									withdrawn_reward.saturating_add(reward_to_withdraw),
 								);
 
-								let ed = T::MultiCurrency::minimum_balance(*reward_currency);
-								let mut account_to_send = who.clone();
-
-								if reward_to_withdraw < ed {
-									let receiver_balance = T::MultiCurrency::total_balance(*reward_currency, who);
-
-									let receiver_balance_after =
-										receiver_balance.checked_add(&reward_to_withdraw).ok_or(ArithmeticError::Overflow)?;
-									if receiver_balance_after < ed {
-										account_to_send = T::TreasuryAccount::get();
-									}
-								}
-								// pay reward to `who`
-								T::MultiCurrency::transfer(
-									*reward_currency,
-									&pool_info.reward_issuer,
-									&account_to_send,
-									reward_to_withdraw,
-								)
+                                Self::reward_token_transfer(reward_currency, reward_to_withdraw, who, &pool_info.reward_issuer)
 							},
 						)?;
                         Ok(())
                     })?;
-                    share_info.claim_last_block = current_block_number;
+                    share_info.claim_last_block = n;
                 };
                 Ok(())
             },
@@ -443,26 +364,8 @@ impl<T: Config> Pallet<T> {
                                 pool_info.tokens_proportion.iter().try_for_each(
                                     |(token, &proportion)| -> DispatchResult {
                                         let withdraw_amount = proportion * native_amount;
-                                        let ed = T::MultiCurrency::minimum_balance(*token);
-                                        let mut account_to_send = who.clone();
 
-                                        if withdraw_amount < ed {
-                                            let receiver_balance =
-                                                T::MultiCurrency::total_balance(*token, who);
-
-                                            let receiver_balance_after = receiver_balance
-                                                .checked_add(&withdraw_amount)
-                                                .ok_or(ArithmeticError::Overflow)?;
-                                            if receiver_balance_after < ed {
-                                                account_to_send = T::TreasuryAccount::get();
-                                            }
-                                        }
-                                        T::MultiCurrency::transfer(
-                                            *token,
-                                            &pool_info.keeper,
-                                            &account_to_send,
-                                            withdraw_amount,
-                                        )
+                                        Self::reward_token_transfer(token, withdraw_amount, who, &pool_info.keeper)
                                     },
                                 )?;
                             } else {
