@@ -16,28 +16,25 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{
-    pallet_prelude::*,
-    PalletId,
-};
+use frame_support::{pallet_prelude::*, PalletId};
 use frame_system::pallet_prelude::*;
 use manta_primitives::types::PoolId;
 use orml_traits::{arithmetic::CheckedAdd, MultiCurrency};
 use sp_core::U256;
 use sp_runtime::{
-    traits::{AccountIdConversion, AtLeast32BitUnsigned, Saturating, Zero, One},
-    ArithmeticError, Perbill, SaturatedConversion
+    traits::{AccountIdConversion, AtLeast32BitUnsigned, One, Saturating, Zero},
+    ArithmeticError, Perbill, SaturatedConversion,
 };
 use sp_std::{borrow::ToOwned, collections::btree_map::BTreeMap, vec::Vec};
 
-#[cfg(test)]
-mod mock;
-#[cfg(test)]
-mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 pub mod gauge;
+#[cfg(test)]
+mod mock;
 pub mod rewards;
+#[cfg(test)]
+mod tests;
 pub mod weights;
 pub use gauge::*;
 pub use pallet::*;
@@ -837,26 +834,27 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-    fn reward_token_transfer(reward_currency: &CurrencyIdOf<T>, reward_to_withdraw: BalanceOf<T>, who: &T::AccountId, from: &T::AccountId) -> DispatchResult {
+    fn reward_token_transfer(
+        reward_currency: &CurrencyIdOf<T>,
+        reward_to_withdraw: BalanceOf<T>,
+        who: &T::AccountId,
+        from: &T::AccountId,
+    ) -> DispatchResult {
         let ed = T::MultiCurrency::minimum_balance(*reward_currency);
         let mut account_to_send = who.clone();
 
         if reward_to_withdraw < ed {
             let receiver_balance = T::MultiCurrency::total_balance(*reward_currency, who);
 
-            let receiver_balance_after =
-                receiver_balance.checked_add(&reward_to_withdraw).ok_or(ArithmeticError::Overflow)?;
+            let receiver_balance_after = receiver_balance
+                .checked_add(&reward_to_withdraw)
+                .ok_or(ArithmeticError::Overflow)?;
             if receiver_balance_after < ed {
                 account_to_send = T::TreasuryAccount::get();
             }
         }
         // pay reward to `who`
-        T::MultiCurrency::transfer(
-            *reward_currency,
-            from,
-            &account_to_send,
-            reward_to_withdraw,
-        )
+        T::MultiCurrency::transfer(*reward_currency, from, &account_to_send, reward_to_withdraw)
     }
 
     pub fn get_farming_rewards(
@@ -872,7 +870,12 @@ impl<T: Config> Pallet<T> {
         pool_info.rewards.iter().try_for_each(
             |(reward_currency, (total_reward, total_withdrawn_reward))| -> DispatchResult {
                 let (_, reward_to_withdraw) = Self::get_reward_amount(
-                    &share_info, total_reward, total_withdrawn_reward, total_shares, reward_currency)?;
+                    &share_info,
+                    total_reward,
+                    total_withdrawn_reward,
+                    total_shares,
+                    reward_currency,
+                )?;
 
                 if reward_to_withdraw.is_zero() {
                     return Ok(());
@@ -885,11 +888,12 @@ impl<T: Config> Pallet<T> {
         Ok(result_vec)
     }
 
-    fn get_reward_amount(share_info: &ShareInfoOf<T>,
-                         total_reward: &BalanceOf<T>,
-                         total_withdrawn_reward: &BalanceOf<T>,
-                         total_shares: BalanceOf<T>,
-                         reward_currency: &CurrencyIdOf<T>
+    fn get_reward_amount(
+        share_info: &ShareInfoOf<T>,
+        total_reward: &BalanceOf<T>,
+        total_withdrawn_reward: &BalanceOf<T>,
+        total_shares: BalanceOf<T>,
+        reward_currency: &CurrencyIdOf<T>,
     ) -> Result<(BalanceOf<T>, BalanceOf<T>), DispatchError> {
         let withdrawn_reward = share_info
             .withdrawn_rewards
@@ -897,7 +901,8 @@ impl<T: Config> Pallet<T> {
             .copied()
             .unwrap_or_default();
 
-        let total_reward_proportion: BalanceOf<T> = Self::get_reward_inflation(share_info.share, total_reward, total_shares);
+        let total_reward_proportion: BalanceOf<T> =
+            Self::get_reward_inflation(share_info.share, total_reward, total_shares);
 
         let reward_to_withdraw = total_reward_proportion
             .saturating_sub(withdrawn_reward)
@@ -906,12 +911,14 @@ impl<T: Config> Pallet<T> {
         Ok((withdrawn_reward, reward_to_withdraw))
     }
 
-    fn get_reward_inflation(amount: BalanceOf<T>, total_reward: &BalanceOf<T>, total_share: BalanceOf<T>) -> BalanceOf<T> {
+    fn get_reward_inflation(
+        amount: BalanceOf<T>,
+        total_reward: &BalanceOf<T>,
+        total_share: BalanceOf<T>,
+    ) -> BalanceOf<T> {
         let total_reward_proportion: BalanceOf<T> =
             U256::from(amount.to_owned().saturated_into::<u128>())
-                .saturating_mul(U256::from(
-                    total_reward.to_owned().saturated_into::<u128>(),
-                ))
+                .saturating_mul(U256::from(total_reward.to_owned().saturated_into::<u128>()))
                 .checked_div(U256::from(total_share.to_owned().saturated_into::<u128>()))
                 .unwrap_or_default()
                 .as_u128()

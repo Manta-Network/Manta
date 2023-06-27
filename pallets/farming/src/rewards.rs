@@ -260,7 +260,9 @@ impl<T: Config> Pallet<T> {
                     share_info.withdrawn_rewards.iter_mut().try_for_each(
                         |(reward_currency, withdrawn_reward)| -> DispatchResult {
                             let withdrawn_reward_to_remove = Self::get_reward_inflation(
-                                remove_amount,withdrawn_reward,share_info.share
+                                remove_amount,
+                                withdrawn_reward,
+                                share_info.share,
                             );
                             if withdrawn_reward_to_remove.is_zero() {
                                 return Ok(());
@@ -365,7 +367,12 @@ impl<T: Config> Pallet<T> {
                                     |(token, &proportion)| -> DispatchResult {
                                         let withdraw_amount = proportion * native_amount;
 
-                                        Self::reward_token_transfer(token, withdraw_amount, who, &pool_info.keeper)
+                                        Self::reward_token_transfer(
+                                            token,
+                                            withdraw_amount,
+                                            who,
+                                            &pool_info.keeper,
+                                        )
                                     },
                                 )?;
                             } else {

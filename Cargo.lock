@@ -5471,7 +5471,7 @@ dependencies = [
 
 [[package]]
 name = "manta-farming"
-version = "4.1.0"
+version = "4.2.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5495,7 +5495,7 @@ dependencies = [
 
 [[package]]
 name = "manta-farming-rpc-api"
-version = "4.1.0"
+version = "4.2.0"
 dependencies = [
  "jsonrpsee",
  "manta-farming-rpc-runtime-api",
@@ -5511,7 +5511,7 @@ dependencies = [
 
 [[package]]
 name = "manta-farming-rpc-runtime-api"
-version = "4.1.0"
+version = "4.2.0"
 dependencies = [
  "manta-primitives",
  "parity-scale-codec",
