@@ -87,41 +87,6 @@ jobs:
           source ${HOME}/.cargo/env
           RUSTC_BOOTSTRAP=1 cargo test -p integration-tests --release --features=calamari --no-default-features
           RUSTC_BOOTSTRAP=1 cargo test -p integration-tests --release --features=manta --no-default-features
-      - name: Run congestion test (allowed to fail)
-        id: congestion_test
-        env:
-          RUST_BACKTRACE: full
-          RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 120G
-          SCCACHE_DIR: /home/runner/.cache/sccache
-        run: |
-          source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime --workspace --exclude integration-tests -- fee::multiplier_tests::multiplier_growth_simulator_and_congestion_budget_test
-        continue-on-error: true
-      - name: Comment on PR whether congestion test failed
-        uses: actions/github-script@v6
-        with:
-          script: |
-            // this uses octokit Issues API from https://octokit.github.io/rest.js/v19#issues
-            const octokit = github;
-            const number = context.issue.number;
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            if (!number) return; // Ignore non-PR CI runs
-            const comment_text = "Congestion test: 1-day congestion cost (calamari)"
-            // find or create a comment in the PR
-            const { data } = await octokit.rest.issues.listComments({ owner, repo, issue_number: number });
-            let existingComment = data.find((comment) => comment.body.includes(comment_text));
-            if (!existingComment) {
-              const { data: newComment } = await octokit.rest.issues.createComment({ owner, repo, issue_number: number, body: comment_text });
-              existingComment = newComment;
-            }
-            // Update comment text with CI status
-            const status = '${{ job.steps.congestion_test.outcome }}';
-            const statusIcon = status === 'success' ? ':white_check_mark:' : ':warning:';
-            const above = status === 'success' ? 'is above' : 'is NOT above';
-            const updatedComment = `${statusIcon} ${comment_text} ${above} target_daily_congestion_cost_kma`;
-            await octokit.rest.issues.updateComment({ owner, repo, comment_id: existingComment.id, body: updatedComment });
       - name: stop sccache server
         run: sccache --stop-server || true
   stop-integration-test-checks:
@@ -324,8 +289,93 @@ jobs:
           github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-integration-test-checks.outputs.aws-region }}
-          runner-label: ${{ needs.start-integration-test-checks.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-integration-test-checks.outputs.aws-instance-id }}
+          aws-region: ${{ needs.start-unit-test-checks.outputs.aws-region }}
+          runner-label: ${{ needs.start-unit-test-checks.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-unit-test-checks.outputs.aws-instance-id }}
+      - name: discard stopper success/failure
+        run: true
+  start-congestion-test-checks:
+    timeout-minutes: 480
+    strategy:
+      matrix:
+        runtime:
+          - name: manta-runtime
+          - name: calamari-runtime
+    runs-on: ubuntu-20.04
+    outputs:
+      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    steps:
+      - id: start-self-hosted-runner
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: start
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
+          aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
+          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
+      - uses: actions/checkout@v2
+      - name: init
+        run: |
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          protoc --version
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup update
+          rustup toolchain install nightly-2023-03-03
+          rustup default nightly-2023-03-03
+          rustup target add wasm32-unknown-unknown
+      - name: Run congestion test (allowed to fail)
+        id: congestion_test
+        run: |
+          source ${HOME}/.cargo/env
+          RUSTC_BOOTSTRAP=1 cargo test --package ${{ matrix.runtime.name }} --lib -- fee::multiplier_tests::multiplier_growth_simulator_and_congestion_budget_test --exact --nocapture --ignored
+        continue-on-error: true
+      - name: Comment on PR whether congestion test failed
+        uses: actions/github-script@v6
+        with:
+          script: |
+            // this uses octokit Issues API from https://octokit.github.io/rest.js/v19#issues
+            const octokit = github;
+            const number = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            if (!number) return; // Ignore non-PR CI runs
+            const comment_text = "Congestion test: 1-day congestion cost (${{ matrix.runtime.name }})"
+            // find or create a comment in the PR
+            const { data } = await octokit.rest.issues.listComments({ owner, repo, issue_number: number });
+            let existingComment = data.find((comment) => comment.body.includes(comment_text));
+            if (!existingComment) {
+              const { data: newComment } = await octokit.rest.issues.createComment({ owner, repo, issue_number: number, body: comment_text });
+              existingComment = newComment;
+            }
+            // Update comment text with CI status
+            const status = '${{ job.steps.congestion_test.outcome }}';
+            const statusIcon = status === 'success' ? ':white_check_mark:' : ':warning:';
+            const above = status === 'success' ? 'is above' : 'is NOT above';
+            const updatedComment = `${statusIcon} ${comment_text} ${above} target_daily_congestion_cost_kma`;
+            await octokit.rest.issues.updateComment({ owner, repo, comment_id: existingComment.id, body: updatedComment });
+  stop-congestion-test-checks:
+    timeout-minutes: 15
+    needs: start-congestion-test-checks
+    runs-on: ubuntu-20.04
+    if: ${{ always() }}
+    steps:
+      - continue-on-error: true
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: stop
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.start-congestion-test-checks.outputs.aws-region }}
+          runner-label: ${{ needs.start-congestion-test-checks.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-congestion-test-checks.outputs.aws-instance-id }}
       - name: discard stopper success/failure
         run: true

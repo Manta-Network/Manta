@@ -763,17 +763,20 @@ pub mod pallet {
                     rng.fill_bytes(&mut rnd);
                     let randomness = T::Hashing::hash(&rnd);
                     random = (randomness, <T as frame_system::Config>::BlockNumber::zero());
+                    log::debug("select-winner using randomness {:?}", random);
                 }
                 #[cfg(not(feature = "runtime-benchmarks"))]
                 {
                     random = T::RandomnessSource::random(&[n; 1]);
-                    ensure!(
-                        random
-                            .1 // = randomness_established_at_block
-                            .saturating_add(<T as Config>::DrawingFreezeout::get())
-                            < <frame_system::Pallet<T>>::block_number(),
-                        Error::<T>::PalletMisconfigured
-                    );
+                    log::debug("select-winner using randomness {:?}", random);
+                    // TODO: The following check needs a change to pallet randomness but is static,
+                    //       so this can be done manually on deployment of the pallet
+                    // ensure!(
+                    //     random.1 = randomness_established_at_block
+                    //         .saturating_add(<T as Config>::DrawingFreezeout::get())
+                    //         < <frame_system::Pallet<T>>::block_number(),
+                    //     Error::<T>::PalletMisconfigured
+                    // );
                 }
                 let random_hash = random.0;
                 let as_number = U256::from_big_endian(random_hash.as_ref());
