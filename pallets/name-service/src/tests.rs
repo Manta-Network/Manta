@@ -183,13 +183,13 @@ fn register_should_fail() {
         initialize_test();
         assert_ok!(NameService::register(
             MockOrigin::signed(ALICE),
-            "test".as_bytes().to_vec(),
+            "test.test_123".as_bytes().to_vec(),
             ALICE.into(),
         ));
         assert_noop!(
             NameService::register(
                 MockOrigin::signed(ALICE),
-                "test".as_bytes().to_vec(),
+                "test.test_123".as_bytes().to_vec(),
                 ALICE.into()
             ),
             Error::<Runtime>::AlreadyPendingRegister
@@ -197,7 +197,7 @@ fn register_should_fail() {
         assert_noop!(
             NameService::register(
                 MockOrigin::signed(ALICE),
-                "!#".as_bytes().to_vec(),
+                ".test.test_123".as_bytes().to_vec(),
                 ALICE.into()
             ),
             Error::<Runtime>::InvalidUsernameFormat
@@ -205,7 +205,7 @@ fn register_should_fail() {
         assert_noop!(
             NameService::accept_register(
                 MockOrigin::signed(ALICE),
-                "test".as_bytes().to_vec(),
+                "test.test_123".as_bytes().to_vec(),
                 ALICE.into()
             ),
             Error::<Runtime>::RegisterTimeNotReached

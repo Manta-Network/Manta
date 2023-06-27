@@ -27,6 +27,7 @@ use frame_support::{
     transactional,
 };
 use frame_system::pallet_prelude::*;
+use safe_regex::{regex, Matcher0};
 use sp_runtime::{
     traits::{AccountIdConversion, Hash, Saturating},
     DispatchResult,
@@ -411,35 +412,9 @@ impl<T: Config> Pallet<T> {
 
 /// username validation
 fn username_validation(username: &Vec<u8>) -> Option<()> {
-    let label = core::str::from_utf8(username.as_slice())
-        .map(|label| label.to_ascii_lowercase())
-        .ok()?;
-
-    if !(NAME_MIN_LEN..=NAME_MAX_LEN).contains(&label.len()) {
-        return None;
+    let username_format: Matcher0<_> = regex!(br"[a-zA-Z][-a-zA-Z0-9\._]*[a-zA-Z0-9]");
+    if username_format.is_match(username.as_slice()) {
+        return Some(());
     }
-
-    let label_chars = label.chars().collect::<Vec<_>>();
-
-    match label_chars.as_slice() {
-        [first, middle @ .., last]
-            if first.is_ascii_alphanumeric() && last.is_ascii_alphanumeric() =>
-        {
-            for (i, &c) in middle.iter().enumerate() {
-                match c {
-                    c if c.is_ascii_alphanumeric() => continue,
-                    c if c == '-' => {
-                        if i == 1 || i == 2 {
-                            return None;
-                        }
-                        continue;
-                    }
-                    _ => return None,
-                }
-            }
-        }
-        _ => return None,
-    }
-
-    Some(())
+    None
 }
