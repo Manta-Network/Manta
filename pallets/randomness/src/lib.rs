@@ -187,7 +187,7 @@ pub mod pallet {
             // TODO: Randomness Established at start of Epoch! This is nontrivial to implement
             // because we need to map the start-of-epoch relayblock to its matching parablock
             // in its current form block_number is meaningless and should not be relied upon
-            let randomness_established_at: <T as Config>::BlockNumber = 0u32.into();
+            let randomness_established_at = 0u32.into();
             (randomness, randomness_established_at)
         }
     }
