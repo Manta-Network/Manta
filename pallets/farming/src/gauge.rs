@@ -284,8 +284,8 @@ where
                     latest_claimed_time_factor - gauge_info.claimed_time_factor,
                     gauge_pool_info.total_time_factor,
                 );
-                let total_shares =
-                    U256::from(pool_info.total_shares.to_owned().saturated_into::<u128>());
+                let total_shares = pool_info.total_shares;
+
                 let share_info = SharesAndWithdrawnRewards::<T>::get(gauge_pool_info.pid, who)
                     .ok_or(Error::<T>::ShareInfoNotExists)?;
                 gauge_pool_info.rewards.iter_mut().try_for_each(
@@ -299,17 +299,9 @@ where
                             .ok_or(ArithmeticError::Overflow)?;
                         // gauge_reward = gauge rate * gauge rewards * existing rewards
                         let gauge_reward = gauge_rate * reward;
-                        // reward_to_claim = farming rate * gauge rate * gauge rewards *
-                        // existing rewards in the gauge pool
+                        // reward_to_claim = farming rate * gauge_reward
                         let reward_to_claim: BalanceOf<T> =
-                            U256::from(share_info.share.to_owned().saturated_into::<u128>())
-                                .saturating_mul(U256::from(
-                                    gauge_reward.to_owned().saturated_into::<u128>(),
-                                ))
-                                .checked_div(total_shares)
-                                .unwrap_or_default()
-                                .as_u128()
-                                .unique_saturated_into();
+                            Self::get_reward_inflation(share_info.share, &gauge_reward, total_shares);
                         *total_gauged_reward = total_gauged_reward
                             .checked_add(&gauge_reward)
                             .ok_or(ArithmeticError::Overflow)?;
@@ -387,8 +379,7 @@ where
                     latest_claimed_time_factor - gauge_info.claimed_time_factor,
                     gauge_pool_info.total_time_factor,
                 );
-                let total_shares =
-                    U256::from(pool_info.total_shares.to_owned().saturated_into::<u128>());
+                let total_shares = pool_info.total_shares;
                 let share_info = SharesAndWithdrawnRewards::<T>::get(gauge_pool_info.pid, who)
                     .ok_or(Error::<T>::ShareInfoNotExists)?;
                 gauge_pool_info.rewards.iter().try_for_each(
@@ -400,20 +391,11 @@ where
                         let reward = reward_amount
                             .checked_sub(total_gauged_reward)
                             .ok_or(ArithmeticError::Overflow)?;
-                        // gauge_reward = gauge rate * gauge rewards * existing rewards in the
-                        // gauge pool
+                        // gauge_reward = gauge rate * gauge rewards * existing rewards
                         let gauge_reward = gauge_rate * reward;
-                        // reward_to_claim = farming rate * gauge rate * gauge rewards *
-                        // existing rewards in the gauge pool
+                        // reward_to_claim = farming rate * gauge_reward
                         let reward_to_claim: BalanceOf<T> =
-                            U256::from(share_info.share.to_owned().saturated_into::<u128>())
-                                .saturating_mul(U256::from(
-                                    gauge_reward.to_owned().saturated_into::<u128>(),
-                                ))
-                                .checked_div(total_shares)
-                                .unwrap_or_default()
-                                .as_u128()
-                                .unique_saturated_into();
+                            Self::get_reward_inflation(share_info.share, &gauge_reward, total_shares);
                         result_vec.push((*reward_currency, reward_to_claim));
                         Ok(())
                     },
@@ -421,5 +403,32 @@ where
             }
         };
         Ok(result_vec)
+    }
+
+    fn get_gauge_rate(who: &T::AccountId, gid: PoolId,) -> Result<Perbill, DispatchError> {
+        let current_block_number: BlockNumberFor<T> = frame_system::Pallet::<T>::block_number();
+        let gauge_pool_info =
+            GaugePoolInfos::<T>::get(gid).ok_or(Error::<T>::GaugePoolNotExist)?;
+        let gauge_info =
+            GaugeInfos::<T>::get(gid, who).ok_or(Error::<T>::GaugeInfoNotExist)?;
+        let start_block = if current_block_number > gauge_info.gauge_stop_block {
+            gauge_info.gauge_stop_block
+        } else {
+            current_block_number
+        };
+
+        let latest_claimed_time_factor = gauge_info.latest_time_factor
+            + gauge_info
+            .gauge_amount
+            .saturated_into::<u128>()
+            .checked_mul(
+                (start_block - gauge_info.gauge_last_block).saturated_into::<u128>(),
+            )
+            .ok_or(ArithmeticError::Overflow)?;
+        let gauge_rate = Perbill::from_rational(
+            latest_claimed_time_factor - gauge_info.claimed_time_factor,
+            gauge_pool_info.total_time_factor,
+        );
+        Ok(gauge_rate)
     }
 }
