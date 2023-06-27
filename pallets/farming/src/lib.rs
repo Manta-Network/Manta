@@ -843,8 +843,9 @@ impl<T: Config> Pallet<T> {
         let ed = T::MultiCurrency::minimum_balance(*reward_currency);
         let mut account_to_send = who.clone();
 
+        let receiver_balance = T::MultiCurrency::total_balance(*reward_currency, who);
+
         if reward_to_withdraw < ed {
-            let receiver_balance = T::MultiCurrency::total_balance(*reward_currency, who);
 
             let receiver_balance_after = receiver_balance
                 .checked_add(&reward_to_withdraw)
@@ -853,6 +854,7 @@ impl<T: Config> Pallet<T> {
                 account_to_send = T::TreasuryAccount::get();
             }
         }
+        log::info!("reward token:{:?}, amount:{:?}, receiver balance:{:?}", reward_currency, reward_to_withdraw, receiver_balance);
         // pay reward to `who`
         T::MultiCurrency::transfer(*reward_currency, from, &account_to_send, reward_to_withdraw)
     }
