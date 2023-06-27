@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    benchmark::precomputed_coins::TO_PRIVATE, AccountId, Box, Call, Config, Pallet,
+    benchmark::precomputed_coins::TO_PRIVATE, AccountId, Box, Call, Config, EvmAddress, Pallet,
     Pallet as MantaSBTPallet, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, vec, whitelisted_caller};
@@ -37,10 +37,21 @@ benchmarks! {
         let caller: T::AccountId = whitelisted_caller();
         let factor = 1_000u32;
         <T as crate::Config>::Currency::make_free_balance_be(&caller, T::ReservePrice::get() * factor.into());
-        Pallet::<T>::reserve_sbt(RawOrigin::Signed(caller.clone()).into())?;
+        Pallet::<T>::reserve_sbt(RawOrigin::Signed(caller.clone()).into(), None)?;
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
+        MantaSBTPallet::<T>::new_mint_info(
+            RawOrigin::Root.into(),
+            0_u32.into(),
+            None,
+            vec![].try_into().unwrap(),
+            true,
+        )?;
+        let bab_id = 1;
     }: to_private (
         RawOrigin::Signed(caller.clone()),
+        Some(bab_id),
+        None,
+        None,
         Box::new(mint_post),
         vec![0].try_into().unwrap()
     )
@@ -50,7 +61,8 @@ benchmarks! {
         let factor = 1_000u32;
         <T as crate::Config>::Currency::make_free_balance_be(&caller, T::ReservePrice::get() * factor.into());
     }: reserve_sbt (
-        RawOrigin::Signed(caller)
+        RawOrigin::Signed(caller),
+        None
     )
 
     change_allowlist_account{
@@ -70,7 +82,8 @@ benchmarks! {
             RawOrigin::Root.into(),
             0_u32.into(),
             None,
-            vec![].try_into().unwrap()
+            vec![].try_into().unwrap(),
+            true
         )?;
         let bab_id = 1;
     }: allowlist_evm_account (
@@ -84,7 +97,8 @@ benchmarks! {
         RawOrigin::Root,
         5u32.into(),
         Some(10u32.into()),
-        vec![].try_into().unwrap()
+        vec![].try_into().unwrap(),
+        true
     )
 
     update_mint_info {
@@ -92,14 +106,16 @@ benchmarks! {
             RawOrigin::Root.into(),
             0_u32.into(),
             None,
-            vec![].try_into().unwrap()
+            vec![].try_into().unwrap(),
+            true,
         )?;
     }: update_mint_info (
         RawOrigin::Root,
         1,
         5u32.into(),
         None,
-        vec![].try_into().unwrap()
+        vec![].try_into().unwrap(),
+        false
     )
 
     mint_sbt_eth {
@@ -114,7 +130,8 @@ benchmarks! {
             RawOrigin::Root.into(),
             0_u32.into(),
             None,
-            vec![].try_into().unwrap()
+            vec![].try_into().unwrap(),
+            true,
         )?;
 
         MantaSBTPallet::<T>::allowlist_evm_account(
@@ -125,7 +142,6 @@ benchmarks! {
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
 
         let signature = MantaSBTPallet::<T>::eth_sign(&alice(), &mint_post.proof, 0);
-
     }: mint_sbt_eth(
         RawOrigin::Signed(caller),
         Box::new(mint_post),
@@ -135,6 +151,87 @@ benchmarks! {
         Some(0),
         Some(0),
         Some(vec![0].try_into().unwrap())
+    )
+
+    change_free_reserve_account {
+        let caller = whitelisted_caller();
+    }: change_allowlist_account(
+        RawOrigin::Root,
+        Some(caller)
+    )
+
+    remove_allowlist_evm_account {
+        let caller: T::AccountId = whitelisted_caller();
+        MantaSBTPallet::<T>::change_allowlist_account(
+            RawOrigin::Root.into(),
+            Some(caller.clone())
+        )?;
+        MantaSBTPallet::<T>::new_mint_info(
+            RawOrigin::Root.into(),
+            0_u32.into(),
+            None,
+            vec![].try_into().unwrap(),
+            true
+        )?;
+        let bab_id = 1;
+
+        MantaSBTPallet::<T>::allowlist_evm_account(
+            RawOrigin::Signed(caller).into(),
+            bab_id,
+            H160::default()
+        )?;
+    }: remove_allowlist_evm_account(
+        RawOrigin::Root,
+        bab_id,
+        H160::default()
+    )
+
+    set_next_sbt_id {
+    }: set_next_sbt_id(
+        RawOrigin::Root,
+        Some(100)
+    )
+
+    force_to_private {
+        let caller: T::AccountId = whitelisted_caller();
+        MantaSBTPallet::<T>::change_force_account(
+            RawOrigin::Root.into(),
+            Some(caller.clone())
+        )?;
+        MantaSBTPallet::<T>::set_next_sbt_id(RawOrigin::Root.into(), Some(100))?;
+        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
+    }: force_to_private(
+        RawOrigin::Signed(caller.clone()),
+        Box::new(mint_post),
+        0,
+        vec![].try_into().unwrap(),
+        caller.clone()
+    )
+
+    force_mint_sbt_eth {
+        let caller: T::AccountId = whitelisted_caller();
+        MantaSBTPallet::<T>::change_force_account(
+            RawOrigin::Root.into(),
+            Some(caller.clone())
+        )?;
+        MantaSBTPallet::<T>::set_next_sbt_id(RawOrigin::Root.into(), Some(100))?;
+        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
+    }: force_mint_sbt_eth(
+        RawOrigin::Signed(caller.clone()),
+        Box::new(mint_post),
+        0,
+        EvmAddress::default(),
+        None,
+        None,
+        vec![].try_into().unwrap(),
+        caller.clone()
+    )
+
+    change_force_account {
+        let caller = whitelisted_caller();
+    }: change_force_account(
+        RawOrigin::Root,
+        Some(caller)
     )
 }
 

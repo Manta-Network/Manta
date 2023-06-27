@@ -68,7 +68,8 @@ use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint}
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use pallet_session::ShouldEndSession;
 use runtime_common::{
-    prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, SlowAdjustingFeeUpdate,
+    prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight,
+    MantaSlowAdjustingFeeUpdate,
 };
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 use zenlink_protocol::{AssetBalance, AssetId as ZenlinkAssetId, MultiAssetsHandler, PairInfo};
@@ -139,7 +140,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("manta"),
     impl_name: create_runtime_str!("manta"),
     authoring_version: 1,
-    spec_version: 4100,
+    spec_version: 4201,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -359,7 +360,7 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    pub const TransactionLengthToFeeCoeff: Balance = 40 * mMANTA;
+    pub const TransactionLengthToFeeCoeff: Balance = 10 * uMANTA;
     pub const WeightToFeeCoeff: Balance = 50_000_000;
 }
 
@@ -367,7 +368,7 @@ impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
     type WeightToFee = ConstantMultiplier<Balance, WeightToFeeCoeff>;
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthToFeeCoeff>;
-    type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
+    type FeeMultiplierUpdate = MantaSlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<5>;
     type RuntimeEvent = RuntimeEvent;
 }

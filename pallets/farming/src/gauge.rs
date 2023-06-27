@@ -297,8 +297,7 @@ where
                         let reward = reward_amount
                             .checked_sub(total_gauged_reward)
                             .ok_or(ArithmeticError::Overflow)?;
-                        // gauge_reward = gauge rate * gauge rewards * existing rewards in the
-                        // gauge pool
+                        // gauge_reward = gauge rate * gauge rewards * existing rewards
                         let gauge_reward = gauge_rate * reward;
                         // reward_to_claim = farming rate * gauge rate * gauge rewards *
                         // existing rewards in the gauge pool
@@ -318,51 +317,24 @@ where
                             .checked_add(&reward_to_claim)
                             .ok_or(ArithmeticError::Overflow)?;
 
-                        let ed = T::MultiCurrency::minimum_balance(*reward_currency);
-                        let mut account_to_send = who.clone();
-
-                        if reward_to_claim < ed {
-                            let receiver_balance =
-                                T::MultiCurrency::total_balance(*reward_currency, who);
-
-                            let receiver_balance_after = receiver_balance
-                                .checked_add(&reward_to_claim)
-                                .ok_or(ArithmeticError::Overflow)?;
-                            if receiver_balance_after < ed {
-                                account_to_send = T::TreasuryAccount::get();
-                            }
-                        }
-                        T::MultiCurrency::transfer(
-                            *reward_currency,
-                            &gauge_pool_info.reward_issuer,
-                            &account_to_send,
+                        Self::reward_token_transfer(
+                            reward_currency,
                             reward_to_claim,
+                            who,
+                            &gauge_pool_info.reward_issuer,
                         )
                     },
                 )?;
                 gauge_info.last_claim_block = current_block_number;
                 gauge_info.claimed_time_factor = latest_claimed_time_factor;
                 if gauge_info.gauge_stop_block <= current_block_number {
-                    let ed = T::MultiCurrency::minimum_balance(gauge_pool_info.token);
-                    let mut account_to_send = who.clone();
-
-                    if gauge_info.gauge_amount < ed {
-                        let receiver_balance =
-                            T::MultiCurrency::total_balance(gauge_pool_info.token, who);
-
-                        let receiver_balance_after = receiver_balance
-                            .checked_add(&gauge_info.gauge_amount)
-                            .ok_or(ArithmeticError::Overflow)?;
-                        if receiver_balance_after < ed {
-                            account_to_send = T::TreasuryAccount::get();
-                        }
-                    }
-                    T::MultiCurrency::transfer(
-                        gauge_pool_info.token,
-                        &gauge_pool_info.keeper,
-                        &account_to_send,
+                    Self::reward_token_transfer(
+                        &gauge_pool_info.token,
                         gauge_info.gauge_amount,
+                        who,
+                        &gauge_pool_info.keeper,
                     )?;
+
                     gauge_pool_info.total_time_factor = gauge_pool_info
                         .total_time_factor
                         .checked_sub(gauge_info.total_time_factor)
@@ -379,49 +351,6 @@ where
             Ok(())
         })?;
         Ok(())
-    }
-
-    pub fn get_farming_rewards(
-        who: &T::AccountId,
-        pid: PoolId,
-    ) -> Result<RewardOf<T>, DispatchError> {
-        let share_info =
-            SharesAndWithdrawnRewards::<T>::get(pid, who).ok_or(Error::<T>::ShareInfoNotExists)?;
-        let pool_info = PoolInfos::<T>::get(pid).ok_or(Error::<T>::PoolDoesNotExist)?;
-        let total_shares = U256::from(pool_info.total_shares.to_owned().saturated_into::<u128>());
-        let mut result_vec = Vec::<(CurrencyIdOf<T>, BalanceOf<T>)>::new();
-
-        pool_info.rewards.iter().try_for_each(
-            |(reward_currency, (total_reward, total_withdrawn_reward))| -> DispatchResult {
-                let withdrawn_reward = share_info
-                    .withdrawn_rewards
-                    .get(reward_currency)
-                    .copied()
-                    .unwrap_or_default();
-
-                let total_reward_proportion: BalanceOf<T> =
-                    U256::from(share_info.share.to_owned().saturated_into::<u128>())
-                        .saturating_mul(U256::from(
-                            total_reward.to_owned().saturated_into::<u128>(),
-                        ))
-                        .checked_div(total_shares)
-                        .unwrap_or_default()
-                        .as_u128()
-                        .unique_saturated_into();
-
-                let reward_to_withdraw = total_reward_proportion
-                    .saturating_sub(withdrawn_reward)
-                    .min(total_reward.saturating_sub(*total_withdrawn_reward));
-
-                if reward_to_withdraw.is_zero() {
-                    return Ok(());
-                };
-
-                result_vec.push((*reward_currency, reward_to_withdraw));
-                Ok(())
-            },
-        )?;
-        Ok(result_vec)
     }
 
     pub fn get_gauge_rewards(

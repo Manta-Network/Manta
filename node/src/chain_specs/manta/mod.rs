@@ -42,7 +42,7 @@ pub const POLKADOT_RELAYCHAIN_LOCAL_NET: &str = "polkadot-local";
 pub const POLKADOT_RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
 
 /// The default XCM version to set in genesis config.
-pub const SAFE_XCM_VERSION: u32 = 2;
+pub const MANTA_SAFE_XCM_VERSION: u32 = 2;
 
 /// Manta Chain Specification
 pub type MantaChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
@@ -147,7 +147,7 @@ fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
         },
         parachain_system: Default::default(),
         polkadot_xcm: PolkadotXcmConfig {
-            safe_xcm_version: Some(SAFE_XCM_VERSION),
+            safe_xcm_version: Some(MANTA_SAFE_XCM_VERSION),
         },
         asset_manager: Default::default(),
         democracy: DemocracyConfig::default(),

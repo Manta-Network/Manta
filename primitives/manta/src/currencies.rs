@@ -127,7 +127,7 @@ where
         if currency_id == A::NativeAssetId::get() {
             Native::transfer(from, to, amount, ExistenceRequirement::KeepAlive)?;
         } else {
-            NonNative::transfer(currency_id, from, to, amount, true)?;
+            NonNative::transfer(currency_id, from, to, amount, false)?;
         }
         Ok(())
     }

@@ -26,7 +26,7 @@ use manta_primitives::{
         AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, MANTA_DECIMAL, MANTA_PAY_PALLET_ID, MANTA_SBT_PALLET_ID},
-    types::{AccountId, Balance, MantaAssetId},
+    types::{AccountId, Balance, MantaAssetId, Signature, Signer},
 };
 
 use frame_support::{
@@ -200,7 +200,7 @@ impl pallet_manta_sbt::Config for Runtime {
     type PalletId = MantaSbtPalletId;
     type Currency = Balances;
     type MintsPerReserve = ConstU16<5>;
-    type ReservePrice = ConstU128<{ 100_000 * MANTA }>;
+    type ReservePrice = ConstU128<{ 50 * MANTA }>;
     type SbtMetadataBound = ConstU32<300>;
     type RegistryBound = ConstU32<300>;
     type AdminOrigin = EitherOfDiverse<
@@ -208,5 +208,7 @@ impl pallet_manta_sbt::Config for Runtime {
         pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>,
     >;
     type Now = Timestamp;
+    type Signature = Signature;
+    type PublicKey = Signer;
     type WeightInfo = weights::pallet_manta_sbt::SubstrateWeight<Runtime>;
 }

@@ -25,14 +25,9 @@ use session_key_primitives::util::unchecked_account_id;
 
 /// Dolphin Protocol Identifier
 pub const DOLPHIN_PROTOCOL_ID: &str = "dolphin";
-/// Kusama Relaychain Local Network Identifier
-pub const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
-
-/// Kusama Relaychain Development Network Identifier
-pub const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
 
 /// The default XCM version to set in genesis config.
-const SAFE_XCM_VERSION: u32 = 2;
+const DOLPHIN_SAFE_XCM_VERSION: u32 = 2;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type DolphinChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
@@ -212,7 +207,7 @@ fn dolphin_dev_genesis(
         technical_membership: Default::default(),
         parachain_system: Default::default(),
         polkadot_xcm: dolphin_runtime::PolkadotXcmConfig {
-            safe_xcm_version: Some(SAFE_XCM_VERSION),
+            safe_xcm_version: Some(DOLPHIN_SAFE_XCM_VERSION),
         },
     }
 }
