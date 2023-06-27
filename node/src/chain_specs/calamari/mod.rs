@@ -24,7 +24,7 @@ use crate::command::CALAMARI_PARACHAIN_ID;
 #[allow(unused_imports)]
 use calamari_runtime::{
     currency::KMA, opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig,
-    ParachainStakingConfig, TechnicalCommitteeConfig,
+    LotteryConfig, ParachainStakingConfig, TechnicalCommitteeConfig,
 };
 use sc_telemetry::TelemetryEndpoints;
 use session_key_primitives::util::unchecked_account_id;
@@ -38,7 +38,7 @@ pub const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
 pub const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
 
 /// The default XCM version to set in genesis config.
-pub const SAFE_XCM_VERSION: u32 = 2;
+pub const CALAMARI_SAFE_XCM_VERSION: u32 = 2;
 
 /// Calamari Chain Spec
 pub type CalamariChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;

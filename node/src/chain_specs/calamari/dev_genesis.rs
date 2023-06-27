@@ -76,7 +76,12 @@ pub(crate) fn calamari_dev_genesis(
         asset_manager: Default::default(),
         parachain_system: Default::default(),
         polkadot_xcm: calamari_runtime::PolkadotXcmConfig {
-            safe_xcm_version: Some(SAFE_XCM_VERSION),
+            safe_xcm_version: Some(CALAMARI_SAFE_XCM_VERSION),
+        },
+        lottery: LotteryConfig {
+            min_deposit: 5_000 * KMA,
+            min_withdraw: 10 * KMA,
+            gas_reserve: 10_000 * KMA,
         },
     }
 }
