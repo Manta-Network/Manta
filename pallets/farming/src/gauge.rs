@@ -17,9 +17,8 @@
 use codec::HasCompact;
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
-use sp_core::U256;
 use sp_runtime::{
-    traits::{Zero, *},
+    traits::{AtLeast32BitUnsigned, CheckedSub, One, Zero},
     ArithmeticError, Perbill, RuntimeDebug, SaturatedConversion,
 };
 use sp_std::prelude::*;
@@ -177,7 +176,7 @@ where
                     Error::<T>::GaugeMaxBlockOverflow
                 );
 
-                let incease_total_time_factor = if gauge_info.gauge_amount.is_zero() {
+                let increase_total_time_factor = if gauge_info.gauge_amount.is_zero() {
                     gauge_info.gauge_stop_block = current_block_number;
                     gauge_info.gauge_start_block = current_block_number;
                     gauge_info.last_claim_block = current_block_number;
@@ -200,10 +199,10 @@ where
                             (gauge_value + gauge_info.gauge_amount).saturated_into::<u128>(),
                         )
                         .ok_or(ArithmeticError::Overflow)?;
-                    let incease_total_time_factor = time_factor_a + time_factor_b;
+                    let increase_total_time_factor = time_factor_a + time_factor_b;
                     gauge_info.total_time_factor = gauge_info
                         .total_time_factor
-                        .checked_add(incease_total_time_factor)
+                        .checked_add(increase_total_time_factor)
                         .ok_or(ArithmeticError::Overflow)?;
                     // latest_time_factor only increases in not first gauge_deposit
                     let increase_latest_time_factor = gauge_info
@@ -218,7 +217,7 @@ where
                         .latest_time_factor
                         .checked_add(increase_latest_time_factor)
                         .ok_or(ArithmeticError::Overflow)?;
-                    incease_total_time_factor
+                    increase_total_time_factor
                 };
 
                 gauge_info.gauge_last_block = current_block_number;
@@ -233,7 +232,7 @@ where
 
                 gauge_pool_info.total_time_factor = gauge_pool_info
                     .total_time_factor
-                    .checked_add(incease_total_time_factor)
+                    .checked_add(increase_total_time_factor)
                     .ok_or(ArithmeticError::Overflow)?;
                 T::MultiCurrency::transfer(
                     gauge_pool_info.token,
@@ -266,26 +265,8 @@ where
                     gauge_info.gauge_start_block <= current_block_number,
                     Error::<T>::CanNotClaim
                 );
-                let start_block = if current_block_number > gauge_info.gauge_stop_block {
-                    gauge_info.gauge_stop_block
-                } else {
-                    current_block_number
-                };
-
-                let latest_claimed_time_factor = gauge_info.latest_time_factor
-                    + gauge_info
-                        .gauge_amount
-                        .saturated_into::<u128>()
-                        .checked_mul(
-                            (start_block - gauge_info.gauge_last_block).saturated_into::<u128>(),
-                        )
-                        .ok_or(ArithmeticError::Overflow)?;
-                let gauge_rate = Perbill::from_rational(
-                    latest_claimed_time_factor - gauge_info.claimed_time_factor,
-                    gauge_pool_info.total_time_factor,
-                );
+                let (gauge_rate, latest_claimed_time_factor) = Self::get_gauge_rate(&gauge_pool_info, &gauge_info)?;
                 let total_shares = pool_info.total_shares;
-
                 let share_info = SharesAndWithdrawnRewards::<T>::get(gauge_pool_info.pid, who)
                     .ok_or(Error::<T>::ShareInfoNotExists)?;
                 gauge_pool_info.rewards.iter_mut().try_for_each(
@@ -355,30 +336,11 @@ where
         match pool_info.gauge {
             None => (),
             Some(gid) => {
-                let current_block_number: BlockNumberFor<T> =
-                    frame_system::Pallet::<T>::block_number();
                 let gauge_pool_info =
                     GaugePoolInfos::<T>::get(gid).ok_or(Error::<T>::GaugePoolNotExist)?;
                 let gauge_info =
                     GaugeInfos::<T>::get(gid, who).ok_or(Error::<T>::GaugeInfoNotExist)?;
-                let start_block = if current_block_number > gauge_info.gauge_stop_block {
-                    gauge_info.gauge_stop_block
-                } else {
-                    current_block_number
-                };
-
-                let latest_claimed_time_factor = gauge_info.latest_time_factor
-                    + gauge_info
-                        .gauge_amount
-                        .saturated_into::<u128>()
-                        .checked_mul(
-                            (start_block - gauge_info.gauge_last_block).saturated_into::<u128>(),
-                        )
-                        .ok_or(ArithmeticError::Overflow)?;
-                let gauge_rate = Perbill::from_rational(
-                    latest_claimed_time_factor - gauge_info.claimed_time_factor,
-                    gauge_pool_info.total_time_factor,
-                );
+                let (gauge_rate, _) = Self::get_gauge_rate(&gauge_pool_info, &gauge_info)?;
                 let total_shares = pool_info.total_shares;
                 let share_info = SharesAndWithdrawnRewards::<T>::get(gauge_pool_info.pid, who)
                     .ok_or(Error::<T>::ShareInfoNotExists)?;
@@ -405,12 +367,8 @@ where
         Ok(result_vec)
     }
 
-    fn get_gauge_rate(who: &T::AccountId, gid: PoolId,) -> Result<Perbill, DispatchError> {
+    fn get_gauge_rate(gauge_pool_info: &GaugePoolInfoOf<T>, gauge_info: &GaugeInfoOf<T>) -> Result<(Perbill, u128), DispatchError> {
         let current_block_number: BlockNumberFor<T> = frame_system::Pallet::<T>::block_number();
-        let gauge_pool_info =
-            GaugePoolInfos::<T>::get(gid).ok_or(Error::<T>::GaugePoolNotExist)?;
-        let gauge_info =
-            GaugeInfos::<T>::get(gid, who).ok_or(Error::<T>::GaugeInfoNotExist)?;
         let start_block = if current_block_number > gauge_info.gauge_stop_block {
             gauge_info.gauge_stop_block
         } else {
@@ -429,6 +387,6 @@ where
             latest_claimed_time_factor - gauge_info.claimed_time_factor,
             gauge_pool_info.total_time_factor,
         );
-        Ok(gauge_rate)
+        Ok((gauge_rate, latest_claimed_time_factor))
     }
 }
