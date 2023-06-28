@@ -420,15 +420,17 @@ pub mod pallet {
                             .ok_or(Error::<T>::ArithmeticUnderflow)?
                         {
                             new_balance if new_balance.is_zero() => {
+                                // remove user if this was his last remaining funds
                                 TotalUsers::<T>::mutate(|users| *users -= 1);
                                 None
                             }
                             new_balance => Some(new_balance),
                         };
                         TotalPot::<T>::try_mutate(|pot| {
-                            (*pot)
+                            *pot = (*pot)
                                 .checked_sub(&amount)
-                                .ok_or(Error::<T>::ArithmeticUnderflow)
+                                .ok_or(Error::<T>::ArithmeticUnderflow)?;
+                            Ok(())
                         })?;
                         Ok(())
                     }
@@ -611,7 +613,7 @@ pub mod pallet {
 
         /// Stops the ongoing lottery and cancels the scheduled and any future drawings.
         ///
-        /// This function cancels the scheduled drawing and cleans up bookkeeping.
+        /// This function cancels the scheduled drawing. Does not prevent users from interacting with the pallet
         ///
         /// Can only be called by the account set as [`Config::ManageOrigin`]
         ///
@@ -839,30 +841,26 @@ pub mod pallet {
             // Match random number to winner. We select a winning **balance** and then just add up accounts in the order they're stored until the sum of balance exceeds the winning amount
             // IMPORTANT: This order and active balances must be locked to modification after the random seed is created (relay BABE randomness, 2 epochs ago)
             let winning_balance = Self::select_winning_balance(Self::total_pot())?;
-            let mut winner: Option<T::AccountId> = None;
+            let mut maybe_winner: Option<T::AccountId> = None;
             let mut count: BalanceOf<T> = 0u32.into();
             for (account, balance) in ActiveBalancePerUser::<T>::iter() {
                 count += balance;
                 if count >= winning_balance {
-                    winner = Some(account);
+                    maybe_winner = Some(account);
                     break;
                 }
             }
             // Should be impossible: If no winner was selected, return Error
-            ensure!(winner.is_some(), Error::<T>::NoWinnerFound);
-
+            ensure!(maybe_winner.is_some(), Error::<T>::NoWinnerFound);
+            let winner = maybe_winner.expect("we checked a winner exists before. qed");
             // Allow winner to manually claim their winnings later
-            UnclaimedWinningsByAccount::<T>::mutate(
-                winner
-                    .clone()
-                    .expect("we checked a winner exists before. qed"),
-                |maybe_balance| match *maybe_balance {
-                    Some(balance) => {
-                        (*maybe_balance) = Some(balance.saturating_add(payout_for_winner))
-                    }
-                    None => (*maybe_balance) = Some(payout_for_winner),
-                },
-            );
+            UnclaimedWinningsByAccount::<T>::mutate(winner.clone(), |maybe_balance| {
+                *maybe_balance = Some(
+                    maybe_balance
+                        .unwrap_or_else(|| 0u32.into())
+                        .saturating_add(payout_for_winner),
+                );
+            });
             TotalUnclaimedWinnings::<T>::try_mutate(|old| {
                 *old = (*old)
                     .checked_add(&payout_for_winner)
@@ -874,10 +872,7 @@ pub mod pallet {
                 payout_for_winner,
                 winner
             );
-            Self::deposit_event(Event::LotteryWinner(
-                winner.expect("We exited earlier if winner was None. qed"),
-                payout_for_winner,
-            ));
+            Self::deposit_event(Event::LotteryWinner(winner, payout_for_winner));
             Ok(())
         }
 
@@ -929,7 +924,6 @@ pub mod pallet {
                         },
                         Ok(_) => {
                             // collator was unstaked
-                            SumOfDeposits::<T>::mutate(|balance| *balance = (*balance).saturating_sub(balance_to_unstake));
                             log::debug!("Unstaked {:?} from collator {:?}",balance_to_unstake,collator.account.clone());
                             // don't retain this collator in the unstaking collators vec
                             false
@@ -959,7 +953,6 @@ pub mod pallet {
                 Self::calculate_deposit_distribution(stakable_balance)
             {
                 Self::do_stake_one_collator(collator.clone(), amount_to_stake)?;
-                TotalPot::<T>::mutate(|balance| *balance += amount_to_stake);
                 log::debug!(
                     "Rebalanced {:?} to collator {:?}",
                     amount_to_stake,
@@ -980,19 +973,21 @@ pub mod pallet {
             if <WithdrawalRequestQueue<T>>::get().is_empty() {
                 return Ok(()); // nothing to do
             }
-            let funds_available_to_withdraw = Self::surplus_funds();
-            log::debug!(
-                "Withdrawable funds: {:?}",
-                funds_available_to_withdraw.clone()
-            );
-            if funds_available_to_withdraw.is_zero() {
-                return Ok(()); // nothing to do
-            }
             let now = <frame_system::Pallet<T>>::block_number();
+            log::debug!(
+                "Serving withdrawals from surplus funds of {:?}",
+                Self::surplus_funds()
+            );
             // Pay down the list from top (oldest) to bottom until we've paid out everyone or run out of available funds
             <WithdrawalRequestQueue<T>>::mutate(|request_vec| -> Result<(), DispatchError> {
                 let mut left_overs: Vec<Request<_, _, _>> = Vec::new();
                 for request in request_vec.iter() {
+                    let funds_available_to_withdraw = Self::surplus_funds();
+                    // Don't pay anyone unless we have surplus funds
+                    if funds_available_to_withdraw.is_zero() {
+                        left_overs.push((*request).clone());
+                        continue;
+                    }
                     // Don't pay anyone still timelocked
                     if now < request.block + <T as Config>::UnstakeLockTime::get() {
                         left_overs.push((*request).clone());
@@ -1006,7 +1001,7 @@ pub mod pallet {
                         continue;
                     }
                     // we know we can pay this out, do it
-                    <SumOfDeposits<T>>::mutate(|sum| (*sum).saturating_sub(request.balance));
+                    <SumOfDeposits<T>>::mutate(|sum| *sum = (*sum).saturating_sub(request.balance));
                     log::debug!(
                         "Transferring {:?} to {:?}",
                         request.balance.clone(),
@@ -1020,8 +1015,9 @@ pub mod pallet {
                     )?;
                 }
                 log::debug!(
-                    "Have {:?} requests left over after transfers",
-                    left_overs.len()
+                    "Have {:?} requests and {:?} surplus funds left over after transfers",
+                    left_overs.len(),
+                    Self::surplus_funds()
                 );
                 // Update T::WithdrawalRequestQueue if we paid at least one guy
                 if left_overs.len() != (*request_vec).len() {

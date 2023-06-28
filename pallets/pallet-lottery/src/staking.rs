@@ -488,8 +488,6 @@ impl<T: Config> Pallet<T> {
                 since: now,
             })
         });
-        TotalPot::<T>::mutate(|pot| *pot = (*pot).saturating_sub(delegated_amount_to_be_unstaked));
-
         Ok(())
     }
 }

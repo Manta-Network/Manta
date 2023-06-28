@@ -161,6 +161,7 @@ fn depositing_and_withdrawing_should_work() {
             assert_last_event!(crate::mock::RuntimeEvent::Lottery(crate::Event::Deposited(
                 *ALICE, balance
             )));
+            assert_eq!(Lottery::active_balance_per_user(*ALICE), balance);
             assert_eq!(Lottery::sum_of_deposits(), balance);
             assert_eq!(Lottery::total_pot(), balance);
             assert_ok!(Lottery::request_withdraw(Origin::signed(*ALICE), balance));
@@ -168,6 +169,7 @@ fn depositing_and_withdrawing_should_work() {
                 crate::Event::ScheduledWithdraw(*ALICE, balance)
             ));
             assert_eq!(Lottery::sum_of_deposits(), balance);
+            assert_eq!(Lottery::active_balance_per_user(*ALICE), 0);
             assert_eq!(Lottery::total_pot(), 0);
         });
 }

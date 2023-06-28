@@ -1,18 +1,18 @@
-// Copyright 2019-2022 PureStake Inc.
-// This file is part of Moonbeam.
-
-// Moonbeam is free software: you can redistribute it and/or modify
+// Copyright 2020-2023 Manta Network.
+// This file is part of Manta.
+//
+// Manta is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-
-// Moonbeam is distributed in the hope that it will be useful,
+//
+// Manta is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-
+//
 // You should have received a copy of the GNU General Public License
-// along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
+// along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 //! # Randomness Pallet
 //!
@@ -111,14 +111,14 @@ pub mod pallet {
             let last_relay_epoch_index = <RelayEpoch<T>>::get();
             let relay_epoch_index = T::BabeDataGetter::get_epoch_index();
             if relay_epoch_index > last_relay_epoch_index {
-                let babe_one_epoch_ago_this_block = RequestType::BabeEpoch(relay_epoch_index);
-                // populate `RandomnessResults` for BABE epoch randomness
+                // NOTE: Whether n = 1 or 2 depends on the trait implementation of BabeDataGetter
+                let babe_n_epochs_ago_this_block = RequestType::BabeEpoch(relay_epoch_index);
                 if let Some(randomness) = T::BabeDataGetter::get_epoch_randomness() {
                     let result = RandomnessResult {
                         request_count: 1,
                         randomness: Some(randomness),
                     };
-                    <RandomnessResults<T>>::insert(babe_one_epoch_ago_this_block, result);
+                    <RandomnessResults<T>>::insert(babe_n_epochs_ago_this_block, result);
                 } else {
                     log::warn!(
                         "Failed to fill BABE epoch randomness results \
