@@ -30,10 +30,14 @@ use sp_rpc::number::NumberOrHex;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
 #[rpc(client, server)]
-pub trait FarmingRpcApi<BlockHash, AccountId, CurrencyId, PoolId> {
+pub trait FarmingRpcApi<BlockHash, AccountId, CurrencyId, PoolId>
+where
+    AccountId: Send + Sync + 'static,
+    PoolId: Send + Sync + 'static,
+{
     /// rpc method for getting farming rewards
     #[method(name = "farming_getFarmingRewards")]
-    fn get_farming_rewards(
+    async fn get_farming_rewards(
         &self,
         who: AccountId,
         pid: PoolId,
@@ -42,7 +46,7 @@ pub trait FarmingRpcApi<BlockHash, AccountId, CurrencyId, PoolId> {
 
     /// rpc method for getting gauge rewards
     #[method(name = "farming_getGaugeRewards")]
-    fn get_gauge_rewards(
+    async fn get_gauge_rewards(
         &self,
         who: AccountId,
         pid: PoolId,
@@ -73,21 +77,20 @@ where
     Block: BlockT,
     C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
     C::Api: FarmingRuntimeApi<Block, AccountId, CurrencyId, PoolId>,
-    AccountId: Codec,
+    AccountId: Codec + Send + Sync + 'static,
     CurrencyId: Codec,
-    PoolId: Codec,
+    PoolId: Codec + Send + Sync + 'static,
 {
-    fn get_farming_rewards(
+    async fn get_farming_rewards(
         &self,
         who: AccountId,
         pid: PoolId,
         at: Option<<Block as BlockT>::Hash>,
     ) -> RpcResult<Vec<(CurrencyId, NumberOrHex)>> {
-        let lm_rpc_api = self.client.runtime_api();
+        let api = self.client.runtime_api();
         let at = BlockId::<Block>::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
-        let rs: Result<Vec<(CurrencyId, Balance)>, _> =
-            lm_rpc_api.get_farming_rewards(&at, who, pid);
+        let rs: Result<Vec<(CurrencyId, Balance)>, _> = api.get_farming_rewards(&at, who, pid);
 
         match rs {
             Ok(rewards) => Ok(rewards
@@ -103,16 +106,16 @@ where
         .map_err(jsonrpsee::core::Error::Call)
     }
 
-    fn get_gauge_rewards(
+    async fn get_gauge_rewards(
         &self,
         who: AccountId,
         pid: PoolId,
         at: Option<<Block as BlockT>::Hash>,
     ) -> RpcResult<Vec<(CurrencyId, NumberOrHex)>> {
-        let lm_rpc_api = self.client.runtime_api();
+        let api = self.client.runtime_api();
         let at = BlockId::<Block>::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
-        let rs: Result<Vec<(CurrencyId, Balance)>, _> = lm_rpc_api.get_gauge_rewards(&at, who, pid);
+        let rs: Result<Vec<(CurrencyId, Balance)>, _> = api.get_gauge_rewards(&at, who, pid);
 
         match rs {
             Ok(rewards) => Ok(rewards
