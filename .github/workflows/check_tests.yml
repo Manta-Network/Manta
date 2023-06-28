@@ -175,9 +175,9 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
+          df -h
       - name: create-chainspec
         run: |
-          df -h
           RUSTC_BOOTSTRAP=1 cargo build --release --features runtime-benchmarks
           ${{ github.workspace }}/target/release/manta build-spec --chain calamari-dev --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
       - name: append manta-pay storage
@@ -284,6 +284,7 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
+          df -h
       - name: Run Unit Tests
         env:
           RUST_BACKTRACE: full
@@ -292,7 +293,6 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          df -h
           RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime --workspace --exclude integration-tests pallet-manta-pay
       - name: stop sccache server
         run: sccache --stop-server || true
