@@ -611,7 +611,7 @@ pub mod pallet {
 
         /// Stops the ongoing lottery and cancels the scheduled and any future drawings.
         ///
-        /// This function cancels the scheduled drawing and cleans up bookkeeping.
+        /// This function cancels the scheduled drawing. Does not prevent users from interacting with the pallet
         ///
         /// Can only be called by the account set as [`Config::ManageOrigin`]
         ///
