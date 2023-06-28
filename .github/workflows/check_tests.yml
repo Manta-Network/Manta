@@ -176,6 +176,16 @@ jobs:
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
           df -h
+          sudo apt remove -y '^dotnet-.*'
+          sudo apt remove -y 'php.*'
+          sudo apt remove -y '^mongodb-.*'
+          sudo apt remove -y '^mysql-.*'
+          sudo apt remove -y google-cloud-sdk google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+          sudo apt autoremove -y
+          sudo apt clean
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/share/dotnet
+          df -h
       - name: create-chainspec
         run: |
           RUSTC_BOOTSTRAP=1 cargo build --release --features runtime-benchmarks
@@ -284,6 +294,16 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
+          df -h
+          sudo apt remove -y '^dotnet-.*'
+          sudo apt remove -y 'php.*'
+          sudo apt remove -y '^mongodb-.*'
+          sudo apt remove -y '^mysql-.*'
+          sudo apt remove -y google-cloud-sdk google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+          sudo apt autoremove -y
+          sudo apt clean
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/share/dotnet
           df -h
       - name: Run Unit Tests
         env:
