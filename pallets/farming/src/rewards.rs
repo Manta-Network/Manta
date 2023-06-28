@@ -249,32 +249,26 @@ impl<T: Config> Pallet<T> {
                     let pool_info = maybe_pool_info
                         .as_mut()
                         .ok_or(Error::<T>::PoolDoesNotExist)?;
-
-                    share_info
-                        .withdraw_list
-                        .push((n + withdraw_limit_time, remove_amount));
-
                     pool_info.total_shares = pool_info.total_shares.saturating_sub(remove_amount);
 
                     // update withdrawn rewards for each reward currency
                     share_info.withdrawn_rewards.iter_mut().try_for_each(
                         |(reward_currency, withdrawn_reward)| -> DispatchResult {
-                            let withdrawn_reward_to_remove = Self::get_reward_inflation(
+                            let withdrawn_amount = Self::get_reward_inflation(
                                 remove_amount,
                                 withdrawn_reward,
                                 share_info.share,
                             );
-                            if withdrawn_reward_to_remove.is_zero() {
+                            if withdrawn_amount.is_zero() {
                                 return Ok(());
                             }
 
                             if let Some((total_reward, total_withdrawn_reward)) =
                                 pool_info.rewards.get_mut(reward_currency)
                             {
-                                *total_reward =
-                                    total_reward.saturating_sub(withdrawn_reward_to_remove);
+                                *total_reward = total_reward.saturating_sub(withdrawn_amount);
                                 *total_withdrawn_reward = total_withdrawn_reward
-                                    .saturating_sub(withdrawn_reward_to_remove);
+                                    .saturating_sub(withdrawn_amount);
 
                                 // remove if all reward is withdrawn
                                 if total_reward.is_zero() {
@@ -282,13 +276,16 @@ impl<T: Config> Pallet<T> {
                                 }
                             }
                             *withdrawn_reward =
-                                withdrawn_reward.saturating_sub(withdrawn_reward_to_remove);
+                                withdrawn_reward.saturating_sub(withdrawn_amount);
                             Ok(())
                         },
                     )?;
                     Ok(())
                 })?;
 
+                share_info
+                    .withdraw_list
+                    .push((n + withdraw_limit_time, remove_amount));
                 share_info.share = share_info.share.saturating_sub(remove_amount);
                 *share_info_old = Some(share_info);
             }
