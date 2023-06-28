@@ -980,19 +980,21 @@ pub mod pallet {
             if <WithdrawalRequestQueue<T>>::get().is_empty() {
                 return Ok(()); // nothing to do
             }
-            let funds_available_to_withdraw = Self::surplus_funds();
-            log::debug!(
-                "Withdrawable funds: {:?}",
-                funds_available_to_withdraw.clone()
-            );
-            if funds_available_to_withdraw.is_zero() {
-                return Ok(()); // nothing to do
-            }
             let now = <frame_system::Pallet<T>>::block_number();
+            log::debug!(
+                "Serving withdrawals from surplus funds of {:?}",
+                Self::surplus_funds()
+            );
             // Pay down the list from top (oldest) to bottom until we've paid out everyone or run out of available funds
             <WithdrawalRequestQueue<T>>::mutate(|request_vec| -> Result<(), DispatchError> {
                 let mut left_overs: Vec<Request<_, _, _>> = Vec::new();
                 for request in request_vec.iter() {
+                    let funds_available_to_withdraw = Self::surplus_funds();
+                    // Don't pay anyone unless we have surplus funds
+                    if funds_available_to_withdraw.is_zero() {
+                        left_overs.push((*request).clone());
+                        continue;
+                    }
                     // Don't pay anyone still timelocked
                     if now < request.block + <T as Config>::UnstakeLockTime::get() {
                         left_overs.push((*request).clone());
@@ -1020,8 +1022,9 @@ pub mod pallet {
                     )?;
                 }
                 log::debug!(
-                    "Have {:?} requests left over after transfers",
-                    left_overs.len()
+                    "Have {:?} requests and {:?} surplus funds left over after transfers",
+                    left_overs.len(),
+                    Self::surplus_funds()
                 );
                 // Update T::WithdrawalRequestQueue if we paid at least one guy
                 if left_overs.len() != (*request_vec).len() {

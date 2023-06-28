@@ -111,14 +111,14 @@ pub mod pallet {
             let last_relay_epoch_index = <RelayEpoch<T>>::get();
             let relay_epoch_index = T::BabeDataGetter::get_epoch_index();
             if relay_epoch_index > last_relay_epoch_index {
-                let babe_one_epoch_ago_this_block = RequestType::BabeEpoch(relay_epoch_index);
-                // populate `RandomnessResults` for BABE epoch randomness
+                // NOTE: Whether n = 1 or 2 depends on the trait implementation of BabeDataGetter
+                let babe_n_epochs_ago_this_block = RequestType::BabeEpoch(relay_epoch_index);
                 if let Some(randomness) = T::BabeDataGetter::get_epoch_randomness() {
                     let result = RandomnessResult {
                         request_count: 1,
                         randomness: Some(randomness),
                     };
-                    <RandomnessResults<T>>::insert(babe_one_epoch_ago_this_block, result);
+                    <RandomnessResults<T>>::insert(babe_n_epochs_ago_this_block, result);
                 } else {
                     log::warn!(
                         "Failed to fill BABE epoch randomness results \
