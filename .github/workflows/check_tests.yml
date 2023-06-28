@@ -177,9 +177,9 @@ jobs:
           rustup target add wasm32-unknown-unknown
           df -h
           sudo apt remove -y '^dotnet-.*'
-          sudo apt remove -y 'php.*'
           sudo apt remove -y '^mongodb-.*'
           sudo apt remove -y '^mysql-.*'
+          sudo apt remove -y '^postgresql-*'
           sudo apt remove -y google-cloud-sdk google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
           sudo apt autoremove -y
           sudo apt clean
@@ -296,9 +296,9 @@ jobs:
           rustup target add wasm32-unknown-unknown
           df -h
           sudo apt remove -y '^dotnet-.*'
-          sudo apt remove -y 'php.*'
           sudo apt remove -y '^mongodb-.*'
           sudo apt remove -y '^mysql-.*'
+          sudo apt remove -y '^postgresql-*'
           sudo apt remove -y google-cloud-sdk google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
           sudo apt autoremove -y
           sudo apt clean
