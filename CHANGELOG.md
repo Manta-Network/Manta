@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## v4.2.0-1
+### Added
+- [\#1166](https://github.com/Manta-Network/Manta/pull/1166) Add Force Calls for zkSBT [MACA]
+
+### Changed
+- [\#1145](https://github.com/Manta-Network/Manta/pull/1145) Bump block fullness to 50% for calamari [CA]
+- [\#1127](https://github.com/Manta-Network/Manta/pull/1127) Add check that public asset is restricted [CA]
+
+### Fixed
+- [\#1169](https://github.com/Manta-Network/Manta/pull/1169) Fix check-tests CI workflow [MACA]
+- [\#1173](https://github.com/Manta-Network/Manta/pull/1173) Add missing runtime-benchmarks features [MACA]
+
 ## v4.2.0
 ### Added
 - [\#1138](https://github.com/Manta-Network/Manta/pull/1138) Check manta and calamari lease expiration [MACA]
