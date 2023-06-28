@@ -379,7 +379,7 @@ pub mod pallet {
 
         /// After create farming pool, need to deposit reward token into the pool.
         #[pallet::call_index(1)]
-        #[pallet::weight(0)]
+        #[pallet::weight(T::WeightInfo::charge())]
         pub fn charge(
             origin: OriginFor<T>,
             pid: PoolId,

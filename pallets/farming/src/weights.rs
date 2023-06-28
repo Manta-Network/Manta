@@ -48,6 +48,7 @@ use manta_primitives::constants::RocksDbWeight;
 pub trait WeightInfo {
     fn on_initialize() -> Weight;
     fn create_farming_pool() -> Weight;
+    fn charge() -> Weight;
     fn deposit() -> Weight;
     fn withdraw() -> Weight;
     fn claim() -> Weight;
@@ -73,6 +74,16 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_ref_time(27_448_000)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(4))
+	}
+	// Storage: Farming PoolInfos (r:1 w:1)
+	// Storage: Assets Asset (r:1 w:1)
+	// Storage: Assets Account (r:2 w:2)
+	// Storage: System Account (r:1 w:1)
+	fn charge() -> Weight {
+		// Minimum execution time: 897_000 nanoseconds.
+		Weight::from_ref_time(902_000_000)
+			.saturating_add(T::DbWeight::get().reads(5))
+			.saturating_add(T::DbWeight::get().writes(5))
 	}
 	// Storage: Farming PoolInfos (r:1 w:1)
 	// Storage: Assets Asset (r:1 w:1)
@@ -132,6 +143,16 @@ impl WeightInfo for () {
 		Weight::from_ref_time(27_448_000)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(4))
+	}
+	// Storage: Farming PoolInfos (r:1 w:1)
+	// Storage: Assets Asset (r:1 w:1)
+	// Storage: Assets Account (r:2 w:2)
+	// Storage: System Account (r:1 w:1)
+	fn charge() -> Weight {
+		// Minimum execution time: 897_000 nanoseconds.
+		Weight::from_ref_time(902_000_000)
+			.saturating_add(RocksDbWeight::get().reads(5))
+			.saturating_add(RocksDbWeight::get().writes(5))
 	}
 	// Storage: Farming PoolInfos (r:1 w:1)
 	// Storage: Assets Asset (r:1 w:1)

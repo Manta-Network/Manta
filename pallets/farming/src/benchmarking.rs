@@ -47,6 +47,38 @@ benchmarks! {
         5
     )
 
+    charge {
+        let location = T::Location::default();
+        let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
+        AssetManager::<T>::do_register_asset(Some(&location), &metadata)?;
+
+        let ksm_asset_id = CurrencyIdOf::<T>::unique_saturated_from(8u128);
+        let caller: T::AccountId = whitelisted_caller();
+        let token_amount = BalanceOf::<T>::unique_saturated_from(1000u128);
+        let tokens_proportion = vec![(ksm_asset_id, Perbill::from_percent(100))];
+        let basic_rewards = vec![(ksm_asset_id, token_amount)];
+        let gauge_basic_rewards = vec![(ksm_asset_id, token_amount)];
+        assert_ok!(Farming::<T>::create_farming_pool(
+            RawOrigin::Root.into(),
+            tokens_proportion,
+            basic_rewards,
+            Some((ksm_asset_id, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
+            BalanceOf::<T>::unique_saturated_from(0u128),
+            BlockNumberFor::<T>::from(0u32),
+            BlockNumberFor::<T>::from(7u32),
+            BlockNumberFor::<T>::from(6u32),
+            5,
+        ));
+        let charge_rewards = vec![(ksm_asset_id, BalanceOf::<T>::unique_saturated_from(300000u128))];
+
+        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
+            8.into(),
+            &caller,
+            INITIAL_VALUE.try_into().unwrap(),
+        );
+        // assert_ok!(Farming::<T>::charge(RawOrigin::Signed(caller.clone()).into(), 0, charge_rewards));
+    }: _(RawOrigin::Signed(caller.clone()), 0, charge_rewards)
+
     deposit {
         let location = T::Location::default();
         let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
