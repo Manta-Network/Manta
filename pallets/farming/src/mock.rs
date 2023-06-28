@@ -26,7 +26,6 @@ use frame_support::{
     PalletId,
 };
 use frame_system::{EnsureNever, EnsureRoot, EnsureSignedBy};
-// use manta_primitives::{CurrencyId, TokenSymbol};
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
@@ -226,7 +225,7 @@ parameter_types! {
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
         metadata: AssetStorageMetadata {
             name: b"Calamari".to_vec(),
-            symbol: b"KAR".to_vec(),
+            symbol: b"KMA".to_vec(),
             decimals: 12,
             is_frozen: false,
         },

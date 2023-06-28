@@ -309,7 +309,7 @@ where
                             .checked_add(&reward_to_claim)
                             .ok_or(ArithmeticError::Overflow)?;
 
-                        Self::reward_token_transfer(
+                        Self::farming_token_transfer(
                             reward_currency,
                             reward_to_claim,
                             who,
@@ -320,7 +320,7 @@ where
                 gauge_info.last_claim_block = current_block_number;
                 gauge_info.claimed_time_factor = latest_claimed_time_factor;
                 if gauge_info.gauge_stop_block <= current_block_number {
-                    Self::reward_token_transfer(
+                    Self::farming_token_transfer(
                         &gauge_pool_info.token,
                         gauge_info.gauge_amount,
                         who,

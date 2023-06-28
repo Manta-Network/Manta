@@ -535,6 +535,7 @@ pub mod pallet {
         }
 
         /// User can withdraw but not claim rewards from farming pool.
+        /// This operation will transfer back user staked token from keeper account.
         #[pallet::call_index(5)]
         #[pallet::weight(T::WeightInfo::claim())]
         pub fn withdraw_claim(origin: OriginFor<T>, pid: PoolId) -> DispatchResult {
@@ -834,7 +835,7 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-    fn reward_token_transfer(
+    fn farming_token_transfer(
         reward_currency: &CurrencyIdOf<T>,
         reward_to_withdraw: BalanceOf<T>,
         who: &T::AccountId,

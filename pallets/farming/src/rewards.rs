@@ -330,7 +330,7 @@ impl<T: Config> Pallet<T> {
 									withdrawn_reward.saturating_add(reward_to_withdraw),
 								);
 
-                                Self::reward_token_transfer(reward_currency, reward_to_withdraw, who, &pool_info.reward_issuer)
+                                Self::farming_token_transfer(reward_currency, reward_to_withdraw, who, &pool_info.reward_issuer)
 							},
 						)?;
                         Ok(())
@@ -367,7 +367,7 @@ impl<T: Config> Pallet<T> {
                                     |(token, &proportion)| -> DispatchResult {
                                         let withdraw_amount = proportion * native_amount;
 
-                                        Self::reward_token_transfer(
+                                        Self::farming_token_transfer(
                                             token,
                                             withdraw_amount,
                                             who,
