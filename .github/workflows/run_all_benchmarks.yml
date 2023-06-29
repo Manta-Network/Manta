@@ -29,7 +29,7 @@ jobs:
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
-          SCCACHE_VERSION: v0.2.15
+          SCCACHE_VERSION: v0.5.3
         run: |
           SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
           mkdir -p $HOME/.local/bin
@@ -67,6 +67,13 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
+      - name: init nodejs && yarn
+        run: |
+          curl -s https://deb.nodesource.com/setup_16.x | sudo bash
+          sudo apt install nodejs -y
+          node -v
+          sudo npm install --global yarn
+          yarn -v
       - name: build benchmarking binary
         env:
           RUST_BACKTRACE: full
@@ -77,19 +84,31 @@ jobs:
         run: |
           source ${HOME}/.cargo/env
           RUSTC_BOOTSTRAP=1 cargo build --profile production --features runtime-benchmarks --verbose
+      - name: create-chainspec
+        run: |
+          ${{ github.workspace }}/target/production/manta build-spec --chain $CHAIN_SPEC --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
+      - name: append manta-pay storage
+        run: |
+          wget -P ${{ github.workspace }}/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
+          cd ${{ github.workspace }}/tests
+          yarn install
+          yarn
+          node append_storage.js
+          CHAIN_SPEC=${{ github.workspace }}/tests/data/fork.json
+          echo $CHAIN_SPEC
       - name: stop sccache server
         run: sccache --stop-server || true
       - if: ${{ env.SNAPSHOT_URL == '' }}
         name: run all benchmarks script without storage benchmark
         run: |
-          ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC
+          ./scripts/benchmarking/run_all_benchmarks.sh -b -c ${{ github.workspace }}/tests/data/fork.json
       - if: ${{ env.SNAPSHOT_URL != '' }}
         name: run all benchmarks script with storage benchmark
         run: |
           mkdir $FULL_DB_FOLDER
           wget -q $SNAPSHOT_URL
           tar -xf calamari.tar.gz --directory ./$FULL_DB_FOLDER
-          ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC -s ./$FULL_DB_FOLDER
+          ./scripts/benchmarking/run_all_benchmarks.sh -b -c ${{ github.workspace }}/tests/data/fork.json -s ./$FULL_DB_FOLDER
       - if: always()
         name: upload benchmarking binary
         uses: actions/upload-artifact@v2

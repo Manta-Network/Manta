@@ -38,7 +38,7 @@ jobs:
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
-          SCCACHE_VERSION: v0.2.15
+          SCCACHE_VERSION: v0.5.3
         run: |
           SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
           mkdir -p $HOME/.local/bin
@@ -131,7 +131,7 @@ jobs:
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
-          SCCACHE_VERSION: v0.2.15
+          SCCACHE_VERSION: v0.5.3
         run: |
           SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
           mkdir -p $HOME/.local/bin
@@ -159,7 +159,13 @@ jobs:
             sccache-
       - name: start sccache server
         run: sccache --start-server
-      - name: init
+      - name: build benchmarking binary
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          SCCACHE_CACHE_SIZE: 120G
+          SCCACHE_DIR: /home/runner/.cache/sccache
+          CARGO_TERM_COLOR: always
         run: |
           sudo apt update
           sudo apt install -y pkg-config libssl-dev protobuf-compiler
@@ -169,6 +175,28 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
+          df -h
+          sudo apt remove -y '^dotnet-.*'
+          sudo apt remove -y '^mongodb-.*'
+          sudo apt remove -y '^mysql-.*'
+          sudo apt remove -y '^postgresql-*'
+          sudo apt remove -y google-cloud-sdk google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+          sudo apt autoremove -y
+          sudo apt clean
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/share/dotnet
+          df -h
+      - name: create-chainspec
+        run: |
+          RUSTC_BOOTSTRAP=1 cargo build --release --features runtime-benchmarks
+          ${{ github.workspace }}/target/release/manta build-spec --chain calamari-dev --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
+      - name: append manta-pay storage
+        run: |
+          wget -P ${{ github.workspace }}/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
+          cd ${{ github.workspace }}/tests
+          yarn install
+          yarn
+          node append_storage.js
       - name: Run live benchmarks test
         env:
           RUST_BACKTRACE: full
@@ -176,10 +204,10 @@ jobs:
           SCCACHE_CACHE_SIZE: 120G
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
-          RUSTC_BOOTSTRAP=1 cargo run --release --features runtime-benchmarks,try-runtime \
+          ${{ github.workspace }}/target/release/manta \
           benchmark \
             pallet \
-            --chain=calamari-dev \
+            --chain=${{ github.workspace }}/tests/data/fork.json \
             --pallet=* \
             --extrinsic=* \
             --repeat=1 \
@@ -227,7 +255,7 @@ jobs:
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
-          SCCACHE_VERSION: v0.2.15
+          SCCACHE_VERSION: v0.5.3
         run: |
           SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
           mkdir -p $HOME/.local/bin
@@ -266,15 +294,26 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
+          df -h
+          sudo apt remove -y '^dotnet-.*'
+          sudo apt remove -y '^mongodb-.*'
+          sudo apt remove -y '^mysql-.*'
+          sudo apt remove -y '^postgresql-*'
+          sudo apt remove -y google-cloud-sdk google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+          sudo apt autoremove -y
+          sudo apt clean
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/share/dotnet
+          df -h
       - name: Run Unit Tests
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 120G
+          SCCACHE_CACHE_SIZE: 240
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime --workspace --exclude integration-tests
+          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime --workspace --exclude integration-tests pallet-manta-pay
       - name: stop sccache server
         run: sccache --stop-server || true
   stop-unit-test-checks:
