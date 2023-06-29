@@ -384,8 +384,8 @@ impl<T: Config> Pallet<T> {
                 &pallet_parachain_staking::Call::delegate {
                     candidate: collator.clone(),
                     amount,
-                    candidate_delegation_count,
-                    delegation_count,
+                    candidate_delegation_count: candidate_delegation_count + 1,
+                    delegation_count: delegation_count + 1,
                 },
                 None::<u64>.into(),
             );
@@ -397,8 +397,8 @@ impl<T: Config> Pallet<T> {
                 RawOrigin::Signed(Self::account_id()).into(),
                 collator.clone(),
                 amount,
-                candidate_delegation_count,
-                delegation_count,
+                candidate_delegation_count + 1,
+                delegation_count + 1,
             )
             .map_err(|e| {
                 log::error!(
