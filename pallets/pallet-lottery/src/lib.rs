@@ -944,11 +944,16 @@ pub mod pallet {
         fn do_rebalance_remaining_funds() -> DispatchResult {
             log::trace!(function_name!());
             // Only restake what isn't needed to service outstanding withdrawal requests
-            let stakable_balance = Self::current_prize_pool();
+            // Also only restake what was previously unstaked
+            let stakable_balance = sp_std::cmp::min(
+                Self::current_prize_pool(),
+                Self::remaining_unstaking_balance(),
+            );
             if stakable_balance.is_zero() {
                 log::debug!("Nothing to restake");
                 return Ok(());
             }
+            RemainingUnstakingBalance::<T>::mutate(|bal| *bal -= stakable_balance);
             for (collator, amount_to_stake) in
                 Self::calculate_deposit_distribution(stakable_balance)
             {
