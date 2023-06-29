@@ -267,16 +267,15 @@ impl<T: Config> Pallet<T> {
                                 pool_info.rewards.get_mut(reward_currency)
                             {
                                 *total_reward = total_reward.saturating_sub(withdrawn_amount);
-                                *total_withdrawn_reward = total_withdrawn_reward
-                                    .saturating_sub(withdrawn_amount);
+                                *total_withdrawn_reward =
+                                    total_withdrawn_reward.saturating_sub(withdrawn_amount);
 
                                 // remove if all reward is withdrawn
                                 if total_reward.is_zero() {
                                     pool_info.rewards.remove(reward_currency);
                                 }
                             }
-                            *withdrawn_reward =
-                                withdrawn_reward.saturating_sub(withdrawn_amount);
+                            *withdrawn_reward = withdrawn_reward.saturating_sub(withdrawn_amount);
                             Ok(())
                         },
                     )?;
