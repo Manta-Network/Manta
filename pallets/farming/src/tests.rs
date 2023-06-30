@@ -1042,7 +1042,7 @@ fn gauge() {
             let (pid, tokens) = init_gauge_900();
             assert_eq!(Assets::balance(KSM, &ALICE), 1900);
             if let Some(gauge_pool_infos) = Farming::gauge_pool_infos(0) {
-                assert!(gauge_pool_infos.rewards.is_empty())
+                assert!(gauge_pool_infos.rewards.is_empty());
             };
             Farming::on_initialize(0);
             System::set_block_number(System::block_number() + 1);
@@ -1052,6 +1052,10 @@ fn gauge() {
 
             Farming::on_initialize(0);
             System::set_block_number(System::block_number() + 10);
+            assert_noop!(
+                Farming::deposit(RuntimeOrigin::signed(ALICE), pid, tokens, Some((100, 2000))),
+                Error::<Runtime>::GaugeMaxBlockOverflow
+            );
             assert_ok!(Farming::deposit(
                 RuntimeOrigin::signed(ALICE),
                 pid,
@@ -1085,6 +1089,18 @@ fn gauge() {
                 pid
             ));
             assert_eq!(Assets::balance(KSM, &BOB), 9699991);
+
+            assert_ok!(Farming::deposit(
+                RuntimeOrigin::signed(ALICE),
+                pid,
+                tokens,
+                Some((100, 1))
+            ));
+            System::set_block_number(System::block_number() + 200);
+            assert_noop!(
+                Farming::deposit(RuntimeOrigin::signed(ALICE), pid, tokens, Some((100, 1))),
+                Error::<Runtime>::LastGaugeNotClaim
+            );
         })
 }
 
