@@ -238,7 +238,9 @@ pub mod pallet {
     #[pallet::getter(fn gauge_pool_infos)]
     pub type GaugePoolInfos<T: Config> = StorageMap<_, Twox64Concat, PoolId, GaugePoolInfoOf<T>>;
 
+    /// Record gauge info for specific `AccountId` under `PoolId`.
     ///
+    /// double_map (PoolId, AccountId) => GaugeInfo
     #[pallet::storage]
     #[pallet::getter(fn gauge_infos)]
     pub type GaugeInfos<T: Config> =

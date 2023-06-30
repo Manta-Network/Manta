@@ -294,9 +294,9 @@ fn no_gauge_farming_pool_should_work() {
             // Stake KSM, get KSM reward
             let tokens_proportion = vec![(KSM, Perbill::from_percent(100))];
             let deposit_amount = 1000;
-            let reward_amount: Balance = 1000;
-            let basic_rewards = vec![(KSM, 1000)];
-            let total_rewards = 300000;
+            let reward_amount: Balance = 800;
+            let basic_rewards = vec![(KSM, reward_amount)];
+            let total_rewards = 300_000;
             let alice_init_balance = 3000;
             assert_eq!(Assets::balance(KSM, &ALICE), alice_init_balance);
 
@@ -359,7 +359,7 @@ fn no_gauge_farming_pool_should_work() {
             );
 
             System::set_block_number(System::block_number() + 3);
-            // Deposit failed because Gauge pool is not exist
+            // Deposit failed because gauge pool is not exist
             assert_noop!(
                 Farming::deposit(
                     RuntimeOrigin::signed(ALICE),
@@ -369,7 +369,7 @@ fn no_gauge_farming_pool_should_work() {
                 ),
                 Error::<Runtime>::GaugePoolNotExist
             );
-            // Deposit success
+            // Deposit success without gauge info
             assert_ok!(Farming::deposit(
                 RuntimeOrigin::signed(ALICE),
                 pid,
@@ -377,7 +377,7 @@ fn no_gauge_farming_pool_should_work() {
                 None
             ));
 
-            // User staked token transfer to keeper account
+            // User staked token transfer to keeper account when deposit
             assert_eq!(
                 Assets::balance(KSM, &ALICE),
                 alice_init_balance - deposit_amount
@@ -391,35 +391,35 @@ fn no_gauge_farming_pool_should_work() {
             assert!(reward.withdraw_list.is_empty());
             assert_eq!(reward.claim_last_block, 3);
 
-            // The pool state is still on Charged until new block
+            // The pool state is still on `Charged` until new block produced
             pool1 = Farming::pool_infos(pid).unwrap();
             assert_eq!(pool1.total_shares, deposit_amount);
             assert_eq!(pool1.state, PoolState::Charged);
             assert!(pool1.rewards.is_empty());
 
-            // Claim failed because of pool state is still Charged
+            // Can't Claim if pool state is `Charged`
             assert_err!(
                 Farming::claim(RuntimeOrigin::signed(ALICE), pid),
                 Error::<Runtime>::InvalidPoolState
             );
 
-            // OnInitialize hook change the pool state
+            // OnInitialize hook change the pool state and also pool rewards
             Farming::on_initialize(System::block_number() + 3);
             Farming::on_initialize(0);
             pool1 = Farming::pool_infos(pid).unwrap();
             assert_eq!(pool1.total_shares, deposit_amount);
             assert_eq!(pool1.state, PoolState::Ongoing);
             assert_eq!(pool1.claim_limit_time, 6);
-            assert_eq!(pool1.rewards.get(&KSM).unwrap(), &(1000, 0));
+            assert_eq!(pool1.rewards.get(&KSM).unwrap(), &(reward_amount, 0));
 
-            // new block didn't change the reward info
+            // Produce new block didn't change the reward info
             reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
             assert_eq!(reward.share, deposit_amount);
             assert!(reward.withdrawn_rewards.is_empty());
             assert!(reward.withdraw_list.is_empty());
             assert_eq!(reward.claim_last_block, 3);
 
-            // Claim failed because of share info not exist
+            // Claim failed because of user share info not exist
             assert_err!(
                 Farming::claim(RuntimeOrigin::signed(BOB), pid),
                 Error::<Runtime>::ShareInfoNotExists
@@ -437,15 +437,21 @@ fn no_gauge_farming_pool_should_work() {
             // Claim success, user get reward.
             System::set_block_number(System::block_number() + 6);
             assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
-            assert_eq!(Assets::balance(KSM, &ALICE), 3000);
+            assert_eq!(
+                Assets::balance(KSM, &ALICE),
+                alice_init_balance - deposit_amount + reward_amount
+            );
             assert_eq!(
                 Assets::balance(KSM, &pool1.reward_issuer),
-                total_rewards - 1000
+                total_rewards - reward_amount
             );
 
             // Claim operation update pool info's rewards and also share info's withdrawn_rewards
             pool1 = Farming::pool_infos(pid).unwrap();
-            assert_eq!(pool1.rewards.get(&KSM).unwrap(), &(1000, 1000));
+            assert_eq!(
+                pool1.rewards.get(&KSM).unwrap(),
+                &(reward_amount, reward_amount)
+            );
             reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
             assert_eq!(reward.withdrawn_rewards.get(&KSM).unwrap(), &reward_amount);
             // The withdraw list of user share info is still empty.
@@ -459,22 +465,31 @@ fn no_gauge_farming_pool_should_work() {
                 reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
                 assert_eq!(reward.withdrawn_rewards.get(&KSM).unwrap(), &reward_amount);
                 assert_eq!(reward.claim_last_block, 109 + i * 100);
-                assert_eq!(reward.share, 1000);
+                assert_eq!(reward.share, deposit_amount);
                 assert!(reward.withdraw_list.is_empty());
 
                 pool1 = Farming::pool_infos(pid).unwrap();
-                assert_eq!(pool1.rewards.get(&KSM).unwrap(), &(1000, 1000));
-                assert_eq!(pool1.total_shares, 1000);
+                assert_eq!(
+                    pool1.rewards.get(&KSM).unwrap(),
+                    &(reward_amount, reward_amount)
+                );
+                assert_eq!(pool1.total_shares, deposit_amount);
 
-                assert_eq!(Assets::balance(KSM, &ALICE), 3000);
+                assert_eq!(
+                    Assets::balance(KSM, &ALICE),
+                    alice_init_balance - deposit_amount + reward_amount
+                );
                 assert_eq!(
                     Assets::balance(KSM, &pool1.reward_issuer),
-                    total_rewards - 1000
+                    total_rewards - reward_amount
                 );
                 assert_eq!(Assets::balance(KSM, &pool1.keeper), deposit_amount);
             }
-            assert_eq!(Assets::balance(KSM, &pool1.reward_issuer), 299000);
-            assert_eq!(Assets::balance(KSM, &pool1.keeper), 1000);
+            assert_eq!(
+                Assets::balance(KSM, &pool1.reward_issuer),
+                total_rewards - reward_amount
+            );
+            assert_eq!(Assets::balance(KSM, &pool1.keeper), deposit_amount);
             // Claim with new block
             for i in 1..5 {
                 System::set_block_number(System::block_number() + 6);
@@ -484,30 +499,43 @@ fn no_gauge_farming_pool_should_work() {
                 reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
                 assert_eq!(
                     reward.withdrawn_rewards.get(&KSM).unwrap(),
-                    &(1000 * (i + 1))
+                    &(reward_amount * (i + 1))
                 );
                 assert_eq!(reward.claim_last_block as u128, 509 + i * 6);
-                assert_eq!(reward.share, 1000);
+                assert_eq!(reward.share, deposit_amount);
                 assert!(reward.withdraw_list.is_empty());
 
                 pool1 = Farming::pool_infos(pid).unwrap();
                 assert_eq!(
                     pool1.rewards.get(&KSM).unwrap(),
-                    &(1000 * (i + 1), 1000 * (i + 1))
+                    &(reward_amount * (i + 1), reward_amount * (i + 1))
                 );
-                assert_eq!(pool1.total_shares, 1000);
+                assert_eq!(pool1.total_shares, deposit_amount);
 
-                assert_eq!(Assets::balance(KSM, &ALICE), 3000 + 1000 * i);
+                assert_eq!(
+                    Assets::balance(KSM, &ALICE),
+                    alice_init_balance - deposit_amount + reward_amount * (i + 1)
+                );
                 assert_eq!(
                     Assets::balance(KSM, &pool1.reward_issuer),
-                    total_rewards - 1000 * (i + 1)
+                    total_rewards - reward_amount * (i + 1)
                 );
                 // Because withdraw_list of user share is empty, keeper not return token to user.
                 assert_eq!(Assets::balance(KSM, &pool1.keeper), deposit_amount);
             }
-            assert_eq!(Assets::balance(KSM, &pool1.reward_issuer), 295000);
-            assert_eq!(Assets::balance(KSM, &pool1.keeper), 1000);
-            assert_eq!(pool1.rewards.get(&KSM).unwrap(), &(5000, 5000));
+            assert_eq!(
+                Assets::balance(KSM, &ALICE),
+                alice_init_balance - deposit_amount + reward_amount * 5
+            );
+            assert_eq!(
+                Assets::balance(KSM, &pool1.reward_issuer),
+                total_rewards - reward_amount * 5
+            );
+            assert_eq!(Assets::balance(KSM, &pool1.keeper), deposit_amount);
+            assert_eq!(
+                pool1.rewards.get(&KSM).unwrap(),
+                &(reward_amount * 5, reward_amount * 5)
+            );
 
             // Withdraw failed because of share info not exist.
             assert_err!(
@@ -521,11 +549,14 @@ fn no_gauge_farming_pool_should_work() {
             assert!(reward.withdraw_list.is_empty());
 
             let share_reward = reward.withdrawn_rewards.get(&KSM).unwrap();
-            assert_eq!(share_reward, &(5000));
+            assert_eq!(share_reward, &(reward_amount * 5));
             let (total_reward, total_withdrawn_reward) = pool1.rewards.get(&KSM).unwrap();
-            assert_eq!(pool1.rewards.get(&KSM).unwrap(), &(5000, 5000));
+            assert_eq!(
+                pool1.rewards.get(&KSM).unwrap(),
+                &(reward_amount * 5, reward_amount * 5)
+            );
 
-            let reward_amount = Farming::get_reward_amount(
+            let reward_amount1 = Farming::get_reward_amount(
                 &reward,
                 total_reward,
                 total_withdrawn_reward,
@@ -533,21 +564,24 @@ fn no_gauge_farming_pool_should_work() {
                 &KSM,
             )
             .unwrap();
-            assert_eq!(reward_amount, (5000, 0));
+            assert_eq!(reward_amount1, (reward_amount * 5, 0));
             let reward_inflation =
                 Farming::get_reward_inflation(reward.share, total_reward, pool1.total_shares);
-            assert_eq!(reward_inflation, 5000);
+            assert_eq!(reward_inflation, reward_amount * 5);
 
             let reward_inflation = Farming::get_reward_inflation(800, share_reward, reward.share);
-            assert_eq!(reward_inflation, 4000);
+            assert_eq!(reward_inflation, share_reward * 8 / 10);
             let reward_inflation = Farming::get_reward_inflation(200, share_reward, reward.share);
-            assert_eq!(reward_inflation, 1000);
+            assert_eq!(reward_inflation, share_reward * 2 / 10);
             let reward_inflation = Farming::get_reward_inflation(100, share_reward, reward.share);
-            assert_eq!(reward_inflation, 500);
+            assert_eq!(reward_inflation, share_reward / 10);
 
             // Withdraw partial tokens
             assert_eq!(System::block_number(), 533);
-            assert_eq!(Assets::balance(KSM, &ALICE), 7000);
+            assert_eq!(
+                Assets::balance(KSM, &ALICE),
+                alice_init_balance - deposit_amount + reward_amount * 5
+            );
             assert_ok!(Farming::withdraw(
                 RuntimeOrigin::signed(ALICE),
                 pid,
@@ -556,9 +590,15 @@ fn no_gauge_farming_pool_should_work() {
 
             // Although withdraw also has claim, but no new rewards due to no new block
             // So both user and reward issuer account balance not change.
-            assert_eq!(Assets::balance(KSM, &ALICE), 7000);
-            assert_eq!(Assets::balance(KSM, &pool1.reward_issuer), 295000);
-            assert_eq!(Assets::balance(KSM, &pool1.keeper), 1000);
+            assert_eq!(
+                Assets::balance(KSM, &ALICE),
+                alice_init_balance - deposit_amount + reward_amount * 5
+            );
+            assert_eq!(
+                Assets::balance(KSM, &pool1.reward_issuer),
+                total_rewards - reward_amount * 5
+            );
+            assert_eq!(Assets::balance(KSM, &pool1.keeper), deposit_amount);
 
             // Withdraw operation has only one operation `remove_share`.
             // And `remove_share` will claim rewards and also update user share info.
@@ -569,8 +609,11 @@ fn no_gauge_farming_pool_should_work() {
             assert_eq!(pool1.total_shares, 200);
             assert_eq!(reward.withdraw_list, vec![(533 + withdraw_limit_time, 800)]);
             assert_eq!(reward.share, 200);
-            assert_eq!(reward.withdrawn_rewards.get(&KSM).unwrap(), &1000);
-            assert_eq!(pool1.rewards.get(&KSM).unwrap(), &(1000, 1000));
+            assert_eq!(reward.withdrawn_rewards.get(&KSM).unwrap(), &reward_amount);
+            assert_eq!(
+                pool1.rewards.get(&KSM).unwrap(),
+                &(reward_amount, reward_amount)
+            );
 
             System::set_block_number(System::block_number() + 6);
             Farming::on_initialize(System::block_number() + 3);

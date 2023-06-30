@@ -125,7 +125,7 @@ where
         amount: Self::Balance,
     ) -> DispatchResult {
         if currency_id == A::NativeAssetId::get() {
-            Native::transfer(from, to, amount, ExistenceRequirement::KeepAlive)?;
+            Native::transfer(from, to, amount, ExistenceRequirement::AllowDeath)?;
         } else {
             NonNative::transfer(currency_id, from, to, amount, false)?;
         }
@@ -155,7 +155,7 @@ where
                 who,
                 amount,
                 WithdrawReasons::empty(),
-                ExistenceRequirement::KeepAlive,
+                ExistenceRequirement::AllowDeath,
             )?;
         } else {
             NonNative::burn_from(currency_id, who, amount)?;
