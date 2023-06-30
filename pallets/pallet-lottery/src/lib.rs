@@ -281,10 +281,22 @@ pub mod pallet {
     pub enum Event<T: Config> {
         LotteryStarted,
         LotteryStopped,
-        LotteryWinner(T::AccountId, BalanceOf<T>),
-        Deposited(T::AccountId, BalanceOf<T>),
-        ScheduledWithdraw(T::AccountId, BalanceOf<T>),
-        Withdrawn(T::AccountId, BalanceOf<T>),
+        LotteryWinner {
+            account: T::AccountId,
+            amount: BalanceOf<T>,
+        },
+        Deposited {
+            account: T::AccountId,
+            amount: BalanceOf<T>,
+        },
+        ScheduledWithdraw {
+            account: T::AccountId,
+            amount: BalanceOf<T>,
+        },
+        Withdrawn {
+            account: T::AccountId,
+            amount: BalanceOf<T>,
+        },
     }
 
     #[pallet::error]
@@ -356,7 +368,10 @@ pub mod pallet {
             TotalPot::<T>::mutate(|balance| *balance += amount);
             TotalUsers::<T>::mutate(|users| *users += 1);
             SumOfDeposits::<T>::mutate(|balance| *balance += amount);
-            Self::deposit_event(Event::Deposited(caller_account, amount));
+            Self::deposit_event(Event::Deposited {
+                account: caller_account,
+                amount,
+            });
             Ok(())
         }
 
@@ -481,7 +496,10 @@ pub mod pallet {
                 })
             })?;
             // END UNSTAKING SECTION
-            Self::deposit_event(Event::ScheduledWithdraw(caller, amount));
+            Self::deposit_event(Event::ScheduledWithdraw {
+                account: caller,
+                amount,
+            });
             Ok::<(), DispatchError>(())
         }
 
@@ -899,7 +917,10 @@ pub mod pallet {
                 payout_for_winner,
                 winner
             );
-            Self::deposit_event(Event::LotteryWinner(winner, payout_for_winner));
+            Self::deposit_event(Event::LotteryWinner {
+                account: winner,
+                amount: payout_for_winner,
+            });
             Ok(())
         }
 
@@ -1045,6 +1066,10 @@ pub mod pallet {
                         request.balance,
                         KeepAlive,
                     )?;
+                    Self::deposit_event(Event::Withdrawn {
+                        account: request.user.clone(),
+                        amount: request.balance,
+                    });
                 }
                 log::debug!(
                     "Have {:?} requests and {:?} surplus funds left over after transfers",
