@@ -519,6 +519,8 @@ pub mod pallet {
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::update_asset_metadata(
                 &asset_id,
                 metadata.clone().into(),
+                metadata.min_balance().to_owned(),
+                metadata.is_sufficient()
             )?;
             AssetIdMetadata::<T>::insert(asset_id, &metadata);
             Self::deposit_event(Event::<T>::AssetMetadataUpdated { asset_id, metadata });

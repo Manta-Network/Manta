@@ -108,9 +108,20 @@ pub trait AssetRegistry: AssetIdType + BalanceType {
     ///
     /// * `asset_id`: the asset id to be created.
     /// * `metadata`: the metadata that the implementation layer stores.
+    /// * `min_balance`: the minimum balance to hold this asset
+    /// * `is_sufficient`: whether this asset can be used as reserve asset,
+    ///     to the first approximation. More specifically, Whether a non-zero balance of this asset
+    ///     is deposit of sufficient value to account for the state bloat associated with its
+    ///     balance storage. If set to `true`, then non-zero balances may be stored without a
+    ///     `consumer` reference (and thus an ED in the Balances pallet or whatever else is used to
+    ///     control user-account state growth).
+    /// WARNING: Exercise extreme caution when changing `min_balance` or `is_sufficient`,
+    ///     ** these can put user's accounts into an invalid existing-but-below-ED state **
     fn update_asset_metadata(
         asset_id: &Self::AssetId,
         metadata: Self::Metadata,
+        min_balance: Self::Balance,
+        is_sufficient: bool,
     ) -> Result<(), Self::Error>;
 }
 

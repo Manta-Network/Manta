@@ -125,6 +125,8 @@ impl AssetRegistry for MantaAssetRegistry {
     fn update_asset_metadata(
         asset_id: &DolphinAssetId,
         metadata: AssetStorageMetadata,
+        min_balance: Self::Balance,
+        is_sufficient: bool,
     ) -> DispatchResult {
         Assets::force_set_metadata(
             RuntimeOrigin::root(),
@@ -132,6 +134,17 @@ impl AssetRegistry for MantaAssetRegistry {
             metadata.name,
             metadata.symbol,
             metadata.decimals,
+            metadata.is_frozen,
+        )?;
+        Assets::force_asset_status(
+            Origin::root(),
+            *asset_id,
+            sp_runtime::MultiAddress::Id(AssetManager::account_id()),
+            sp_runtime::MultiAddress::Id(AssetManager::account_id()),
+            sp_runtime::MultiAddress::Id(AssetManager::account_id()),
+            sp_runtime::MultiAddress::Id(AssetManager::account_id()),
+            min_balance,
+            is_sufficient,
             metadata.is_frozen,
         )
     }
