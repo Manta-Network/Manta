@@ -17,7 +17,7 @@ env:
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
-  CHAIN: "manta-dev"
+  CHAIN: "manta-baikal"
 jobs:
   build-node-current:
     needs: start-node-builder-current
@@ -89,16 +89,14 @@ jobs:
       - name: Export genesis files
         run: |
           cd ${{github.workspace}}/export
-          ./manta build-spec --chain $CHAIN --raw > $CHAIN-genesis.json
-          ./manta export-genesis-state --chain $CHAIN > $CHAIN-genesis.state
-          ./manta export-genesis-wasm --chain $CHAIN > $CHAIN-genesis.wasm
+          ./manta build-spec --chain manta-dev --raw > $CHAIN-genesis.json
+          ./manta export-genesis-state --chain $CHAIN-genesis.json > $CHAIN-genesis.state
+          ./manta export-genesis-wasm --chain $CHAIN-genesis.json > $CHAIN-genesis.wasm
   push-to-s3:
     needs: [start-node-builder-current, build-node-current, build-genesis-files]
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     steps:
       - uses: jakejarvis/s3-sync-action@master
-        with:
-          args: --follow-symlinks --delete
         env:
           AWS_S3_BUCKET: public-baikal
           AWS_ACCESS_KEY_ID: "AKIAZ6VD3QKGIIAZR5IJ"
