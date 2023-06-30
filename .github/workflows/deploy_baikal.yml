@@ -2,9 +2,15 @@
 # baikal is not meant to be upgraded, it is meant to be redeployed with every change
 name: build and prepare baikal deployment
 on:
-  push:
-    branches:
-      - "baikal"
+  workflow_dispatch:
+    inputs:
+      deployment:
+        description: The name of the baikal deployment to generate files for
+        default: manta-baikal
+        required: true
+      chain:
+        description: The chain spec to build with
+        required: true
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -17,7 +23,8 @@ env:
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
-  CHAIN: "manta-baikal"
+  CHAIN: ${{github.event.inputs.chain}}
+  DEPLOYMENT: ${{github.event.inputs.deployment}}
 jobs:
   build-node-current:
     needs: start-node-builder-current
@@ -89,9 +96,9 @@ jobs:
       - name: Export genesis files
         run: |
           cd ${{github.workspace}}/export
-          ./manta build-spec --chain manta-dev --raw > $CHAIN-genesis.json
-          ./manta export-genesis-state --chain $CHAIN-genesis.json > $CHAIN-genesis.state
-          ./manta export-genesis-wasm --chain $CHAIN-genesis.json > $CHAIN-genesis.wasm
+          ./manta build-spec --chain $CHAIN --raw > $DEPLOYMENT-genesis.json
+          ./manta export-genesis-state --chain $DEPLOYMENT-genesis.json > $DEPLOYMENT-genesis.state
+          ./manta export-genesis-wasm --chain $DEPLOYMENT-genesis.json > $DEPLOYMENT-genesis.wasm
   push-to-s3:
     needs: [start-node-builder-current, build-node-current, build-genesis-files]
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
