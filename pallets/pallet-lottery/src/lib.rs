@@ -297,6 +297,10 @@ pub mod pallet {
             account: T::AccountId,
             amount: BalanceOf<T>,
         },
+        Claimed {
+            account: T::AccountId,
+            amount: BalanceOf<T>,
+        },
     }
 
     #[pallet::error]
@@ -530,13 +534,17 @@ pub mod pallet {
                             .ok_or(ArithmeticError::Underflow)?;
                         Ok::<(), ArithmeticError>(())
                     })?;
-
                     <T as pallet_parachain_staking::Config>::Currency::transfer(
                         &Self::account_id(),
                         &caller,
                         winnings,
                         KeepAlive,
-                    ) // NOTE: If the transfer fails, the TXN get rolled back and the winnings stay in the map for claiming later
+                    )?; // NOTE: If the transfer fails, the TXN get rolled back and the winnings stay in the map for claiming later
+                    Self::deposit_event(Event::Claimed {
+                        account: caller,
+                        amount: winnings,
+                    });
+                    Ok(())
                 }
                 None => Err(DispatchError::CannotLookup),
             }
