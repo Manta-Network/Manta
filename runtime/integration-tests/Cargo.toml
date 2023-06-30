@@ -78,3 +78,6 @@ default = ["manta"]
 manta = [
   "dep:manta-runtime",
 ]
+runtime-benchmarks = [
+  "pallet-assets/runtime-benchmarks"
+]
