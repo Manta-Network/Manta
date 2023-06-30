@@ -225,7 +225,18 @@ benchmarks! {
     }: _(RawOrigin::Root)
     verify {
     }
-
+    set_min_deposit {
+    }: _(RawOrigin::Root,u32::MAX.into())
+    verify {
+    }
+    set_min_withdraw {
+    }: _(RawOrigin::Root,u32::MAX.into())
+    verify {
+    }
+    set_gas_reserve {
+    }: _(RawOrigin::Root,u32::MAX.into())
+    verify {
+    }
     // rebalance_stake {
     // }: _()
     // verify {

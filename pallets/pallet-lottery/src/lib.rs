@@ -733,6 +733,34 @@ pub mod pallet {
 
             // Ok(())
         }
+        #[pallet::call_index(9)]
+        #[pallet::weight(<T as Config>::WeightInfo::set_min_deposit())]
+        pub fn set_min_deposit(origin: OriginFor<T>, min_deposit: BalanceOf<T>) -> DispatchResult {
+            T::ManageOrigin::ensure_origin(origin.clone())?;
+            ensure!(
+                min_deposit >= Self::min_withdraw(),
+                Error::<T>::PalletMisconfigured
+            );
+            MinDeposit::<T>::set(min_deposit);
+            Ok(())
+        }
+        #[pallet::call_index(10)]
+        #[pallet::weight(<T as Config>::WeightInfo::set_min_withdraw())]
+        pub fn set_min_withdraw(
+            origin: OriginFor<T>,
+            min_withdraw: BalanceOf<T>,
+        ) -> DispatchResult {
+            T::ManageOrigin::ensure_origin(origin.clone())?;
+            MinWithdraw::<T>::set(min_withdraw);
+            Ok(())
+        }
+        #[pallet::call_index(11)]
+        #[pallet::weight(<T as Config>::WeightInfo::set_gas_reserve())]
+        pub fn set_gas_reserve(origin: OriginFor<T>, gas_reserve: BalanceOf<T>) -> DispatchResult {
+            T::ManageOrigin::ensure_origin(origin.clone())?;
+            GasReserve::<T>::set(gas_reserve);
+            Ok(())
+        }
     }
 
     impl<T: Config> Pallet<T> {
