@@ -79,5 +79,5 @@ manta = [
   "dep:manta-runtime",
 ]
 runtime-benchmarks = [
-  "pallet-assets/runtime-benchmarks"
+  "pallet-assets/runtime-benchmarks",
 ]
