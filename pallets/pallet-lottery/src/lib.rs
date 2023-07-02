@@ -305,26 +305,41 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
+        /// Lottery has not been started
         LotteryNotStarted,
+        /// Lottery has already been started
         LotteryIsRunning,
-        LotteryNotScheduled,
-        TooEarlyForDrawing,
+        /// Pre-drawing freeze in effect, can't modify balances
         TooCloseToDrawing,
+        /// Not enough funds in pallet to pay winnings
         PotBalanceTooLow,
+        /// Pallet balance is lower than the needed gas fee buffer
         PotBalanceBelowGasReserve,
+        /// Pallet balance is too low to submit a needed transaction
         PotBalanceTooLowToPayTxFee,
+        /// Fatal: No winner could be selected
         NoWinnerFound,
+        /// Deposit amount is below minimum amount
         DepositBelowMinAmount,
+        /// Requested Withdrawal amount is below minimum
         WithdrawBelowMinAmount,
+        /// Requested to withdraw more than you deposited
         WithdrawAboveDeposit,
+        /// No deposits found for this account
         NoDepositForAccount,
+        /// Fatal: No collators found to assign this deposit to
         NoCollatorForDeposit,
+        /// Fatal: No collators found to withdraw from
         NoCollatorForWithdrawal,
-        WithdrawFailed,
+        /// Fatal: Some value would underflow
         ArithmeticUnderflow,
+        /// Fatal: Some value would overflow
         ArithmeticOverflow,
+        /// Fatal: Pallet configuration violates sanity checks
         PalletMisconfigured,
+        /// Fatal: Could not schedule lottery drawings
         CouldNotSchedule,
+        /// Fatal: Functionality not yet supported
         NotImplemented,
     }
 
@@ -339,7 +354,6 @@ pub mod pallet {
         #[pallet::weight(<T as Config>::WeightInfo::deposit(Pallet::<T>::total_users(), pallet_parachain_staking::Pallet::<T>::selected_candidates().len() as u32))]
         pub fn deposit(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
             let caller_account = ensure_signed(origin)?;
-
             ensure!(
                 amount >= Self::min_deposit(),
                 Error::<T>::DepositBelowMinAmount
@@ -417,7 +431,7 @@ pub mod pallet {
             );
             let now = <frame_system::Pallet<T>>::block_number();
             log::debug!("Requesting withdraw of {:?} tokens", amount);
-            // Ensure user has enough funds active and mark them as offboarding (remove from `ActiveFundsPerUser`)
+            // Ensure user has enough funds active and mark them as offboarding (remove from `ActiveBalancePerUser`)
             ActiveBalancePerUser::<T>::try_mutate_exists(caller.clone(), |maybe_balance| {
                 match maybe_balance {
                     None => Err(Error::<T>::NoDepositForAccount),
@@ -504,7 +518,7 @@ pub mod pallet {
                 account: caller,
                 amount,
             });
-            Ok::<(), DispatchError>(())
+            Ok(())
         }
 
         /// Allows the caller to transfer any of the account's previously unclaimed winnings to his their wallet
@@ -665,7 +679,6 @@ pub mod pallet {
         ///
         /// ## Operational
         /// * BadOrigin: Caller is not ManageOrigin
-        /// * TooEarlyForDrawing: The lottery is not ready for drawing yet.
         /// * PotBalanceBelowGasReserve: The balance of the pot is below the gas reserve so no winner will be paid out
         ///
         /// ## Fatal
