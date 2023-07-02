@@ -454,7 +454,12 @@ pub mod pallet {
                         {
                             new_balance if new_balance.is_zero() => {
                                 // remove user if this was his last remaining funds
-                                TotalUsers::<T>::mutate(|users| *users -= 1);
+                                TotalUsers::<T>::try_mutate(|users| {
+                                    *users = (*users)
+                                        .checked_sub(1u32.into())
+                                        .ok_or(Error::<T>::ArithmeticUnderflow)?;
+                                    Ok(())
+                                })?;
                                 None
                             }
                             new_balance => Some(new_balance),
