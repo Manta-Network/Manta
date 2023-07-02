@@ -21,9 +21,9 @@ use sp_runtime::RuntimeString;
 
 #[derive(Encode)]
 #[cfg_attr(feature = "std", derive(Debug, Decode))]
-/// TODO document
+/// Error type for missing mandatory inherent of pallet_randomness
 pub enum InherentError {
-    /// TODO document
+    /// Takes an error explanation as string
     Other(RuntimeString),
 }
 

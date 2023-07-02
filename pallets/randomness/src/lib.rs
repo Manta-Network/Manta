@@ -177,9 +177,18 @@ pub mod pallet {
             let relay_epoch_index = <RelayEpoch<T>>::get();
             let randomness_output =
                 RandomnessResults::<T>::get(RequestType::BabeEpoch(relay_epoch_index))
-                    .unwrap()
+                    .unwrap_or_else(|| {
+                        log::error!(
+                    "FATAL Could not find the included Babe randomness for {:?}. Using None",
+                    relay_epoch_index
+                );
+                        RandomnessResult::<T::Hash>::new()
+                    })
                     .randomness
-                    .unwrap(); // TODO: Handle unavailable randomness
+                    .unwrap_or_else(|| {
+                        log::error!("FATAL included BABE randomness is `None`. Using default hash");
+                        T::Hash::default()
+                    });
             let mut digest = Vec::new();
             digest.extend_from_slice(randomness_output.as_ref());
             digest.extend_from_slice(subject);
