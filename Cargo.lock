@@ -6958,7 +6958,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-lottery"
-version = "0.1.0"
+version = "4.2.0"
 dependencies = [
  "calamari-runtime",
  "frame-benchmarking",
@@ -7303,7 +7303,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-randomness"
-version = "0.1.0"
+version = "4.2.0"
 dependencies = [
  "derive_more",
  "frame-benchmarking",

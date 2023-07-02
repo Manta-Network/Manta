@@ -479,7 +479,7 @@ impl<T: Config> Pallet<T> {
         .map_err(|e| e.error)?;
 
         // Update bookkeeping
-        RemainingUnstakingBalance::<T>::mutate(|bal| {
+        UnallocatedUnstakingBalance::<T>::mutate(|bal| {
             *bal = (*bal).saturating_add(delegated_amount_to_be_unstaked);
         });
         UnstakingCollators::<T>::mutate(|collators| {

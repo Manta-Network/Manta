@@ -1,9 +1,12 @@
 [package]
 authors = ["Manta Network"]
-description = "Provides randomness"
-edition = "2018"
-name = "pallet-randomness"
-version = "0.1.0"
+description = "Provides on-chain randomness"
+edition = "2021"
+homepage = 'https://manta.network'
+license = 'GPL-3.0'
+name = 'pallet-randomness'
+repository = 'https://github.com/Manta-Network/Manta/'
+version = '4.2.0'
 
 [dependencies]
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37", default-features = false, optional = true }
@@ -13,7 +16,7 @@ hex = { version = "0.4.3", default-features = false }
 log = { version = "0.4", default-features = false }
 manta-primitives = { path = "../../primitives/manta", default-features = false }
 nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.8", default-features = false }
-parity-scale-codec = { version = "3.1.2", default-features = false, features = ["derive"] }
+parity-scale-codec = { version = "3.4.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 serde = { version = "1.0.136", default-features = false, optional = true }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }

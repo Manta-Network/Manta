@@ -1,11 +1,15 @@
 [package]
-authors = ["Adam Reif"]
+authors = ["Manta Network"]
+description = 'Pallet implementing an APY-maximizing no-loss lottery'
 edition = "2021"
-name = "pallet-lottery"
-version = "0.1.0"
+homepage = 'https://manta.network'
+license = 'GPL-3.0'
+name = 'pallet-lottery'
+repository = 'https://github.com/Manta-Network/Manta/'
+version = '4.2.0'
 
 [dependencies]
-codec = { version = '3.1.2', default-features = false, features = ['derive'], package = 'parity-scale-codec' }
+codec = { version = '3.4.0', default-features = false, features = ['derive'], package = 'parity-scale-codec' }
 function_name = "0.3"
 jsonrpsee = { version = "0.16.2", features = ["server", "macros"], optional = true }
 log = { version = "0.4.0", default-features = false }

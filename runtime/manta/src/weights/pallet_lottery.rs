@@ -53,6 +53,9 @@ pub trait WeightInfo {
     fn stop_lottery() -> Weight;
     fn draw_lottery(x: u32, y: u32, ) -> Weight;
     fn process_matured_withdrawals() -> Weight;
+    fn set_min_deposit() -> Weight;
+    fn set_min_withdraw() -> Weight;
+    fn set_gas_reserve() -> Weight;
 }
 
 /// Weights for pallet_lottery using the Substrate node and recommended hardware.
@@ -96,7 +99,7 @@ impl<T: frame_system::Config> pallet_lottery::WeightInfo for SubstrateWeight<T> 
 	// Storage: Lottery WithdrawalRequestQueue (r:1 w:1)
 	// Storage: Lottery TotalUsers (r:1 w:1)
 	// Storage: Lottery TotalPot (r:1 w:1)
-	// Storage: Lottery RemainingUnstakingBalance (r:1 w:1)
+	// Storage: Lottery UnallocatedUnstakingBalance (r:1 w:1)
 	// Storage: ParachainStaking SelectedCandidates (r:1 w:0)
 	// Storage: Lottery StakedCollators (r:2 w:1)
 	// Storage: TransactionPayment NextFeeMultiplier (r:1 w:0)
@@ -185,6 +188,21 @@ impl<T: frame_system::Config> pallet_lottery::WeightInfo for SubstrateWeight<T> 
 		Weight::from_ref_time(53_534_000)
 			.saturating_add(T::DbWeight::get().reads(6))
 	}
+    fn set_min_deposit() -> Weight {
+		// Minimum execution time: 52_626 nanoseconds.
+		Weight::from_ref_time(53_534_000)
+			.saturating_add(T::DbWeight::get().reads(6))
+	}
+    fn set_min_withdraw() -> Weight {
+		// Minimum execution time: 52_626 nanoseconds.
+		Weight::from_ref_time(53_534_000)
+			.saturating_add(T::DbWeight::get().reads(6))
+	}
+    fn set_gas_reserve() -> Weight {
+		// Minimum execution time: 52_626 nanoseconds.
+		Weight::from_ref_time(53_534_000)
+			.saturating_add(T::DbWeight::get().reads(6))
+	}
 }
 
 // For backwards compatibility and tests
@@ -227,7 +245,7 @@ impl WeightInfo for () {
 	// Storage: Lottery WithdrawalRequestQueue (r:1 w:1)
 	// Storage: Lottery TotalUsers (r:1 w:1)
 	// Storage: Lottery TotalPot (r:1 w:1)
-	// Storage: Lottery RemainingUnstakingBalance (r:1 w:1)
+	// Storage: Lottery UnallocatedUnstakingBalance (r:1 w:1)
 	// Storage: ParachainStaking SelectedCandidates (r:1 w:0)
 	// Storage: Lottery StakedCollators (r:2 w:1)
 	// Storage: TransactionPayment NextFeeMultiplier (r:1 w:0)
@@ -312,6 +330,21 @@ impl WeightInfo for () {
 	// Storage: Lottery TotalUnclaimedWinnings (r:1 w:0)
 	// Storage: Lottery GasReserve (r:1 w:0)
 	fn process_matured_withdrawals() -> Weight {
+		// Minimum execution time: 52_626 nanoseconds.
+		Weight::from_ref_time(53_534_000)
+			.saturating_add(RocksDbWeight::get().reads(6))
+	}
+    fn set_min_deposit() -> Weight {
+		// Minimum execution time: 52_626 nanoseconds.
+		Weight::from_ref_time(53_534_000)
+			.saturating_add(RocksDbWeight::get().reads(6))
+	}
+    fn set_min_withdraw() -> Weight {
+		// Minimum execution time: 52_626 nanoseconds.
+		Weight::from_ref_time(53_534_000)
+			.saturating_add(RocksDbWeight::get().reads(6))
+	}
+    fn set_gas_reserve() -> Weight {
 		// Minimum execution time: 52_626 nanoseconds.
 		Weight::from_ref_time(53_534_000)
 			.saturating_add(RocksDbWeight::get().reads(6))
