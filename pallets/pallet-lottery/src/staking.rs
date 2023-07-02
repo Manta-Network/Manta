@@ -92,7 +92,7 @@ impl<T: Config> Pallet<T> {
             pallet_parachain_staking::Pallet::<T>::compute_top_candidates(); // XXX: This can select collators that are joined but not yet producing blocks
         if top_collator_accounts.is_empty() {
             // Use `SelectedCandidates` as fallback (should basically never happen)
-            log::warn!("Lottery falling back to selected candidates");
+            log::warn!("Parachain Staking found no new active candidates. This should not happen. Lottery falling back to selected candidates from start of round");
             top_collator_accounts = pallet_parachain_staking::Pallet::<T>::selected_candidates();
             if top_collator_accounts.is_empty() {
                 log::error!("Lottery found no collators to stake with");
