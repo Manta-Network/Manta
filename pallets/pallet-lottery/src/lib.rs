@@ -1127,9 +1127,7 @@ pub mod pallet {
                 // Update T::WithdrawalRequestQueue if we paid at least one guy
                 if left_overs.len() != (*request_vec).len() {
                     request_vec.clear();
-                    for c in left_overs {
-                        request_vec.push(c);
-                    }
+                    request_vec.append(&mut left_overs);
                 }
                 Ok(())
             })?;
