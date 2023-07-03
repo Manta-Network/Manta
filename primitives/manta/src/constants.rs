@@ -37,12 +37,6 @@ pub const MANTA_DECIMAL: u8 = 18;
 /// Manta Token Symbol
 pub const MANTA_TOKEN_SYMBOL: &str = "MANTA";
 
-/// Dolphin Decimals
-pub const DOLPHIN_DECIMAL: u8 = 18;
-
-/// Dolphin Token Symbol
-pub const DOLPHIN_TOKEN_SYMBOL: &str = "DOL";
-
 /// Manta parachain time-related
 pub mod time {
     use crate::types::{BlockNumber, Moment};

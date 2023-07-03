@@ -313,7 +313,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime --workspace --exclude integration-tests pallet-manta-pay
+          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime --workspace --exclude integration-tests
       - name: stop sccache server
         run: sccache --stop-server || true
   stop-unit-test-checks:

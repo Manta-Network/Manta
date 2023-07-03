@@ -11,9 +11,6 @@ version = "4.2.0"
 calamari-runtime = { path = "../calamari", optional = true }
 cfg-if = "1.0"
 manta-runtime = { path = "../manta", optional = true }
-pallet-conviction-voting = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-pallet-ranked-collective = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-pallet-referenda = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 
 [dev-dependencies]
 codec = { package = "parity-scale-codec", version = '3.1.2', features = ["derive", "max-encoded-len"] }
@@ -82,7 +79,5 @@ manta = [
   "dep:manta-runtime",
 ]
 runtime-benchmarks = [
-  "pallet-conviction-voting/runtime-benchmarks",
-  "pallet-referenda/runtime-benchmarks",
-  "pallet-ranked-collective/runtime-benchmarks",
+  "pallet-assets/runtime-benchmarks",
 ]
