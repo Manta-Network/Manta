@@ -469,7 +469,8 @@ pub mod pallet {
             Ok(())
         }
 
-        /// User can withdraw token from farming pool. This only remove share and get claim rewards.
+        /// `Withdraw` operation only remove share and get claim rewards, then update `withdraw_list` of user share info.
+        /// This operation don't withdrawn staked token.
         #[pallet::call_index(3)]
         #[pallet::weight(T::WeightInfo::withdraw())]
         pub fn withdraw(
@@ -502,7 +503,7 @@ pub mod pallet {
             Ok(())
         }
 
-        /// User can claim rewards and also unStake.
+        /// `claim` operation can claim rewards and also un-stake if user share info has `withdraw_list`.
         #[pallet::call_index(4)]
         #[pallet::weight(T::WeightInfo::claim())]
         pub fn claim(origin: OriginFor<T>, pid: PoolId) -> DispatchResult {
@@ -535,7 +536,7 @@ pub mod pallet {
             Ok(())
         }
 
-        /// User can unStake token from farm pool.
+        /// `withdraw_claim` operation will un-stake user staked token on farming pool from keeper account to user account.
         #[pallet::call_index(5)]
         #[pallet::weight(T::WeightInfo::claim())]
         pub fn withdraw_claim(origin: OriginFor<T>, pid: PoolId) -> DispatchResult {

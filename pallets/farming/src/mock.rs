@@ -53,6 +53,7 @@ pub type AccountId = AccountId32;
 pub type Balance = u128;
 
 pub const KSM: DolphinAssetId = 8;
+pub const KMA: DolphinAssetId = 1;
 
 pub const ALICE: AccountId = AccountId32::new([0u8; 32]);
 pub const BOB: AccountId = AccountId32::new([1u8; 32]);
@@ -309,11 +310,11 @@ impl ExtBuilder {
 
     pub fn one_hundred_for_alice_n_bob(self) -> Self {
         self.balances(vec![
-            (ALICE, 1, 100),
-            (BOB, 1, 100),
+            (ALICE, 1, 3000),
+            (BOB, 1, 400_000),
             (CHARLIE, 1, 100),
             (ALICE, KSM, 3000),
-            (BOB, KSM, 10000000),
+            (BOB, KSM, 10_000_000),
         ])
     }
 
