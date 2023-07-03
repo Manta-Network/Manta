@@ -33,7 +33,7 @@ use manta_primitives::{
     },
     constants::ASSET_MANAGER_PALLET_ID,
     currencies::Currencies,
-    types::{CalamariAssetId, DolphinAssetId},
+    types::CalamariAssetId,
 };
 use sp_core::{ConstU32, H256};
 use sp_runtime::{
@@ -52,8 +52,8 @@ use crate as pallet_farming;
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 
-pub const KSM: DolphinAssetId = 8;
-pub const KMA: DolphinAssetId = 1;
+pub const KSM: CalamariAssetId = 8;
+pub const KMA: CalamariAssetId = 1;
 
 pub const ALICE: AccountId = AccountId32::new([0u8; 32]);
 pub const BOB: AccountId = AccountId32::new([1u8; 32]);
@@ -312,7 +312,7 @@ impl ExtBuilder {
         self.balances(vec![
             (ALICE, 1, 3000),
             (BOB, 1, 400_000),
-            (CHARLIE, 1, 100),
+            (CHARLIE, 1, 1),
             (ALICE, KSM, 3000),
             (BOB, KSM, 10_000_000),
         ])

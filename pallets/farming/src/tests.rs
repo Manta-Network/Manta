@@ -17,7 +17,7 @@
 #![cfg(test)]
 
 use frame_support::{assert_err, assert_noop, assert_ok};
-use manta_primitives::types::DolphinAssetId;
+use manta_primitives::types::CalamariAssetId;
 use sp_runtime::traits::AccountIdConversion;
 
 use crate::{mock::*, *};
@@ -40,20 +40,20 @@ fn init_gauge_900() -> (PoolId, BalanceOf<Runtime>) {
         5  // withdraw_limit_count
     ));
 
-    let pid = 0;
+    let pool_id = 0;
     let charge_rewards = vec![(KSM, 300000)];
     assert_ok!(Farming::charge(
         RuntimeOrigin::signed(BOB),
-        pid,
+        pool_id,
         charge_rewards
     ));
     assert_ok!(Farming::deposit(
         RuntimeOrigin::signed(ALICE),
-        pid,
+        pool_id,
         tokens,
         Some((100, 100))
     ));
-    (pid, tokens)
+    (pool_id, tokens)
 }
 
 fn init_gauge_1000() -> (PoolId, BalanceOf<Runtime>) {
@@ -74,24 +74,24 @@ fn init_gauge_1000() -> (PoolId, BalanceOf<Runtime>) {
         1   // withdraw_limit_count
     ));
 
-    let pid = 0;
+    let pool_id = 0;
     let charge_rewards = vec![(KSM, 100000)];
 
     assert_ok!(Farming::charge(
         RuntimeOrigin::signed(BOB),
-        pid,
+        pool_id,
         charge_rewards
     ));
     assert_ok!(Farming::deposit(
         RuntimeOrigin::signed(ALICE),
-        pid,
+        pool_id,
         tokens,
         None
     ));
 
-    let share_info = Farming::shares_and_withdrawn_rewards(pid, &ALICE).unwrap();
+    let share_info = Farming::shares_and_withdrawn_rewards(pool_id, &ALICE).unwrap();
     assert_eq!(share_info.share, tokens);
-    (pid, tokens)
+    (pool_id, tokens)
 }
 
 fn init_no_gauge() -> (PoolId, BalanceOf<Runtime>) {
@@ -111,24 +111,24 @@ fn init_no_gauge() -> (PoolId, BalanceOf<Runtime>) {
         1   // withdraw_limit_count
     ));
 
-    let pid = 0;
+    let pool_id = 0;
     let charge_rewards = vec![(KSM, 100000)];
 
     assert_ok!(Farming::charge(
         RuntimeOrigin::signed(BOB),
-        pid,
+        pool_id,
         charge_rewards
     ));
     assert_ok!(Farming::deposit(
         RuntimeOrigin::signed(ALICE),
-        pid,
+        pool_id,
         tokens,
         None
     ));
 
-    let share_info = Farming::shares_and_withdrawn_rewards(pid, &ALICE).unwrap();
+    let share_info = Farming::shares_and_withdrawn_rewards(pool_id, &ALICE).unwrap();
     assert_eq!(share_info.share, tokens);
-    (pid, tokens)
+    (pool_id, tokens)
 }
 
 #[test]
@@ -137,8 +137,8 @@ fn precondition_check_should_work() {
         .one_hundred_for_alice_n_bob()
         .build()
         .execute_with(|| {
-            let (pid0, tokens) = init_gauge_1000();
-            let pid = 1;
+            let (pool_id0, tokens) = init_gauge_1000();
+            let pool_id = 1;
             let charge_rewards = vec![(KSM, 300000)];
 
             assert_noop!(
@@ -157,37 +157,42 @@ fn precondition_check_should_work() {
             );
 
             assert_noop!(
-                Farming::charge(RuntimeOrigin::signed(BOB), pid, charge_rewards),
+                Farming::charge(RuntimeOrigin::signed(BOB), pool_id, charge_rewards),
                 Error::<Runtime>::PoolDoesNotExist
             );
             assert_noop!(
-                Farming::deposit(RuntimeOrigin::signed(ALICE), pid, tokens, Some((100, 100))),
+                Farming::deposit(
+                    RuntimeOrigin::signed(ALICE),
+                    pool_id,
+                    tokens,
+                    Some((100, 100))
+                ),
                 Error::<Runtime>::PoolDoesNotExist
             );
             assert_noop!(
-                Farming::withdraw(RuntimeOrigin::signed(ALICE), pid, Some(200)),
+                Farming::withdraw(RuntimeOrigin::signed(ALICE), pool_id, Some(200)),
                 Error::<Runtime>::PoolDoesNotExist
             );
             assert_noop!(
-                Farming::withdraw_claim(RuntimeOrigin::signed(ALICE), pid),
+                Farming::withdraw_claim(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::PoolDoesNotExist
             );
             assert_noop!(
-                Farming::claim(RuntimeOrigin::signed(ALICE), pid),
+                Farming::claim(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::PoolDoesNotExist
             );
             assert_noop!(
-                Farming::close_pool(RuntimeOrigin::signed(ALICE), pid),
+                Farming::close_pool(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::PoolDoesNotExist
             );
             assert_noop!(
-                Farming::retire_pool(RuntimeOrigin::signed(ALICE), pid),
+                Farming::retire_pool(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::PoolDoesNotExist
             );
             assert_noop!(
                 Farming::reset_pool(
                     RuntimeOrigin::signed(ALICE),
-                    pid,
+                    pool_id,
                     None,
                     None,
                     None,
@@ -199,17 +204,17 @@ fn precondition_check_should_work() {
                 Error::<Runtime>::PoolDoesNotExist
             );
             assert_noop!(
-                Farming::kill_pool(RuntimeOrigin::signed(ALICE), pid),
+                Farming::kill_pool(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::PoolDoesNotExist
             );
             assert_noop!(
-                Farming::gauge_withdraw(RuntimeOrigin::signed(ALICE), pid),
+                Farming::gauge_withdraw(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::GaugePoolNotExist
             );
             assert_noop!(
                 Farming::edit_pool(
                     RuntimeOrigin::signed(ALICE),
-                    pid,
+                    pool_id,
                     None,
                     None,
                     None,
@@ -220,33 +225,33 @@ fn precondition_check_should_work() {
             );
 
             // Pool state is Charged
-            let pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pid0).unwrap();
+            let pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pool_id0).unwrap();
             assert_eq!(pool1.state, PoolState::Charged);
             // Charge again
             assert_ok!(Farming::charge(
                 RuntimeOrigin::signed(BOB),
-                pid0,
+                pool_id0,
                 vec![(KSM, 1000)]
             ));
-            let pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pid0).unwrap();
+            let pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pool_id0).unwrap();
             assert_eq!(pool1.state, PoolState::Charged);
 
             assert_noop!(
-                Farming::claim(RuntimeOrigin::signed(ALICE), pid0),
+                Farming::claim(RuntimeOrigin::signed(ALICE), pool_id0),
                 Error::<Runtime>::InvalidPoolState
             );
             assert_noop!(
-                Farming::close_pool(RuntimeOrigin::signed(ALICE), pid0),
+                Farming::close_pool(RuntimeOrigin::signed(ALICE), pool_id0),
                 Error::<Runtime>::InvalidPoolState
             );
             assert_noop!(
-                Farming::retire_pool(RuntimeOrigin::signed(ALICE), pid0),
+                Farming::retire_pool(RuntimeOrigin::signed(ALICE), pool_id0),
                 Error::<Runtime>::InvalidPoolState
             );
             assert_noop!(
                 Farming::reset_pool(
                     RuntimeOrigin::signed(ALICE),
-                    pid0,
+                    pool_id0,
                     None,
                     None,
                     None,
@@ -258,23 +263,23 @@ fn precondition_check_should_work() {
                 Error::<Runtime>::InvalidPoolState
             );
             assert_noop!(
-                Farming::kill_pool(RuntimeOrigin::signed(ALICE), pid0),
+                Farming::kill_pool(RuntimeOrigin::signed(ALICE), pool_id0),
                 Error::<Runtime>::InvalidPoolState
             );
 
             // Pool state is Ongoing
             Farming::on_initialize(System::block_number() + 10);
-            let pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pid0).unwrap();
+            let pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pool_id0).unwrap();
             assert_eq!(pool1.state, PoolState::Ongoing);
 
             assert_noop!(
-                Farming::retire_pool(RuntimeOrigin::signed(ALICE), pid0),
+                Farming::retire_pool(RuntimeOrigin::signed(ALICE), pool_id0),
                 Error::<Runtime>::InvalidPoolState
             );
             assert_noop!(
                 Farming::reset_pool(
                     RuntimeOrigin::signed(ALICE),
-                    pid0,
+                    pool_id0,
                     None,
                     None,
                     None,
@@ -286,17 +291,17 @@ fn precondition_check_should_work() {
                 Error::<Runtime>::InvalidPoolState
             );
             assert_noop!(
-                Farming::kill_pool(RuntimeOrigin::signed(ALICE), pid0),
+                Farming::kill_pool(RuntimeOrigin::signed(ALICE), pool_id0),
                 Error::<Runtime>::InvalidPoolState
             );
 
             // Charge again, change back state from Ongoing to Charged.
             assert_ok!(Farming::charge(
                 RuntimeOrigin::signed(BOB),
-                pid0,
+                pool_id0,
                 vec![(KSM, 1000)]
             ));
-            let pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pid0).unwrap();
+            let pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pool_id0).unwrap();
             assert_eq!(pool1.state, PoolState::Charged);
         })
 }
@@ -349,14 +354,14 @@ fn no_gauge_farming_pool_should_work() {
             assert_eq!(Farming::pool_infos(0), None);
 
             // Charge to the pool reward issuer
-            let pid = 1;
+            let pool_id = 1;
             let charge_rewards = vec![(KSM, total_rewards)];
             assert_ok!(Farming::charge(
                 RuntimeOrigin::signed(BOB),
-                pid,
+                pool_id,
                 charge_rewards
             ));
-            let mut pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pid).unwrap();
+            let mut pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(pool1.total_shares, 0);
             assert_eq!(pool1.min_deposit_to_start, 2);
             assert_eq!(pool1.state, PoolState::Charged);
@@ -367,7 +372,7 @@ fn no_gauge_farming_pool_should_work() {
             assert_noop!(
                 Farming::deposit(
                     RuntimeOrigin::signed(ALICE),
-                    pid,
+                    pool_id,
                     deposit_amount,
                     Some((100, 100))
                 ),
@@ -379,7 +384,7 @@ fn no_gauge_farming_pool_should_work() {
             assert_noop!(
                 Farming::deposit(
                     RuntimeOrigin::signed(ALICE),
-                    pid,
+                    pool_id,
                     deposit_amount,
                     Some((100, 100))
                 ),
@@ -388,7 +393,7 @@ fn no_gauge_farming_pool_should_work() {
             // Deposit success without gauge info
             assert_ok!(Farming::deposit(
                 RuntimeOrigin::signed(ALICE),
-                pid,
+                pool_id,
                 deposit_amount,
                 None
             ));
@@ -401,35 +406,35 @@ fn no_gauge_farming_pool_should_work() {
             assert_eq!(Assets::balance(KSM, &pool1.keeper), deposit_amount);
 
             // reward info
-            let mut reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
+            let mut reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
             assert_eq!(reward.share, deposit_amount);
             assert!(reward.withdrawn_rewards.is_empty());
             assert!(reward.withdraw_list.is_empty());
             assert_eq!(reward.claim_last_block, 3);
 
             // The pool state is still on `Charged` until new block produced
-            pool1 = Farming::pool_infos(pid).unwrap();
+            pool1 = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(pool1.total_shares, deposit_amount);
             assert_eq!(pool1.state, PoolState::Charged);
             assert!(pool1.rewards.is_empty());
 
             // Can't Claim if pool state is `Charged`
             assert_err!(
-                Farming::claim(RuntimeOrigin::signed(ALICE), pid),
+                Farming::claim(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::InvalidPoolState
             );
 
             // OnInitialize hook change the pool state and also pool rewards
             Farming::on_initialize(System::block_number() + 3);
             Farming::on_initialize(0);
-            pool1 = Farming::pool_infos(pid).unwrap();
+            pool1 = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(pool1.total_shares, deposit_amount);
             assert_eq!(pool1.state, PoolState::Ongoing);
             assert_eq!(pool1.claim_limit_time, 6);
             assert_eq!(pool1.rewards.get(&KSM).unwrap(), &(reward_amount, 0));
 
             // Produce new block didn't change the reward info
-            reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
+            reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
             assert_eq!(reward.share, deposit_amount);
             assert!(reward.withdrawn_rewards.is_empty());
             assert!(reward.withdraw_list.is_empty());
@@ -437,19 +442,19 @@ fn no_gauge_farming_pool_should_work() {
 
             // Claim failed because of user share info not exist
             assert_err!(
-                Farming::claim(RuntimeOrigin::signed(BOB), pid),
+                Farming::claim(RuntimeOrigin::signed(BOB), pool_id),
                 Error::<Runtime>::ShareInfoNotExists
             );
             // Claim failed because of block not reached, at least 3+6=9
             assert!(System::block_number() < reward.claim_last_block + pool1.claim_limit_time);
             assert_err!(
-                Farming::claim(RuntimeOrigin::signed(ALICE), pid),
+                Farming::claim(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::CanNotClaim
             );
 
             // Claim success, user get reward.
             System::set_block_number(System::block_number() + 6);
-            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
             assert_eq!(
                 Assets::balance(KSM, &ALICE),
                 alice_init_balance - deposit_amount + reward_amount
@@ -460,12 +465,12 @@ fn no_gauge_farming_pool_should_work() {
             );
 
             // Claim operation update pool info's rewards and also share info's withdrawn_rewards
-            pool1 = Farming::pool_infos(pid).unwrap();
+            pool1 = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(
                 pool1.rewards.get(&KSM).unwrap(),
                 &(reward_amount, reward_amount)
             );
-            reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
+            reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
             assert_eq!(reward.withdrawn_rewards.get(&KSM).unwrap(), &reward_amount);
             // The withdraw list of user share info is still empty.
             assert!(reward.withdraw_list.is_empty());
@@ -473,15 +478,15 @@ fn no_gauge_farming_pool_should_work() {
             // Claim without new block.
             for i in 0..5 {
                 System::set_block_number(System::block_number() + 100);
-                assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+                assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
 
-                reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
+                reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
                 assert_eq!(reward.withdrawn_rewards.get(&KSM).unwrap(), &reward_amount);
                 assert_eq!(reward.claim_last_block, 109 + i * 100);
                 assert_eq!(reward.share, deposit_amount);
                 assert!(reward.withdraw_list.is_empty());
 
-                pool1 = Farming::pool_infos(pid).unwrap();
+                pool1 = Farming::pool_infos(pool_id).unwrap();
                 assert_eq!(
                     pool1.rewards.get(&KSM).unwrap(),
                     &(reward_amount, reward_amount)
@@ -507,9 +512,9 @@ fn no_gauge_farming_pool_should_work() {
             for i in 1..5 {
                 System::set_block_number(System::block_number() + 6);
                 Farming::on_initialize(System::block_number() + 3);
-                assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+                assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
 
-                reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
+                reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
                 assert_eq!(
                     reward.withdrawn_rewards.get(&KSM).unwrap(),
                     &(reward_amount * (i + 1))
@@ -518,7 +523,7 @@ fn no_gauge_farming_pool_should_work() {
                 assert_eq!(reward.share, deposit_amount);
                 assert!(reward.withdraw_list.is_empty());
 
-                pool1 = Farming::pool_infos(pid).unwrap();
+                pool1 = Farming::pool_infos(pool_id).unwrap();
                 assert_eq!(
                     pool1.rewards.get(&KSM).unwrap(),
                     &(reward_amount * (i + 1), reward_amount * (i + 1))
@@ -552,13 +557,13 @@ fn no_gauge_farming_pool_should_work() {
 
             // Withdraw failed because of share info not exist.
             assert_err!(
-                Farming::withdraw(RuntimeOrigin::signed(BOB), pid, Some(800)),
+                Farming::withdraw(RuntimeOrigin::signed(BOB), pool_id, Some(800)),
                 Error::<Runtime>::ShareInfoNotExists
             );
 
             // Claim again without new blocks, no new rewards
-            reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
-            pool1 = Farming::pool_infos(pid).unwrap();
+            reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
+            pool1 = Farming::pool_infos(pool_id).unwrap();
             assert!(reward.withdraw_list.is_empty());
 
             let share_reward = reward.withdrawn_rewards.get(&KSM).unwrap();
@@ -597,7 +602,7 @@ fn no_gauge_farming_pool_should_work() {
             );
             assert_ok!(Farming::withdraw(
                 RuntimeOrigin::signed(ALICE),
-                pid,
+                pool_id,
                 Some(800)
             ));
 
@@ -616,8 +621,8 @@ fn no_gauge_farming_pool_should_work() {
             // Withdraw operation has only one operation `remove_share`.
             // And `remove_share` will claim rewards and also update user share info.
             // We already know that due to no new block, claim rewards actually has no reward.
-            reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
-            pool1 = Farming::pool_infos(pid).unwrap();
+            reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
+            pool1 = Farming::pool_infos(pool_id).unwrap();
 
             assert_eq!(pool1.total_shares, 200);
             assert_eq!(reward.withdraw_list, vec![(533 + withdraw_limit_time, 800)]);
@@ -634,11 +639,11 @@ fn no_gauge_farming_pool_should_work() {
             // Withdraw rest all of share
             assert_ok!(Farming::withdraw(
                 RuntimeOrigin::signed(ALICE),
-                pid,
+                pool_id,
                 Some(300)
             ));
-            reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
-            pool1 = Farming::pool_infos(pid).unwrap();
+            reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
+            pool1 = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(pool1.total_shares, 0);
             assert!(pool1.rewards.is_empty());
             assert_eq!(reward.share, 0);
@@ -652,15 +657,94 @@ fn no_gauge_staking_cases_should_work() {
     staking_case(KSM, KMA);
     staking_case(KMA, KSM);
     staking_all_kma(KMA, KSM);
+    staking_minimum_kma(KMA, KSM);
 }
 
-fn staking_all_kma(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
+fn staking_minimum_kma(stake_token: CalamariAssetId, reward_token: CalamariAssetId) {
     ExtBuilder::default()
         .one_hundred_for_alice_n_bob()
         .build()
         .execute_with(|| {
             let tokens_proportion = vec![(stake_token, Perbill::from_percent(100))];
-            // let deposit_amount = 1000;
+            let reward_amount: Balance = 1;
+            let basic_rewards = vec![(reward_token, reward_amount)];
+            let total_rewards = 300_000;
+            let charlie_init_kma = 1;
+            assert_eq!(Balances::free_balance(&CHARLIE), charlie_init_kma);
+
+            assert_ok!(Farming::create_farming_pool(
+                RuntimeOrigin::signed(ALICE),
+                tokens_proportion,
+                basic_rewards,
+                None,
+                1, // min_deposit_to_start
+                1, // after_block_to_start
+                7, // withdraw_limit_time,
+                6, // claim_limit_time
+                5  // withdraw_limit_count
+            ));
+
+            // Charge to the pool reward issuer
+            let pool_id = 0;
+            let charge_rewards = vec![(reward_token, total_rewards)];
+            assert_ok!(Farming::charge(
+                RuntimeOrigin::signed(BOB),
+                pool_id,
+                charge_rewards
+            ));
+
+            System::set_block_number(System::block_number() + 3);
+            // Deposit success without gauge info
+            assert_ok!(Farming::deposit(
+                RuntimeOrigin::signed(CHARLIE),
+                pool_id,
+                charlie_init_kma,
+                None
+            ));
+
+            let pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pool_id).unwrap();
+            assert_eq!(Balances::free_balance(&CHARLIE), 0);
+            assert_eq!(Balances::free_balance(&pool1.keeper), charlie_init_kma);
+
+            Farming::on_initialize(System::block_number() + 10);
+            System::set_block_number(System::block_number() + 10);
+            assert_eq!(Balances::free_balance(&CHARLIE), 0);
+            assert_ok!(Farming::claim(RuntimeOrigin::signed(CHARLIE), pool_id));
+            assert_eq!(Balances::free_balance(&CHARLIE), 0);
+
+            System::set_block_number(System::block_number() + 10);
+            assert_ok!(Farming::withdraw(
+                RuntimeOrigin::signed(CHARLIE),
+                pool_id,
+                None
+            ));
+            assert_eq!(Balances::free_balance(&CHARLIE), 0);
+            let reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &CHARLIE).unwrap();
+            assert_eq!(reward.withdraw_list, vec![(30, charlie_init_kma)]);
+
+            System::set_block_number(System::block_number() + 6);
+            assert_ok!(Farming::withdraw_claim(
+                RuntimeOrigin::signed(CHARLIE),
+                pool_id
+            ));
+            assert_eq!(Balances::free_balance(&CHARLIE), 0);
+
+            System::set_block_number(System::block_number() + 6);
+            assert_ok!(Farming::withdraw_claim(
+                RuntimeOrigin::signed(CHARLIE),
+                pool_id
+            ));
+            assert_eq!(Balances::free_balance(&CHARLIE), charlie_init_kma);
+            assert_eq!(Balances::free_balance(pool1.keeper), 0);
+        });
+}
+
+fn staking_all_kma(stake_token: CalamariAssetId, reward_token: CalamariAssetId) {
+    ExtBuilder::default()
+        .one_hundred_for_alice_n_bob()
+        .build()
+        .execute_with(|| {
+            let tokens_proportion = vec![(stake_token, Perbill::from_percent(100))];
             let reward_amount: Balance = 800;
             let basic_rewards = vec![(reward_token, reward_amount)];
             let total_rewards = 300_000;
@@ -680,11 +764,11 @@ fn staking_all_kma(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
             ));
 
             // Charge to the pool reward issuer
-            let pid = 0;
+            let pool_id = 0;
             let charge_rewards = vec![(reward_token, total_rewards)];
             assert_ok!(Farming::charge(
                 RuntimeOrigin::signed(BOB),
-                pid,
+                pool_id,
                 charge_rewards
             ));
 
@@ -692,39 +776,49 @@ fn staking_all_kma(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
             // Deposit success without gauge info
             assert_ok!(Farming::deposit(
                 RuntimeOrigin::signed(ALICE),
-                pid,
+                pool_id,
                 alice_init_kma,
                 None
             ));
 
-            let pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pid).unwrap();
+            let pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(Balances::free_balance(&ALICE), 0);
             assert_eq!(Balances::free_balance(&pool1.keeper), alice_init_kma);
 
             Farming::on_initialize(System::block_number() + 10);
             System::set_block_number(System::block_number() + 10);
             assert_eq!(Balances::free_balance(&ALICE), 0);
-            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
             assert_eq!(Balances::free_balance(&ALICE), 0);
 
             System::set_block_number(System::block_number() + 10);
-            assert_ok!(Farming::withdraw(RuntimeOrigin::signed(ALICE), pid, None));
+            assert_ok!(Farming::withdraw(
+                RuntimeOrigin::signed(ALICE),
+                pool_id,
+                None
+            ));
             assert_eq!(Balances::free_balance(&ALICE), 0);
-            let reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
+            let reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
             assert_eq!(reward.withdraw_list, vec![(30, alice_init_kma)]);
 
             System::set_block_number(System::block_number() + 6);
-            assert_ok!(Farming::withdraw_claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::withdraw_claim(
+                RuntimeOrigin::signed(ALICE),
+                pool_id
+            ));
             assert_eq!(Balances::free_balance(&ALICE), 0);
 
             System::set_block_number(System::block_number() + 6);
-            assert_ok!(Farming::withdraw_claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::withdraw_claim(
+                RuntimeOrigin::signed(ALICE),
+                pool_id
+            ));
             assert_eq!(Balances::free_balance(&ALICE), alice_init_kma);
             assert_eq!(Balances::free_balance(pool1.keeper), 0);
         });
 }
 
-fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
+fn staking_case(stake_token: CalamariAssetId, reward_token: CalamariAssetId) {
     ExtBuilder::default()
         .one_hundred_for_alice_n_bob()
         .build()
@@ -753,15 +847,15 @@ fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
             ));
 
             // Charge to the pool reward issuer
-            let pid = 0;
+            let pool_id = 0;
             let charge_rewards = vec![(reward_token, total_rewards)];
             assert_ok!(Farming::charge(
                 RuntimeOrigin::signed(BOB),
-                pid,
+                pool_id,
                 charge_rewards
             ));
 
-            let mut pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pid).unwrap();
+            let mut pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(pool1.total_shares, 0);
             assert_eq!(pool1.min_deposit_to_start, 2);
             assert_eq!(pool1.state, PoolState::Charged);
@@ -771,7 +865,7 @@ fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
             // Deposit success without gauge info
             assert_ok!(Farming::deposit(
                 RuntimeOrigin::signed(ALICE),
-                pid,
+                pool_id,
                 deposit_amount,
                 None
             ));
@@ -805,14 +899,14 @@ fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
             }
 
             // reward info
-            let mut reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
+            let mut reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
             assert_eq!(reward.share, deposit_amount);
             assert!(reward.withdrawn_rewards.is_empty());
             assert!(reward.withdraw_list.is_empty());
             assert_eq!(reward.claim_last_block, 3);
 
             // The pool state is still on `Charged` until new block produced
-            pool1 = Farming::pool_infos(pid).unwrap();
+            pool1 = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(pool1.total_shares, deposit_amount);
             assert_eq!(pool1.state, PoolState::Charged);
             assert!(pool1.rewards.is_empty());
@@ -820,7 +914,7 @@ fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
             // OnInitialize hook change the pool state and also pool rewards
             Farming::on_initialize(System::block_number() + 3);
             Farming::on_initialize(0);
-            pool1 = Farming::pool_infos(pid).unwrap();
+            pool1 = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(pool1.total_shares, deposit_amount);
             assert_eq!(pool1.state, PoolState::Ongoing);
             assert_eq!(pool1.claim_limit_time, 6);
@@ -830,7 +924,7 @@ fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
             );
 
             // Produce new block didn't change the reward info
-            reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
+            reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
             assert_eq!(reward.share, deposit_amount);
             assert!(reward.withdrawn_rewards.is_empty());
             assert!(reward.withdraw_list.is_empty());
@@ -838,7 +932,7 @@ fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
 
             // Claim success, user get reward.
             System::set_block_number(System::block_number() + 6);
-            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
             if reward_token == KSM {
                 // Stake KMA, reward KSM
                 assert_eq!(
@@ -862,12 +956,12 @@ fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
             }
 
             // Claim operation update pool info's rewards and also share info's withdrawn_rewards
-            pool1 = Farming::pool_infos(pid).unwrap();
+            pool1 = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(
                 pool1.rewards.get(&reward_token).unwrap(),
                 &(reward_amount, reward_amount)
             );
-            reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
+            reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
             assert_eq!(
                 reward.withdrawn_rewards.get(&reward_token).unwrap(),
                 &reward_amount
@@ -878,9 +972,9 @@ fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
             // Claim without new block.
             for i in 0..5 {
                 System::set_block_number(System::block_number() + 100);
-                assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+                assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
 
-                reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
+                reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
                 assert_eq!(
                     reward.withdrawn_rewards.get(&reward_token).unwrap(),
                     &reward_amount
@@ -889,7 +983,7 @@ fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
                 assert_eq!(reward.share, deposit_amount);
                 assert!(reward.withdraw_list.is_empty());
 
-                pool1 = Farming::pool_infos(pid).unwrap();
+                pool1 = Farming::pool_infos(pool_id).unwrap();
                 assert_eq!(
                     pool1.rewards.get(&reward_token).unwrap(),
                     &(reward_amount, reward_amount)
@@ -919,9 +1013,9 @@ fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
             for i in 1..5 {
                 System::set_block_number(System::block_number() + 6);
                 Farming::on_initialize(System::block_number() + 3);
-                assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+                assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
 
-                reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
+                reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
                 assert_eq!(
                     reward.withdrawn_rewards.get(&reward_token).unwrap(),
                     &(reward_amount * (i + 1))
@@ -930,7 +1024,7 @@ fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
                 assert_eq!(reward.share, deposit_amount);
                 assert!(reward.withdraw_list.is_empty());
 
-                pool1 = Farming::pool_infos(pid).unwrap();
+                pool1 = Farming::pool_infos(pool_id).unwrap();
                 assert_eq!(
                     pool1.rewards.get(&reward_token).unwrap(),
                     &(reward_amount * (i + 1), reward_amount * (i + 1))
@@ -970,13 +1064,13 @@ fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
 
             // Withdraw failed because of share info not exist.
             assert_err!(
-                Farming::withdraw(RuntimeOrigin::signed(BOB), pid, Some(800)),
+                Farming::withdraw(RuntimeOrigin::signed(BOB), pool_id, Some(800)),
                 Error::<Runtime>::ShareInfoNotExists
             );
 
             // Claim again without new blocks, no new rewards
-            reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
-            pool1 = Farming::pool_infos(pid).unwrap();
+            reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
+            pool1 = Farming::pool_infos(pool_id).unwrap();
             assert!(reward.withdraw_list.is_empty());
 
             let share_reward = reward.withdrawn_rewards.get(&reward_token).unwrap();
@@ -1011,7 +1105,7 @@ fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
             assert_eq!(System::block_number(), 533);
             assert_ok!(Farming::withdraw(
                 RuntimeOrigin::signed(ALICE),
-                pid,
+                pool_id,
                 Some(800)
             ));
             // Although withdraw also has claim, but no new rewards due to no new block
@@ -1046,8 +1140,8 @@ fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
             // Withdraw operation has only one operation `remove_share`.
             // And `remove_share` will claim rewards and also update user share info.
             // We already know that due to no new block, claim rewards actually has no reward.
-            reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
-            pool1 = Farming::pool_infos(pid).unwrap();
+            reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
+            pool1 = Farming::pool_infos(pool_id).unwrap();
 
             assert_eq!(pool1.total_shares, 200);
             assert_eq!(reward.withdraw_list, vec![(533 + withdraw_limit_time, 800)]);
@@ -1067,11 +1161,11 @@ fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
             // Withdraw rest all of share
             assert_ok!(Farming::withdraw(
                 RuntimeOrigin::signed(ALICE),
-                pid,
+                pool_id,
                 Some(300)
             ));
-            reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
-            pool1 = Farming::pool_infos(pid).unwrap();
+            reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
+            pool1 = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(pool1.total_shares, 0);
             assert!(pool1.rewards.is_empty());
             assert_eq!(reward.share, 0);
@@ -1107,7 +1201,10 @@ fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
             }
 
             System::set_block_number(System::block_number() + 6);
-            assert_ok!(Farming::withdraw_claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::withdraw_claim(
+                RuntimeOrigin::signed(ALICE),
+                pool_id
+            ));
             if stake_token == KSM {
                 // Stake KSM, reward KMA
                 assert_eq!(Assets::balance(stake_token, &pool1.keeper), 200);
@@ -1117,7 +1214,10 @@ fn staking_case(stake_token: DolphinAssetId, reward_token: DolphinAssetId) {
             }
 
             System::set_block_number(System::block_number() + 6);
-            assert_ok!(Farming::withdraw_claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::withdraw_claim(
+                RuntimeOrigin::signed(ALICE),
+                pool_id
+            ));
             if stake_token == KSM {
                 // Stake KSM, reward KMA
                 assert_eq!(Assets::balance(stake_token, &pool1.keeper), 0);
@@ -1171,14 +1271,14 @@ fn gauge_farming_pool_should_work() {
             assert_eq!(Farming::pool_infos(0), None);
 
             // Charge to the pool
-            let pid = 1;
+            let pool_id = 1;
             let charge_rewards = vec![(KSM, 300000)];
             assert_ok!(Farming::charge(
                 RuntimeOrigin::signed(BOB),
-                pid,
+                pool_id,
                 charge_rewards
             ));
-            let mut pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pid).unwrap();
+            let mut pool1: PoolInfoOf<Runtime> = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(pool1.total_shares, 0);
             assert_eq!(pool1.min_deposit_to_start, 2);
             assert_eq!(pool1.state, PoolState::Charged);
@@ -1187,7 +1287,7 @@ fn gauge_farming_pool_should_work() {
             assert_err!(
                 Farming::deposit(
                     RuntimeOrigin::signed(ALICE),
-                    pid,
+                    pool_id,
                     deposit_amount,
                     Some((100, 100))
                 ),
@@ -1197,12 +1297,12 @@ fn gauge_farming_pool_should_work() {
             assert_eq!(Assets::balance(KSM, &ALICE), 3000);
             assert_ok!(Farming::deposit(
                 RuntimeOrigin::signed(ALICE),
-                pid,
+                pool_id,
                 deposit_amount,
                 Some((100, 100))
             ));
             assert_eq!(Assets::balance(KSM, &ALICE), 1900);
-            pool1 = Farming::pool_infos(pid).unwrap();
+            pool1 = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(pool1.total_shares, 1000);
             assert_eq!(pool1.min_deposit_to_start, 2);
             assert_eq!(pool1.state, PoolState::Charged);
@@ -1210,42 +1310,42 @@ fn gauge_farming_pool_should_work() {
             // OnInitialize hook change the pool state
             Farming::on_initialize(System::block_number() + 3);
             Farming::on_initialize(0);
-            pool1 = Farming::pool_infos(pid).unwrap();
+            pool1 = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(pool1.total_shares, 1000);
             assert_eq!(pool1.min_deposit_to_start, 2);
             assert_eq!(pool1.state, PoolState::Ongoing);
 
             // Claim to get rewards
             assert_err!(
-                Farming::claim(RuntimeOrigin::signed(ALICE), pid),
+                Farming::claim(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::CanNotClaim
             );
             System::set_block_number(System::block_number() + 6);
-            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
             assert_eq!(Assets::balance(KSM, &ALICE), 3008);
 
             System::set_block_number(System::block_number() + 100);
-            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
             assert_eq!(Assets::balance(KSM, &ALICE), 4698);
 
             // Withdraw part tokens
             assert_ok!(Farming::withdraw(
                 RuntimeOrigin::signed(ALICE),
-                pid,
+                pool_id,
                 Some(800)
             ));
             assert_eq!(Assets::balance(KSM, &ALICE), 4698);
 
             // Claim again
             System::set_block_number(System::block_number() + 6);
-            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
             assert_err!(
-                Farming::claim(RuntimeOrigin::signed(ALICE), pid),
+                Farming::claim(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::CanNotClaim
             );
             assert_eq!(Assets::balance(KSM, &ALICE), 4698);
             System::set_block_number(System::block_number() + 6);
-            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
             assert_eq!(Assets::balance(KSM, &ALICE), 5498);
         })
 }
@@ -1272,14 +1372,14 @@ fn deposit_gauge_should_work() {
 
 fn deposit_should_work(use_gauge: bool) {
     assert_eq!(Assets::balance(KSM, &ALICE), 3000);
-    let (pid, tokens) = if use_gauge {
+    let (pool_id, tokens) = if use_gauge {
         init_gauge_1000()
     } else {
         init_no_gauge()
     };
-    let keeper: AccountId = <Runtime as Config>::Keeper::get().into_sub_account_truncating(pid);
+    let keeper: AccountId = <Runtime as Config>::Keeper::get().into_sub_account_truncating(pool_id);
     let reward_issuer: AccountId =
-        <Runtime as Config>::RewardIssuer::get().into_sub_account_truncating(pid);
+        <Runtime as Config>::RewardIssuer::get().into_sub_account_truncating(pool_id);
 
     assert_eq!(Assets::balance(KSM, &ALICE), 2000);
     assert_eq!(Assets::balance(KSM, &keeper), 1000);
@@ -1288,7 +1388,7 @@ fn deposit_should_work(use_gauge: bool) {
     if use_gauge {
         assert_ok!(Farming::deposit(
             RuntimeOrigin::signed(ALICE),
-            pid,
+            pool_id,
             tokens,
             Some((100, 100))
         ));
@@ -1298,7 +1398,7 @@ fn deposit_should_work(use_gauge: bool) {
         System::set_block_number(System::block_number() + 1);
         assert_ok!(Farming::deposit(
             RuntimeOrigin::signed(ALICE),
-            pid,
+            pool_id,
             0,
             Some((100, 100))
         ));
@@ -1307,7 +1407,7 @@ fn deposit_should_work(use_gauge: bool) {
     } else {
         assert_ok!(Farming::deposit(
             RuntimeOrigin::signed(ALICE),
-            pid,
+            pool_id,
             tokens,
             None
         ));
@@ -1317,7 +1417,7 @@ fn deposit_should_work(use_gauge: bool) {
         System::set_block_number(System::block_number() + 1);
         assert_ok!(Farming::deposit(
             RuntimeOrigin::signed(ALICE),
-            pid,
+            pool_id,
             100,
             None
         ));
@@ -1329,7 +1429,7 @@ fn deposit_should_work(use_gauge: bool) {
         let mut gauge_basic_rewards = BTreeMap::<CurrencyIdOf<Runtime>, BalanceOf<Runtime>>::new();
         gauge_basic_rewards.entry(KSM).or_insert(tokens);
         let gauge_pool_info = GaugePoolInfo {
-            pid,
+            pool_id,
             token: KSM,
             keeper,
             reward_issuer,
@@ -1404,12 +1504,12 @@ fn withdraw_no_gauge_should_work() {
 }
 
 fn withdraw_should_work(use_gauge: bool) {
-    let (pid, tokens) = if use_gauge {
+    let (pool_id, tokens) = if use_gauge {
         init_gauge_1000()
     } else {
         init_no_gauge()
     };
-    let pool = PoolInfos::<Runtime>::get(pid).unwrap();
+    let pool = PoolInfos::<Runtime>::get(pool_id).unwrap();
     let reward_issuer = pool.reward_issuer;
     let token_keeper = pool.keeper;
 
@@ -1421,14 +1521,14 @@ fn withdraw_should_work(use_gauge: bool) {
     Farming::on_initialize(0);
     System::set_block_number(System::block_number() + 1);
 
-    let reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
+    let reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
     assert!(reward.withdraw_list.is_empty());
     assert_eq!(pool.withdraw_limit_count, 1);
 
     // withdraw
     assert_ok!(Farming::withdraw(
         RuntimeOrigin::signed(ALICE),
-        pid,
+        pool_id,
         Some(800)
     ));
 
@@ -1437,16 +1537,16 @@ fn withdraw_should_work(use_gauge: bool) {
     assert_eq!(Assets::balance(KSM, &reward_issuer), 99_000);
     assert_eq!(Assets::balance(KSM, &ALICE), 3_000);
 
-    let reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
+    let reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
     assert_eq!(reward.withdraw_list.len(), 1);
     // user share info withdraw list size is not less than pool info `withdraw_limit_count`
     assert_err!(
-        Farming::withdraw(RuntimeOrigin::signed(ALICE), pid, Some(100)),
+        Farming::withdraw(RuntimeOrigin::signed(ALICE), pool_id, Some(100)),
         Error::<Runtime>::WithdrawLimitCountExceeded
     );
 
     // Alice claim reward manually, but due to no new block, so no reward
-    assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+    assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
     assert_eq!(Assets::balance(KSM, &ALICE), 3_000);
     assert_eq!(Assets::balance(KSM, &reward_issuer), 99_000);
     assert_eq!(Assets::balance(KSM, &token_keeper), 1_000);
@@ -1456,14 +1556,14 @@ fn withdraw_should_work(use_gauge: bool) {
     if use_gauge {
         assert_ok!(Farming::deposit(
             RuntimeOrigin::signed(BOB),
-            pid,
+            pool_id,
             tokens,
             Some((100, 100))
         ));
     } else {
         assert_ok!(Farming::deposit(
             RuntimeOrigin::signed(BOB),
-            pid,
+            pool_id,
             tokens,
             None
         ));
@@ -1478,14 +1578,14 @@ fn withdraw_should_work(use_gauge: bool) {
 
     // Alice claim again, because new block produces, so has reward now
     Farming::on_initialize(0);
-    assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+    assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
     assert_eq!(Assets::balance(KSM, &ALICE), 3_966);
     assert_eq!(Assets::balance(KSM, &reward_issuer), 98_834);
 
     // withdraw
     assert_ok!(Farming::withdraw(
         RuntimeOrigin::signed(ALICE),
-        pid,
+        pool_id,
         Some(200)
     ));
     assert_eq!(Assets::balance(KSM, &ALICE), 3_966);
@@ -1499,7 +1599,10 @@ fn withdraw_should_work(use_gauge: bool) {
     // `withdraw_claim` operation will transfer back user stake token
     // User unStake 200 KSM, so keeper transfer back 200 KSM to user.
     System::set_block_number(System::block_number() + 100);
-    assert_ok!(Farming::withdraw_claim(RuntimeOrigin::signed(ALICE), pid));
+    assert_ok!(Farming::withdraw_claim(
+        RuntimeOrigin::signed(ALICE),
+        pool_id
+    ));
     assert_eq!(Assets::balance(KSM, &ALICE), 4_166);
     assert_eq!(Assets::balance(KSM, &reward_issuer), 98_834);
     if use_gauge {
@@ -1509,9 +1612,9 @@ fn withdraw_should_work(use_gauge: bool) {
     }
 
     // claim
-    let reward = SharesAndWithdrawnRewards::<Runtime>::get(pid, &ALICE).unwrap();
+    let reward = SharesAndWithdrawnRewards::<Runtime>::get(pool_id, &ALICE).unwrap();
     assert!(reward.withdraw_list.is_empty());
-    assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+    assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
     assert_eq!(Assets::balance(KSM, &ALICE), 4_166);
     assert_eq!(Assets::balance(KSM, &reward_issuer), 98_834);
     if use_gauge {
@@ -1522,7 +1625,7 @@ fn withdraw_should_work(use_gauge: bool) {
 
     // `process_withdraw_list` remove the share info.
     // due to withdraw_list of share info is empty, so there's no token transfer.
-    assert_eq!(Farming::shares_and_withdrawn_rewards(pid, &ALICE), None);
+    assert_eq!(Farming::shares_and_withdrawn_rewards(pool_id, &ALICE), None);
     assert_eq!(Assets::balance(KSM, &TREASURY_ACCOUNT), 0);
 }
 
@@ -1532,38 +1635,41 @@ fn claim() {
         .one_hundred_for_alice_n_bob()
         .build()
         .execute_with(|| {
-            let (pid, _tokens) = init_gauge_1000();
+            let (pool_id, _tokens) = init_gauge_1000();
             let keeper: AccountId =
-                <Runtime as Config>::Keeper::get().into_sub_account_truncating(pid);
+                <Runtime as Config>::Keeper::get().into_sub_account_truncating(pool_id);
             let reward_issuer: AccountId =
-                <Runtime as Config>::RewardIssuer::get().into_sub_account_truncating(pid);
+                <Runtime as Config>::RewardIssuer::get().into_sub_account_truncating(pool_id);
 
             assert_ok!(Farming::set_retire_limit(RuntimeOrigin::signed(ALICE), 10));
             assert_err!(
-                Farming::claim(RuntimeOrigin::signed(ALICE), pid),
+                Farming::claim(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::InvalidPoolState
             );
 
             System::set_block_number(System::block_number() + 100);
             Farming::on_initialize(0);
-            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
             assert_eq!(Assets::balance(KSM, &ALICE), 2000);
             assert_eq!(Assets::balance(KSM, &keeper), 1000);
             assert_eq!(Assets::balance(KSM, &reward_issuer), 100_000);
 
             Farming::on_initialize(0);
-            assert_ok!(Farming::withdraw_claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::withdraw_claim(
+                RuntimeOrigin::signed(ALICE),
+                pool_id
+            ));
             assert_eq!(Assets::balance(KSM, &ALICE), 2000);
 
-            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
             assert_eq!(Assets::balance(KSM, &ALICE), 3000);
             assert_eq!(Assets::balance(KSM, &keeper), 1000);
             assert_eq!(Assets::balance(KSM, &reward_issuer), 99_000);
 
             Farming::on_initialize(0);
-            assert_ok!(Farming::close_pool(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::close_pool(RuntimeOrigin::signed(ALICE), pool_id));
 
-            assert_ok!(Farming::retire_pool(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::retire_pool(RuntimeOrigin::signed(ALICE), pool_id));
             assert_eq!(Assets::balance(KSM, &ALICE), 5000); // 3000 + 1000 + 1000
             assert_eq!(Assets::balance(KSM, &keeper), 0);
             assert_eq!(Assets::balance(KSM, &reward_issuer), 98_000);
@@ -1576,7 +1682,7 @@ fn gauge() {
         .one_hundred_for_alice_n_bob()
         .build()
         .execute_with(|| {
-            let (pid, tokens) = init_gauge_900();
+            let (pool_id, tokens) = init_gauge_900();
             assert_eq!(Assets::balance(KSM, &ALICE), 1900);
             if let Some(gauge_pool_infos) = Farming::gauge_pool_infos(0) {
                 assert!(gauge_pool_infos.rewards.is_empty());
@@ -1584,37 +1690,47 @@ fn gauge() {
             Farming::on_initialize(0);
             System::set_block_number(System::block_number() + 1);
             Farming::on_initialize(0);
-            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
             assert_eq!(Assets::balance(KSM, &ALICE), 2918);
 
             Farming::on_initialize(0);
             System::set_block_number(System::block_number() + 10);
             assert_noop!(
-                Farming::deposit(RuntimeOrigin::signed(ALICE), pid, tokens, Some((100, 2000))),
+                Farming::deposit(
+                    RuntimeOrigin::signed(ALICE),
+                    pool_id,
+                    tokens,
+                    Some((100, 2000))
+                ),
                 Error::<Runtime>::GaugeMaxBlockOverflow
             );
             assert_ok!(Farming::deposit(
                 RuntimeOrigin::signed(ALICE),
-                pid,
+                pool_id,
                 tokens,
                 Some((100, 100))
             ));
             assert_eq!(Assets::balance(KSM, &ALICE), 1818);
 
             System::set_block_number(System::block_number() + 20);
-            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
             assert_eq!(Assets::balance(KSM, &ALICE), 3163);
 
-            assert_ok!(Farming::deposit(RuntimeOrigin::signed(BOB), pid, 10, None));
+            assert_ok!(Farming::deposit(
+                RuntimeOrigin::signed(BOB),
+                pool_id,
+                10,
+                None
+            ));
             assert_eq!(Assets::balance(KSM, &BOB), 9699990);
 
             System::set_block_number(System::block_number() + 200);
-            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
             assert_eq!(Assets::balance(KSM, &ALICE), 5383);
             assert_eq!(Assets::balance(KSM, &BOB), 9699990);
             assert_ok!(Farming::deposit(
                 RuntimeOrigin::signed(BOB),
-                pid,
+                pool_id,
                 0,
                 Some((100, 100))
             ));
@@ -1623,19 +1739,24 @@ fn gauge() {
             assert_ok!(Farming::set_retire_limit(RuntimeOrigin::signed(ALICE), 10));
             assert_ok!(Farming::force_gauge_claim(
                 RuntimeOrigin::signed(ALICE),
-                pid
+                pool_id
             ));
             assert_eq!(Assets::balance(KSM, &BOB), 9699991);
 
             assert_ok!(Farming::deposit(
                 RuntimeOrigin::signed(ALICE),
-                pid,
+                pool_id,
                 tokens,
                 Some((100, 1))
             ));
             System::set_block_number(System::block_number() + 200);
             assert_noop!(
-                Farming::deposit(RuntimeOrigin::signed(ALICE), pid, tokens, Some((100, 1))),
+                Farming::deposit(
+                    RuntimeOrigin::signed(ALICE),
+                    pool_id,
+                    tokens,
+                    Some((100, 1))
+                ),
                 Error::<Runtime>::LastGaugeNotClaim
             );
         })
@@ -1647,7 +1768,7 @@ fn gauge_withdraw() {
         .one_hundred_for_alice_n_bob()
         .build()
         .execute_with(|| {
-            let (pid, _tokens) = init_gauge_900();
+            let (pool_id, _tokens) = init_gauge_900();
             assert_eq!(Assets::balance(KSM, &ALICE), 1900);
             if let Some(gauge_pool_infos) = Farming::gauge_pool_infos(0) {
                 assert_eq!(gauge_pool_infos.gauge_amount, 100)
@@ -1655,10 +1776,16 @@ fn gauge_withdraw() {
             Farming::on_initialize(0);
             System::set_block_number(System::block_number() + 1);
             Farming::on_initialize(0);
-            assert_ok!(Farming::gauge_withdraw(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::gauge_withdraw(
+                RuntimeOrigin::signed(ALICE),
+                pool_id
+            ));
             assert_eq!(Assets::balance(KSM, &ALICE), 1918);
             System::set_block_number(System::block_number() + 1000);
-            assert_ok!(Farming::gauge_withdraw(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::gauge_withdraw(
+                RuntimeOrigin::signed(ALICE),
+                pool_id
+            ));
             assert_eq!(Assets::balance(KSM, &ALICE), 3782);
             if let Some(gauge_pool_infos) = Farming::gauge_pool_infos(0) {
                 assert_eq!(gauge_pool_infos.gauge_amount, 0)
@@ -1672,19 +1799,19 @@ fn pool_admin_operation_should_work() {
         .one_hundred_for_alice_n_bob()
         .build()
         .execute_with(|| {
-            let (pid, tokens) = init_gauge_1000();
+            let (pool_id, tokens) = init_gauge_1000();
             Farming::on_initialize(0);
             System::set_block_number(System::block_number() + 1);
             assert_ok!(Farming::deposit(
                 RuntimeOrigin::signed(ALICE),
-                pid,
+                pool_id,
                 tokens,
                 Some((100, 100))
             ));
             System::set_block_number(System::block_number() + 1);
             assert_ok!(Farming::deposit(
                 RuntimeOrigin::signed(ALICE),
-                pid,
+                pool_id,
                 0,
                 Some((100, 100))
             ));
@@ -1692,17 +1819,17 @@ fn pool_admin_operation_should_work() {
 
             // Not allow retire or reset, kill pool if pool is not Dead
             assert_noop!(
-                Farming::retire_pool(RuntimeOrigin::signed(ALICE), pid),
+                Farming::retire_pool(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::InvalidPoolState
             );
             assert_noop!(
-                Farming::kill_pool(RuntimeOrigin::signed(ALICE), pid),
+                Farming::kill_pool(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::InvalidPoolState
             );
             assert_noop!(
                 Farming::reset_pool(
                     RuntimeOrigin::signed(ALICE),
-                    pid,
+                    pool_id,
                     None,
                     None,
                     None,
@@ -1715,10 +1842,10 @@ fn pool_admin_operation_should_work() {
             );
 
             // Close the pool
-            let pool: PoolInfoOf<Runtime> = Farming::pool_infos(pid).unwrap();
+            let pool: PoolInfoOf<Runtime> = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(pool.state, PoolState::Ongoing);
-            assert_ok!(Farming::close_pool(RuntimeOrigin::signed(ALICE), pid));
-            let pool: PoolInfoOf<Runtime> = Farming::pool_infos(pid).unwrap();
+            assert_ok!(Farming::close_pool(RuntimeOrigin::signed(ALICE), pool_id));
+            let pool: PoolInfoOf<Runtime> = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(pool.state, PoolState::Dead);
 
             assert_ok!(Farming::set_retire_limit(RuntimeOrigin::signed(ALICE), 10));
@@ -1726,17 +1853,17 @@ fn pool_admin_operation_should_work() {
 
             // Pool is dead, not allow to close again, deposit, reset, kill or edit.
             assert_noop!(
-                Farming::close_pool(RuntimeOrigin::signed(ALICE), pid),
+                Farming::close_pool(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::InvalidPoolState
             );
             assert_noop!(
-                Farming::kill_pool(RuntimeOrigin::signed(ALICE), pid),
+                Farming::kill_pool(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::InvalidPoolState
             );
             assert_noop!(
                 Farming::reset_pool(
                     RuntimeOrigin::signed(ALICE),
-                    pid,
+                    pool_id,
                     None,
                     None,
                     None,
@@ -1750,7 +1877,7 @@ fn pool_admin_operation_should_work() {
             assert_noop!(
                 Farming::edit_pool(
                     RuntimeOrigin::signed(ALICE),
-                    pid,
+                    pool_id,
                     None,
                     None,
                     None,
@@ -1760,44 +1887,44 @@ fn pool_admin_operation_should_work() {
                 Error::<Runtime>::InvalidPoolState
             );
             assert_noop!(
-                Farming::deposit(RuntimeOrigin::signed(ALICE), pid, 0, Some((100, 100))),
+                Farming::deposit(RuntimeOrigin::signed(ALICE), pool_id, 0, Some((100, 100))),
                 Error::<Runtime>::InvalidPoolState
             );
 
             // Retire pool
-            assert_ok!(Farming::retire_pool(RuntimeOrigin::signed(ALICE), pid));
-            let pool: PoolInfoOf<Runtime> = Farming::pool_infos(pid).unwrap();
+            assert_ok!(Farming::retire_pool(RuntimeOrigin::signed(ALICE), pool_id));
+            let pool: PoolInfoOf<Runtime> = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(pool.state, PoolState::Retired);
 
             // claim all rewards automatically to user
             assert_eq!(Assets::balance(KSM, &ALICE), 3000);
-            assert_eq!(Farming::shares_and_withdrawn_rewards(pid, &ALICE), None);
+            assert_eq!(Farming::shares_and_withdrawn_rewards(pool_id, &ALICE), None);
 
             // Pool is retired, not allow to retire again, deposit, withdraw, claim, close
             assert_noop!(
-                Farming::close_pool(RuntimeOrigin::signed(ALICE), pid),
+                Farming::close_pool(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::InvalidPoolState
             );
             assert_noop!(
-                Farming::retire_pool(RuntimeOrigin::signed(ALICE), pid),
+                Farming::retire_pool(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::InvalidPoolState
             );
             assert_noop!(
-                Farming::deposit(RuntimeOrigin::signed(ALICE), pid, 0, Some((100, 100))),
+                Farming::deposit(RuntimeOrigin::signed(ALICE), pool_id, 0, Some((100, 100))),
                 Error::<Runtime>::InvalidPoolState
             );
             assert_noop!(
-                Farming::withdraw(RuntimeOrigin::signed(ALICE), pid, None),
+                Farming::withdraw(RuntimeOrigin::signed(ALICE), pool_id, None),
                 Error::<Runtime>::InvalidPoolState
             );
             assert_noop!(
-                Farming::claim(RuntimeOrigin::signed(ALICE), pid),
+                Farming::claim(RuntimeOrigin::signed(ALICE), pool_id),
                 Error::<Runtime>::InvalidPoolState
             );
 
             // Kill the pool
-            assert_ok!(Farming::kill_pool(RuntimeOrigin::signed(ALICE), pid));
-            assert_eq!(Farming::pool_infos(pid), None);
+            assert_ok!(Farming::kill_pool(RuntimeOrigin::signed(ALICE), pool_id));
+            assert_eq!(Farming::pool_infos(pool_id), None);
         })
 }
 
@@ -1807,20 +1934,20 @@ fn reset() {
         .one_hundred_for_alice_n_bob()
         .build()
         .execute_with(|| {
-            let (pid, _tokens) = init_gauge_900();
+            let (pool_id, _tokens) = init_gauge_900();
             assert_eq!(Assets::balance(KSM, &ALICE), 1900);
             Farming::on_initialize(0);
             System::set_block_number(System::block_number() + 1);
             Farming::on_initialize(0);
-            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
             assert_eq!(Assets::balance(KSM, &ALICE), 2918);
-            assert_ok!(Farming::close_pool(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::close_pool(RuntimeOrigin::signed(ALICE), pool_id));
             assert_ok!(Farming::set_retire_limit(RuntimeOrigin::signed(ALICE), 10));
-            assert_ok!(Farming::retire_pool(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::retire_pool(RuntimeOrigin::signed(ALICE), pool_id));
             let basic_rewards = vec![(KSM, 1000)];
             assert_ok!(Farming::reset_pool(
                 RuntimeOrigin::signed(ALICE),
-                pid,
+                pool_id,
                 None,
                 None,
                 None,
@@ -1830,9 +1957,9 @@ fn reset() {
                 Some((KSM, 1000, basic_rewards)),
             ));
             let keeper: AccountId =
-                <Runtime as Config>::Keeper::get().into_sub_account_truncating(pid);
+                <Runtime as Config>::Keeper::get().into_sub_account_truncating(pool_id);
             let reward_issuer: AccountId =
-                <Runtime as Config>::RewardIssuer::get().into_sub_account_truncating(pid);
+                <Runtime as Config>::RewardIssuer::get().into_sub_account_truncating(pool_id);
             let mut basic_rewards_map =
                 BTreeMap::<CurrencyIdOf<Runtime>, BalanceOf<Runtime>>::new();
             basic_rewards_map.entry(KSM).or_insert(1000);
@@ -1859,7 +1986,7 @@ fn reset() {
             };
             assert_eq!(Farming::pool_infos(0), Some(pool_infos));
             let gauge_pool_info = GaugePoolInfo {
-                pid,
+                pool_id,
                 token: KSM,
                 keeper,
                 reward_issuer,
@@ -1879,19 +2006,19 @@ fn reset() {
             let charge_rewards = vec![(KSM, 300000)];
             assert_ok!(Farming::charge(
                 RuntimeOrigin::signed(BOB),
-                pid,
+                pool_id,
                 charge_rewards
             ));
             assert_ok!(Farming::deposit(
                 RuntimeOrigin::signed(ALICE),
-                pid,
+                pool_id,
                 1,
                 Some((100, 100))
             ));
             assert_eq!(Assets::balance(KSM, &ALICE), 3817);
             Farming::on_initialize(0);
             System::set_block_number(System::block_number() + 20);
-            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
+            assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pool_id));
             assert_eq!(Assets::balance(KSM, &ALICE), 4017);
         })
 }

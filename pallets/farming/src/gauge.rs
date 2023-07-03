@@ -61,7 +61,7 @@ where
 /// The Reward Pool Info.
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct GaugePoolInfo<BalanceOf: HasCompact, CurrencyIdOf: Ord, AccountIdOf, BlockNumberFor> {
-    pub pid: PoolId,
+    pub pool_id: PoolId,
     pub token: CurrencyIdOf,
     pub keeper: AccountIdOf,
     pub reward_issuer: AccountIdOf,
@@ -88,7 +88,7 @@ where
     BlockNumberFor: Clone,
 {
     pub fn new(
-        pid: PoolId,
+        pool_id: PoolId,
         token: CurrencyIdOf,
         keeper: AccountIdOf,
         reward_issuer: AccountIdOf,
@@ -97,7 +97,7 @@ where
         current_block_number: BlockNumberFor,
     ) -> Self {
         Self {
-            pid,
+            pool_id,
             token,
             keeper,
             reward_issuer,
@@ -118,7 +118,7 @@ where
     BalanceOf<T>: AtLeast32BitUnsigned + Copy,
 {
     pub fn create_gauge_pool(
-        pid: PoolId,
+        pool_id: PoolId,
         pool_info: &mut PoolInfo<BalanceOf<T>, CurrencyIdOf<T>, AccountIdOf<T>, BlockNumberFor<T>>,
         gauge_token: CurrencyIdOf<T>,
         gauge_basic_rewards: BTreeMap<CurrencyIdOf<T>, BalanceOf<T>>,
@@ -128,7 +128,7 @@ where
         pool_info.gauge = Some(gid);
         let current_block_number = frame_system::Pallet::<T>::block_number();
         let gauge_pool_info = GaugePoolInfo::new(
-            pid,
+            pool_id,
             gauge_token,
             pool_info.keeper.clone(),
             pool_info.reward_issuer.clone(),
@@ -278,7 +278,7 @@ where
         let mut gauge_pool_info =
             GaugePoolInfos::<T>::get(gid).ok_or(Error::<T>::GaugePoolNotExist)?;
         let pool_info =
-            PoolInfos::<T>::get(gauge_pool_info.pid).ok_or(Error::<T>::PoolDoesNotExist)?;
+            PoolInfos::<T>::get(gauge_pool_info.pool_id).ok_or(Error::<T>::PoolDoesNotExist)?;
         GaugeInfos::<T>::mutate_exists(gid, who, |maybe_gauge_info| -> DispatchResult {
             if let Some(mut gauge_info) = maybe_gauge_info.take() {
                 ensure!(
@@ -288,7 +288,7 @@ where
                 let (gauge_rate, latest_claimed_time_factor) =
                     Self::get_gauge_rate(&gauge_pool_info, &gauge_info)?;
                 let total_shares = pool_info.total_shares;
-                let share_info = SharesAndWithdrawnRewards::<T>::get(gauge_pool_info.pid, who)
+                let share_info = SharesAndWithdrawnRewards::<T>::get(gauge_pool_info.pool_id, who)
                     .ok_or(Error::<T>::ShareInfoNotExists)?;
                 gauge_pool_info.rewards.iter_mut().try_for_each(
                     |(
@@ -352,9 +352,9 @@ where
 
     pub fn get_gauge_rewards(
         who: &T::AccountId,
-        pid: PoolId,
+        pool_id: PoolId,
     ) -> Result<RewardOf<T>, DispatchError> {
-        let pool_info = PoolInfos::<T>::get(pid).ok_or(Error::<T>::PoolDoesNotExist)?;
+        let pool_info = PoolInfos::<T>::get(pool_id).ok_or(Error::<T>::PoolDoesNotExist)?;
         let mut result_vec = Vec::<(CurrencyIdOf<T>, BalanceOf<T>)>::new();
 
         match pool_info.gauge {
@@ -366,7 +366,7 @@ where
                     GaugeInfos::<T>::get(gid, who).ok_or(Error::<T>::GaugeInfoNotExist)?;
                 let (gauge_rate, _) = Self::get_gauge_rate(&gauge_pool_info, &gauge_info)?;
                 let total_shares = pool_info.total_shares;
-                let share_info = SharesAndWithdrawnRewards::<T>::get(gauge_pool_info.pid, who)
+                let share_info = SharesAndWithdrawnRewards::<T>::get(gauge_pool_info.pool_id, who)
                     .ok_or(Error::<T>::ShareInfoNotExists)?;
                 gauge_pool_info.rewards.iter().try_for_each(
                     |(

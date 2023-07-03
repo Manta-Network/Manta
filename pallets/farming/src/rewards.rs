@@ -165,7 +165,7 @@ impl PoolState {
 impl<T: Config> Pallet<T> {
     pub fn add_share(
         who: &T::AccountId,
-        pid: PoolId,
+        pool_id: PoolId,
         pool_info: &mut PoolInfo<BalanceOf<T>, CurrencyIdOf<T>, AccountIdOf<T>, BlockNumberFor<T>>,
         add_amount: BalanceOf<T>,
     ) {
@@ -179,7 +179,7 @@ impl<T: Config> Pallet<T> {
 
         // update user share
         let n: BlockNumberFor<T> = frame_system::Pallet::<T>::block_number();
-        let mut share_info = SharesAndWithdrawnRewards::<T>::get(pid, who)
+        let mut share_info = SharesAndWithdrawnRewards::<T>::get(pool_id, who)
             .unwrap_or_else(|| ShareInfo::new(who.clone(), n));
         share_info.share = share_info.share.saturating_add(add_amount);
 
@@ -213,8 +213,8 @@ impl<T: Config> Pallet<T> {
                     .or_insert(reward_inflation);
             });
 
-        SharesAndWithdrawnRewards::<T>::insert(pid, who, share_info);
-        PoolInfos::<T>::insert(pid, pool_info);
+        SharesAndWithdrawnRewards::<T>::insert(pool_id, who, share_info);
+        PoolInfos::<T>::insert(pool_id, pool_info);
     }
 
     pub fn remove_share(
