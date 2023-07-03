@@ -81,7 +81,7 @@ jobs:
       - name: copy to workspace
         run: |
           mkdir ${{github.workspace}}/export
-          cp target/release/manta ${{github.workspace}}/export/manta
+          cp target/release/manta ${{github.workspace}}/export/$CHAIN
   build-genesis-files:
     needs: [start-node-builder-current, build-node-current]
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
@@ -89,9 +89,9 @@ jobs:
       - name: Export genesis files
         run: |
           cd ${{github.workspace}}/export
-          ./manta build-spec --chain manta-dev --raw > $CHAIN-genesis.json
-          ./manta export-genesis-state --chain $CHAIN-genesis.json > $CHAIN-genesis.state
-          ./manta export-genesis-wasm --chain $CHAIN-genesis.json > $CHAIN-genesis.wasm
+          ./$CHAIN build-spec --chain manta-dev --raw > $CHAIN-genesis.json
+          ./$CHAIN export-genesis-state --chain $CHAIN-genesis.json > $CHAIN-genesis.state
+          ./$CHAIN export-genesis-wasm --chain $CHAIN-genesis.json > $CHAIN-genesis.wasm
   push-to-s3:
     needs: [start-node-builder-current, build-node-current, build-genesis-files]
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
