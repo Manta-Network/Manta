@@ -456,7 +456,7 @@ pub mod pallet {
                                 // remove user if this was his last remaining funds
                                 TotalUsers::<T>::try_mutate(|users| {
                                     *users = (*users)
-                                        .checked_sub(1u32.into())
+                                        .checked_sub(1u32)
                                         .ok_or(Error::<T>::ArithmeticUnderflow)?;
                                     Ok(())
                                 })?;
