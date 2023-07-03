@@ -4,7 +4,7 @@ name: build and prepare baikal deployment
 on:
   push:
     branches:
-      - "ghzlatarev/baikal"
+      - "baikal"
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -17,7 +17,7 @@ env:
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
-  CHAIN: "manta-baikal"
+  CHAIN: "calamari-baikal"
 jobs:
   build-node-current:
     needs: start-node-builder-current
@@ -89,7 +89,7 @@ jobs:
       - name: Export genesis files
         run: |
           cd ${{github.workspace}}/export
-          ./$CHAIN build-spec --chain manta-dev --raw > $CHAIN-genesis.json
+          ./$CHAIN build-spec --chain $CHAIN --raw > $CHAIN-genesis.json
           ./$CHAIN export-genesis-state --chain $CHAIN-genesis.json > $CHAIN-genesis.state
           ./$CHAIN export-genesis-wasm --chain $CHAIN-genesis.json > $CHAIN-genesis.wasm
   push-to-s3:

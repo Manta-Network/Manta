@@ -100,7 +100,7 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
     match id {
         // manta chainspec
-        "manta-dev" => Ok(Box::new(chain_specs::manta_development_config())),
+        "manta-baikal" => Ok(Box::new(chain_specs::manta_development_config())),
         "manta-local" => Ok(Box::new(chain_specs::manta_local_config())),
         "manta-testnet" => Ok(Box::new(chain_specs::manta_testnet_config())),
         "manta" => Ok(Box::new(chain_specs::manta_mainnet_config()?)),
