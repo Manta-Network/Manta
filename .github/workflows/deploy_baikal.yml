@@ -105,6 +105,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.MANTA_DEV_S3_KEY }}
           AWS_REGION: "us-east-2"
           SOURCE_DIR: ${{github.workspace}}/export
+          DEST_DIR: $CHAIN
   start-node-builder-current:
     runs-on: ubuntu-20.04
     outputs:
