@@ -56,8 +56,8 @@ use frame_system::{
 };
 use manta_primitives::{
     constants::{
-        time::*, RocksDbWeight, LOTTERY_PALLET_ID, NAME_SERVICE_PALLET_ID, STAKING_PALLET_ID, TREASURY_PALLET_ID,
-        WEIGHT_PER_SECOND,
+        time::*, RocksDbWeight, LOTTERY_PALLET_ID, NAME_SERVICE_PALLET_ID, STAKING_PALLET_ID,
+        TREASURY_PALLET_ID, WEIGHT_PER_SECOND,
     },
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
