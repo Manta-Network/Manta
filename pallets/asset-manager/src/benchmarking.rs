@@ -18,7 +18,6 @@
 
 use crate::{Call, Config, Pallet};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
-use frame_support::traits::Get;
 use frame_system::{EventRecord, RawOrigin};
 use manta_primitives::assets::{AssetConfig, TestingDefault, UnitsPerSecond};
 use xcm::latest::prelude::*;
@@ -38,7 +37,7 @@ benchmarks! {
         let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
     }: _(RawOrigin::Root, location.clone(), metadata)
     verify {
-        assert_eq!(Pallet::<T>::asset_id_location(<T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get()), Some(location));
+        assert_eq!(Pallet::<T>::asset_id_location(crate::NextAssetId::<T>::get() - 1.into()), Some(location));
     }
 
     set_units_per_second {
@@ -154,6 +153,7 @@ benchmarks! {
     }
 
     register_lp_asset {
+        let current_asset_id = crate::NextAssetId::<T>::get();
         let assets_count = 10;
         for i in 8..assets_count {
             let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
@@ -162,10 +162,10 @@ benchmarks! {
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
         }
         let lp_metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
-    }: _(RawOrigin::Root, <T as Config>::AssetId::from(8), <T as Config>::AssetId::from(9), lp_metadata)
+    }: _(RawOrigin::Root, current_asset_id, current_asset_id + 1.into(), lp_metadata)
     verify {
-        assert_eq!(Pallet::<T>::asset_id_pair_to_lp((<T as Config>::AssetId::from(8), <T as Config>::AssetId::from(9))), Some(<T as Config>::AssetId::from(10)));
-        assert_eq!(Pallet::<T>::lp_to_asset_id_pair(<T as Config>::AssetId::from(10)), Some((<T as Config>::AssetId::from(8), <T as Config>::AssetId::from(9))));
+        assert_eq!(Pallet::<T>::asset_id_pair_to_lp((current_asset_id, current_asset_id + 1.into())), Some(current_asset_id + 2.into()));
+        assert_eq!(Pallet::<T>::lp_to_asset_id_pair(current_asset_id + 2.into()), Some((current_asset_id, current_asset_id + 1.into())));
     }
 }
 
