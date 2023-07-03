@@ -126,43 +126,43 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         FarmingPoolCreated {
-            pool_id: PoolId,
+            pid: PoolId,
         },
         FarmingPoolReset {
-            pool_id: PoolId,
+            pid: PoolId,
         },
         FarmingPoolClosed {
-            pool_id: PoolId,
+            pid: PoolId,
         },
         FarmingPoolKilled {
-            pool_id: PoolId,
+            pid: PoolId,
         },
         FarmingPoolEdited {
-            pool_id: PoolId,
+            pid: PoolId,
         },
         Charged {
             who: AccountIdOf<T>,
-            pool_id: PoolId,
+            pid: PoolId,
             rewards: Vec<(CurrencyIdOf<T>, BalanceOf<T>)>,
         },
         Deposited {
             who: AccountIdOf<T>,
-            pool_id: PoolId,
+            pid: PoolId,
             add_value: BalanceOf<T>,
             gauge_info: Option<(BalanceOf<T>, BlockNumberFor<T>)>,
         },
         Withdrawn {
             who: AccountIdOf<T>,
-            pool_id: PoolId,
+            pid: PoolId,
             remove_value: Option<BalanceOf<T>>,
         },
         Claimed {
             who: AccountIdOf<T>,
-            pool_id: PoolId,
+            pid: PoolId,
         },
         WithdrawClaimed {
             who: AccountIdOf<T>,
-            pool_id: PoolId,
+            pid: PoolId,
         },
         GaugeWithdrawn {
             who: AccountIdOf<T>,
@@ -175,10 +175,10 @@ pub mod pallet {
             gid: PoolId,
         },
         AllRetired {
-            pool_id: PoolId,
+            pid: PoolId,
         },
         PartiallyRetired {
-            pool_id: PoolId,
+            pid: PoolId,
         },
         RetireLimitSet {
             limit: u32,
@@ -381,7 +381,7 @@ pub mod pallet {
                 Ok(())
             })?;
 
-            Self::deposit_event(Event::FarmingPoolCreated { pool_id });
+            Self::deposit_event(Event::FarmingPoolCreated { pid: pool_id });
             Ok(())
         }
 
@@ -411,7 +411,7 @@ pub mod pallet {
 
             Self::deposit_event(Event::Charged {
                 who: exchanger,
-                pool_id,
+                pid: pool_id,
                 rewards,
             });
             Ok(())
@@ -468,7 +468,7 @@ pub mod pallet {
 
             Self::deposit_event(Event::Deposited {
                 who: exchanger,
-                pool_id,
+                pid: pool_id,
                 add_value,
                 gauge_info,
             });
@@ -508,7 +508,7 @@ pub mod pallet {
 
             Self::deposit_event(Event::Withdrawn {
                 who: exchanger,
-                pool_id,
+                pid: pool_id,
                 remove_value,
             });
             Ok(())
@@ -542,7 +542,7 @@ pub mod pallet {
 
             Self::deposit_event(Event::Claimed {
                 who: exchanger,
-                pool_id,
+                pid: pool_id,
             });
             Ok(())
         }
@@ -558,7 +558,7 @@ pub mod pallet {
 
             Self::deposit_event(Event::WithdrawClaimed {
                 who: exchanger,
-                pool_id,
+                pid: pool_id,
             });
             Ok(())
         }
@@ -577,7 +577,7 @@ pub mod pallet {
             pool_info.state = PoolState::Dead;
             PoolInfos::<T>::insert(pool_id, pool_info);
 
-            Self::deposit_event(Event::FarmingPoolClosed { pool_id });
+            Self::deposit_event(Event::FarmingPoolClosed { pid: pool_id });
             Ok(())
         }
 
@@ -633,9 +633,9 @@ pub mod pallet {
                 pool_info.state = PoolState::Retired;
                 pool_info.gauge = None;
                 PoolInfos::<T>::insert(pool_id, pool_info);
-                Self::deposit_event(Event::AllRetired { pool_id });
+                Self::deposit_event(Event::AllRetired { pid: pool_id });
             } else {
-                Self::deposit_event(Event::PartiallyRetired { pool_id });
+                Self::deposit_event(Event::PartiallyRetired { pid: pool_id });
             }
             Ok(())
         }
@@ -702,7 +702,7 @@ pub mod pallet {
             pool_info.block_startup = None;
             PoolInfos::<T>::insert(pool_id, &pool_info);
 
-            Self::deposit_event(Event::FarmingPoolReset { pool_id });
+            Self::deposit_event(Event::FarmingPoolReset { pid: pool_id });
             Ok(())
         }
 
@@ -720,7 +720,7 @@ pub mod pallet {
             SharesAndWithdrawnRewards::<T>::remove_prefix(pool_id, None);
             PoolInfos::<T>::remove(pool_id);
 
-            Self::deposit_event(Event::FarmingPoolKilled { pool_id });
+            Self::deposit_event(Event::FarmingPoolKilled { pid: pool_id });
             Ok(())
         }
 
@@ -775,7 +775,7 @@ pub mod pallet {
             };
             PoolInfos::<T>::insert(pool_id, &pool_info);
 
-            Self::deposit_event(Event::FarmingPoolEdited { pool_id });
+            Self::deposit_event(Event::FarmingPoolEdited { pid: pool_id });
             Ok(())
         }
 
