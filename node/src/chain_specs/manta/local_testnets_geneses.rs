@@ -31,11 +31,6 @@ pub fn genesis_spec_dev() -> MantaChainSpec {
             None,
             SessionKeys::from_seed_unchecked("Bob"),
         ),
-        Collator::new(
-            unchecked_account_id::<sr25519::Public>("Charlie"),
-            None,
-            SessionKeys::from_seed_unchecked("Charlie"),
-        ),
     ];
     let genesis_collators_clone = genesis_collators.clone(); // so we can move it into the constructor closure
 
