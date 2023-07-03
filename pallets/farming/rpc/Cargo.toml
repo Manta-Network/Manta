@@ -3,7 +3,7 @@ authors = ['Manta Network']
 edition = "2021"
 homepage = "https://manta.network"
 license = "GPL-3.0"
-name = "manta-farming-rpc-api"
+name = "pallet-farming-rpc-api"
 repository = 'https://github.com/Manta-Network/Manta/'
 version = "4.2.0"
 
@@ -18,5 +18,5 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-
 sp-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
 
-manta-farming-rpc-runtime-api = { path = "./runtime-api" }
 manta-primitives = { path = '../../../primitives/manta', default-features = false }
+pallet-farming-rpc-runtime-api = { path = "./runtime-api" }

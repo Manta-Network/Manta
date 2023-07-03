@@ -808,7 +808,7 @@ parameter_types! {
 /// Zenlink protocol Asset adaptor for orml_traits::MultiCurrency.
 type MantaCurrencies = Currencies<Runtime, assets_config::CalamariAssetConfig, Balances, Assets>;
 
-impl manta_farming::Config for Runtime {
+impl pallet_farming::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type CurrencyId = CalamariAssetId;
     type MultiCurrency = MantaCurrencies;
@@ -819,7 +819,7 @@ impl manta_farming::Config for Runtime {
     type TreasuryAccount = TreasuryAccount;
     type Keeper = FarmingKeeperPalletId;
     type RewardIssuer = FarmingRewardIssuerPalletId;
-    type WeightInfo = weights::manta_farming::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_farming::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -904,7 +904,7 @@ construct_runtime!(
         // Calamari stuff
         CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
         ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 51,
-        Farming: manta_farming::{Pallet, Call, Storage, Event<T>} = 54,
+        Farming: pallet_farming::{Pallet, Call, Storage, Event<T>} = 54,
     }
 );
 
@@ -977,7 +977,7 @@ mod benches {
         [pallet_name_service, NameService]
         // Dex
         [zenlink_protocol, ZenlinkProtocol]
-        [manta_farming, Farming]
+        [pallet_farming, Farming]
         // XCM
         [cumulus_pallet_xcmp_queue, XcmpQueue]
         [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
@@ -1236,7 +1236,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl manta_farming_rpc_runtime_api::FarmingRuntimeApi<Block, AccountId, CalamariAssetId, PoolId> for Runtime {
+    impl pallet_farming_rpc_runtime_api::FarmingRuntimeApi<Block, AccountId, CalamariAssetId, PoolId> for Runtime {
         fn get_farming_rewards(who: AccountId, pid: PoolId) -> Vec<(CalamariAssetId, Balance)> {
             Farming::get_farming_rewards(&who, pid).unwrap_or(Vec::new())
         }

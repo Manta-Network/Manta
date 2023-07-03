@@ -4,7 +4,7 @@ description = 'Pallet implementing farming protocol.'
 edition = "2021"
 homepage = "https://manta.network"
 license = "GPL-3.0"
-name = "manta-farming"
+name = "pallet-farming"
 repository = 'https://github.com/Manta-Network/Manta/'
 version = "4.2.0"
 

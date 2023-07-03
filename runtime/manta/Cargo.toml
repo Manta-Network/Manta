@@ -93,11 +93,11 @@ zenlink-protocol-runtime-api = { git = 'https://github.com/manta-network/Zenlink
 
 # Self dependencies
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
-manta-farming = { path = '../../pallets/farming', default-features = false }
-manta-farming-rpc-runtime-api = { path = '../../pallets/farming/rpc/runtime-api', default-features = false }
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 manta-support = { package = "pallet-manta-support", path = "../../pallets/manta-support", default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
+pallet-farming = { path = '../../pallets/farming', default-features = false }
+pallet-farming-rpc-runtime-api = { path = '../../pallets/farming/rpc/runtime-api', default-features = false }
 pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
 pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
@@ -154,7 +154,7 @@ runtime-benchmarks = [
   'pallet-xcm-benchmarks/runtime-benchmarks',
   'pallet-manta-sbt/runtime-benchmarks',
   "zenlink-protocol/runtime-benchmarks",
-  'manta-farming/runtime-benchmarks',
+  'pallet-farming/runtime-benchmarks',
 ]
 try-runtime = [
   'frame-try-runtime',
@@ -195,7 +195,7 @@ try-runtime = [
   'orml-xtokens/try-runtime',
   'pallet-manta-sbt/try-runtime',
   "zenlink-protocol/try-runtime",
-  "manta-farming/try-runtime",
+  "pallet-farming/try-runtime",
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
@@ -269,8 +269,8 @@ std = [
   'manta-support/std',
   "zenlink-protocol/std",
   "zenlink-protocol-runtime-api/std",
-  "manta-farming/std",
-  "manta-farming-rpc-runtime-api/std",
+  "pallet-farming/std",
+  "pallet-farming-rpc-runtime-api/std",
 ]
 # A feature that should be enabled when the runtime should be build for on-chain
 # deployment. This will disable stuff that shouldn't be part of the on-chain wasm

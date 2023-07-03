@@ -17,9 +17,9 @@
 //! Calamari RPC Extensions
 
 use super::*;
-use manta_farming_rpc_api::{FarmingRpc, FarmingRpcApiServer};
-use manta_farming_rpc_runtime_api::FarmingRuntimeApi;
 use manta_primitives::types::{CalamariAssetId, PoolId};
+use pallet_farming_rpc_api::{FarmingRpc, FarmingRpcApiServer};
+use pallet_farming_rpc_runtime_api::FarmingRuntimeApi;
 use pallet_manta_pay::{
     rpc::{Pull, PullApiServer},
     runtime::PullLedgerDiffApi,

@@ -47,7 +47,7 @@ use xcm::{
     VersionedMultiLocation,
 };
 
-use crate as manta_farming;
+use crate as pallet_farming;
 
 pub type AccountId = AccountId32;
 pub type Balance = u128;
@@ -70,7 +70,7 @@ frame_support::construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Assets: pallet_assets::{Pallet, Storage, Config<T>, Event<T>},
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>},
-        Farming: manta_farming::{Pallet, Call, Storage, Event<T>}
+        Farming: pallet_farming::{Pallet, Call, Storage, Event<T>}
     }
 );
 
@@ -283,7 +283,7 @@ ord_parameter_types! {
 
 type MantaCurrencies = Currencies<Runtime, MantaAssetConfig, Balances, Assets>;
 
-impl manta_farming::Config for Runtime {
+impl pallet_farming::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type CurrencyId = CalamariAssetId;
     type MultiCurrency = MantaCurrencies;

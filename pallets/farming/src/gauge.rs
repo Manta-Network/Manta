@@ -225,7 +225,12 @@ where
                 .ok_or(ArithmeticError::Overflow)?;
             let time_factor_b = gauge_block
                 .saturated_into::<u128>()
-                .checked_mul((gauge_value + gauge_info.gauge_amount).saturated_into::<u128>())
+                .checked_mul(
+                    (gauge_value
+                        .checked_add(&gauge_info.gauge_amount)
+                        .ok_or(ArithmeticError::Overflow)?)
+                    .saturated_into::<u128>(),
+                )
                 .ok_or(ArithmeticError::Overflow)?;
             let increase_total_time_factor = time_factor_a + time_factor_b;
             gauge_info.total_time_factor = gauge_info
@@ -293,7 +298,7 @@ where
                      -> DispatchResult {
                         let reward = reward_amount
                             .checked_sub(total_gauged_reward)
-                            .ok_or(ArithmeticError::Overflow)?;
+                            .ok_or(ArithmeticError::Underflow)?;
                         // gauge_reward = gauge rate * gauge rewards * existing rewards
                         let gauge_reward = gauge_rate * reward;
                         // reward_to_claim = farming rate * gauge_reward
@@ -330,11 +335,11 @@ where
                     gauge_pool_info.total_time_factor = gauge_pool_info
                         .total_time_factor
                         .checked_sub(gauge_info.total_time_factor)
-                        .ok_or(ArithmeticError::Overflow)?;
+                        .ok_or(ArithmeticError::Underflow)?;
                     gauge_pool_info.gauge_amount = gauge_pool_info
                         .gauge_amount
                         .checked_sub(&gauge_info.gauge_amount)
-                        .ok_or(ArithmeticError::Overflow)?;
+                        .ok_or(ArithmeticError::Underflow)?;
                 } else {
                     *maybe_gauge_info = Some(gauge_info);
                 };
@@ -371,7 +376,7 @@ where
                      -> DispatchResult {
                         let reward = reward_amount
                             .checked_sub(total_gauged_reward)
-                            .ok_or(ArithmeticError::Overflow)?;
+                            .ok_or(ArithmeticError::Underflow)?;
                         // gauge_reward = gauge rate * gauge rewards * existing rewards
                         let gauge_reward = gauge_rate * reward;
                         // reward_to_claim = farming rate * gauge_reward
@@ -400,12 +405,18 @@ where
             current_block_number
         };
 
-        let latest_claimed_time_factor = gauge_info.latest_time_factor
-            + gauge_info
-                .gauge_amount
-                .saturated_into::<u128>()
-                .checked_mul((start_block - gauge_info.gauge_last_block).saturated_into::<u128>())
-                .ok_or(ArithmeticError::Overflow)?;
+        let latest_claimed_time_factor = gauge_info
+            .latest_time_factor
+            .checked_add(
+                gauge_info
+                    .gauge_amount
+                    .saturated_into::<u128>()
+                    .checked_mul(
+                        (start_block - gauge_info.gauge_last_block).saturated_into::<u128>(),
+                    )
+                    .ok_or(ArithmeticError::Overflow)?,
+            )
+            .ok_or(ArithmeticError::Overflow)?;
         let gauge_rate = Perbill::from_rational(
             latest_claimed_time_factor - gauge_info.claimed_time_factor,
             gauge_pool_info.total_time_factor,

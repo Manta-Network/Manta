@@ -142,6 +142,21 @@ fn precondition_check_should_work() {
             let charge_rewards = vec![(KSM, 300000)];
 
             assert_noop!(
+                Farming::create_farming_pool(
+                    RuntimeOrigin::signed(ALICE),
+                    vec![],
+                    vec![(KSM, 1000)],
+                    None,
+                    0,  // min_deposit_to_start
+                    0,  // after_block_to_start
+                    10, // withdraw_limit_time
+                    0,  // claim_limit_time
+                    1   // withdraw_limit_count
+                ),
+                Error::<Runtime>::InvalidPoolParameter
+            );
+
+            assert_noop!(
                 Farming::charge(RuntimeOrigin::signed(BOB), pid, charge_rewards),
                 Error::<Runtime>::PoolDoesNotExist
             );

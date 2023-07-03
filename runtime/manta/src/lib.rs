@@ -769,7 +769,7 @@ parameter_types! {
 /// Zenlink protocol Asset adaptor for orml_traits::MultiCurrency.
 type MantaCurrencies = Currencies<Runtime, assets_config::MantaAssetConfig, Balances, Assets>;
 
-impl manta_farming::Config for Runtime {
+impl pallet_farming::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type CurrencyId = MantaAssetId;
     type MultiCurrency = MantaCurrencies;
@@ -780,7 +780,7 @@ impl manta_farming::Config for Runtime {
     type TreasuryAccount = TreasuryAccount;
     type Keeper = FarmingKeeperPalletId;
     type RewardIssuer = FarmingRewardIssuerPalletId;
-    type WeightInfo = weights::manta_farming::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_farming::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -846,7 +846,7 @@ construct_runtime!(
         MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
 
         ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 51,
-        Farming: manta_farming::{Pallet, Call, Storage, Event<T>} = 54,
+        Farming: pallet_farming::{Pallet, Call, Storage, Event<T>} = 54,
     }
 );
 
@@ -920,7 +920,7 @@ mod benches {
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
         [zenlink_protocol, ZenlinkProtocol]
-        [manta_farming, Farming]
+        [pallet_farming, Farming]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
     );
@@ -1183,7 +1183,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl manta_farming_rpc_runtime_api::FarmingRuntimeApi<Block, AccountId, MantaAssetId, PoolId> for Runtime {
+    impl pallet_farming_rpc_runtime_api::FarmingRuntimeApi<Block, AccountId, MantaAssetId, PoolId> for Runtime {
         fn get_farming_rewards(who: AccountId, pid: PoolId) -> Vec<(MantaAssetId, Balance)> {
             Farming::get_farming_rewards(&who, pid).unwrap_or(Vec::new())
         }

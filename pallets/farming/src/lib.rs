@@ -187,6 +187,8 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
+        /// Pool parameter is invalid
+        InvalidPoolParameter,
         /// Pool not exist
         PoolDoesNotExist,
         /// Gauge pool not exist
@@ -331,6 +333,10 @@ pub mod pallet {
             let pid = Self::pool_next_id();
             let keeper = T::Keeper::get().into_sub_account_truncating(pid);
             let reward_issuer = T::RewardIssuer::get().into_sub_account_truncating(pid);
+            ensure!(
+                !tokens_proportion.is_empty(),
+                Error::<T>::InvalidPoolParameter
+            );
             let basic_token = tokens_proportion[0];
             let tokens_proportion_map: BTreeMap<CurrencyIdOf<T>, Perbill> =
                 tokens_proportion.into_iter().map(|(k, v)| (k, v)).collect();
@@ -553,7 +559,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(6)]
-        #[pallet::weight(0)]
+        #[pallet::weight(1000)]
         pub fn close_pool(origin: OriginFor<T>, pid: PoolId) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 
@@ -571,7 +577,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(7)]
-        #[pallet::weight(0)]
+        #[pallet::weight(1000)]
         pub fn set_retire_limit(origin: OriginFor<T>, limit: u32) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 
@@ -584,7 +590,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(8)]
-        #[pallet::weight(0)]
+        #[pallet::weight(1000)]
         pub fn retire_pool(origin: OriginFor<T>, pid: PoolId) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 
@@ -630,7 +636,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(9)]
-        #[pallet::weight(0)]
+        #[pallet::weight(1000)]
         pub fn reset_pool(
             origin: OriginFor<T>,
             pid: PoolId,
@@ -696,7 +702,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(10)]
-        #[pallet::weight(0)]
+        #[pallet::weight(1000)]
         pub fn kill_pool(origin: OriginFor<T>, pid: PoolId) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 
@@ -714,7 +720,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(11)]
-        #[pallet::weight(0)]
+        #[pallet::weight(1000)]
         pub fn edit_pool(
             origin: OriginFor<T>,
             pid: PoolId,
@@ -794,7 +800,7 @@ pub mod pallet {
                                 gauge_pool_info.total_time_factor = gauge_pool_info
                                     .total_time_factor
                                     .checked_sub(gauge_info.total_time_factor)
-                                    .ok_or(ArithmeticError::Overflow)?;
+                                    .ok_or(ArithmeticError::Underflow)?;
                                 GaugePoolInfos::<T>::insert(gid, gauge_pool_info);
                             } else {
                                 *maybe_gauge_info = Some(gauge_info);
@@ -810,7 +816,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(13)]
-        #[pallet::weight(0)]
+        #[pallet::weight(1000)]
         pub fn force_gauge_claim(origin: OriginFor<T>, gid: PoolId) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 

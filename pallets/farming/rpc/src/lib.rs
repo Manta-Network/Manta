@@ -22,8 +22,8 @@ use jsonrpsee::{
     proc_macros::rpc,
     types::error::{CallError, ErrorCode, ErrorObject},
 };
-pub use manta_farming_rpc_runtime_api::{self as runtime_api, FarmingRuntimeApi};
 use manta_primitives::types::Balance;
+pub use pallet_farming_rpc_runtime_api::{self as runtime_api, FarmingRuntimeApi};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_rpc::number::NumberOrHex;
