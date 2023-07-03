@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{Call, Config, Event, Pallet, StandardAssetId, TransferPost};
-use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::traits::Get;
 use frame_system::RawOrigin;
 use manta_support::manta_pay::{
@@ -171,4 +171,5 @@ benchmarks! {
     }
 }
 
-impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
+// Unit tests are disabled as they are not compatible with the custom chain-spec logic we have for the benchmarks
+// impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
