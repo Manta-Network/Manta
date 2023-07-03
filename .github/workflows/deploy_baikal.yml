@@ -2,15 +2,9 @@
 # baikal is not meant to be upgraded, it is meant to be redeployed with every change
 name: build and prepare baikal deployment
 on:
-  workflow_dispatch:
-    inputs:
-      deployment:
-        description: The name of the baikal deployment to generate files for
-        default: manta-baikal
-        required: true
-      chain:
-        description: The chain spec to build with
-        required: true
+  push:
+    branches:
+      - "ghzlatarev/baikal"
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -103,6 +97,8 @@ jobs:
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     steps:
       - uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --follow-symlinks --delete
         env:
           AWS_S3_BUCKET: public-baikal
           AWS_ACCESS_KEY_ID: "AKIAZ6VD3QKGIIAZR5IJ"
