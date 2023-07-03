@@ -378,8 +378,8 @@ impl pallet_randomness::GetBabeData<u64, Option<Hash>> for BabeDataGetter {
         relay_chain_state_proof()
             .read_optional_entry(
                 // We use randomness from one relaychain epoch ago (4hrs Polkadot, 1hr Kusama) in combination with a (longer) `DrawingFreezeout` in pallet lottery
-                // to prevent manuipulation of the winning set by participants of the lottery
-                // NOTE: We operate under the following assumption https://github.com/Manta-Network/Manta/blob/f7b1a74e0261cc6a73081a9a86f8cd87aef8ea27/pallets/randomness/README.md#L85,
+                // to prevent manipulation of the winning set by participants of the lottery
+                // NOTE: We operate under the following assumption https://github.com/Manta-Network/Manta/blob/garandor/pt/pallets/randomness/README.md#risks,
                 // i.e. polkadot validators are not incentivized enough to skip their block rewards to influence the drawing.
                 cumulus_primitives_core::relay_chain::well_known_keys::ONE_EPOCH_AGO_RANDOMNESS,
             )
