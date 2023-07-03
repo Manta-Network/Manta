@@ -80,20 +80,6 @@ impl sc_executor::NativeExecutionDispatch for CalamariRuntimeExecutor {
     }
 }
 
-/// Native Dolphin Parachain executor instance.
-pub struct DolphinRuntimeExecutor;
-impl sc_executor::NativeExecutionDispatch for DolphinRuntimeExecutor {
-    type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-
-    fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-        dolphin_runtime::api::dispatch(method, data)
-    }
-
-    fn native_version() -> sc_executor::NativeVersion {
-        dolphin_runtime::native_version()
-    }
-}
-
 /// We use wasm executor only now.
 pub type DefaultExecutorType = WasmExecutor<HostFunctions>;
 
@@ -352,7 +338,7 @@ where
     Ok((task_manager, client))
 }
 
-/// Start a calamari/dolphin parachain node.
+/// Start a calamari parachain node.
 pub async fn start_parachain_node<RuntimeApi, FullRpc>(
     parachain_config: Configuration,
     polkadot_config: Configuration,

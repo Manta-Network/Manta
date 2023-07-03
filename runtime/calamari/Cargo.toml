@@ -59,6 +59,10 @@ pallet-treasury = { git = "https://github.com/paritytech/substrate.git", default
 pallet-utility = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 substrate-fixed = { git = "https://github.com/Manta-Network/substrate-fixed.git", default-features = false }
 
+pallet-conviction-voting = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+pallet-ranked-collective = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+pallet-referenda = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+
 # Cumulus dependencies
 cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.37" }
 cumulus-pallet-parachain-system = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.37" }
@@ -165,6 +169,9 @@ runtime-benchmarks = [
   'pallet-manta-sbt/runtime-benchmarks',
   'pallet-name-service/runtime-benchmarks',
   "zenlink-protocol/runtime-benchmarks",
+  "pallet-conviction-voting/runtime-benchmarks",
+  "pallet-referenda/runtime-benchmarks",
+  "pallet-ranked-collective/runtime-benchmarks",
 ]
 try-runtime = [
   'frame-try-runtime',
@@ -278,6 +285,9 @@ std = [
   'manta-support/std',
   "zenlink-protocol/std",
   "zenlink-protocol-runtime-api/std",
+  "pallet-conviction-voting/std",
+  "pallet-referenda/std",
+  "pallet-ranked-collective/std",
 ]
 # A feature that should be enabled when the runtime should be build for on-chain
 # deployment. This will disable stuff that shouldn't be part of the on-chain wasm
