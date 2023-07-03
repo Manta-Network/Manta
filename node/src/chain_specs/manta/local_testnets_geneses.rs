@@ -19,7 +19,7 @@
 use super::*;
 use session_key_primitives::util::unchecked_account_id;
 
-pub fn genesis_spec_dev() -> MantaChainSpec {
+pub fn genesis_spec_baikal() -> MantaChainSpec {
     let genesis_collators: Vec<Collator> = vec![
         Collator::new(
             unchecked_account_id::<sr25519::Public>("Alice"),
@@ -34,15 +34,17 @@ pub fn genesis_spec_dev() -> MantaChainSpec {
     ];
     let genesis_collators_clone = genesis_collators.clone(); // so we can move it into the constructor closure
 
+    let boot_nodes = vec![
+            "/dns/crispy.baikal.testnet.calamari.systems/tcp/30433/p2p/12D3KooW9yqGrHvonaSaRGuhk164p6V2rgBmjgxCVsGG4zPVzC3Q".parse().unwrap(),
+            "/dns/crunchy.baikal.testnet.calamari.systems/tcp/30433/p2p/12D3KooWG87weajSoHuLwW4PBHUswtMJzdnJaMNJSt7MRhi4jRFC".parse().unwrap(),
+    ];
+
     MantaChainSpec::from_genesis(
         "Manta Parachain Fast",
         "manta",
         ChainType::Live,
         move || manta_devnet_genesis(genesis_collators_clone.clone()),
-        genesis_collators
-            .into_iter()
-            .filter_map(|collator| collator.nodeid)
-            .collect(),
+        boot_nodes,
         None,
         Some(MANTA_PROTOCOL_ID),
         None,
