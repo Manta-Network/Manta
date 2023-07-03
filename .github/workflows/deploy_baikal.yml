@@ -98,7 +98,7 @@ jobs:
     steps:
       - uses: jakejarvis/s3-sync-action@master
         with:
-          args: --acl public-read --follow-symlinks --delete
+          args: --follow-symlinks --delete
         env:
           AWS_S3_BUCKET: public-baikal
           AWS_ACCESS_KEY_ID: "AKIAZ6VD3QKGIIAZR5IJ"
