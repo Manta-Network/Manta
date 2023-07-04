@@ -405,3 +405,82 @@ fn winner_distribution_should_be_equal_with_equal_deposits() {
             );
         });
 }
+
+#[test]
+fn depsiting_to_new_collator_multiple_times_in_the_same_block_should_work() {
+    let balance = 50_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![(*ALICE, HIGH_BALANCE), (*BOB, HIGH_BALANCE)])
+        .with_candidates(vec![(*BOB, balance)])
+        .with_funded_lottery_account(HIGH_BALANCE)
+        .build()
+        .execute_with(|| {
+            assert!(HIGH_BALANCE > balance);
+            assert_eq!(0, Lottery::staked_collators(*BOB));
+            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
+            assert_eq!(balance, Lottery::staked_collators(*BOB));
+            assert_last_event!(crate::mock::RuntimeEvent::Lottery(
+                crate::Event::Deposited {
+                    account: *ALICE,
+                    amount: balance
+                }
+            ));
+            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
+            assert_eq!(2 * balance, Lottery::staked_collators(*BOB));
+            assert_last_event!(crate::mock::RuntimeEvent::Lottery(
+                crate::Event::Deposited {
+                    account: *ALICE,
+                    amount: balance
+                }
+            ));
+            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
+            assert_eq!(3 * balance, Lottery::staked_collators(*BOB));
+            assert_last_event!(crate::mock::RuntimeEvent::Lottery(
+                crate::Event::Deposited {
+                    account: *ALICE,
+                    amount: balance
+                }
+            ));
+            assert_eq!(Lottery::sum_of_deposits(), 3 * balance);
+        });
+}
+
+#[test]
+fn deposit_withdraw_deposit_works() {
+    let balance = 50_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![(*ALICE, HIGH_BALANCE), (*BOB, HIGH_BALANCE)])
+        .with_candidates(vec![(*BOB, balance)])
+        .with_funded_lottery_account(HIGH_BALANCE)
+        .build()
+        .execute_with(|| {
+            assert!(HIGH_BALANCE > balance);
+            assert_eq!(0, Lottery::staked_collators(*BOB));
+            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
+            assert_eq!(balance, Lottery::staked_collators(*BOB));
+            assert_last_event!(crate::mock::RuntimeEvent::Lottery(
+                crate::Event::Deposited {
+                    account: *ALICE,
+                    amount: balance
+                }
+            ));
+            assert_ok!(Lottery::request_withdraw(Origin::signed(*ALICE), balance));
+            assert_eq!(0, Lottery::staked_collators(*BOB));
+            // join a new collator because BOB is now ineligible to receive deposits
+            let (new_collator, _) = crate::mock::from_bench::create_funded_user::<Test>(
+                "collator",
+                0xDEADBEEF,
+                HIGH_BALANCE,
+            );
+            assert_ok!(ParachainStaking::join_candidates(
+                Origin::signed(new_collator),
+                balance,
+                10
+            ));
+            assert_eq!(2, ParachainStaking::candidate_pool().len());
+            roll_to_round_begin(2);
+            assert_eq!(new_collator, ParachainStaking::selected_candidates()[1]);
+            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
+            assert_eq!(balance, Lottery::staked_collators(new_collator));
+        });
+}

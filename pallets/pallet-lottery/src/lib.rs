@@ -183,12 +183,12 @@ pub mod pallet {
 
     // Dynamic Storage Items
 
-    /// NOTE: sum of all user's deposits, to ensure balance never drops below
+    /// sum of all user's deposits, to ensure balance never drops below
     #[pallet::storage]
     #[pallet::getter(fn sum_of_deposits)]
     pub(super) type SumOfDeposits<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
-    /// NOTE: the total pot is the total number of KMA eligible to win in the current drawing cycle
+    /// the total pot is the total number of KMA eligible to win in the current drawing cycle
     #[pallet::storage]
     #[pallet::getter(fn total_pot)]
     pub(super) type TotalPot<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
@@ -211,9 +211,15 @@ pub mod pallet {
     pub(super) type UnclaimedWinningsByAccount<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, OptionQuery>;
 
+    /// Free balance in the pallet that belongs to a previous lottery winner
     #[pallet::storage]
     #[pallet::getter(fn total_unclaimed_winnings)]
     pub(super) type TotalUnclaimedWinnings<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+
+    /// Free balance in the pallet that was unstaked from a collator and is needed for future withdrawal requests
+    #[pallet::storage]
+    #[pallet::getter(fn unlocked_unstaking_funds)]
+    pub(super) type UnlockedUnstakingFunds<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
     #[derive(Clone, Encode, Decode, TypeInfo)]
     pub(super) struct UnstakingCollator<AccountId, BlockNumber> {
@@ -379,6 +385,7 @@ pub mod pallet {
                 Error::<T>::NoCollatorForDeposit
             );
             for (some_collator, balance) in collator_balance_pairs {
+                // TODO: What if the `balance` is below `MinDelegation`a on a new collator? this will fail
                 Self::do_stake_one_collator(some_collator, balance)?;
             }
 
@@ -975,7 +982,7 @@ pub mod pallet {
                     let balance_to_unstake = match delegation_requests_against_this_collator.iter().find(|request|request.delegator == Self::account_id()){
                         Some(our_request) if matches!(our_request.action, pallet_parachain_staking::DelegationAction::Revoke(_)) => {
                             if T::BlockNumber::from(our_request.when_executable) > now {
-                                log::error!("Collator {:?} finished our unstaking timelock but not the pallet_parachain_staking one. leaving in queue", collator.account.clone());
+                                log::error!("Collator {:?} finished lottery unstaking timelock but not the pallet_parachain_staking one. leaving in queue", collator.account.clone());
                                 return true;
                             };
                             our_request.action.amount()
@@ -1001,8 +1008,10 @@ pub mod pallet {
                             true
                         },
                         Ok(_) => {
-                            // collator was unstaked
+                            // collator was unstaked, its funds are now "free balance", we track it so it won't be given to the next winner
                             log::debug!("Unstaked {:?} from collator {:?}",balance_to_unstake,collator.account.clone());
+                            <UnlockedUnstakingFunds<T>>::mutate(|unlocked| *unlocked = (*unlocked).saturating_add(balance_to_unstake));
+                            <StakedCollators<T>>::remove(collator.account.clone());
                             // don't retain this collator in the unstaking collators vec
                             false
                         },
@@ -1050,9 +1059,12 @@ pub mod pallet {
                     .ok_or(Error::<T>::ArithmeticUnderflow)?;
                 Ok(())
             })?;
-            for (collator, amount_to_stake) in
-                Self::calculate_deposit_distribution(restakable_balance)
-            {
+            let collator_balance_pairs = Self::calculate_deposit_distribution(restakable_balance);
+            ensure!(
+                !collator_balance_pairs.is_empty(),
+                Error::<T>::NoCollatorForDeposit
+            );
+            for (collator, amount_to_stake) in collator_balance_pairs {
                 Self::do_stake_one_collator(collator.clone(), amount_to_stake)?;
                 log::debug!(
                     "Rebalanced {:?} to collator {:?}",
@@ -1060,6 +1072,12 @@ pub mod pallet {
                     collator
                 );
             }
+            <UnlockedUnstakingFunds<T>>::try_mutate(|unlocked| -> DispatchResult {
+                *unlocked = (*unlocked)
+                    .checked_sub(&restakable_balance)
+                    .ok_or(Error::<T>::ArithmeticUnderflow)?;
+                Ok(())
+            })?;
             Ok(())
         }
 
@@ -1153,6 +1171,7 @@ pub mod pallet {
             non_staked_funds
                 // unclaimed winnings are unlocked balance sitting in the pallet until a user claims, ensure we don't touch these
                 .saturating_sub(Self::total_unclaimed_winnings())
+                .saturating_sub(Self::unlocked_unstaking_funds())
         }
         /// funds in the lottery pallet that are not needed/reserved for anything and can be paid to the next winner
         pub fn current_prize_pool() -> BalanceOf<T> {
