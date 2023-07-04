@@ -1736,6 +1736,10 @@ fn gauge() {
             ));
 
             System::set_block_number(System::block_number() + 200);
+            assert_noop!(
+                Farming::force_gauge_claim(RuntimeOrigin::signed(ALICE), pool_id),
+                Error::<Runtime>::RetireLimitNotSet
+            );
             assert_ok!(Farming::set_retire_limit(RuntimeOrigin::signed(ALICE), 10));
             assert_ok!(Farming::force_gauge_claim(
                 RuntimeOrigin::signed(ALICE),
@@ -1848,9 +1852,6 @@ fn pool_admin_operation_should_work() {
             let pool: PoolInfoOf<Runtime> = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(pool.state, PoolState::Dead);
 
-            assert_ok!(Farming::set_retire_limit(RuntimeOrigin::signed(ALICE), 10));
-            System::set_block_number(System::block_number() + 1000);
-
             // Pool is dead, not allow to close again, deposit, reset, kill or edit.
             assert_noop!(
                 Farming::close_pool(RuntimeOrigin::signed(ALICE), pool_id),
@@ -1892,6 +1893,13 @@ fn pool_admin_operation_should_work() {
             );
 
             // Retire pool
+            assert_noop!(
+                Farming::retire_pool(RuntimeOrigin::signed(ALICE), pool_id),
+                Error::<Runtime>::RetireLimitNotSet
+            );
+            assert_ok!(Farming::set_retire_limit(RuntimeOrigin::signed(ALICE), 10));
+            System::set_block_number(System::block_number() + 1000);
+
             assert_ok!(Farming::retire_pool(RuntimeOrigin::signed(ALICE), pool_id));
             let pool: PoolInfoOf<Runtime> = Farming::pool_infos(pool_id).unwrap();
             assert_eq!(pool.state, PoolState::Retired);

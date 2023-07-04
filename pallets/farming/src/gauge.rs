@@ -207,50 +207,8 @@ where
             Error::<T>::GaugeMaxBlockOverflow
         );
 
-        let increase_total_time_factor = if gauge_info.gauge_amount.is_zero() {
-            gauge_info.gauge_stop_block = current_block_number;
-            gauge_info.gauge_start_block = current_block_number;
-            gauge_info.last_claim_block = current_block_number;
-            gauge_info.total_time_factor = gauge_block
-                .saturated_into::<u128>()
-                .checked_mul(gauge_value.saturated_into::<u128>())
-                .ok_or(ArithmeticError::Overflow)?;
-            gauge_info.total_time_factor
-        } else {
-            let time_factor_a = gauge_value
-                .saturated_into::<u128>()
-                .checked_mul(
-                    (gauge_info.gauge_stop_block - current_block_number).saturated_into::<u128>(),
-                )
-                .ok_or(ArithmeticError::Overflow)?;
-            let time_factor_b = gauge_block
-                .saturated_into::<u128>()
-                .checked_mul(
-                    (gauge_value
-                        .checked_add(&gauge_info.gauge_amount)
-                        .ok_or(ArithmeticError::Overflow)?)
-                    .saturated_into::<u128>(),
-                )
-                .ok_or(ArithmeticError::Overflow)?;
-            let increase_total_time_factor = time_factor_a + time_factor_b;
-            gauge_info.total_time_factor = gauge_info
-                .total_time_factor
-                .checked_add(increase_total_time_factor)
-                .ok_or(ArithmeticError::Overflow)?;
-            // latest_time_factor only increases in not first gauge_deposit
-            let increase_latest_time_factor = gauge_info
-                .gauge_amount
-                .saturated_into::<u128>()
-                .checked_mul(
-                    (current_block_number - gauge_info.gauge_last_block).saturated_into::<u128>(),
-                )
-                .ok_or(ArithmeticError::Overflow)?;
-            gauge_info.latest_time_factor = gauge_info
-                .latest_time_factor
-                .checked_add(increase_latest_time_factor)
-                .ok_or(ArithmeticError::Overflow)?;
-            increase_total_time_factor
-        };
+        let increase_total_time_factor =
+            Self::get_time_factor(gauge_info, current_block_number, gauge_value, gauge_block)?;
 
         gauge_info.gauge_last_block = current_block_number;
         gauge_info.gauge_amount = gauge_info
@@ -422,5 +380,58 @@ where
             gauge_pool_info.total_time_factor,
         );
         Ok((gauge_rate, latest_claimed_time_factor))
+    }
+
+    fn get_time_factor(
+        gauge_info: &mut GaugeInfoOf<T>,
+        current_block_number: BlockNumberFor<T>,
+        gauge_value: BalanceOf<T>,
+        gauge_block: BlockNumberFor<T>,
+    ) -> Result<u128, DispatchError> {
+        let increase_total_time_factor = if gauge_info.gauge_amount.is_zero() {
+            gauge_info.gauge_stop_block = current_block_number;
+            gauge_info.gauge_start_block = current_block_number;
+            gauge_info.last_claim_block = current_block_number;
+            gauge_info.total_time_factor = gauge_block
+                .saturated_into::<u128>()
+                .checked_mul(gauge_value.saturated_into::<u128>())
+                .ok_or(ArithmeticError::Overflow)?;
+            gauge_info.total_time_factor
+        } else {
+            let time_factor_a = gauge_value
+                .saturated_into::<u128>()
+                .checked_mul(
+                    (gauge_info.gauge_stop_block - current_block_number).saturated_into::<u128>(),
+                )
+                .ok_or(ArithmeticError::Overflow)?;
+            let time_factor_b = gauge_block
+                .saturated_into::<u128>()
+                .checked_mul(
+                    (gauge_value
+                        .checked_add(&gauge_info.gauge_amount)
+                        .ok_or(ArithmeticError::Overflow)?)
+                    .saturated_into::<u128>(),
+                )
+                .ok_or(ArithmeticError::Overflow)?;
+            let increase_total_time_factor = time_factor_a + time_factor_b;
+            gauge_info.total_time_factor = gauge_info
+                .total_time_factor
+                .checked_add(increase_total_time_factor)
+                .ok_or(ArithmeticError::Overflow)?;
+            // latest_time_factor only increases in not first gauge_deposit
+            let increase_latest_time_factor = gauge_info
+                .gauge_amount
+                .saturated_into::<u128>()
+                .checked_mul(
+                    (current_block_number - gauge_info.gauge_last_block).saturated_into::<u128>(),
+                )
+                .ok_or(ArithmeticError::Overflow)?;
+            gauge_info.latest_time_factor = gauge_info
+                .latest_time_factor
+                .checked_add(increase_latest_time_factor)
+                .ok_or(ArithmeticError::Overflow)?;
+            increase_total_time_factor
+        };
+        Ok(increase_total_time_factor)
     }
 }

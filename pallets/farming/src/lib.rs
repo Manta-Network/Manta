@@ -209,6 +209,8 @@ pub mod pallet {
         WithdrawLimitCountExceeded,
         /// Can not deposit to pool yet
         CanNotDeposit,
+        /// The retire limit number is not set
+        RetireLimitNotSet,
     }
 
     /// The next farming pool id.
@@ -607,6 +609,7 @@ pub mod pallet {
 
             let withdraw_limit_time = BlockNumberFor::<T>::default();
             let retire_limit = RetireLimit::<T>::get();
+            ensure!(retire_limit > 0, Error::<T>::RetireLimitNotSet);
             let mut all_retired = true;
             let share_infos = SharesAndWithdrawnRewards::<T>::iter_prefix_values(pool_id);
             for (retire_count, share_info) in share_infos.enumerate() {
@@ -827,6 +830,7 @@ pub mod pallet {
 
             let gauge_infos = GaugeInfos::<T>::iter_prefix_values(gid);
             let retire_limit = RetireLimit::<T>::get();
+            ensure!(retire_limit > 0, Error::<T>::RetireLimitNotSet);
             let mut all_retired = true;
             for (retire_count, gauge_info) in gauge_infos.enumerate() {
                 if retire_count.saturated_into::<u32>() >= retire_limit {
