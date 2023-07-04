@@ -66,7 +66,7 @@ impl<T: Config> Pallet<T> {
             .iter()
             .filter(|account| {
                 !collators_we_are_unstaking_from.contains(account)
-                    && (round_info.current == 0
+                    && (round_info.current <= 1
                         || !pallet_parachain_staking::Pallet::<T>::awarded_pts(
                             round_info.current - 1,
                             account,

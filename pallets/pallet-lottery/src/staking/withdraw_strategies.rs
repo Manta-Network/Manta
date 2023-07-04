@@ -37,7 +37,7 @@ pub(super) fn unstake_inactive_collators<T: Config>(
                 // no longer selected for block rewards
                 !selected.contains(collator) ||
                 // did not receive any points last round unless this is the first round
-                (round_info.current > 0 && pallet_parachain_staking::Pallet::<T>::awarded_pts(round_info.current-1,collator).is_zero())
+                (round_info.current > 1 && pallet_parachain_staking::Pallet::<T>::awarded_pts(round_info.current-1,collator).is_zero())
             });
     // since these collators are inactive, we just unstake in any order until we have satisfied the withdrawal request
     for collator in inactive_eligible_collators {

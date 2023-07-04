@@ -480,6 +480,8 @@ fn deposit_withdraw_deposit_works() {
             assert_eq!(2, ParachainStaking::candidate_pool().len());
             roll_to_round_begin(2);
             assert_eq!(new_collator, ParachainStaking::selected_candidates()[1]);
+            // pretend the collator got some rewards
+            pallet_parachain_staking::AwardedPts::<Test>::insert(1, &new_collator, 20);
             assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
             assert_eq!(balance, Lottery::staked_collators(new_collator));
         });
