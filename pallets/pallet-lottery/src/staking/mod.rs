@@ -48,7 +48,7 @@ impl<T: Config> Pallet<T> {
         let mut deposits: Vec<(T::AccountId, BalanceOf<T>)> = vec![];
         let mut remaining_deposit = new_deposit;
 
-        // Only deposit to active collators (according to ParachainStaking) that we are not currently undelegating from (re-delegating would fail)
+        // Only deposit to active collators (according to ParachainStaking) that we are not currently undelegating from (re-delegating would fail) and that received some rewards in the last round
         let top_collator_accounts = pallet_parachain_staking::Pallet::<T>::selected_candidates();
         if top_collator_accounts.is_empty() {
             log::error!("FATAL: ParachainStaking returned no active collators"); // NOTE: guaranteed by ParachainStaking to not happen
@@ -60,10 +60,19 @@ impl<T: Config> Pallet<T> {
             .map(|uc| uc.account)
             .collect::<Vec<_>>();
 
+        let round_info = pallet_parachain_staking::Pallet::<T>::round();
         // NOTE: This is O(n^2) but both vecs are << 100 elements
         let deposit_eligible_collators = top_collator_accounts
             .iter()
-            .filter(|account| !collators_we_are_unstaking_from.contains(account))
+            .filter(|account| {
+                !collators_we_are_unstaking_from.contains(account)
+                    && (round_info.current == 0
+                        || !pallet_parachain_staking::Pallet::<T>::awarded_pts(
+                            round_info.current - 1,
+                            account,
+                        )
+                        .is_zero())
+            })
             .cloned()
             .collect::<Vec<_>>();
 
