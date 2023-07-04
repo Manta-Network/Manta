@@ -15,13 +15,11 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-#[cfg(not(feature = "runtime-benchmarks"))]
-use frame_support::dispatch::RawOrigin;
 use pallet_parachain_staking::BalanceOf;
 use sp_runtime::traits::{Saturating, Zero};
 use sp_std::{vec, vec::Vec};
 
-pub(crate) fn unstake_inactive_collators<T: Config>(
+pub(super) fn unstake_inactive_collators<T: Config>(
     eligible_collators: &Vec<T::AccountId>,
     withdrawal_amount: BalanceOf<T>,
 ) -> (Vec<T::AccountId>, BalanceOf<T>) {
@@ -43,7 +41,7 @@ pub(crate) fn unstake_inactive_collators<T: Config>(
             });
     // since these collators are inactive, we just unstake in any order until we have satisfied the withdrawal request
     for collator in inactive_eligible_collators {
-        let our_stake = StakedCollators::<T>::get(&collator);
+        let our_stake = StakedCollators::<T>::get(collator);
         log::debug!("Unstaking {:?} from inactive {:?}", our_stake, collator);
         unstaked += our_stake;
         withdrawals.push(collator.clone());
@@ -58,7 +56,7 @@ pub(crate) fn unstake_inactive_collators<T: Config>(
     (withdrawals, unstaked)
 }
 
-pub(crate) fn unstake_least_apy_collators<T: Config>(
+pub(super) fn unstake_least_apy_collators<T: Config>(
     eligible_collators: &Vec<T::AccountId>,
     withdrawal_amount: BalanceOf<T>,
 ) -> (Vec<T::AccountId>, BalanceOf<T>) {

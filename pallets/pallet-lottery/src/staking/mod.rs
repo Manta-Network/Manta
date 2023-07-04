@@ -18,9 +18,6 @@ mod deposit_strategies;
 mod withdraw_strategies;
 
 use super::*;
-use codec::alloc::collections::BTreeSet;
-#[cfg(not(feature = "runtime-benchmarks"))]
-use frame_support::traits::Randomness;
 use frame_support::{
     dispatch::RawOrigin,
     ensure,
@@ -49,7 +46,7 @@ impl<T: Config> Pallet<T> {
             return vec![];
         }
         let mut deposits: Vec<(T::AccountId, BalanceOf<T>)> = vec![];
-        let mut remaining_deposit = new_deposit.clone();
+        let mut remaining_deposit = new_deposit;
 
         // Only deposit to active collators (according to ParachainStaking) that we are not currently undelegating from (re-delegating would fail)
         let top_collator_accounts = pallet_parachain_staking::Pallet::<T>::selected_candidates();
@@ -57,22 +54,22 @@ impl<T: Config> Pallet<T> {
             log::error!("FATAL: ParachainStaking returned no active collators"); // NOTE: guaranteed by ParachainStaking to not happen
             return vec![];
         }
-        let collators_we_are_unstaking_from: Vec<_> = UnstakingCollators::<T>::get()
+        let collators_we_are_unstaking_from = UnstakingCollators::<T>::get()
             .iter()
             .cloned()
             .map(|uc| uc.account)
-            .collect();
+            .collect::<Vec<_>>();
 
         // NOTE: This is O(n^2) but both vecs are << 100 elements
         let deposit_eligible_collators = top_collator_accounts
             .iter()
             .filter(|account| !collators_we_are_unstaking_from.contains(account))
             .cloned()
-            .collect();
+            .collect::<Vec<_>>();
 
         // first concern: If we fell out of the active set on one or more collators, we need to get back into it
         deposits.append(&mut deposit_strategies::reactivate_bottom_collators::<T>(
-            &deposit_eligible_collators,
+            deposit_eligible_collators.as_slice(),
             new_deposit,
         ));
         remaining_deposit -= deposits
@@ -97,7 +94,7 @@ impl<T: Config> Pallet<T> {
         // second concern: We want to maximize staking APY earned, so we want to balance the staking pools with our deposits while conserving gas
         deposits.append(
             &mut deposit_strategies::split_to_underallocated_collators::<T>(
-                &deposit_eligible_collators,
+                deposit_eligible_collators.as_slice(),
                 remaining_deposit,
             ),
         );
@@ -113,7 +110,7 @@ impl<T: Config> Pallet<T> {
                 remaining_deposit
             );
             if let Some(deposit) = deposit_strategies::stake_to_random_collator::<T>(
-                &deposit_eligible_collators,
+                deposit_eligible_collators.as_slice(),
                 remaining_deposit,
             ) {
                 deposits.push(deposit);
@@ -173,7 +170,9 @@ impl<T: Config> Pallet<T> {
         );
         withdrawals.append(&mut collators);
         remaining_balance = remaining_balance.saturating_sub(balance_unstaked);
-
+        if remaining_balance.is_zero() && !withdrawals.is_empty() {
+            return withdrawals;
+        }
         // If we have balance to withdraw left over, we have to unstake some healthy collator.
         // Unstake starting from the highest overallocated collator ( since that yields the lowest APY ) going down until request is satisfied
         let (mut collators, balance_unstaked) = withdraw_strategies::unstake_least_apy_collators::<T>(

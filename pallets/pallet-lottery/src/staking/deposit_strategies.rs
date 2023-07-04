@@ -15,24 +15,19 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use codec::alloc::collections::BTreeSet;
+use frame_support::traits::Get;
 #[cfg(not(feature = "runtime-benchmarks"))]
 use frame_support::traits::Randomness;
-use frame_support::{
-    dispatch::RawOrigin,
-    ensure,
-    traits::{EstimateCallFee, Get},
-};
 use pallet_parachain_staking::BalanceOf;
 use sp_runtime::{
     traits::{Saturating, Zero},
-    DispatchResult, Percent,
+    Percent,
 };
 use sp_std::{vec, vec::Vec};
 
 #[named]
-pub(crate) fn reactivate_bottom_collators<T: Config>(
-    active_collators: &Vec<T::AccountId>,
+pub(super) fn reactivate_bottom_collators<T: Config>(
+    active_collators: &[T::AccountId],
     new_deposit: BalanceOf<T>,
 ) -> Vec<(T::AccountId, BalanceOf<T>)> {
     log::trace!(function_name!());
@@ -63,8 +58,8 @@ pub(crate) fn reactivate_bottom_collators<T: Config>(
 }
 
 /// second concern: We want to maximize staking APY earned, so we want to balance the staking pools with our deposits while conserving gas
-pub(crate) fn split_to_underallocated_collators<T: Config>(
-    active_collators: &Vec<T::AccountId>,
+pub(super) fn split_to_underallocated_collators<T: Config>(
+    active_collators: &[T::AccountId],
     new_deposit: BalanceOf<T>,
 ) -> Vec<(T::AccountId, BalanceOf<T>)> {
     let mut deposits: Vec<(T::AccountId, BalanceOf<T>)> = vec![];
@@ -166,7 +161,7 @@ pub(crate) fn split_to_underallocated_collators<T: Config>(
         log::debug!(
             "Underallocated tokens {:?} on selected collators: {:?}",
             total_underallocation,
-            underallocated_collators.clone()
+            underallocated_collators
         );
         for (account, tokens_to_reach_median) in underallocated_collators {
             // If a proportional deposit is over the min deposit and can get us into the top balance, deposit it, if not just skip it
@@ -208,7 +203,7 @@ pub(crate) fn split_to_underallocated_collators<T: Config>(
 
 /// fallback: just assign to a random active collator ( choose a different collator for each invocation )
 pub(crate) fn stake_to_random_collator<T: Config>(
-    active_collators: &Vec<T::AccountId>,
+    active_collators: &[T::AccountId],
     new_deposit: BalanceOf<T>,
 ) -> Option<(T::AccountId, BalanceOf<T>)> {
     use sp_runtime::traits::SaturatedConversion;
