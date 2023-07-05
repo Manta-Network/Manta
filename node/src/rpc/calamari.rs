@@ -17,13 +17,13 @@
 //! Calamari RPC Extensions
 
 use super::*;
+use manta_primitives::types::{CalamariAssetId, PoolId};
+use pallet_farming_rpc_api::{FarmingRpc, FarmingRpcApiServer};
+use pallet_farming_rpc_runtime_api::FarmingRuntimeApi;
 use pallet_lottery::{
     rpc::{Lottery, LotteryRpcServer},
     runtime::LotteryApi,
 };
-use manta_primitives::types::{CalamariAssetId, PoolId};
-use pallet_farming_rpc_api::{FarmingRpc, FarmingRpcApiServer};
-use pallet_farming_rpc_runtime_api::FarmingRuntimeApi;
 use pallet_manta_pay::{
     rpc::{Pull, PullApiServer},
     runtime::PullLedgerDiffApi,
@@ -93,7 +93,7 @@ where
         .merge(FarmingRpc::new(client.clone()).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
-        module
+    module
         .merge(Lottery::new(client).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
