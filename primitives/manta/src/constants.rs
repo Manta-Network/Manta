@@ -37,12 +37,6 @@ pub const MANTA_DECIMAL: u8 = 18;
 /// Manta Token Symbol
 pub const MANTA_TOKEN_SYMBOL: &str = "MANTA";
 
-/// Dolphin Decimals
-pub const DOLPHIN_DECIMAL: u8 = 18;
-
-/// Dolphin Token Symbol
-pub const DOLPHIN_TOKEN_SYMBOL: &str = "DOL";
-
 /// Manta parachain time-related
 pub mod time {
     use crate::types::{BlockNumber, Moment};
@@ -93,6 +87,9 @@ pub const MANTA_PAY_PALLET_ID: PalletId = PalletId(*b"mantapay");
 
 /// Soul Bound NFT Pallet Identifier
 pub const MANTA_SBT_PALLET_ID: PalletId = PalletId(*b"mantasbt");
+
+/// Name Service Identifier
+pub const NAME_SERVICE_PALLET_ID: PalletId = PalletId(*b"nameserv");
 
 /// Test Default Asset Existential Deposit
 ///

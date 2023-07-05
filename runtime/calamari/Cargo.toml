@@ -59,6 +59,10 @@ pallet-treasury = { git = "https://github.com/paritytech/substrate.git", default
 pallet-utility = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 substrate-fixed = { git = "https://github.com/Manta-Network/substrate-fixed.git", default-features = false }
 
+pallet-conviction-voting = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+pallet-ranked-collective = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+pallet-referenda = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+
 # Cumulus dependencies
 cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.37" }
 cumulus-pallet-parachain-system = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.37" }
@@ -93,6 +97,7 @@ pallet-asset-manager = { path = '../../pallets/asset-manager', default-features 
 pallet-lottery = { path = '../../pallets/pallet-lottery', default-features = false }
 pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
 pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
+pallet-name-service = { path = '../../pallets/name-service', default-features = false }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
 pallet-randomness = { path = '../../pallets/randomness', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
@@ -167,7 +172,11 @@ runtime-benchmarks = [
   'pallet-manta-pay/runtime-benchmarks',
   'pallet-xcm-benchmarks/runtime-benchmarks',
   'pallet-manta-sbt/runtime-benchmarks',
+  'pallet-name-service/runtime-benchmarks',
   "zenlink-protocol/runtime-benchmarks",
+  "pallet-conviction-voting/runtime-benchmarks",
+  "pallet-referenda/runtime-benchmarks",
+  "pallet-ranked-collective/runtime-benchmarks",
 ]
 try-runtime = [
   'frame-try-runtime',
@@ -207,6 +216,7 @@ try-runtime = [
   'pallet-manta-pay/try-runtime',
   'calamari-vesting/try-runtime',
   'pallet-manta-sbt/try-runtime',
+  'pallet-name-service/try-runtime',
   "zenlink-protocol/try-runtime",
   'pallet-randomness/try-runtime',
   'pallet-lottery/try-runtime',
@@ -286,6 +296,9 @@ std = [
   'manta-support/std',
   "zenlink-protocol/std",
   "zenlink-protocol-runtime-api/std",
+  "pallet-conviction-voting/std",
+  "pallet-referenda/std",
+  "pallet-ranked-collective/std",
 ]
 # A feature that should be enabled when the runtime should be build for on-chain
 # deployment. This will disable stuff that shouldn't be part of the on-chain wasm
