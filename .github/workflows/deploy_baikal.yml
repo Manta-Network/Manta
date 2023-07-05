@@ -5,15 +5,6 @@ on:
   push:
     branches:
       - "baikal"
-  workflow_dispatch:
-    inputs:
-      deployment:
-        description: The name of the baikal deployment to generate files for
-        default: calamari-baikal
-        required: true
-      chain:
-        description: The chain spec to build with
-        required: true
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -90,7 +81,7 @@ jobs:
       - name: copy to workspace
         run: |
           mkdir ${{github.workspace}}/export
-          cp target/release/manta ${{github.workspace}}/export/manta
+          cp target/release/manta ${{github.workspace}}/export/$CHAIN
   build-genesis-files:
     needs: [start-node-builder-current, build-node-current]
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
@@ -98,20 +89,23 @@ jobs:
       - name: Export genesis files
         run: |
           cd ${{github.workspace}}/export
-          ./manta build-spec --chain calamari-baikal --raw > $CHAIN-genesis.json
-          ./manta export-genesis-state --chain $CHAIN-genesis.json > $CHAIN-genesis.state
-          ./manta export-genesis-wasm --chain $CHAIN-genesis.json > $CHAIN-genesis.wasm
+          ./$CHAIN build-spec --chain $CHAIN --raw > $CHAIN-genesis.json
+          ./$CHAIN export-genesis-state --chain $CHAIN-genesis.json > $CHAIN-genesis.state
+          ./$CHAIN export-genesis-wasm --chain $CHAIN-genesis.json > $CHAIN-genesis.wasm
   push-to-s3:
     needs: [start-node-builder-current, build-node-current, build-genesis-files]
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     steps:
       - uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --follow-symlinks --delete
         env:
           AWS_S3_BUCKET: public-baikal
           AWS_ACCESS_KEY_ID: "AKIAZ6VD3QKGIIAZR5IJ"
           AWS_SECRET_ACCESS_KEY: ${{ secrets.MANTA_DEV_S3_KEY }}
           AWS_REGION: "us-east-2"
           SOURCE_DIR: ${{github.workspace}}/export
+          DEST_DIR: $CHAIN
   start-node-builder-current:
     runs-on: ubuntu-20.04
     outputs:

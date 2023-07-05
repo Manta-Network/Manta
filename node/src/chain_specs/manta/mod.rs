@@ -85,8 +85,8 @@ pub fn manta_local_config(localdev: bool) -> MantaChainSpec {
     local_testnets_geneses::genesis_spec_local(localdev)
 }
 /// Returns the Manta development chainspec.
-pub fn manta_development_config() -> MantaChainSpec {
-    local_testnets_geneses::genesis_spec_dev()
+pub fn manta_baikal_config() -> MantaChainSpec {
+    local_testnets_geneses::genesis_spec_baikal()
 }
 
 // common helper to create the above configs
