@@ -1,0 +1,12 @@
+block: 					 	 0
+lotry-total: 				 	 0
+lotry-free: 				 	 0
+lotry-totalpot:  				 0
+lotry-reserve:  				 10000000000000000
+lotry-unclaimed:  				 0
+lotry-unstaking:  				 0
+lotry-surplus:  				 0
+free+unstaking+unclaimed:  		 0
+free+unstaking+unclaimed+pot:  	 0
+lotry-total: 				 	 0
+staking-delegated:				 NONE

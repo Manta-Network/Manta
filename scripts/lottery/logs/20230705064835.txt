@@ -1,0 +1,13 @@
+block: 					 	 93
+lotry-total: 				 	 5651090511628165000
+lotry-free: 				 	 79032917590237180
+lotry-totalpot:  				 5572057594037928000
+lotry-reserve:  				 10000000000000000
+lotry-unclaimed:  				 67289086331501713
+lotry-unstaking:  				 0
+lotry-surplus:  				 1743831258735463
+free+unstaking+unclaimed:  		 146322003921738880
+free+unstaking+unclaimed+pot:  	 5718379597959667000
+lotry-total: 				 	 5651090511628165000
+staking-delegated:				 5572057594037928000
+staking collators delegated to: 	2
