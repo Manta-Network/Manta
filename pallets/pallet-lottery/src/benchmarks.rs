@@ -226,6 +226,7 @@ benchmarks! {
     verify {
     }
     set_min_deposit {
+        assert_ok!(Pallet::<T>::set_min_withdraw(RawOrigin::Root,u32::MAX.into()));
     }: _(RawOrigin::Root,u32::MAX.into())
     verify {
     }
