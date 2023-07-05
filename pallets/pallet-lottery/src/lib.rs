@@ -184,11 +184,15 @@ pub mod pallet {
     // Dynamic Storage Items
 
     /// sum of all user's deposits, to ensure balance never drops below
+    /// Incremented on [`Call::deposit`]
+    /// Decremented on withdrawal to user wallet in [`Call::process_matured_withdrawals`]
     #[pallet::storage]
     #[pallet::getter(fn sum_of_deposits)]
     pub(super) type SumOfDeposits<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
-    /// the total pot is the total number of KMA eligible to win in the current drawing cycle
+    /// Total number of token eligible to win in the current drawing cycle
+    /// Incremented on [`Call::deposit`]
+    /// Decremented on [`Call::request_withdraw`]
     #[pallet::storage]
     #[pallet::getter(fn total_pot)]
     pub(super) type TotalPot<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
@@ -212,11 +216,15 @@ pub mod pallet {
         StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, OptionQuery>;
 
     /// Free balance in the pallet that belongs to a previous lottery winner
+    /// Incremented on winner election in the course of a drawing
+    /// Decremented on transfer of winnings to ower wallet in [`Call::claim_my_winnings`]
     #[pallet::storage]
     #[pallet::getter(fn total_unclaimed_winnings)]
     pub(super) type TotalUnclaimedWinnings<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
     /// Free balance in the pallet that was unstaked from a collator and is needed for future withdrawal requests
+    /// Incremented on successful unstaking of a collator
+    /// Decremented on transfer of funds to withdrawer and on restaking of funds a collator
     #[pallet::storage]
     #[pallet::getter(fn unlocked_unstaking_funds)]
     pub(super) type UnlockedUnstakingFunds<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
@@ -232,10 +240,11 @@ pub mod pallet {
         StorageValue<_, Vec<UnstakingCollator<T::AccountId, T::BlockNumber>>, ValueQuery>;
 
     /// This is balance unstaked from a collator that is not needed to service user's withdrawal requests
+    /// Incremented on initiation of a collator unstake in [`Call::request_withdraw`]
+    /// Decremented on [`Call::request_withdraw`] (no collator unstake) and [`Call::rebalance_stake`] (restaking of surplus funds)
     #[pallet::storage]
-    #[pallet::getter(fn remaining_unstaking_balance)]
-    pub(super) type UnallocatedUnstakingBalance<T: Config> =
-        StorageValue<_, BalanceOf<T>, ValueQuery>;
+    #[pallet::getter(fn surplus_unstaking_balance)]
+    pub(super) type SurplusUnstakingBalance<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
     #[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo)]
     pub struct Request<AccountId, BlockNumber, Balance> {
@@ -409,7 +418,7 @@ pub mod pallet {
         /// Withdrawals can NOT be cancelled because they inflict ecomomic damage on the lottery through collator unstaking
         /// and the user causing this damage must be subjected to economic consequences for doing so
         ///
-        /// The withdrawal is paid from [`UnallocatedUnstakingBalance`]
+        /// The withdrawal is paid from [`SurplusUnstakingBalance`]
         /// If this balance is too low to handle the request, another collator is unstaked
         ///
         /// # Arguments
@@ -488,7 +497,7 @@ pub mod pallet {
             // 3. Add balance overshoot to "remaining balance" to handle further requests from
 
             // If the withdrawal fits in the currently unstaking funds, do nothing else
-            UnallocatedUnstakingBalance::<T>::try_mutate(|remaining_balance| {
+            SurplusUnstakingBalance::<T>::try_mutate(|remaining_balance| {
                 match (*remaining_balance).checked_sub(&amount){
                     Some(subtracted) => {
                         *remaining_balance = subtracted;
@@ -501,27 +510,27 @@ pub mod pallet {
             })
             .or_else(|_| {
                 // Withdrawal needs extra collators to unstake to have enough funds to serve withdrawals, do it
-                let reserve = UnallocatedUnstakingBalance::<T>::get();
+                let reserve = SurplusUnstakingBalance::<T>::get();
                 let mut remaining_to_withdraw = amount - reserve;
 
-                // unstake collators as necessary. This updates `UnallocatedUnstakingBalance`
+                // unstake collators as necessary. This updates `SurplusUnstakingBalance`
                 for collator_to_unstake in Self::calculate_withdrawal_distribution(remaining_to_withdraw){
                     let our_stake = StakedCollators::<T>::get(collator_to_unstake.clone());
                     remaining_to_withdraw = remaining_to_withdraw.saturating_sub(our_stake);
-                    // If this fails, something weird is going on
+                    // The following call updates `SurplusUnstakingBalance` with newly unstaked funds
                     Self::do_unstake_collator(now,collator_to_unstake)?;
                 }
                 if !remaining_to_withdraw.is_zero() {
-                    log::error!("Somehow didn't manage to handle the requested balance. Have {:?} left over",remaining_to_withdraw);
+                    return Err("FATAL: Didn't unstake the full requested balance (or more)");
                 }
-                UnallocatedUnstakingBalance::<T>::try_mutate(|remaining_balance| {
+                SurplusUnstakingBalance::<T>::try_mutate(|remaining_balance| {
                     match (*remaining_balance).checked_sub(&amount){
                         Some(subtracted) => {
                             *remaining_balance = subtracted;
                             Ok(())
                         }
                         _ => {
-                            Err("not enough left to handle this request after unstaking additional collators")
+                            Err("not enough unstaking balance to handle request after unstaking additional collators")
                         }
                     }
                 })
@@ -1037,28 +1046,18 @@ pub mod pallet {
             // - isn't needed to service the still outstanding withdrawal requests
             // - is funds that were previously unstaked
             // - is surplus funds (we may have some from `finish_unstaking_collators`)
-            // NOTE: Funds tracked in `remaining_unstaking_balance` might still be partially stake locked
+            // NOTE: Funds tracked in `surplus_unstaking_balance` might still be partially stake locked
             let outstanding_balance_to_withdraw = <WithdrawalRequestQueue<T>>::get()
                 .iter()
                 .map(|request| request.balance)
                 .reduce(|acc, balance| acc + balance)
                 .unwrap_or_else(|| 0u32.into());
-            let restakable_balance = sp_std::cmp::min(
-                Self::surplus_funds(),
-                Self::remaining_unstaking_balance()
-                    .checked_sub(&outstanding_balance_to_withdraw)
-                    .ok_or(Error::<T>::ArithmeticUnderflow)?,
-            );
+            let restakable_balance =
+                Self::unlocked_unstaking_funds().saturating_sub(outstanding_balance_to_withdraw);
             if restakable_balance.is_zero() {
                 log::debug!("Nothing to restake");
                 return Ok(());
             }
-            UnallocatedUnstakingBalance::<T>::try_mutate(|bal| -> DispatchResult {
-                *bal = (*bal)
-                    .checked_sub(&restakable_balance)
-                    .ok_or(Error::<T>::ArithmeticUnderflow)?;
-                Ok(())
-            })?;
             let collator_balance_pairs = Self::calculate_deposit_distribution(restakable_balance);
             ensure!(
                 !collator_balance_pairs.is_empty(),
@@ -1072,7 +1071,13 @@ pub mod pallet {
                     collator
                 );
             }
-            <UnlockedUnstakingFunds<T>>::try_mutate(|unlocked| -> DispatchResult {
+            SurplusUnstakingBalance::<T>::try_mutate(|bal| -> DispatchResult {
+                *bal = (*bal)
+                    .checked_sub(&restakable_balance)
+                    .ok_or(Error::<T>::ArithmeticUnderflow)?;
+                Ok(())
+            })?;
+            UnlockedUnstakingFunds::<T>::try_mutate(|unlocked| -> DispatchResult {
                 *unlocked = (*unlocked)
                     .checked_sub(&restakable_balance)
                     .ok_or(Error::<T>::ArithmeticUnderflow)?;
@@ -1094,21 +1099,21 @@ pub mod pallet {
             }
             let now = <frame_system::Pallet<T>>::block_number();
             log::debug!(
-                "Serving withdrawals from surplus funds of {:?}",
-                Self::surplus_funds()
+                "Serving withdrawals from unlocked unstaking funds of {:?}",
+                Self::unlocked_unstaking_funds()
             );
             // Pay down the list from top (oldest) to bottom until we've paid out everyone or run out of available funds
             <WithdrawalRequestQueue<T>>::mutate(|request_vec| -> Result<(), DispatchError> {
                 let mut left_overs: Vec<Request<_, _, _>> = Vec::new();
                 for request in request_vec.iter() {
-                    let funds_available_to_withdraw = Self::surplus_funds();
+                    let funds_available_to_withdraw = Self::unlocked_unstaking_funds();
                     // Don't pay anyone unless we have surplus funds
                     if funds_available_to_withdraw.is_zero() {
                         left_overs.push((*request).clone());
                         continue;
                     }
                     // Don't pay anyone still timelocked
-                    if now < request.block + <T as Config>::UnstakeLockTime::get() {
+                    if request.block + <T as Config>::UnstakeLockTime::get() > now {
                         left_overs.push((*request).clone());
                         continue;
                     }
@@ -1132,17 +1137,24 @@ pub mod pallet {
                         request.balance,
                         KeepAlive,
                     )?;
+                    <UnlockedUnstakingFunds<T>>::try_mutate(|funds| -> DispatchResult {
+                        *funds = (*funds)
+                            .checked_sub(&request.balance)
+                            .ok_or(Error::<T>::ArithmeticUnderflow)?;
+                        Ok(())
+                    })?;
                     Self::deposit_event(Event::Withdrawn {
                         account: request.user.clone(),
                         amount: request.balance,
                     });
                 }
                 log::debug!(
-                    "Have {:?} requests and {:?} surplus funds left over after transfers",
+                    "Have {:?} requests, {:?} free unstaking and {:?} surplus funds left over after transfers",
                     left_overs.len(),
+                    Self::unlocked_unstaking_funds(),
                     Self::surplus_funds()
                 );
-                // Update T::WithdrawalRequestQueue if we paid at least one guy
+                // Update T::WithdrawalRequestQueue by mutating `request_vec` if we paid at least one guy
                 if left_overs.len() != (*request_vec).len() {
                     request_vec.clear();
                     request_vec.append(&mut left_overs);
@@ -1162,16 +1174,20 @@ pub mod pallet {
         /// funds in the lottery that are not staked or assigned to previous winners ( can be used to pay TX fees )
         pub(crate) fn surplus_funds() -> BalanceOf<T> {
             // Returns funds that are not locked in staking.
-            // Notably excludes `ActiveBalancePerUser` and the still locked part `UnallocatedUnstakingBalance`
+            // Notably excludes `ActiveBalancePerUser` and the still locked part of `SurplusUnstakingBalance`
             // the latter only get unlocked in `finish_unstaking_collators` if out of staking timelock
             let non_staked_funds =
                 pallet_parachain_staking::Pallet::<T>::get_delegator_stakable_free_balance(
                     &Self::account_id(),
                 );
+            // unclaimed winnings are unlocked balance sitting in the pallet until a user claims, ensure we don't touch these
+            let unclaimed = Self::total_unclaimed_winnings();
+            // if unlocked funds are meant for future withdrawals, we must not touch them either until the withdrawal is out of timelock
+            let unlocked = Self::unlocked_unstaking_funds();
+
             non_staked_funds
-                // unclaimed winnings are unlocked balance sitting in the pallet until a user claims, ensure we don't touch these
-                .saturating_sub(Self::total_unclaimed_winnings())
-                .saturating_sub(Self::unlocked_unstaking_funds())
+                .saturating_sub(unclaimed)
+                .saturating_sub(unlocked)
         }
         /// funds in the lottery pallet that are not needed/reserved for anything and can be paid to the next winner
         pub fn current_prize_pool() -> BalanceOf<T> {

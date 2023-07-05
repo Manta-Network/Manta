@@ -236,7 +236,7 @@ fn calamari_dev_genesis(
         },
         lottery: LotteryConfig {
             min_deposit: 5_000 * KMA,
-            min_withdraw: 10 * KMA,
+            min_withdraw: 5_000 * KMA,
             gas_reserve: 10_000 * KMA,
         },
     }
