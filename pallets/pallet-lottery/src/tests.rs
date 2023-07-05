@@ -593,7 +593,7 @@ fn multiround_withdraw_partial_deposit_works() {
             assert!(crate::UnstakingCollators::<Test>::get().is_empty());
 
             roll_to_round_begin(4);
-            pallet_parachain_staking::AwardedPts::<Test>::insert(3, &BOB, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(3, *BOB, 20);
             // second withdrawal can be paid out
             assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
             assert_eq!(
