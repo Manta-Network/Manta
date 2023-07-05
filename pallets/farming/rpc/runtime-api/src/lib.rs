@@ -14,17 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Manta Primitives
-
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(doc_cfg, feature(doc_cfg))]
-#![forbid(rustdoc::broken_intra_doc_links)]
-#![forbid(missing_docs)]
 
-extern crate alloc;
+use codec::Codec;
+use manta_primitives::types::Balance;
+use sp_api::decl_runtime_apis;
+use sp_std::vec::Vec;
 
-pub mod assets;
-pub mod constants;
-pub mod currencies;
-pub mod types;
-pub mod xcm;
+decl_runtime_apis! {
+    pub trait FarmingRuntimeApi<AccountId, CurrencyId, PoolId> where
+        AccountId: Codec,
+        PoolId: Codec,
+        CurrencyId: Codec,
+    {
+        fn get_farming_rewards(
+            who: AccountId,
+            pid: PoolId,
+        ) -> Vec<(CurrencyId, Balance)>;
+
+        fn get_gauge_rewards(
+            who: AccountId,
+            pid: PoolId,
+        ) -> Vec<(CurrencyId, Balance)>;
+    }
+}
