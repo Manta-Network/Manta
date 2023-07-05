@@ -1132,6 +1132,8 @@ dependencies = [
  "pallet-collective",
  "pallet-conviction-voting",
  "pallet-democracy",
+ "pallet-farming",
+ "pallet-farming-rpc-runtime-api",
  "pallet-manta-pay",
  "pallet-manta-sbt",
  "pallet-manta-support",
@@ -5286,6 +5288,8 @@ dependencies = [
  "nimbus-consensus",
  "nimbus-primitives",
  "pallet-author-inherent",
+ "pallet-farming-rpc-api",
+ "pallet-farming-rpc-runtime-api",
  "pallet-manta-pay",
  "pallet-manta-sbt",
  "pallet-parachain-staking",
@@ -5454,6 +5458,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "orml-traits",
  "parity-scale-codec",
  "scale-info",
  "smallvec",
@@ -5501,6 +5506,8 @@ dependencies = [
  "pallet-balances",
  "pallet-collective",
  "pallet-democracy",
+ "pallet-farming",
+ "pallet-farming-rpc-runtime-api",
  "pallet-manta-pay",
  "pallet-manta-sbt",
  "pallet-manta-support",
@@ -5549,6 +5556,8 @@ dependencies = [
  "xcm-builder",
  "xcm-executor",
  "xcm-simulator",
+ "zenlink-protocol",
+ "zenlink-protocol-runtime-api",
 ]
 
 [[package]]
@@ -6795,6 +6804,56 @@ dependencies = [
  "sp-io",
  "sp-npos-elections",
  "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-farming"
+version = "4.2.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "log",
+ "manta-primitives",
+ "orml-traits",
+ "pallet-asset-manager",
+ "pallet-assets",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+]
+
+[[package]]
+name = "pallet-farming-rpc-api"
+version = "4.2.0"
+dependencies = [
+ "jsonrpsee",
+ "manta-primitives",
+ "pallet-farming-rpc-runtime-api",
+ "parity-scale-codec",
+ "serde",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-farming-rpc-runtime-api"
+version = "4.2.0"
+dependencies = [
+ "manta-primitives",
+ "parity-scale-codec",
+ "sp-api",
  "sp-std",
 ]
 

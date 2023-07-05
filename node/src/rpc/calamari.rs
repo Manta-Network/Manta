@@ -17,6 +17,9 @@
 //! Calamari RPC Extensions
 
 use super::*;
+use manta_primitives::types::{CalamariAssetId, PoolId};
+use pallet_farming_rpc_api::{FarmingRpc, FarmingRpcApiServer};
+use pallet_farming_rpc_runtime_api::FarmingRuntimeApi;
 use pallet_manta_pay::{
     rpc::{Pull, PullApiServer},
     runtime::PullLedgerDiffApi,
@@ -45,6 +48,7 @@ where
     C::Api: BlockBuilder<Block>,
     C::Api: PullLedgerDiffApi<Block>,
     C::Api: SBTPullLedgerDiffApi<Block>,
+    C::Api: FarmingRuntimeApi<Block, AccountId, CalamariAssetId, PoolId>,
     C::Api: ZenlinkProtocolRuntimeApi<Block, AccountId, ZenlinkAssetId>,
     P: TransactionPool + Sync + Send + 'static,
 {
@@ -77,7 +81,11 @@ where
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
     module
-        .merge(ZenlinkProtocol::new(client).into_rpc())
+        .merge(ZenlinkProtocol::new(client.clone()).into_rpc())
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+
+    module
+        .merge(FarmingRpc::new(client).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
     Ok(module)

@@ -30,7 +30,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+    traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, Perbill, Percent, Permill,
 };
@@ -62,7 +62,7 @@ use frame_system::{
 };
 use manta_primitives::{
     constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
-    types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
+    types::{AccountId, Balance, BlockNumber, Hash, Header, Index, PoolId, Signature},
 };
 use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
 pub use pallet_parachain_staking::{InflationInfo, Range};
@@ -72,6 +72,7 @@ use runtime_common::{
     MantaSlowAdjustingFeeUpdate,
 };
 use session_key_primitives::{AuraId, NimbusId, VrfId};
+use zenlink_protocol::{AssetBalance, AssetId as ZenlinkAssetId, MultiAssetsHandler, PairInfo};
 
 #[cfg(feature = "runtime-benchmarks")]
 use xcm::latest::prelude::*;
@@ -87,9 +88,11 @@ pub mod migrations;
 mod nimbus_session_adapter;
 pub mod staking;
 pub mod xcm_config;
+pub mod zenlink;
 
 use currency::*;
 use impls::DealWithFees;
+use manta_primitives::{currencies::Currencies, types::MantaAssetId};
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -265,6 +268,8 @@ impl Contains<RuntimeCall> for MantaFilter {
             | RuntimeCall::MantaPay(_)
             | RuntimeCall::MantaSbt(_)
             | RuntimeCall::TransactionPause(_)
+            | RuntimeCall::ZenlinkProtocol(_)
+            | RuntimeCall::Farming(_)
             | RuntimeCall::AssetManager(pallet_asset_manager::Call::update_outgoing_filtered_assets {..})
             | RuntimeCall::Utility(_) => true,
 
@@ -755,6 +760,29 @@ impl pallet_treasury::Config for Runtime {
     type SpendOrigin = NeverEnsureOrigin<Balance>;
 }
 
+parameter_types! {
+    pub const FarmingKeeperPalletId: PalletId = PalletId(*b"mt/fmkpr");
+    pub const FarmingRewardIssuerPalletId: PalletId = PalletId(*b"mt/fmrir");
+    pub TreasuryAccount: AccountId = TreasuryPalletId::get().into_account_truncating();
+}
+
+/// Zenlink protocol Asset adaptor for orml_traits::MultiCurrency.
+type MantaCurrencies = Currencies<Runtime, assets_config::MantaAssetConfig, Balances, Assets>;
+
+impl pallet_farming::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type CurrencyId = MantaAssetId;
+    type MultiCurrency = MantaCurrencies;
+    type ControlOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>,
+    >;
+    type TreasuryAccount = TreasuryAccount;
+    type Keeper = FarmingKeeperPalletId;
+    type RewardIssuer = FarmingRewardIssuerPalletId;
+    type WeightInfo = weights::pallet_farming::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -816,6 +844,9 @@ construct_runtime!(
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
         MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
+
+        ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 51,
+        Farming: pallet_farming::{Pallet, Call, Storage, Event<T>} = 54,
     }
 );
 
@@ -888,6 +919,8 @@ mod benches {
         [pallet_parachain_staking, ParachainStaking]
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
+        [zenlink_protocol, ZenlinkProtocol]
+        [pallet_farming, Farming]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
     );
@@ -1085,6 +1118,78 @@ impl_runtime_apis! {
         }
         fn sbt_pull_ledger_total_count() -> [u8; 16] {
             MantaSbt::pull_ledger_total_count()
+        }
+    }
+
+    // zenlink runtime outer apis
+    impl zenlink_protocol_runtime_api::ZenlinkProtocolApi<Block, AccountId, ZenlinkAssetId> for Runtime {
+
+        fn get_balance(
+            asset_id: ZenlinkAssetId,
+            owner: AccountId
+        ) -> AssetBalance {
+            <<Runtime as zenlink_protocol::Config>::MultiAssetsHandler as MultiAssetsHandler<AccountId, ZenlinkAssetId>>::balance_of(asset_id, &owner)
+        }
+
+        fn get_pair_by_asset_id(
+            asset_0: ZenlinkAssetId,
+            asset_1: ZenlinkAssetId
+        ) -> Option<PairInfo<AccountId, AssetBalance, ZenlinkAssetId>> {
+            ZenlinkProtocol::get_pair_by_asset_id(asset_0, asset_1)
+        }
+
+        fn get_amount_in_price(
+            supply: AssetBalance,
+            path: Vec<ZenlinkAssetId>
+        ) -> AssetBalance {
+            ZenlinkProtocol::desired_in_amount(supply, path)
+        }
+
+        fn get_amount_out_price(
+            supply: AssetBalance,
+            path: Vec<ZenlinkAssetId>
+        ) -> AssetBalance {
+            ZenlinkProtocol::supply_out_amount(supply, path)
+        }
+
+        fn get_estimate_lptoken(
+            token_0: ZenlinkAssetId,
+            token_1: ZenlinkAssetId,
+            amount_0_desired: AssetBalance,
+            amount_1_desired: AssetBalance,
+            amount_0_min: AssetBalance,
+            amount_1_min: AssetBalance,
+        ) -> AssetBalance{
+            ZenlinkProtocol::get_estimate_lptoken(
+                token_0,
+                token_1,
+                amount_0_desired,
+                amount_1_desired,
+                amount_0_min,
+                amount_1_min
+            )
+        }
+
+        fn calculate_remove_liquidity(
+            asset_0: ZenlinkAssetId,
+            asset_1: ZenlinkAssetId,
+            amount: AssetBalance,
+        ) -> Option<(AssetBalance, AssetBalance)> {
+            ZenlinkProtocol::calculate_remove_liquidity(
+                asset_0,
+                asset_1,
+                amount
+            )
+        }
+    }
+
+    impl pallet_farming_rpc_runtime_api::FarmingRuntimeApi<Block, AccountId, MantaAssetId, PoolId> for Runtime {
+        fn get_farming_rewards(who: AccountId, pid: PoolId) -> Vec<(MantaAssetId, Balance)> {
+            Farming::get_farming_rewards(&who, pid).unwrap_or(Vec::new())
+        }
+
+        fn get_gauge_rewards(who: AccountId, pid: PoolId) -> Vec<(MantaAssetId, Balance)> {
+            Farming::get_gauge_rewards(&who, pid).unwrap_or(Vec::new())
         }
     }
 

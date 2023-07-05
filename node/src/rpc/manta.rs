@@ -17,6 +17,9 @@
 //! Manta RPC Extensions
 
 use super::*;
+use manta_primitives::types::{MantaAssetId, PoolId};
+use pallet_farming_rpc_api::{FarmingRpc, FarmingRpcApiServer};
+use pallet_farming_rpc_runtime_api::FarmingRuntimeApi;
 use pallet_manta_pay::{
     rpc::{Pull, PullApiServer},
     runtime::PullLedgerDiffApi,
@@ -25,6 +28,9 @@ use pallet_manta_sbt::{
     rpc::{SBTPull, SBTPullApiServer},
     runtime::SBTPullLedgerDiffApi,
 };
+use zenlink_protocol::AssetId as ZenlinkAssetId;
+use zenlink_protocol_rpc::{ZenlinkProtocol, ZenlinkProtocolApiServer};
+use zenlink_protocol_runtime_api::ZenlinkProtocolApi as ZenlinkProtocolRuntimeApi;
 
 /// Instantiate all RPC extensions for manta.
 pub fn create_manta_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, sc_service::Error>
@@ -41,6 +47,8 @@ where
     C::Api: BlockBuilder<Block>,
     C::Api: PullLedgerDiffApi<Block>,
     C::Api: SBTPullLedgerDiffApi<Block>,
+    C::Api: FarmingRuntimeApi<Block, AccountId, MantaAssetId, PoolId>,
+    C::Api: ZenlinkProtocolRuntimeApi<Block, AccountId, ZenlinkAssetId>,
     P: TransactionPool + Sync + Send + 'static,
 {
     use frame_rpc_system::{System, SystemApiServer};
@@ -65,9 +73,18 @@ where
         .merge(manta_pay_rpc)
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
-    let manta_sbt_rpc: jsonrpsee::RpcModule<SBTPull<Block, C>> = SBTPull::new(client).into_rpc();
+    let manta_sbt_rpc: jsonrpsee::RpcModule<SBTPull<Block, C>> =
+        SBTPull::new(client.clone()).into_rpc();
     module
         .merge(manta_sbt_rpc)
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+
+    module
+        .merge(ZenlinkProtocol::new(client.clone()).into_rpc())
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+
+    module
+        .merge(FarmingRpc::new(client).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
     Ok(module)

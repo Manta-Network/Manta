@@ -94,6 +94,8 @@ manta-collator-selection = { path = '../../pallets/collator-selection', default-
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 manta-support = { package = "pallet-manta-support", path = "../../pallets/manta-support", default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
+pallet-farming = { path = '../../pallets/farming', default-features = false }
+pallet-farming-rpc-runtime-api = { path = '../../pallets/farming/rpc/runtime-api', default-features = false }
 pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
 pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
 pallet-name-service = { path = '../../pallets/name-service', default-features = false }
@@ -169,6 +171,7 @@ runtime-benchmarks = [
   'pallet-manta-sbt/runtime-benchmarks',
   'pallet-name-service/runtime-benchmarks',
   "zenlink-protocol/runtime-benchmarks",
+  'pallet-farming/runtime-benchmarks',
   "pallet-conviction-voting/runtime-benchmarks",
   "pallet-referenda/runtime-benchmarks",
   "pallet-ranked-collective/runtime-benchmarks",
@@ -212,6 +215,7 @@ try-runtime = [
   'pallet-manta-sbt/try-runtime',
   'pallet-name-service/try-runtime',
   "zenlink-protocol/try-runtime",
+  "pallet-farming/try-runtime",
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
@@ -285,6 +289,8 @@ std = [
   'manta-support/std',
   "zenlink-protocol/std",
   "zenlink-protocol-runtime-api/std",
+  "pallet-farming/std",
+  "pallet-farming-rpc-runtime-api/std",
   "pallet-conviction-voting/std",
   "pallet-referenda/std",
   "pallet-ranked-collective/std",
