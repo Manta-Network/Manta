@@ -89,7 +89,7 @@ fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
     match id {
         // manta chainspec
         "manta-baikal" => Ok(Box::new(chain_specs::manta_baikal_config())),
-        "manta-local" => Ok(Box::new(chain_specs::manta_local_config())),
+        "manta-local" => Ok(Box::new(chain_specs::manta_local_config(false))),
         "manta-testnet" => Ok(Box::new(chain_specs::manta_testnet_config())),
         "manta" => Ok(Box::new(chain_specs::manta_mainnet_config()?)),
         // calamari chainspec
