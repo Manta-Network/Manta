@@ -28,6 +28,8 @@ xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = f
 xcm-builder = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.37" }
 xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.37" }
 
+orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', branch = "polkadot-v0.9.37", default-features = false }
+
 [features]
 default = ["std"]
 runtime-benchmarks = [
@@ -49,4 +51,5 @@ std = [
   'xcm-executor/std',
   'xcm-builder/std',
   'xcm/std',
+  'orml-traits/std',
 ]

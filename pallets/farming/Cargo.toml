@@ -1,0 +1,63 @@
+[package]
+authors = ['Manta Network']
+description = 'Pallet implementing farming protocol.'
+edition = "2021"
+homepage = "https://manta.network"
+license = "GPL-3.0"
+name = "pallet-farming"
+repository = 'https://github.com/Manta-Network/Manta/'
+version = "4.2.0"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false, features = ["derive"] }
+hex-literal = { version = "0.3.1" }
+log = { version = "0.4.16", default-features = false }
+scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
+
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false, optional = true }
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+
+manta-primitives = { path = '../../primitives/manta', default-features = false }
+orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.37", default-features = false }
+pallet-asset-manager = { path = "../asset-manager", default-features = false, optional = true }
+pallet-assets = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false, optional = true }
+xcm = { git = "https://github.com/paritytech/polkadot.git", branch = "release-v0.9.37", default-features = false, optional = true }
+
+[dev-dependencies]
+pallet-assets = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[features]
+default = ["std"]
+std = [
+  "codec/std",
+  "log/std",
+  "frame-benchmarking/std",
+  "frame-support/std",
+  "frame-system/std",
+  "manta-primitives/std",
+  "scale-info/std",
+  "pallet-assets/std",
+  "pallet-asset-manager/std",
+  "xcm/std",
+]
+
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "pallet-assets/runtime-benchmarks",
+  "xcm",
+  "pallet-asset-manager",
+]
+try-runtime = ["frame-support/try-runtime"]
