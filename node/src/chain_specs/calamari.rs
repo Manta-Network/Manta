@@ -21,7 +21,7 @@ use crate::command::CALAMARI_PARACHAIN_ID;
 #[allow(unused_imports)]
 use calamari_runtime::{
     currency::KMA, opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig,
-    ParachainStakingConfig, TechnicalCommitteeConfig,
+    LotteryConfig, ParachainStakingConfig, TechnicalCommitteeConfig,
 };
 use session_key_primitives::util::unchecked_account_id;
 /// Calamari Protocol Identifier
@@ -158,7 +158,6 @@ pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
 
 fn calamari_dev_genesis(
     invulnerables: Vec<(AccountId, SessionKeys)>,
-
     delegations: Vec<(AccountId, AccountId, Balance)>,
     endowed_accounts: Vec<AccountId>,
 ) -> GenesisConfig {
@@ -234,6 +233,11 @@ fn calamari_dev_genesis(
         parachain_system: Default::default(),
         polkadot_xcm: calamari_runtime::PolkadotXcmConfig {
             safe_xcm_version: Some(CALAMARI_SAFE_XCM_VERSION),
+        },
+        lottery: LotteryConfig {
+            min_deposit: 5_000 * KMA,
+            min_withdraw: 5_000 * KMA,
+            gas_reserve: 10_000 * KMA,
         },
     }
 }

@@ -96,10 +96,12 @@ manta-support = { package = "pallet-manta-support", path = "../../pallets/manta-
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
 pallet-farming = { path = '../../pallets/farming', default-features = false }
 pallet-farming-rpc-runtime-api = { path = '../../pallets/farming/rpc/runtime-api', default-features = false }
+pallet-lottery = { path = '../../pallets/pallet-lottery', default-features = false }
 pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
 pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
 pallet-name-service = { path = '../../pallets/name-service', default-features = false }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
+pallet-randomness = { path = '../../pallets/randomness', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
@@ -150,6 +152,7 @@ runtime-benchmarks = [
   'pallet-author-inherent/runtime-benchmarks',
   'pallet-balances/runtime-benchmarks',
   'pallet-multisig/runtime-benchmarks',
+  'pallet-scheduler/runtime-benchmarks',
   'pallet-utility/runtime-benchmarks',
   'pallet-timestamp/runtime-benchmarks',
   'pallet-xcm/runtime-benchmarks',
@@ -165,6 +168,8 @@ runtime-benchmarks = [
   'pallet-assets/runtime-benchmarks',
   'pallet-asset-manager/runtime-benchmarks',
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
+  "pallet-randomness/runtime-benchmarks",
+  "pallet-lottery/runtime-benchmarks",
   'cumulus-pallet-parachain-system/runtime-benchmarks',
   'pallet-manta-pay/runtime-benchmarks',
   'pallet-xcm-benchmarks/runtime-benchmarks',
@@ -186,6 +191,7 @@ try-runtime = [
   'pallet-balances/try-runtime',
   'pallet-parachain-staking/try-runtime',
   'pallet-preimage/try-runtime',
+  'pallet-scheduler/try-runtime',
   'pallet-multisig/try-runtime',
   'pallet-session/try-runtime',
   'pallet-timestamp/try-runtime',
@@ -215,6 +221,8 @@ try-runtime = [
   'pallet-manta-sbt/try-runtime',
   'pallet-name-service/try-runtime',
   "zenlink-protocol/try-runtime",
+  'pallet-randomness/try-runtime',
+  'pallet-lottery/try-runtime',
   "pallet-farming/try-runtime",
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
@@ -228,11 +236,14 @@ std = [
   'sp-std/std',
   'sp-io/std',
   'sp-core/std',
+  'pallet-scheduler/std',
   'sp-runtime/std',
+  'pallet-randomness/std',
   'sp-version/std',
   'sp-offchain/std',
   'sp-session/std',
   'sp-block-builder/std',
+  'pallet-lottery/std',
   'sp-transaction-pool/std',
   'sp-inherents/std',
   'frame-support/std',

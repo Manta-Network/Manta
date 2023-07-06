@@ -112,6 +112,7 @@ xcm = { git = "https://github.com/paritytech/polkadot.git", branch = "release-v0
 calamari-runtime = { path = '../runtime/calamari' }
 manta-primitives = { path = '../primitives/manta' }
 manta-runtime = { path = '../runtime/manta' }
+pallet-lottery = { path = '../pallets/pallet-lottery', features = ["rpc"] }
 pallet-manta-pay = { path = '../pallets/manta-pay', features = ["rpc", "runtime"] }
 pallet-manta-sbt = { path = '../pallets/manta-sbt', features = ["rpc", "runtime"] }
 pallet-parachain-staking = { path = '../pallets/parachain-staking' }

@@ -20,6 +20,10 @@ use super::*;
 use manta_primitives::types::{MantaAssetId, PoolId};
 use pallet_farming_rpc_api::{FarmingRpc, FarmingRpcApiServer};
 use pallet_farming_rpc_runtime_api::FarmingRuntimeApi;
+use pallet_lottery::{
+    rpc::{Lottery, LotteryRpcServer},
+    runtime::LotteryApi,
+};
 use pallet_manta_pay::{
     rpc::{Pull, PullApiServer},
     runtime::PullLedgerDiffApi,
@@ -47,6 +51,7 @@ where
     C::Api: BlockBuilder<Block>,
     C::Api: PullLedgerDiffApi<Block>,
     C::Api: SBTPullLedgerDiffApi<Block>,
+    C::Api: LotteryApi<Block>,
     C::Api: FarmingRuntimeApi<Block, AccountId, MantaAssetId, PoolId>,
     C::Api: ZenlinkProtocolRuntimeApi<Block, AccountId, ZenlinkAssetId>,
     P: TransactionPool + Sync + Send + 'static,
@@ -84,7 +89,11 @@ where
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
     module
-        .merge(FarmingRpc::new(client).into_rpc())
+        .merge(FarmingRpc::new(client.clone()).into_rpc())
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+
+    module
+        .merge(Lottery::new(client).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
     Ok(module)

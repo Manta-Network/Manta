@@ -1134,6 +1134,7 @@ dependencies = [
  "pallet-democracy",
  "pallet-farming",
  "pallet-farming-rpc-runtime-api",
+ "pallet-lottery",
  "pallet-manta-pay",
  "pallet-manta-sbt",
  "pallet-manta-support",
@@ -1142,6 +1143,7 @@ dependencies = [
  "pallet-name-service",
  "pallet-parachain-staking",
  "pallet-preimage",
+ "pallet-randomness",
  "pallet-ranked-collective",
  "pallet-referenda",
  "pallet-scheduler",
@@ -3419,6 +3421,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "function_name"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1ab577a896d09940b5fe12ec5ae71f9d8211fff62c919c03a3750a9901e98a7"
+dependencies = [
+ "function_name-proc-macro",
+]
+
+[[package]]
+name = "function_name-proc-macro"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "673464e1e314dd67a0fd9544abc99e8eb28d0c7e3b69b033bcff9b2d00b87333"
+
+[[package]]
 name = "funty"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5290,6 +5307,7 @@ dependencies = [
  "pallet-author-inherent",
  "pallet-farming-rpc-api",
  "pallet-farming-rpc-runtime-api",
+ "pallet-lottery",
  "pallet-manta-pay",
  "pallet-manta-sbt",
  "pallet-parachain-staking",
@@ -5508,6 +5526,7 @@ dependencies = [
  "pallet-democracy",
  "pallet-farming",
  "pallet-farming-rpc-runtime-api",
+ "pallet-lottery",
  "pallet-manta-pay",
  "pallet-manta-sbt",
  "pallet-manta-support",
@@ -5515,6 +5534,7 @@ dependencies = [
  "pallet-multisig",
  "pallet-parachain-staking",
  "pallet-preimage",
+ "pallet-randomness",
  "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
@@ -6952,6 +6972,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-lottery"
+version = "4.2.0"
+dependencies = [
+ "calamari-runtime",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "function_name",
+ "jsonrpsee",
+ "lazy_static",
+ "log",
+ "manta-collator-selection",
+ "manta-primitives",
+ "pallet-balances",
+ "pallet-parachain-staking",
+ "pallet-preimage",
+ "pallet-randomness",
+ "pallet-scheduler",
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "rand 0.8.5",
+ "runtime-common",
+ "scale-info",
+ "session-key-primitives",
+ "similar-asserts",
+ "sp-api",
+ "sp-arithmetic",
+ "sp-blockchain",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-manta-pay"
 version = "4.2.0"
 dependencies = [
@@ -7274,6 +7330,29 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "scale-info",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-randomness"
+version = "4.2.0"
+dependencies = [
+ "derive_more",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "log",
+ "manta-primitives",
+ "nimbus-primitives",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "session-key-primitives",
+ "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -11553,6 +11632,7 @@ dependencies = [
 name = "session-key-primitives"
 version = "4.2.0"
 dependencies = [
+ "async-trait",
  "manta-primitives",
  "nimbus-primitives",
  "parity-scale-codec",
@@ -11560,6 +11640,7 @@ dependencies = [
  "sp-application-crypto",
  "sp-consensus-aura",
  "sp-core",
+ "sp-inherents",
  "sp-runtime",
 ]
 

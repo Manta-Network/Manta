@@ -45,12 +45,10 @@ pub mod time {
     ///
     /// This constant is currently set to 12 seconds.
     ///
-    /// This determines the average expected block time that we are targeting. Blocks will be
-    /// produced at a minimum duration defined by [`SLOT_DURATION`]. [`SLOT_DURATION`] is picked up
-    /// by [`pallet_timestamp`] which is in turn picked up by [`pallet_aura`] to implement the
-    /// `slot_duration` function.
-    ///
-    /// Change this to adjust the block time.
+    /// Determines the targeted average expected block time
+    /// It is currently used
+    /// - to inform staking inflation in pallet_parachain_staking
+    /// - to implement the obsolete `slot_duration()` AuraApi using the [`SLOT_DURATION`] constant
     pub const SECONDS_PER_BLOCK: Moment = 12;
 
     /// Milliseconds per Block
@@ -71,6 +69,9 @@ pub mod time {
 
 /// Asset String Limit
 pub const ASSET_STRING_LIMIT: u32 = 50;
+
+/// Staking Pallet Identifier
+pub const LOTTERY_PALLET_ID: PalletId = PalletId(*b"LotryPot");
 
 /// Staking Pallet Identifier
 pub const STAKING_PALLET_ID: PalletId = PalletId(*b"PotStake");

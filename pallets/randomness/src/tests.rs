@@ -14,22 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Session Key Primitives
+use crate::mock::*;
 
-#![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(doc_cfg, feature(doc_cfg))]
-#![forbid(rustdoc::broken_intra_doc_links)]
-#![forbid(missing_docs)]
+#[test]
+fn set_babe_randomness_results_is_mandatory() {
+    use frame_support::dispatch::{DispatchClass, GetDispatchInfo};
 
-pub mod aura;
-pub mod inherent;
-pub mod nimbus;
-pub mod vrf;
-
-pub use aura::AuraId;
-pub use nimbus::NimbusId;
-pub use vrf::VrfId;
-
-#[cfg(feature = "std")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
-pub mod util;
+    let info = crate::Call::<Test>::set_babe_randomness_results {}.get_dispatch_info();
+    assert_eq!(info.class, DispatchClass::Mandatory);
+}

@@ -61,7 +61,10 @@ use frame_system::{
     EnsureRoot,
 };
 use manta_primitives::{
-    constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
+    constants::{
+        time::*, RocksDbWeight, LOTTERY_PALLET_ID, STAKING_PALLET_ID, TREASURY_PALLET_ID,
+        WEIGHT_PER_SECOND,
+    },
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, PoolId, Signature},
 };
 use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
@@ -234,6 +237,8 @@ impl Contains<RuntimeCall> for MantaFilter {
             | RuntimeCall::TechnicalCommittee(_)
             | RuntimeCall::CouncilMembership(_)
             | RuntimeCall::TechnicalMembership(_)
+            | RuntimeCall::Lottery(_)
+            | RuntimeCall::Randomness(pallet_randomness::Call::set_babe_randomness_results{..})
             | RuntimeCall::Scheduler(_)
             // Sudo also cannot be filtered because it is used in runtime upgrade.
             | RuntimeCall::Sudo(_)
@@ -334,6 +339,85 @@ impl pallet_timestamp::Config for Runtime {
     type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
     type WeightInfo = weights::pallet_timestamp::SubstrateWeight<Runtime>;
+}
+
+/// Only callable after `set_validation_data` is called which forms this proof the same way
+fn relay_chain_state_proof() -> cumulus_pallet_parachain_system::RelayChainStateProof {
+    let relay_storage_root = ParachainSystem::validation_data()
+        .expect("set in `set_validation_data`")
+        .relay_parent_storage_root;
+    let relay_chain_state =
+        ParachainSystem::relay_state_proof().expect("set in `set_validation_data`");
+    cumulus_pallet_parachain_system::RelayChainStateProof::new(
+        ParachainInfo::get(),
+        relay_storage_root,
+        relay_chain_state,
+    )
+    .expect("Invalid relay chain state proof, already constructed in `set_validation_data`")
+}
+pub struct BabeDataGetter;
+impl pallet_randomness::GetBabeData<u64, Option<Hash>> for BabeDataGetter {
+    // Tolerate panic here because only ever called in inherent (so can be omitted)
+    fn get_epoch_index() -> u64 {
+        if cfg!(feature = "runtime-benchmarks") {
+            // storage reads as per actual reads
+            let _relay_storage_root = ParachainSystem::validation_data();
+            let _relay_chain_state = ParachainSystem::relay_state_proof();
+            const BENCHMARKING_NEW_EPOCH: u64 = 10u64;
+            return BENCHMARKING_NEW_EPOCH;
+        }
+        relay_chain_state_proof()
+            .read_optional_entry(cumulus_primitives_core::relay_chain::well_known_keys::EPOCH_INDEX)
+            .ok()
+            .flatten()
+            .expect("expected to be able to read epoch index from relay chain state proof")
+    }
+    fn get_epoch_randomness() -> Option<Hash> {
+        if cfg!(feature = "runtime-benchmarks") {
+            // storage reads as per actual reads
+            let _relay_storage_root = ParachainSystem::validation_data();
+            let _relay_chain_state = ParachainSystem::relay_state_proof();
+            let benchmarking_babe_output = Hash::default();
+            return Some(benchmarking_babe_output);
+        }
+        relay_chain_state_proof()
+            .read_optional_entry(
+                // We use randomness from one relaychain epoch ago (4hrs Polkadot, 1hr Kusama) in combination with a (longer) `DrawingFreezeout` in pallet lottery
+                // to prevent manipulation of the winning set by participants of the lottery
+                // NOTE: We operate under the following assumption https://github.com/Manta-Network/Manta/blob/garandor/pt/pallets/randomness/README.md#risks,
+                // i.e. polkadot validators are not incentivized enough to skip their block rewards to influence the drawing.
+                cumulus_primitives_core::relay_chain::well_known_keys::ONE_EPOCH_AGO_RANDOMNESS,
+            )
+            .ok()
+            .flatten()
+    }
+}
+impl pallet_randomness::Config for Runtime {
+    type BabeDataGetter = BabeDataGetter;
+    type WeightInfo = weights::pallet_randomness::SubstrateWeight<Runtime>;
+}
+parameter_types! {
+    pub const LotteryPotId: PalletId = LOTTERY_PALLET_ID;
+    /// Time in blocks between lottery drawings
+    pub DrawingInterval: BlockNumber = prod_or_fast!(7 * DAYS, 3 * MINUTES);
+    /// Time in blocks *before* a drawing in which modifications of the win-eligble pool are prevented
+    pub DrawingFreezeout: BlockNumber = prod_or_fast!(1 * DAYS, 1 * MINUTES);
+    /// Time in blocks until a collator is done unstaking
+    pub UnstakeLockTime: BlockNumber = LeaveDelayRounds::get() * DefaultBlocksPerRound::get();
+}
+impl pallet_lottery::Config for Runtime {
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type Scheduler = Scheduler;
+    type EstimateCallFee = TransactionPayment;
+    type RandomnessSource = Randomness;
+    type ManageOrigin = EnsureRootOrMoreThanHalfCouncil;
+    type PalletsOrigin = OriginCaller;
+    type LotteryPot = LotteryPotId;
+    type DrawingInterval = DrawingInterval;
+    type DrawingFreezeout = DrawingFreezeout;
+    type UnstakeLockTime = UnstakeLockTime;
+    type WeightInfo = weights::pallet_lottery::SubstrateWeight<Runtime>;
 }
 
 impl pallet_authorship::Config for Runtime {
@@ -847,6 +931,11 @@ construct_runtime!(
 
         ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 51,
         Farming: pallet_farming::{Pallet, Call, Storage, Event<T>} = 54,
+
+        // Lottery
+        Randomness: pallet_randomness::{Pallet, Call, Storage, Inherent} = 70,
+        Lottery: pallet_lottery::{Pallet, Call, Storage, Event<T>, Config<T>} = 71 // Beware: Lottery depends on Randomness inherent
+
     }
 );
 
@@ -917,6 +1006,8 @@ mod benches {
         [pallet_tx_pause, TransactionPause]
         [manta_collator_selection, CollatorSelection]
         [pallet_parachain_staking, ParachainStaking]
+        [pallet_randomness, Randomness]
+        [pallet_lottery, Lottery]
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
         [zenlink_protocol, ZenlinkProtocol]
@@ -1043,6 +1134,18 @@ impl_runtime_apis! {
             len: u32,
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_call_fee_details(call, len)
+        }
+    }
+    impl pallet_lottery::runtime::LotteryApi<Block> for Runtime {
+        fn not_in_drawing_freezeout(
+        ) -> bool {
+            Lottery::not_in_drawing_freezeout()
+        }
+        fn current_prize_pool() -> u128 {
+            Lottery::current_prize_pool()
+        }
+        fn next_drawing_at() -> Option<u128> {
+            Lottery::next_drawing_at().map(|x| x as u128)
         }
     }
 

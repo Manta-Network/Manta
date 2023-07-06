@@ -98,9 +98,11 @@ manta-support = { package = "pallet-manta-support", path = "../../pallets/manta-
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
 pallet-farming = { path = '../../pallets/farming', default-features = false }
 pallet-farming-rpc-runtime-api = { path = '../../pallets/farming/rpc/runtime-api', default-features = false }
+pallet-lottery = { path = '../../pallets/pallet-lottery', default-features = false }
 pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
 pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
+pallet-randomness = { path = '../../pallets/randomness', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
@@ -150,6 +152,8 @@ runtime-benchmarks = [
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
   'orml-xtokens/runtime-benchmarks',
   'cumulus-pallet-parachain-system/runtime-benchmarks',
+  'pallet-randomness/runtime-benchmarks',
+  'pallet-lottery/runtime-benchmarks',
   'pallet-manta-pay/runtime-benchmarks',
   'pallet-xcm-benchmarks/runtime-benchmarks',
   'pallet-manta-sbt/runtime-benchmarks',
@@ -194,6 +198,8 @@ try-runtime = [
   'pallet-manta-pay/try-runtime',
   'orml-xtokens/try-runtime',
   'pallet-manta-sbt/try-runtime',
+  'pallet-randomness/try-runtime',
+  'pallet-lottery/try-runtime',
   "zenlink-protocol/try-runtime",
   "pallet-farming/try-runtime",
 ]
@@ -229,6 +235,8 @@ std = [
   'pallet-membership/std',
   'pallet-multisig/std',
   'pallet-parachain-staking/std',
+  'pallet-randomness/std',
+  'pallet-lottery/std',
   'pallet-preimage/std',
   'pallet-utility/std',
   'pallet-transaction-payment-rpc-runtime-api/std',
