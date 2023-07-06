@@ -201,7 +201,6 @@ impl<T: Config> Pallet<T> {
             );
             return vec![]; // NOTE: Ensure we do not continue with the partial withdrawal
         }
-        // TODO: Add random fallback
         if withdrawals.is_empty() {
             log::error!("COULD NOT SELECT ANY COLLATOR TO WITHDRAW FROM");
         } else {
