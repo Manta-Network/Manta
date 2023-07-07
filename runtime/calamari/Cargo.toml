@@ -297,6 +297,7 @@ std = [
   'orml-xtokens/std',
   'pallet-manta-pay/std',
   'pallet-manta-sbt/std',
+  'pallet-name-service/std',
   'manta-support/std',
   "zenlink-protocol/std",
   "zenlink-protocol-runtime-api/std",
