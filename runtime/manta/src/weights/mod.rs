@@ -31,6 +31,7 @@ pub mod pallet_manta_pay;
 pub mod pallet_manta_sbt;
 pub mod pallet_membership;
 pub mod pallet_multisig;
+pub mod pallet_name_service;
 pub mod pallet_parachain_staking;
 pub mod pallet_preimage;
 pub mod pallet_randomness;

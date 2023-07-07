@@ -879,7 +879,7 @@ impl pallet_name_service::Config for Runtime {
     type RegisterWaitingPeriod = ConstU32<2>;
     /// Register pricing around 5$ with estimated MANTA/USD
     type RegisterPrice = ConstU128<{ 15 * MANTA }>;
-    type WeightInfo = (); // weights::pallet_name_service::SubstrateWeight<Runtime>;
+    type WeightInfo = weights::pallet_name_service::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
