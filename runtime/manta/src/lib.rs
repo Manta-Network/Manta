@@ -1026,6 +1026,7 @@ mod benches {
         [pallet_lottery, Lottery]
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
+        [pallet_name_service, NameService]
         [zenlink_protocol, ZenlinkProtocol]
         [pallet_farming, Farming]
         // Nimbus pallets
