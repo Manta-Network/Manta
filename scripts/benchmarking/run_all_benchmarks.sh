@@ -69,11 +69,11 @@ done
 if [ "$skip_build" != true ]
 then
   echo "[+] Compiling Manta benchmarks..."
-  cargo build --profile=production --locked --features=runtime-benchmarks
+  cargo build --profile=release --locked --features=runtime-benchmarks
 fi
 
 # The executable to use.
-MANTA=./target/production/manta
+MANTA=./target/release/manta
 
 # Manually exclude some pallets.
 EXCLUDED_PALLETS=(
@@ -114,73 +114,92 @@ rm -f ${STORAGE_WEIGHTS_OUTPUT}
 MACHINE_OUTPUT="scripts/benchmarking/machine_benchmark_result.txt"
 rm -f $MACHINE_OUTPUT
 
-# Benchmark each frame pallet.
-for PALLET in "${PALLETS[@]}"; do
-  # If `-p` is used, skip benchmarks until the start pallet.
-  if [ ! -z "$start_pallet" ] && [ "$start_pallet" != "$PALLET" ]
-  then
-    echo "[+] Skipping ${PALLET}..."
-    continue
-  else
-    unset start_pallet
-  fi
+# # Benchmark each frame pallet.
+# for PALLET in "${PALLETS[@]}"; do
+#   # If `-p` is used, skip benchmarks until the start pallet.
+#   if [ ! -z "$start_pallet" ] && [ "$start_pallet" != "$PALLET" ]
+#   then
+#     echo "[+] Skipping ${PALLET}..."
+#     continue
+#   else
+#     unset start_pallet
+#   fi
 
-  FOLDER="$(echo "${PALLET#*_}" | tr '_' '-')";
-  WEIGHT_FILE="./${FRAME_WEIGHTS_OUTPUT}/${PALLET}.rs"
-  TEMPLATE_FILE=".github/resources/frame-weight-template.hbs"
-  echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
+#   FOLDER="$(echo "${PALLET#*_}" | tr '_' '-')";
+#   WEIGHT_FILE="./${FRAME_WEIGHTS_OUTPUT}/${PALLET}.rs"
+#   TEMPLATE_FILE=".github/resources/frame-weight-template.hbs"
+#   echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
 
-  if [ "$PALLET" == "pallet_xcm_benchmarks::fungible" ] || [ "$PALLET" == "pallet_xcm_benchmarks::generic" ]
-  then
-    OUTPUT_NAME=$(echo $PALLET | sed -r 's/[:]+/_/g')
-    WEIGHT_FILE="./${XCM_WEIGHTS_OUTPUT}/${OUTPUT_NAME}.rs"
-    TEMPLATE_FILE=".github/resources/xcm-weight-template.hbs"
-  fi
+#   if [ "$PALLET" == "pallet_xcm_benchmarks::fungible" ] || [ "$PALLET" == "pallet_xcm_benchmarks::generic" ]
+#   then
+#     OUTPUT_NAME=$(echo $PALLET | sed -r 's/[:]+/_/g')
+#     WEIGHT_FILE="./${XCM_WEIGHTS_OUTPUT}/${OUTPUT_NAME}.rs"
+#     TEMPLATE_FILE=".github/resources/xcm-weight-template.hbs"
+#   fi
 
-  OUTPUT=$(
-    $MANTA benchmark pallet \
-    --chain=$chain_spec \
-    --steps=50 \
-    --repeat=40 \
-    --pallet="$PALLET" \
-    --extrinsic="*" \
-    --execution=wasm \
-    --wasm-execution=compiled \
-    --heap-pages=4096 \
-    --output="$WEIGHT_FILE" \
-    --template="$TEMPLATE_FILE" 2>&1
-  )
-  if [ $? -ne 0 ]; then
-    echo "$OUTPUT" >> "$ERR_FILE"
-    echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."
-  fi
-done
-
-echo "[+] Benchmarking the machine..."
+#   OUTPUT=$(
+#     $MANTA benchmark pallet \
+#     --chain=$chain_spec \
+#     --steps=50 \
+#     --repeat=40 \
+#     --pallet=pallet_lottery \
+#     --extrinsic="*" \
+#     --execution=wasm \
+#     --wasm-execution=compiled \
+#     --heap-pages=4096 \
+#     --output="$WEIGHT_FILE" \
+#     --template="$TEMPLATE_FILE" 2>&1
+#   )
+#   if [ $? -ne 0 ]; then
+#     echo "$OUTPUT" >> "$ERR_FILE"
+#     echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."
+#   fi
+# done
+TEMPLATE_FILE=".github/resources/frame-weight-template.hbs"
+WEIGHT_FILE="./${FRAME_WEIGHTS_OUTPUT}/pallet_lottery.rs"
 OUTPUT=$(
-  $MANTA benchmark machine --chain=$chain_spec --allow-fail 2>&1
+  $MANTA benchmark pallet \
+  --chain=$chain_spec \
+  --steps=50 \
+  --repeat=40 \
+  --pallet=pallet_lottery \
+  --extrinsic="*" \
+  --execution=wasm \
+  --wasm-execution=compiled \
+  --heap-pages=4096 \
+  --output="$WEIGHT_FILE" \
+  --template="$TEMPLATE_FILE" 2>&1
 )
-# In any case don't write errors to the error file since they're not benchmarking errors.
-echo "[x] Machine benchmark:\n$OUTPUT"
-echo $OUTPUT >> $MACHINE_OUTPUT
-
-# If `-s` is used, run the storage benchmark.
-if [ ! -z "$storage_folder" ]; then
-  OUTPUT=$(
-  $MANTA benchmark storage \
-    --chain=$chain_spec \
-    --state-version=1 \
-    --warmups=10 \
-    --base-path=$storage_folder \
-    --weight-path=./$STORAGE_WEIGHTS_OUTPUT 2>&1
-  )
-  if [ $? -ne 0 ]; then
-    echo "$OUTPUT" >> "$ERR_FILE"
-    echo "[-] Failed the storage benchmark. Error written to $ERR_FILE; continuing..."
-  fi
-else
-  unset storage_folder
+if [ $? -ne 0 ]; then
+  echo "$OUTPUT" >> "$ERR_FILE"
+  echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."
 fi
+
+# echo "[+] Benchmarking the machine..."
+# OUTPUT=$(
+#   $MANTA benchmark machine --chain=$chain_spec --allow-fail 2>&1
+# )
+# # In any case don't write errors to the error file since they're not benchmarking errors.
+# echo "[x] Machine benchmark:\n$OUTPUT"
+# echo $OUTPUT >> $MACHINE_OUTPUT
+
+# # If `-s` is used, run the storage benchmark.
+# if [ ! -z "$storage_folder" ]; then
+#   OUTPUT=$(
+#   $MANTA benchmark storage \
+#     --chain=$chain_spec \
+#     --state-version=1 \
+#     --warmups=10 \
+#     --base-path=$storage_folder \
+#     --weight-path=./$STORAGE_WEIGHTS_OUTPUT 2>&1
+#   )
+#   if [ $? -ne 0 ]; then
+#     echo "$OUTPUT" >> "$ERR_FILE"
+#     echo "[-] Failed the storage benchmark. Error written to $ERR_FILE; continuing..."
+#   fi
+# else
+#   unset storage_folder
+# fi
 
 # Check if the error file exists.
 if [ -f "$ERR_FILE" ]; then
