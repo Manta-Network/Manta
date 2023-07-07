@@ -1055,7 +1055,7 @@ mod benches {
         [pallet_asset_manager, AssetManager]
         [pallet_parachain_staking, ParachainStaking]
         [pallet_randomness, Randomness]
-        [pallet_lottery, Lottery]
+        //[pallet_lottery, Lottery]
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
         [pallet_name_service, NameService]
