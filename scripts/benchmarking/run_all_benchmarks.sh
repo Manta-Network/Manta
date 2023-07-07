@@ -69,11 +69,11 @@ done
 if [ "$skip_build" != true ]
 then
   echo "[+] Compiling Manta benchmarks..."
-  cargo build --profile=release --locked --features=runtime-benchmarks
+  cargo build --profile=production --locked --features=runtime-benchmarks
 fi
 
 # The executable to use.
-MANTA=./target/release/manta
+MANTA=./target/production/manta
 
 # Manually exclude some pallets.
 EXCLUDED_PALLETS=(
