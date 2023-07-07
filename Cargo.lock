@@ -5655,6 +5655,7 @@ dependencies = [
  "pallet-manta-support",
  "pallet-membership",
  "pallet-multisig",
+ "pallet-name-service",
  "pallet-parachain-staking",
  "pallet-preimage",
  "pallet-randomness",
