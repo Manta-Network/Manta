@@ -75,6 +75,17 @@ jobs:
           sudo apt update
           sudo apt install -y pkg-config libssl-dev protobuf-compiler
           protoc --version
+          df -h
+          sudo apt remove -y '^dotnet-.*'
+          sudo apt remove -y '^mongodb-.*'
+          sudo apt remove -y '^mysql-.*'
+          sudo apt remove -y '^postgresql-*'
+          sudo apt remove -y google-cloud-sdk google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+          sudo apt autoremove -y
+          sudo apt clean
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/share/dotnet
+          df -h
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install nightly-2023-03-03
