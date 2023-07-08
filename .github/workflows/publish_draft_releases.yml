@@ -1,7 +1,7 @@
 name: publish draft releases
 on:
   push:
-    branches: [ghzlatarev/srtool-2]
+    branches: [ghzlatrev/srtool-2]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 concurrency:
