@@ -18,7 +18,6 @@ env:
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
 jobs:
   get-rust-versions:
-    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-20.04
     container:
       image: paritytech/ci-linux:production
@@ -34,7 +33,6 @@ jobs:
           echo "::set-output name=nightly::$(rustc +nightly --version)"
   build-runtimes:
     timeout-minutes: 180
-    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always
@@ -78,7 +76,6 @@ jobs:
             ${{ steps.srtool-build.outputs.wasm_compressed }}
   build-node-current:
     timeout-minutes: 180
-    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     needs: start-node-builder-current
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     env:
@@ -163,7 +160,6 @@ jobs:
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
       asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
-    if: startsWith(github.ref, 'refs/tags')
     steps:
       - name: create draft release
         id: create-release
@@ -182,7 +178,6 @@ jobs:
         runtime:
           - name: calamari
           - name: manta
-    if: startsWith(github.ref, 'refs/tags')
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
@@ -244,7 +239,6 @@ jobs:
     needs: [build-node-current, create-draft-release]
     outputs:
       download_url: ${{ steps.upload-manta.outputs.browser_download_url }}
-    if: startsWith(github.ref, 'refs/tags')
     steps:
       - uses: actions/download-artifact@v2
         with:
@@ -262,7 +256,6 @@ jobs:
   brag:
     runs-on: ubuntu-20.04
     needs: [publish-runtimes, publish-node]
-    if: startsWith(github.ref, 'refs/tags')
     steps:
       - env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
@@ -272,7 +265,6 @@ jobs:
         with:
           args: 'draft runtime release ${{ github.ref }} created at ${{ needs.create-draft-release.outputs.release_url }}'
   start-node-builder-current:
-    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
