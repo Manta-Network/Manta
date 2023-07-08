@@ -60,39 +60,39 @@ impl<T: frame_system::Config> pallet_name_service::WeightInfo for SubstrateWeigh
 	// Storage: NameService PendingRegister (r:1 w:1)
 	// Storage: NameService UsernameRecords (r:1 w:0)
 	fn register() -> Weight {
-		// Minimum execution time: 49_652 nanoseconds.
-		Weight::from_ref_time(51_720_000)
+		// Minimum execution time: 50_509 nanoseconds.
+		Weight::from_ref_time(52_169_000)
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	// Storage: NameService PendingRegister (r:1 w:1)
 	// Storage: NameService UsernameRecords (r:0 w:1)
 	fn accept_register() -> Weight {
-		// Minimum execution time: 26_218 nanoseconds.
-		Weight::from_ref_time(27_297_000)
+		// Minimum execution time: 26_350 nanoseconds.
+		Weight::from_ref_time(27_097_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	// Storage: NameService UsernameRecords (r:1 w:0)
 	// Storage: NameService PrimaryRecords (r:1 w:1)
 	fn set_primary_name() -> Weight {
-		// Minimum execution time: 27_351 nanoseconds.
-		Weight::from_ref_time(27_925_000)
+		// Minimum execution time: 25_747 nanoseconds.
+		Weight::from_ref_time(26_621_000)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: NameService PendingRegister (r:1 w:1)
 	fn cancel_pending_register() -> Weight {
-		// Minimum execution time: 23_909 nanoseconds.
-		Weight::from_ref_time(24_540_000)
+		// Minimum execution time: 22_613 nanoseconds.
+		Weight::from_ref_time(24_315_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: NameService UsernameRecords (r:1 w:1)
 	// Storage: NameService PrimaryRecords (r:1 w:0)
 	fn remove_register() -> Weight {
-		// Minimum execution time: 25_486 nanoseconds.
-		Weight::from_ref_time(27_940_000)
+		// Minimum execution time: 25_666 nanoseconds.
+		Weight::from_ref_time(27_544_000)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -104,39 +104,39 @@ impl WeightInfo for () {
 	// Storage: NameService PendingRegister (r:1 w:1)
 	// Storage: NameService UsernameRecords (r:1 w:0)
 	fn register() -> Weight {
-		// Minimum execution time: 49_652 nanoseconds.
-		Weight::from_ref_time(51_720_000)
+		// Minimum execution time: 50_509 nanoseconds.
+		Weight::from_ref_time(52_169_000)
 			.saturating_add(RocksDbWeight::get().reads(3))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
 	// Storage: NameService PendingRegister (r:1 w:1)
 	// Storage: NameService UsernameRecords (r:0 w:1)
 	fn accept_register() -> Weight {
-		// Minimum execution time: 26_218 nanoseconds.
-		Weight::from_ref_time(27_297_000)
+		// Minimum execution time: 26_350 nanoseconds.
+		Weight::from_ref_time(27_097_000)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
 	// Storage: NameService UsernameRecords (r:1 w:0)
 	// Storage: NameService PrimaryRecords (r:1 w:1)
 	fn set_primary_name() -> Weight {
-		// Minimum execution time: 27_351 nanoseconds.
-		Weight::from_ref_time(27_925_000)
+		// Minimum execution time: 25_747 nanoseconds.
+		Weight::from_ref_time(26_621_000)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: NameService PendingRegister (r:1 w:1)
 	fn cancel_pending_register() -> Weight {
-		// Minimum execution time: 23_909 nanoseconds.
-		Weight::from_ref_time(24_540_000)
+		// Minimum execution time: 22_613 nanoseconds.
+		Weight::from_ref_time(24_315_000)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: NameService UsernameRecords (r:1 w:1)
 	// Storage: NameService PrimaryRecords (r:1 w:0)
 	fn remove_register() -> Weight {
-		// Minimum execution time: 25_486 nanoseconds.
-		Weight::from_ref_time(27_940_000)
+		// Minimum execution time: 25_666 nanoseconds.
+		Weight::from_ref_time(27_544_000)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
