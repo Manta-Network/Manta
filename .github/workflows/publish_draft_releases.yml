@@ -1,7 +1,7 @@
 name: publish draft releases
 on:
   push:
-    branches: [manta, release-**]
+    branches: [ghzlatarev/srtool]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 concurrency:
@@ -57,7 +57,6 @@ jobs:
         uses: chevdor/srtool-actions@v0.4.0
         with:
           image: paritytech/srtool
-          tag: 1.66.1
           chain: ${{ matrix.runtime.name }}
       - name: persist srtool digest
         run: >
