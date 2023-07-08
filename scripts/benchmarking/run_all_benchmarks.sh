@@ -164,8 +164,8 @@ for PALLET in "${PALLETS[@]}"; do
   OUTPUT=$(
     $MANTA benchmark pallet \
     --chain=$chain_spec \
-    --steps=4 \
-    --repeat=3 \
+    --steps=2 \
+    --repeat=2 \
     --pallet="$PALLET" \
     --extrinsic="*" \
     --execution=wasm \
