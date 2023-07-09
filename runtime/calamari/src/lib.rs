@@ -29,7 +29,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+    traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, Perbill, Percent, Permill,
 };
@@ -55,8 +55,14 @@ use frame_system::{
     EnsureRoot,
 };
 use manta_primitives::{
-    constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
-    types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
+    constants::{
+        time::*, RocksDbWeight, LOTTERY_PALLET_ID, NAME_SERVICE_PALLET_ID, STAKING_PALLET_ID,
+        TREASURY_PALLET_ID, WEIGHT_PER_SECOND,
+    },
+    currencies::Currencies,
+    types::{
+        AccountId, Balance, BlockNumber, CalamariAssetId, Hash, Header, Index, PoolId, Signature,
+    },
 };
 use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
 pub use pallet_parachain_staking::{InflationInfo, Range};
@@ -137,7 +143,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 4201,
+    spec_version: 4300,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 14,
@@ -269,6 +275,8 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::TechnicalCommittee(_)
             | RuntimeCall::CouncilMembership(_)
             | RuntimeCall::TechnicalMembership(_)
+            | RuntimeCall::Lottery(_)
+            | RuntimeCall::Randomness(pallet_randomness::Call::set_babe_randomness_results{..})
             | RuntimeCall::Scheduler(_)
             | RuntimeCall::CalamariVesting(_)
             | RuntimeCall::Session(_) // User must be able to set their session key when applying for a collator
@@ -299,10 +307,12 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::Preimage(_)
             | RuntimeCall::MantaPay(_)
             | RuntimeCall::MantaSbt(_)
+            | RuntimeCall::NameService(_)
             | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..}
                 | orml_xtokens::Call::transfer_multicurrencies {..})
             | RuntimeCall::TransactionPause(_)
             | RuntimeCall::ZenlinkProtocol(_)
+            | RuntimeCall::Farming(_)
             | RuntimeCall::AssetManager(pallet_asset_manager::Call::update_outgoing_filtered_assets {..})
             | RuntimeCall::Utility(_) => true,
 
@@ -352,6 +362,81 @@ impl pallet_timestamp::Config for Runtime {
     type WeightInfo = weights::pallet_timestamp::SubstrateWeight<Runtime>;
 }
 
+/// Only callable after `set_validation_data` is called which forms this proof the same way
+fn relay_chain_state_proof() -> cumulus_pallet_parachain_system::RelayChainStateProof {
+    use sp_core::Get;
+    let relay_storage_root = ParachainSystem::validation_data()
+        .expect("set in `set_validation_data`")
+        .relay_parent_storage_root;
+    let relay_chain_state =
+        ParachainSystem::relay_state_proof().expect("set in `set_validation_data`");
+    cumulus_pallet_parachain_system::RelayChainStateProof::new(
+        ParachainInfo::get(),
+        relay_storage_root,
+        relay_chain_state,
+    )
+    .expect("Invalid relay chain state proof, already constructed in `set_validation_data`")
+}
+pub struct BabeDataGetter;
+impl pallet_randomness::GetBabeData<u64, Option<Hash>> for BabeDataGetter {
+    // Tolerate panic here because only ever called in inherent (so can be omitted)
+    fn get_epoch_index() -> u64 {
+        if cfg!(feature = "runtime-benchmarks") {
+            // storage reads as per actual reads
+            let _relay_storage_root = ParachainSystem::validation_data();
+            let _relay_chain_state = ParachainSystem::relay_state_proof();
+            const BENCHMARKING_NEW_EPOCH: u64 = 10u64;
+            return BENCHMARKING_NEW_EPOCH;
+        }
+        relay_chain_state_proof()
+            .read_optional_entry(cumulus_primitives_core::relay_chain::well_known_keys::EPOCH_INDEX)
+            .ok()
+            .flatten()
+            .expect("expected to be able to read epoch index from relay chain state proof")
+    }
+    fn get_epoch_randomness() -> Option<Hash> {
+        if cfg!(feature = "runtime-benchmarks") {
+            // storage reads as per actual reads
+            let _relay_storage_root = ParachainSystem::validation_data();
+            let _relay_chain_state = ParachainSystem::relay_state_proof();
+            let benchmarking_babe_output = Hash::default();
+            return Some(benchmarking_babe_output);
+        }
+        relay_chain_state_proof()
+            .read_optional_entry(
+                cumulus_primitives_core::relay_chain::well_known_keys::TWO_EPOCHS_AGO_RANDOMNESS,
+            )
+            .ok()
+            .flatten()
+    }
+}
+impl pallet_randomness::Config for Runtime {
+    type BabeDataGetter = BabeDataGetter;
+    type WeightInfo = weights::pallet_randomness::SubstrateWeight<Runtime>;
+}
+parameter_types! {
+    pub const LotteryPotId: PalletId = LOTTERY_PALLET_ID;
+    /// Time in blocks between lottery drawings
+    pub DrawingInterval: BlockNumber = prod_or_fast!(7 * DAYS, 3 * MINUTES);
+    /// Time in blocks *before* a drawing in which modifications of the win-eligble pool are prevented
+    pub DrawingFreezeout: BlockNumber = prod_or_fast!(1 * DAYS, 1 * MINUTES);
+    /// Time in blocks until a collator is done unstaking
+    pub UnstakeLockTime: BlockNumber = LeaveDelayRounds::get() * DefaultBlocksPerRound::get();
+}
+impl pallet_lottery::Config for Runtime {
+    type RuntimeCall = RuntimeCall;
+    type RuntimeEvent = RuntimeEvent;
+    type Scheduler = Scheduler;
+    type EstimateCallFee = TransactionPayment;
+    type RandomnessSource = Randomness;
+    type ManageOrigin = EnsureRootOrMoreThanHalfCouncil;
+    type PalletsOrigin = OriginCaller;
+    type LotteryPot = LotteryPotId;
+    type DrawingInterval = DrawingInterval;
+    type DrawingFreezeout = DrawingFreezeout;
+    type UnstakeLockTime = UnstakeLockTime;
+    type WeightInfo = weights::pallet_lottery::SubstrateWeight<Runtime>;
+}
 impl pallet_authorship::Config for Runtime {
     type FindAuthor = AuthorInherent;
     type UncleGenerations = ConstU32<0>;
@@ -651,13 +736,7 @@ impl pallet_author_inherent::Config for Runtime {
     type CanAuthor = AuraAuthorFilter;
 }
 
-parameter_types! {
-    pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
-        RuntimeBlockWeights::get().max_block;
-    pub const NoPreimagePostponement: Option<u32> = Some(10);
-}
-
-type ScheduleOrigin = EnsureRoot<AccountId>;
+type ScheduleOrigin = EnsureRootOrMoreThanHalfCouncil;
 /// Used the compare the privilege of an origin inside the scheduler.
 pub struct OriginPrivilegeCmp;
 impl PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
@@ -680,6 +759,11 @@ impl PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
     }
 }
 
+parameter_types! {
+    pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
+        RuntimeBlockWeights::get().max_block;
+    pub const NoPreimagePostponement: Option<u32> = Some(10);
+}
 impl pallet_scheduler::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
@@ -793,6 +877,43 @@ impl calamari_vesting::Config for Runtime {
     type WeightInfo = weights::calamari_vesting::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub const FarmingKeeperPalletId: PalletId = PalletId(*b"mt/fmkpr");
+    pub const FarmingRewardIssuerPalletId: PalletId = PalletId(*b"mt/fmrir");
+    pub TreasuryAccount: AccountId = TreasuryPalletId::get().into_account_truncating();
+}
+
+/// Zenlink protocol Asset adaptor for orml_traits::MultiCurrency.
+type MantaCurrencies = Currencies<Runtime, assets_config::CalamariAssetConfig, Balances, Assets>;
+
+impl pallet_farming::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type CurrencyId = CalamariAssetId;
+    type MultiCurrency = MantaCurrencies;
+    type ControlOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>,
+    >;
+    type TreasuryAccount = TreasuryAccount;
+    type Keeper = FarmingKeeperPalletId;
+    type RewardIssuer = FarmingRewardIssuerPalletId;
+    type WeightInfo = weights::pallet_farming::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+    pub const NameServicePalletId: PalletId = NAME_SERVICE_PALLET_ID;
+}
+
+impl pallet_name_service::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type PalletId = NameServicePalletId;
+    type RegisterWaitingPeriod = ConstU32<2>;
+    /// Register pricing around 5$ with current KMA/USD
+    type RegisterPrice = ConstU128<{ 3300 * KMA }>;
+    type WeightInfo = weights::pallet_name_service::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -856,10 +977,18 @@ construct_runtime!(
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
         MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
+        NameService: pallet_name_service::{Pallet, Call, Storage, Event<T>} = 52,
 
         // Calamari stuff
         CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
+
         ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 51,
+
+        Farming: pallet_farming::{Pallet, Call, Storage, Event<T>} = 54,
+
+        // Lottery
+        Randomness: pallet_randomness::{Pallet, Call, Storage, Inherent} = 70,
+        Lottery: pallet_lottery::{Pallet, Call, Storage, Event<T>, Config<T>} = 71 // Beware: Lottery depends on Randomness inherent
     }
 );
 
@@ -927,10 +1056,14 @@ mod benches {
         [manta_collator_selection, CollatorSelection]
         [pallet_asset_manager, AssetManager]
         [pallet_parachain_staking, ParachainStaking]
+        [pallet_randomness, Randomness]
+        [pallet_lottery, Lottery]
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
+        [pallet_name_service, NameService]
         // Dex
         [zenlink_protocol, ZenlinkProtocol]
+        [pallet_farming, Farming]
         // XCM
         [cumulus_pallet_xcmp_queue, XcmpQueue]
         [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
@@ -1060,6 +1193,19 @@ impl_runtime_apis! {
         }
     }
 
+    impl pallet_lottery::runtime::LotteryApi<Block> for Runtime {
+        fn not_in_drawing_freezeout(
+        ) -> bool {
+            Lottery::not_in_drawing_freezeout()
+        }
+        fn current_prize_pool() -> u128 {
+            Lottery::current_prize_pool()
+        }
+        fn next_drawing_at() -> Option<u128> {
+            Lottery::next_drawing_at().map(|x| x as u128)
+        }
+    }
+
     impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
         fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
             ParachainSystem::collect_collation_info(header)
@@ -1186,6 +1332,16 @@ impl_runtime_apis! {
                 asset_1,
                 amount
             )
+        }
+    }
+
+    impl pallet_farming_rpc_runtime_api::FarmingRuntimeApi<Block, AccountId, CalamariAssetId, PoolId> for Runtime {
+        fn get_farming_rewards(who: AccountId, pid: PoolId) -> Vec<(CalamariAssetId, Balance)> {
+            Farming::get_farming_rewards(&who, pid).unwrap_or(Vec::new())
+        }
+
+        fn get_gauge_rewards(who: AccountId, pid: PoolId) -> Vec<(CalamariAssetId, Balance)> {
+            Farming::get_gauge_rewards(&who, pid).unwrap_or(Vec::new())
         }
     }
 

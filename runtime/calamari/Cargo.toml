@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'calamari-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '4.2.0'
+version = '4.3.0'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = '3.4.0', default-features = false, features = ["derive", "max-encoded-len"] }
@@ -59,6 +59,10 @@ pallet-treasury = { git = "https://github.com/paritytech/substrate.git", default
 pallet-utility = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 substrate-fixed = { git = "https://github.com/Manta-Network/substrate-fixed.git", default-features = false }
 
+pallet-conviction-voting = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+pallet-ranked-collective = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+pallet-referenda = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+
 # Cumulus dependencies
 cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.37" }
 cumulus-pallet-parachain-system = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.37" }
@@ -90,9 +94,14 @@ manta-collator-selection = { path = '../../pallets/collator-selection', default-
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 manta-support = { package = "pallet-manta-support", path = "../../pallets/manta-support", default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
+pallet-farming = { path = '../../pallets/farming', default-features = false }
+pallet-farming-rpc-runtime-api = { path = '../../pallets/farming/rpc/runtime-api', default-features = false }
+pallet-lottery = { path = '../../pallets/pallet-lottery', default-features = false }
 pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
 pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
+pallet-name-service = { path = '../../pallets/name-service', default-features = false }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
+pallet-randomness = { path = '../../pallets/randomness', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
@@ -145,6 +154,7 @@ runtime-benchmarks = [
   'pallet-author-inherent/runtime-benchmarks',
   'pallet-balances/runtime-benchmarks',
   'pallet-multisig/runtime-benchmarks',
+  'pallet-scheduler/runtime-benchmarks',
   'pallet-utility/runtime-benchmarks',
   'pallet-timestamp/runtime-benchmarks',
   'pallet-xcm/runtime-benchmarks',
@@ -160,11 +170,18 @@ runtime-benchmarks = [
   'pallet-assets/runtime-benchmarks',
   'pallet-asset-manager/runtime-benchmarks',
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
+  "pallet-randomness/runtime-benchmarks",
+  "pallet-lottery/runtime-benchmarks",
   'cumulus-pallet-parachain-system/runtime-benchmarks',
   'pallet-manta-pay/runtime-benchmarks',
   'pallet-xcm-benchmarks/runtime-benchmarks',
   'pallet-manta-sbt/runtime-benchmarks',
+  'pallet-name-service/runtime-benchmarks',
   "zenlink-protocol/runtime-benchmarks",
+  'pallet-farming/runtime-benchmarks',
+  "pallet-conviction-voting/runtime-benchmarks",
+  "pallet-referenda/runtime-benchmarks",
+  "pallet-ranked-collective/runtime-benchmarks",
 ]
 try-runtime = [
   'frame-try-runtime',
@@ -176,6 +193,7 @@ try-runtime = [
   'pallet-balances/try-runtime',
   'pallet-parachain-staking/try-runtime',
   'pallet-preimage/try-runtime',
+  'pallet-scheduler/try-runtime',
   'pallet-multisig/try-runtime',
   'pallet-session/try-runtime',
   'pallet-timestamp/try-runtime',
@@ -203,7 +221,11 @@ try-runtime = [
   'pallet-manta-pay/try-runtime',
   'calamari-vesting/try-runtime',
   'pallet-manta-sbt/try-runtime',
+  'pallet-name-service/try-runtime',
   "zenlink-protocol/try-runtime",
+  'pallet-randomness/try-runtime',
+  'pallet-lottery/try-runtime',
+  "pallet-farming/try-runtime",
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
@@ -216,11 +238,14 @@ std = [
   'sp-std/std',
   'sp-io/std',
   'sp-core/std',
+  'pallet-scheduler/std',
   'sp-runtime/std',
+  'pallet-randomness/std',
   'sp-version/std',
   'sp-offchain/std',
   'sp-session/std',
   'sp-block-builder/std',
+  'pallet-lottery/std',
   'sp-transaction-pool/std',
   'sp-inherents/std',
   'frame-support/std',
@@ -274,9 +299,15 @@ std = [
   'orml-xtokens/std',
   'pallet-manta-pay/std',
   'pallet-manta-sbt/std',
+  'pallet-name-service/std',
   'manta-support/std',
   "zenlink-protocol/std",
   "zenlink-protocol-runtime-api/std",
+  "pallet-farming/std",
+  "pallet-farming-rpc-runtime-api/std",
+  "pallet-conviction-voting/std",
+  "pallet-referenda/std",
+  "pallet-ranked-collective/std",
 ]
 # A feature that should be enabled when the runtime should be build for on-chain
 # deployment. This will disable stuff that shouldn't be part of the on-chain wasm

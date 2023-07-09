@@ -1,0 +1,82 @@
+[package]
+authors = ["Manta Network"]
+description = 'Pallet implementing an APY-maximizing no-loss lottery'
+edition = "2021"
+homepage = 'https://manta.network'
+license = 'GPL-3.0'
+name = 'pallet-lottery'
+repository = 'https://github.com/Manta-Network/Manta/'
+version = '4.3.0'
+
+[dependencies]
+codec = { version = '3.4.0', default-features = false, features = ['derive'], package = 'parity-scale-codec' }
+function_name = "0.3"
+jsonrpsee = { version = "0.16.2", features = ["server", "macros"], optional = true }
+log = { version = "0.4.0", default-features = false }
+scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+
+# Substrate dependencies
+frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
+frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
+sp-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
+sp-arithmetic = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
+sp-blockchain = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37", optional = true }
+sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
+sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
+sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
+
+# Self dependencies
+manta-primitives = { path = "../../primitives/manta", default-features = false }
+pallet-parachain-staking = { path = '../parachain-staking', default-features = false }
+runtime-common = { path = "../../runtime/common", default-features = false }
+session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
+
+# Benchmarking dependencies
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37", default-features = false, optional = true }
+rand = { version = "0.8.5", default-features = false, optional = true }
+
+[dev-dependencies]
+calamari-runtime = { path = "../../runtime/calamari", default-features = false }
+lazy_static = "1.4.0"
+manta-collator-selection = { path = "../collator-selection", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+pallet-preimage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+pallet-randomness = { path = '../randomness', default-features = false }
+pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+rand = "0.8"
+similar-asserts = "1.1.0"
+sp-staking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
+
+[features]
+default = ["std"]
+# RPC Interface
+rpc = [
+  "jsonrpsee",
+  "sp-blockchain",
+]
+runtime-benchmarks = [
+  'frame-benchmarking/runtime-benchmarks',
+  'frame-support/runtime-benchmarks',
+  'pallet-parachain-staking/runtime-benchmarks',
+  'rand/std_rng',
+]
+std = [
+  "manta-primitives/std",
+  "pallet-parachain-staking/std",
+  "pallet-randomness/std",
+  "calamari-runtime/std",
+  "session-key-primitives/std",
+  "sp-core/std",
+  "sp-std/std",
+  "sp-io/std",
+  "sp-runtime/std",
+  'frame-benchmarking/std',
+  "frame-support/std",
+  "frame-system/std",
+]
+try-runtime = [
+  "frame-support/try-runtime",
+  "frame-system/try-runtime",
+]
