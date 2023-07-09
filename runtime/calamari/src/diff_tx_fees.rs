@@ -1728,7 +1728,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
     {
         assert_eq!(
             crate::RuntimeCall::get_call_names("MantaSbt").len(),
-            7,
+            13,
             "Please update new extrinsic here."
         );
         let to_private_proof = [0u8; 552];
@@ -1736,14 +1736,29 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         let to_private_post =
             Box::new(TransferPost::decode(&mut to_private_proof.as_slice()).unwrap());
         let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::to_private {
+            mint_id: None,
+            chain_id: None,
+            signature: None,
             post: to_private_post.clone(),
             metadata: Default::default(),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_manta_sbt", "to_private", dispatch_info, call_len));
 
+        // force_to_private
+        let to_private_post =
+            Box::new(TransferPost::decode(&mut to_private_proof.as_slice()).unwrap());
+        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::force_to_private {
+            post: to_private_post.clone(),
+            mint_id: 1u32,
+            metadata: Default::default(),
+            minting_account: ALICE.clone(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_manta_sbt", "force_to_private", dispatch_info, call_len));
+
         // reserve_sbt
-        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::reserve_sbt {});
+        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::reserve_sbt { reservee: Default::default() });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_manta_sbt", "reserve_sbt", dispatch_info, call_len));
 
@@ -1756,6 +1771,73 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         calamari_runtime_calls.push((
             "pallet_manta_sbt",
             "allowlist_evm_account",
+            dispatch_info,
+            call_len,
+        ));
+
+        // set_next_sbt_id
+        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::set_next_sbt_id {
+            asset_id: Some(1),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_manta_sbt",
+            "set_next_sbt_id",
+            dispatch_info,
+            call_len,
+        ));
+
+        // remove_allowlist_evm_account
+        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::remove_allowlist_evm_account {
+            mint_id: 1,
+            evm_address: Default::default(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_manta_sbt",
+            "remove_allowlist_evm_account",
+            dispatch_info,
+            call_len,
+        ));
+
+        // change_free_reserve_account
+        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::change_free_reserve_account {
+            account: Some(ALICE.clone()),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_manta_sbt",
+            "change_free_reserve_account",
+            dispatch_info,
+            call_len,
+        ));
+
+        // force_mint_sbt_eth
+        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::force_mint_sbt_eth {
+            post: to_private_post.clone(),
+            mint_id: 1u32,
+            address: Default::default(),
+            collection_id: Some(128),
+            item_id: Some(64),
+            metadata: Default::default(),
+            minting_account: ALICE.clone(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_manta_sbt",
+            "force_mint_sbt_eth",
+            dispatch_info,
+            call_len,
+        ));
+
+         // change_force_account
+         let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::change_force_account {
+            account: Some(ALICE.clone()),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_manta_sbt",
+            "change_force_account",
             dispatch_info,
             call_len,
         ));
@@ -1791,6 +1873,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             start_time: Default::default(),
             end_time: None,
             mint_name: Default::default(),
+            public: true,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -1805,6 +1888,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             start_time: Default::default(),
             end_time: None,
             mint_name: Default::default(),
+            public: true,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_manta_sbt", "new_mint_info", dispatch_info, call_len));
@@ -2446,6 +2530,67 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         let call = crate::RuntimeCall::Utility(pallet_utility::Call::force_batch { calls: vec![] });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_utility", "force_batch", dispatch_info, call_len));
+    }
+
+    // pallet_randomness
+    {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("Randomness").len(),
+            1,
+            "Please update new extrinsic here."
+        );
+        // set_babe_randomness_results
+        let call = crate::RuntimeCall::Randomness(pallet_randomness::Call::set_babe_randomness_results {});
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_randomness", "set_babe_randomness_results", dispatch_info, call_len));
+    }
+
+    // pallet_name_service
+    {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("NameService").len(),
+            5,
+            "Please update new extrinsic here."
+        );
+        // register
+        let call = crate::RuntimeCall::NameService(pallet_name_service::Call::register {
+            username: "test".as_bytes().to_vec(),
+            registrant: ALICE.clone().into(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_name_service", "register", dispatch_info, call_len));
+
+        // accept_register
+        let call = crate::RuntimeCall::NameService(pallet_name_service::Call::accept_register {
+            username: "test".as_bytes().to_vec(),
+            registrant: ALICE.clone().into(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_name_service", "accept_register", dispatch_info, call_len));
+
+        // set_primary_name
+        let call = crate::RuntimeCall::NameService(pallet_name_service::Call::set_primary_name {
+            username: "test".as_bytes().to_vec(),
+            registrant: ALICE.clone().into(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_name_service", "set_primary_name", dispatch_info, call_len));
+
+        // cancel_pending_register
+        let call = crate::RuntimeCall::NameService(pallet_name_service::Call::cancel_pending_register {
+            username: "test".as_bytes().to_vec(),
+            registrant: ALICE.clone().into(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_name_service", "cancel_pending_register", dispatch_info, call_len));
+
+        // remove_register
+        let call = crate::RuntimeCall::NameService(pallet_name_service::Call::remove_register {
+            username: "test".as_bytes().to_vec(),
+            registrant: ALICE.clone().into(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_name_service", "remove_register", dispatch_info, call_len));
     }
 
     (calamari_runtime_calls, t)
