@@ -20,7 +20,7 @@ env:
 jobs:
   start-checks:
     timeout-minutes: 120
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
@@ -75,7 +75,6 @@ jobs:
           sudo apt update
           sudo apt install -y pkg-config libssl-dev protobuf-compiler
           protoc --version
-          df -h
           sudo apt remove -y '^dotnet-.*'
           sudo apt remove -y '^mongodb-.*'
           sudo apt remove -y '^mysql-.*'
@@ -85,7 +84,6 @@ jobs:
           sudo apt clean
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /usr/share/dotnet
-          df -h
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install nightly-2023-03-03
