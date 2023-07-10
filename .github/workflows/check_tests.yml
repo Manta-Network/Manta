@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [manta]
   push:
-    branches: [manta]
+    branches: [ghzlatarev/benchmarks-check-for-manta-dev]
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -186,10 +186,28 @@ jobs:
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /usr/share/dotnet
           df -h
-      - name: create-chainspec
+      - name: build benchmarking binary
         run: |
           RUSTC_BOOTSTRAP=1 cargo build --release --features runtime-benchmarks
-          ${{ github.workspace }}/target/release/manta build-spec --chain calamari-dev --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
+      - name: stop sccache server
+        run: sccache --stop-server || true
+  run-benchmark-checks:
+    needs: start-benchmark-checks
+    timeout-minutes: 180
+    strategy:
+      matrix:
+        runtime:
+          - name: manta-dev
+          - name: calamari-dev
+    runs-on: ubuntu-20.04
+    outputs:
+      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    steps:
+      - name: create-chainspec
+        run: |
+          ${{ github.workspace }}/target/release/manta build-spec --chain ${{ matrix.runtime.name }} --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/${{ matrix.runtime.name }}-fork.json
       - name: append manta-pay storage
         run: |
           wget -P ${{ github.workspace }}/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
@@ -207,15 +225,13 @@ jobs:
           ${{ github.workspace }}/target/release/manta \
           benchmark \
             pallet \
-            --chain=${{ github.workspace }}/tests/data/fork.json \
+            --chain=${{ github.workspace }}/tests/data/${{ matrix.runtime.name }}-fork.json \
             --pallet=* \
             --extrinsic=* \
             --repeat=1 \
             --steps=2
-      - name: stop sccache server
-        run: sccache --stop-server || true
   stop-benchmark-checks:
-    needs: start-benchmark-checks
+    needs: start-benchmark-checks, run-benchmark-checks
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
