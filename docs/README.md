@@ -34,7 +34,7 @@ cargo build --release
 --bob \
 --rpc-cors 'all' \
 --unsafe-ws-external \
---rpc-port 9945 \
+--ws-port 9945 \
 --discover-local \
 --port 30334
 ```

@@ -5,9 +5,9 @@
       "nodes": [
         {
           "name": "alice",
+          "wsPort": 9911,
           "port": 31331,
           "flags": [
-            "--rpc-port=9911",
             "--rpc-cors=all",
             "--telemetry-url=wss://api.telemetry.manta.systems/submit 0"
           ]
@@ -15,8 +15,8 @@
         {
           "name": "bob",
           "port": 31332,
+          "wsPort": 9912,
           "flags": [
-            "--rpc-port=9912",
             "--rpc-cors=all",
             "--telemetry-url=wss://api.telemetry.manta.systems/submit 0"
           ]
@@ -24,8 +24,8 @@
         {
           "name": "charlie",
           "port": 31333,
+          "wsPort": 9913,
           "flags": [
-            "--rpc-port=9913",
             "--rpc-cors=all",
             "--telemetry-url=wss://api.telemetry.manta.systems/submit 0"
           ]
