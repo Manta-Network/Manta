@@ -2,9 +2,9 @@ name: Transaction Version Update Check
 on:
   workflow_dispatch:
     inputs:
-      reference_binary:
-        description: The link to the reference binary, which should be the previous release.
-        required: true
+      endpoint:
+        description: The endpoint to the calamari or manta mainnet.
+        required: false
       chain:
         description: The name of the chain under test. Usually, you would pass a local chain
         default: manta-local
@@ -16,7 +16,7 @@ env:
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
   CHAIN: ${{github.event.inputs.chain}}
-  REF_BINARY: ${{github.event.inputs.reference_binary}}
+  ENDPOINT: ${{github.event.inputs.endpoint}}
 jobs:
   start-checks:
     timeout-minutes: 120
@@ -101,19 +101,17 @@ jobs:
           chmod +x target/release/manta
       - name: stop sccache server
         run: sccache --stop-server || true
-      - name: Fetch and chmod old release binary
-        run: |
-          curl -L -o $HOME/manta-old $REF_BINARY
-          chmod +x $HOME/manta-old
-          ls -ahl $HOME/
-      - name: Start old node
+      - name: Start latest manta node
         run: |
           echo Running on $CHAIN
-          $HOME/manta-old --chain=$CHAIN --port 30444 --base-path ./temp1 --ws-port 9944 -- --chain kusama &
-      - name: Start new node
-        run: |
-          echo Running on $CHAIN
-          target/release/manta --chain=$CHAIN --port 30555 --base-path ./temp2 --ws-port 9955 -- --chain kusama &
+          RELAYCHAIN=kusama
+          ENDPOINT=wss://calamari.systems
+          if [[ "$CHAIN" == *"manta"* ]]; then
+              ENDPOINT=wss://ws.manta.systems
+              RELAYCHAIN=polkadot
+              echo "It's going to diff runtime metadata for $CHAIN with endpoint $ENDPOINT."
+          fi;
+          target/release/manta --chain=$CHAIN --port 30555 --base-path ./temp1 --ws-port 9955 -- --chain $RELAYCHAIN &
       - name: Prepare output
         run: |
           VERSION=$(./target/release/manta --version)
@@ -127,7 +125,12 @@ jobs:
 
       - name: Compare the metadata
         run: |
-          CMD="docker run --pull always --network host jacogr/polkadot-js-tools metadata ws://localhost:9944 ws://localhost:9955"
+          ENDPOINT=wss://calamari.systems
+          if [[ "$CHAIN" == *"manta"* ]]; then
+              ENDPOINT=wss://ws.manta.systems
+          fi;
+          echo $ENDPOINT
+          CMD="docker run --pull always --network host jacogr/polkadot-js-tools metadata $ENDPOINT ws://localhost:9955"
           echo -e "Running:\n$CMD"
           $CMD >> output.txt
           sed -z -i 's/\n\n/\n/g' output.txt
