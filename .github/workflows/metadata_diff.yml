@@ -20,7 +20,10 @@ env:
 jobs:
   start-checks:
     timeout-minutes: 120
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        node-version: [16.x]
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
@@ -39,6 +42,7 @@ jobs:
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
       - uses: actions/checkout@v2
+      - uses: borales/actions-yarn@v3.0.0
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
@@ -107,9 +111,9 @@ jobs:
           RELAYCHAIN=kusama
           ENDPOINT=wss://calamari.systems
           if [[ "$CHAIN" == *"manta"* ]]; then
-              ENDPOINT=wss://ws.manta.systems
-              RELAYCHAIN=polkadot
-              echo "It's going to diff runtime metadata for $CHAIN with endpoint $ENDPOINT."
+            ENDPOINT=wss://ws.manta.systems
+            RELAYCHAIN=polkadot
+            echo "It's going to diff runtime metadata for $CHAIN with endpoint $ENDPOINT."
           fi;
           target/release/manta --chain=$CHAIN --port 30555 --base-path ./temp1 --ws-port 9955 -- --chain $RELAYCHAIN &
       - name: Prepare output
@@ -120,17 +124,20 @@ jobs:
           echo "Target version: $VERSION" >> output.txt
           echo "Chain: $CHAIN" >> output.txt
           echo "----------------------------------------------------------------------" >> output.txt
-      - name: Pull polkadot-js-tools image
-        run: docker pull jacogr/polkadot-js-tools
-
+     - uses: actions/checkout@v2
+        with:
+          repository: polkadot-js/tools
+          path: tools
       - name: Compare the metadata
         run: |
           ENDPOINT=wss://calamari.systems
           if [[ "$CHAIN" == *"manta"* ]]; then
-              ENDPOINT=wss://ws.manta.systems
+            ENDPOINT=wss://ws.manta.systems
           fi;
           echo $ENDPOINT
-          CMD="docker run --pull always --network host jacogr/polkadot-js-tools metadata $ENDPOINT ws://localhost:9955"
+          cd ${{ github.workspace }}/tools
+          yarn
+          CMD="yarn run:metadata $ENDPOINT ws://localhost:9955"
           echo -e "Running:\n$CMD"
           $CMD >> output.txt
           sed -z -i 's/\n\n/\n/g' output.txt
