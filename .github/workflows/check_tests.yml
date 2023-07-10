@@ -231,7 +231,7 @@ jobs:
             --repeat=1 \
             --steps=2
   stop-benchmark-checks:
-    needs: start-benchmark-checks, run-benchmark-checks
+    needs: run-benchmark-checks
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
