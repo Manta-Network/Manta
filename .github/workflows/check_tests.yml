@@ -209,7 +209,7 @@ jobs:
           ${{ github.workspace }}/target/release/manta \
           benchmark \
             pallet \
-            --chain=${{ github.workspace }}/tests/data/calamari-fork.json \
+            --chain=${{ github.workspace }}/tests/data/fork.json \
             --pallet=* \
             --extrinsic=* \
             --repeat=1 \
