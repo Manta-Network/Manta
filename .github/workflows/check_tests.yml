@@ -189,25 +189,9 @@ jobs:
       - name: build benchmarking binary
         run: |
           RUSTC_BOOTSTRAP=1 cargo build --release --features runtime-benchmarks
-      - name: stop sccache server
-        run: sccache --stop-server || true
-  run-benchmark-checks:
-    needs: start-benchmark-checks
-    timeout-minutes: 180
-    strategy:
-      matrix:
-        runtime:
-          - name: manta-dev
-          - name: calamari-dev
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
       - name: create-chainspec
         run: |
-          ${{ github.workspace }}/target/release/manta build-spec --chain ${{ matrix.runtime.name }} --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/${{ matrix.runtime.name }}-fork.json
+          ${{ github.workspace }}/target/release/manta build-spec --chain calamari-dev --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
       - name: append manta-pay storage
         run: |
           wget -P ${{ github.workspace }}/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
@@ -225,13 +209,40 @@ jobs:
           ${{ github.workspace }}/target/release/manta \
           benchmark \
             pallet \
-            --chain=${{ github.workspace }}/tests/data/${{ matrix.runtime.name }}-fork.json \
+            --chain=${{ github.workspace }}/tests/data/calamari-fork.json \
             --pallet=* \
             --extrinsic=* \
             --repeat=1 \
             --steps=2
+      - name: create-chainspec
+        run: |
+          ${{ github.workspace }}/target/release/manta build-spec --chain manta-dev --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
+      - name: append manta-pay storage
+        run: |
+          wget -P ${{ github.workspace }}/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
+          cd ${{ github.workspace }}/tests
+          yarn install
+          yarn
+          node append_storage.js
+      - name: Run live benchmarks test
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          SCCACHE_CACHE_SIZE: 120G
+          SCCACHE_DIR: /home/runner/.cache/sccache
+        run: |
+          ${{ github.workspace }}/target/release/manta \
+          benchmark \
+            pallet \
+            --chain=${{ github.workspace }}/tests/data/manta-fork.json \
+            --pallet=* \
+            --extrinsic=* \
+            --repeat=1 \
+            --steps=2
+      - name: stop sccache server
+        run: sccache --stop-server || true
   stop-benchmark-checks:
-    needs: run-benchmark-checks
+    needs: start-benchmark-checks
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
