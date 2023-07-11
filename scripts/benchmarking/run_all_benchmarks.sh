@@ -117,7 +117,7 @@ rm -f $MACHINE_OUTPUT
 # Benchmark each frame pallet.
 for PALLET in "${PALLETS[@]}"; do
   # If `-p` is used, skip benchmarks until the start pallet.
-  if [ ! -z "$start_pallet" ] && [ "$start_pallet" != "$PALLET" ]
+  if [ "zenlink_protocol" != "$PALLET" ]
   then
     echo "[+] Skipping ${PALLET}..."
     continue
