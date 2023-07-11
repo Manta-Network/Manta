@@ -14,8 +14,8 @@
         },
         {
           "name": "bob",
-          "wsPort": 9912,
           "port": 31332,
+          "wsPort": 9912,
           "flags": [
             "--rpc-cors=all",
             "--telemetry-url=wss://api.telemetry.manta.systems/submit 0"
@@ -23,8 +23,8 @@
         },
         {
           "name": "charlie",
-          "wsPort": 9913,
           "port": 31333,
+          "wsPort": 9913,
           "flags": [
             "--rpc-cors=all",
             "--telemetry-url=wss://api.telemetry.manta.systems/submit 0"
