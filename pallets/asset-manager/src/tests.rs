@@ -653,8 +653,8 @@ fn permissionless_register_asset_works() {
     new_test_ext().execute_with(|| {
         assert_ok!(AssetManager::permissionless_register_asset(
             RuntimeOrigin::signed(ALICE),
-            create_asset_metadata("dog token", "dog", 12, 1, false, false),
-            1,
+            create_asset_metadata("dog token", "dog", 12, 1, false, false).into(),
+            1_000_000_000_000_000,
         ));
     });
 }

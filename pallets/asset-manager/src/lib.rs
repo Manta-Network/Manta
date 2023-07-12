@@ -53,7 +53,8 @@ pub mod pallet {
     use manta_primitives::{
         assets::{
             self, AssetConfig, AssetIdLocationMap, AssetIdLpMap, AssetIdType, AssetMetadata,
-            AssetRegistry, AssetRegistryMetadata, FungibleLedger, LocationType,
+            AssetRegistry, AssetRegistryMetadata, AssetStorageMetadata, FungibleLedger,
+            LocationType,
         },
         types::Balance,
     };
@@ -695,7 +696,7 @@ pub mod pallet {
         #[transactional]
         pub fn permissionless_register_asset(
             origin: OriginFor<T>,
-            metadata: AssetRegistryMetadata<Balance>,
+            metadata: AssetStorageMetadata,
             total_supply: Balance,
         ) -> DispatchResult {
             let who = ensure_signed(origin.clone())?;
@@ -709,12 +710,18 @@ pub mod pallet {
             // create asset and mint total supply to creator
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
                 asset_id,
-                metadata.clone().into(),
+                metadata.clone(),
                 min_balance,
                 true,
             )
             .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
-            AssetIdMetadata::<T>::insert(asset_id, &metadata);
+
+            let register_metadata = AssetRegistryMetadata::<Balance> {
+                metadata: metadata.clone(),
+                min_balance,
+                is_sufficient: true,
+            };
+            AssetIdMetadata::<T>::insert(asset_id, &register_metadata);
             <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(
                 asset_id,
                 &who,
@@ -726,7 +733,7 @@ pub mod pallet {
             Self::deposit_event(Event::<T>::AssetRegistered {
                 asset_id,
                 location,
-                metadata,
+                metadata: register_metadata,
             });
             Ok(())
         }
