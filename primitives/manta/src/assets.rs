@@ -28,7 +28,6 @@ use frame_support::{
         fungibles::{self, Mutate, Transfer},
         DepositConsequence, ExistenceRequirement, WithdrawReasons,
     },
-    Parameter,
 };
 use frame_system::Config;
 use scale_info::TypeInfo;
@@ -119,12 +118,6 @@ pub trait AssetConfig<C>: AssetIdType + BalanceType + LocationType
 where
     C: Config,
 {
-    /// Metadata type that required in token storage: e.g. AssetMetadata in Pallet-Assets.
-    type StorageMetadata: From<Self::AssetRegistryMetadata>;
-
-    /// The Asset Metadata type stored in this pallet.
-    type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance> + Parameter + TestingDefault;
-
     /// The AssetId that the non-native asset starts from.
     ///
     /// A typical configuration is 8, so that asset 0 - 7 is reserved.
@@ -137,7 +130,7 @@ where
     type NativeAssetLocation: Get<Self::Location>;
 
     /// Native Asset Metadata
-    type NativeAssetMetadata: Get<Self::AssetRegistryMetadata>;
+    type NativeAssetMetadata: Get<AssetRegistryMetadata<Self::Balance>>;
 
     /// Asset Registry
     ///
@@ -145,7 +138,7 @@ where
     type AssetRegistry: AssetRegistry<
         AssetId = Self::AssetId,
         Balance = Self::Balance,
-        Metadata = Self::StorageMetadata,
+        Metadata = AssetStorageMetadata,
         Error = DispatchError,
     >;
 

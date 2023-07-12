@@ -53,7 +53,7 @@ pub mod pallet {
     use manta_primitives::{
         assets::{
             self, AssetConfig, AssetIdLocationMap, AssetIdLpMap, AssetIdType, AssetMetadata,
-            AssetRegistry, FungibleLedger, LocationType,
+            AssetRegistry, AssetRegistryMetadata, FungibleLedger, LocationType,
         },
         types::Balance,
     };
@@ -70,8 +70,8 @@ pub mod pallet {
     /// Storage Version
     pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
-    /// Used to set the minimum balance for permissionless assets
-    pub const POSSIBLE_ACCOUNTS_PER_ASSET: Balance = 50_000_000_000;
+    /// Used to set the minimum balance for permissionless assets.
+    pub const POSSIBLE_ACCOUNTS_PER_ASSET: Balance = 10_000_000_000;
 
     /// Alias for the junction type `Parachain(#[codec(compact)] u32)`
     pub(crate) type ParaId = u32;
@@ -228,7 +228,7 @@ pub mod pallet {
             location: T::Location,
 
             /// Metadata Registered to Asset Manager
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+            metadata: AssetRegistryMetadata<Balance>,
         },
 
         /// A LP asset was registered
@@ -243,7 +243,7 @@ pub mod pallet {
             asset_id: T::AssetId,
 
             /// Metadata Registered to Asset Manager
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+            metadata: AssetRegistryMetadata<Balance>,
         },
 
         /// Updated the location of an asset
@@ -261,7 +261,7 @@ pub mod pallet {
             asset_id: T::AssetId,
 
             /// Updated Metadata for the Asset
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+            metadata: AssetRegistryMetadata<Balance>,
         },
 
         /// Updated the units-per-second for an asset
@@ -360,12 +360,8 @@ pub mod pallet {
     /// AssetId to AssetRegistry Map.
     #[pallet::storage]
     #[pallet::getter(fn asset_id_metadata)]
-    pub(super) type AssetIdMetadata<T: Config> = StorageMap<
-        _,
-        Blake2_128Concat,
-        T::AssetId,
-        <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
-    >;
+    pub(super) type AssetIdMetadata<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AssetId, AssetRegistryMetadata<Balance>>;
 
     /// The Next Available [`AssetId`](AssetConfig::AssetId)
     #[pallet::storage]
@@ -425,7 +421,7 @@ pub mod pallet {
         pub fn register_asset(
             origin: OriginFor<T>,
             location: T::Location,
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+            metadata: AssetRegistryMetadata<Balance>,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
 
@@ -520,7 +516,7 @@ pub mod pallet {
         pub fn update_asset_metadata(
             origin: OriginFor<T>,
             asset_id: T::AssetId,
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+            metadata: AssetRegistryMetadata<Balance>,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
@@ -664,7 +660,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             asset_0: T::AssetId,
             asset_1: T::AssetId,
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+            metadata: AssetRegistryMetadata<Balance>,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(asset_0 != asset_1, Error::<T>::AssetIdNotDifferent);
@@ -699,7 +695,7 @@ pub mod pallet {
         #[transactional]
         pub fn permissionless_register_asset(
             origin: OriginFor<T>,
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+            metadata: AssetRegistryMetadata<Balance>,
             total_supply: Balance,
         ) -> DispatchResult {
             let who = ensure_signed(origin.clone())?;
@@ -743,7 +739,7 @@ pub mod pallet {
         /// Register asset by providing optional location and metadata.
         pub fn do_register_asset(
             location: Option<&T::Location>,
-            metadata: &<T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+            metadata: &AssetRegistryMetadata<Balance>,
         ) -> Result<T::AssetId, DispatchError> {
             if let Some(location) = location {
                 ensure!(
