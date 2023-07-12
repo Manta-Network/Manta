@@ -44,11 +44,12 @@ use sp_runtime::traits::Convert;
 use sp_std::marker::PhantomData;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
-    ConvertedConcreteAssetId, EnsureXcmOrigin, FixedRateOfFungible, LocationInverter,
-    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SovereignSignedViaLocation,
-    TakeRevenue, TakeWeightCredit, WeightInfoBounds,
+    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
+    EnsureXcmOrigin, FixedRateOfFungible, LocationInverter, ParentAsSuperuser, ParentIsPreset,
+    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit,
+    WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
@@ -159,6 +160,9 @@ pub type Barrier = (
     // Allows execution of Transact XCM instruction from configurable set of origins
     // as long as the message is in the format DescendOrigin + WithdrawAsset + BuyExecution
     AllowTopLevelPaidExecutionDescendOriginFirst<Everything>,
+    // Allows non-local origin messages, for example from from the xcmp queue,
+    // which have the ability to deposit assets and pay for their own execution.
+    AllowTopLevelPaidExecutionFrom<Everything>,
     // Parent root gets free execution
     AllowUnpaidExecutionFrom<ParentLocation>,
     // Expected responses are OK.
