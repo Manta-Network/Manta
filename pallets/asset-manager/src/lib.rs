@@ -50,14 +50,18 @@ pub mod pallet {
         transactional, PalletId,
     };
     use frame_system::pallet_prelude::*;
-    use manta_primitives::assets::{
-        self, AssetConfig, AssetIdLocationMap, AssetIdLpMap, AssetIdType, AssetMetadata,
-        AssetRegistry, FungibleLedger, LocationType,
+    use manta_primitives::{
+        assets::{
+            self, AssetConfig, AssetIdLocationMap, AssetIdLpMap, AssetIdType, AssetMetadata,
+            AssetRegistry, FungibleLedger, LocationType,
+        },
+        types::Balance,
     };
     use orml_traits::GetByKey;
     use sp_runtime::{
         traits::{
             AccountIdConversion, AtLeast32BitUnsigned, CheckedAdd, MaybeSerializeDeserialize, One,
+            Zero,
         },
         ArithmeticError,
     };
@@ -65,6 +69,9 @@ pub mod pallet {
 
     /// Storage Version
     pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
+
+    /// Used to set the minimum balance for permissionless assets
+    pub const POSSIBLE_ACCOUNTS_PER_ASSET: Balance = 50_000_000_000;
 
     /// Alias for the junction type `Parachain(#[codec(compact)] u32)`
     pub(crate) type ParaId = u32;
@@ -86,9 +93,6 @@ pub mod pallet {
             + TypeInfo
             + Copy;
 
-        /// Balance Type
-        type Balance: Default + Member + Parameter + TypeInfo;
-
         /// Location Type
         type Location: Default
             + Parameter
@@ -100,7 +104,7 @@ pub mod pallet {
         type AssetConfig: AssetConfig<
             Self,
             AssetId = Self::AssetId,
-            Balance = Self::Balance,
+            Balance = Balance,
             Location = Self::Location,
         >;
 
@@ -115,6 +119,9 @@ pub mod pallet {
 
         /// Weight information for the extrinsics in this pallet.
         type WeightInfo: crate::weights::WeightInfo;
+
+        /// Permissionless
+        type PermissionlessStartId: Get<Self::AssetId>;
     }
 
     /// Asset Manager Pallet
@@ -275,7 +282,7 @@ pub mod pallet {
             beneficiary: T::AccountId,
 
             /// Amount Minted
-            amount: T::Balance,
+            amount: Balance,
         },
 
         /// Updated the minimum XCM fee for an asset
@@ -329,6 +336,9 @@ pub mod pallet {
 
         /// Two asset that used for generate LP asset should exist
         AssetIdNotExist,
+
+        /// AssetIdOverflow
+        AssetIdOverflow,
     }
 
     /// [`AssetId`](AssetConfig::AssetId) to [`MultiLocation`] Map
@@ -361,6 +371,11 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn next_asset_id)]
     pub type NextAssetId<T: Config> = StorageValue<_, T::AssetId, ValueQuery>;
+
+    /// The Next Available Permissionless [`AssetId`](AssetConfig::AssetId)
+    #[pallet::storage]
+    #[pallet::getter(fn next_permissionless_asset_id)]
+    pub type NextPermissionlessAssetId<T: Config> = StorageValue<_, T::AssetId, ValueQuery>;
 
     /// XCM transfer cost for each [`AssetId`](AssetConfig::AssetId)
     #[pallet::storage]
@@ -564,7 +579,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             #[pallet::compact] asset_id: T::AssetId,
             beneficiary: T::AccountId,
-            amount: T::Balance,
+            amount: Balance,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
@@ -678,6 +693,47 @@ pub mod pallet {
             });
             Ok(())
         }
+
+        #[pallet::call_index(8)]
+        #[pallet::weight(T::WeightInfo::register_asset())]
+        #[transactional]
+        pub fn permissionless_register_asset(
+            origin: OriginFor<T>,
+            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+            total_supply: Balance,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin.clone())?;
+            let location = <T::AssetConfig as AssetConfig<T>>::NativeAssetLocation::get();
+
+            let asset_id = Self::next_permissionless_asset_id_and_increment()?;
+            let min_balance: Balance = total_supply
+                .checked_div(POSSIBLE_ACCOUNTS_PER_ASSET)
+                .ok_or(ArithmeticError::DivisionByZero)?;
+
+            // create asset and mint total supply to creator
+            <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
+                asset_id,
+                metadata.clone().into(),
+                min_balance,
+                true,
+            )
+            .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
+            AssetIdMetadata::<T>::insert(asset_id, &metadata);
+            <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(
+                asset_id,
+                &who,
+                total_supply,
+                true,
+            )
+            .map_err(|_| Error::<T>::MintError)?;
+
+            Self::deposit_event(Event::<T>::AssetRegistered {
+                asset_id,
+                location,
+                metadata,
+            });
+            Ok(())
+        }
     }
 
     impl<T> Pallet<T>
@@ -711,15 +767,39 @@ pub mod pallet {
             Ok(asset_id)
         }
 
-        /// Returns and increments the [`NextAssetId`] by one.
+        /// Returns and increments the [`NextAssetId`] by one. Fails if it hits the upper limit of `PermissionlessStartId`
         #[inline]
         fn next_asset_id_and_increment() -> Result<T::AssetId, DispatchError> {
             NextAssetId::<T>::try_mutate(|current| {
-                let id = *current;
-                *current = current
-                    .checked_add(&One::one())
-                    .ok_or(ArithmeticError::Overflow)?;
-                Ok(id)
+                if *current >= T::PermissionlessStartId::get() {
+                    Err(Error::<T>::AssetIdOverflow.into())
+                } else {
+                    let id = *current;
+                    *current = current
+                        .checked_add(&One::one())
+                        .ok_or(ArithmeticError::Overflow)?;
+                    Ok(id)
+                }
+            })
+        }
+
+        /// Returns and increments the [`NextPermssionlessAssetId`] by one.
+        #[inline]
+        fn next_permissionless_asset_id_and_increment() -> Result<T::AssetId, DispatchError> {
+            NextPermissionlessAssetId::<T>::try_mutate(|current| {
+                if current.is_zero() {
+                    let id = T::PermissionlessStartId::get();
+                    *current = id
+                        .checked_add(&One::one())
+                        .ok_or(ArithmeticError::Overflow)?;
+                    Ok(id)
+                } else {
+                    let id = *current;
+                    *current = current
+                        .checked_add(&One::one())
+                        .ok_or(ArithmeticError::Overflow)?;
+                    Ok(id)
+                }
             })
         }
 

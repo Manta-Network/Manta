@@ -25,7 +25,7 @@ use frame_support::{
     construct_runtime,
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU32},
+    traits::{AsEnsureOriginWithArg, ConstU128, ConstU32},
     PalletId,
 };
 use frame_system as system;
@@ -221,12 +221,12 @@ impl AssetConfig<Runtime> for MantaAssetConfig {
 impl pallet_asset_manager::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = CalamariAssetId;
-    type Balance = Balance;
     type Location = AssetLocation;
     type AssetConfig = MantaAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId>;
     type SuspenderOrigin = EnsureRoot<AccountId>;
     type PalletId = AssetManagerPalletId;
+    type PermissionlessStartId = ConstU128<100>;
     type WeightInfo = ();
 }
 
