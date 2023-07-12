@@ -4,7 +4,7 @@ on:
     inputs:
       chain_spec:
         description: The chain spec to be used for all benchmarks. Required.
-        default: calamari-dev
+        default: manta-dev
         required: true
       snapshot_url:
         description: The chain snapshot to use for storage benchmarks. Leaving it blank will skip the storage benchmark.
@@ -21,6 +21,7 @@ env:
   FULL_DB_FOLDER: full-db
 jobs:
   run-benchmarks:
+    timeout-minutes: 720
     needs: start-node-builder-current
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     steps:
@@ -28,7 +29,7 @@ jobs:
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
-          SCCACHE_VERSION: v0.2.15
+          SCCACHE_VERSION: v0.5.3
         run: |
           SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
           mkdir -p $HOME/.local/bin
@@ -58,12 +59,21 @@ jobs:
         run: sccache --start-server
       - name: init
         run: |
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
-          rustup toolchain install stable
-          rustup default stable
-          rustup update
+          rustup toolchain install nightly-2023-03-03
+          rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
+      - name: init nodejs && yarn
+        run: |
+          curl -s https://deb.nodesource.com/setup_16.x | sudo bash
+          sudo apt install nodejs -y
+          node -v
+          sudo npm install --global yarn
+          yarn -v
       - name: build benchmarking binary
         env:
           RUST_BACKTRACE: full
@@ -74,52 +84,64 @@ jobs:
         run: |
           source ${HOME}/.cargo/env
           RUSTC_BOOTSTRAP=1 cargo build --profile production --features runtime-benchmarks --verbose
+      - name: create-chainspec
+        run: |
+          ${{ github.workspace }}/target/production/manta build-spec --chain $CHAIN_SPEC --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
+      - name: append manta-pay storage
+        run: |
+          wget -P ${{ github.workspace }}/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
+          cd ${{ github.workspace }}/tests
+          yarn install
+          yarn
+          node append_storage.js
+          CHAIN_SPEC=${{ github.workspace }}/tests/data/fork.json
+          echo $CHAIN_SPEC
       - name: stop sccache server
         run: sccache --stop-server || true
       - if: ${{ env.SNAPSHOT_URL == '' }}
         name: run all benchmarks script without storage benchmark
         run: |
-          ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC
+          ./scripts/benchmarking/run_all_benchmarks.sh -b -c ${{ github.workspace }}/tests/data/fork.json
       - if: ${{ env.SNAPSHOT_URL != '' }}
         name: run all benchmarks script with storage benchmark
         run: |
           mkdir $FULL_DB_FOLDER
           wget -q $SNAPSHOT_URL
           tar -xf calamari.tar.gz --directory ./$FULL_DB_FOLDER
-          ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC -s ./$FULL_DB_FOLDER
+          ./scripts/benchmarking/run_all_benchmarks.sh -b -c ${{ github.workspace }}/tests/data/fork.json -s ./$FULL_DB_FOLDER
       - if: always()
         name: upload benchmarking binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: manta
           path: ./target/production/manta
       - if: always()
         name: upload frame weights
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: frame-weights-output
           path: ./scripts/benchmarking/frame-weights-output/
       - if: always()
         name: upload xcm weights
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: xcm-weights-output
           path: ./scripts/benchmarking/xcm-weights-output/
       - if: always()
         name: upload benchmarking errors
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: benchmarks-errors
           path: ./scripts/benchmarking/benchmarking_errors.txt
       - if: always()
         name: upload machine benchmark result
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: machine-benchmark
           path: ./scripts/benchmarking/machine_benchmark_result.txt
       - if: always()
         name: upload storage weights
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: rocksdb-weights
           path: ./scripts/benchmarking/rocksdb_weights.rs

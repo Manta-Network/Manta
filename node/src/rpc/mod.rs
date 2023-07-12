@@ -26,12 +26,10 @@ use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use std::sync::Arc;
 
 mod calamari;
-mod common;
-mod dolphin;
+mod manta;
 
+pub use self::manta::create_manta_full;
 pub use calamari::create_calamari_full;
-pub use common::create_common_full;
-pub use dolphin::create_dolphin_full;
 
 /// A type representing all RPC extensions.
 pub type RpcExtension = jsonrpsee::RpcModule<()>;

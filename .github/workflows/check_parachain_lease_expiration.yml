@@ -1,0 +1,24 @@
+name: Check Parachain_Lease_Expiration
+
+on:
+  pull_request:
+    branches: [manta]
+  push:
+    branches: [manta]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: borales/actions-yarn@v3.0.0
+      - name: Check manta and calamari lease
+        run: |
+          cd ${{ github.workspace }}/tests/
+          yarn
+          yarn parachain_lease_test

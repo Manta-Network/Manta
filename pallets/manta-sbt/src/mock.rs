@@ -18,10 +18,15 @@
 
 use frame_support::{
     parameter_types,
-    traits::{ConstU128, ConstU16, ConstU32, Everything, GenesisBuild, IsInVec},
+    traits::{
+        AsEnsureOriginWithArg, ConstU128, ConstU16, ConstU32, ConstU64, Everything, GenesisBuild,
+        IsInVec,
+    },
+    weights::RuntimeDbWeight,
     PalletId,
 };
-use frame_system::EnsureRoot;
+
+use frame_system::{EnsureNever, EnsureRoot};
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
@@ -33,7 +38,7 @@ use manta_primitives::{
 use sp_core::H256;
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
-    AccountId32, DispatchResult,
+    AccountId32, DispatchResult, MultiSignature, MultiSigner,
 };
 use xcm::{
     prelude::{Parachain, X1},
@@ -55,6 +60,7 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         MantaSBTPallet: crate::{Pallet, Call, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Assets: pallet_assets::{Pallet, Storage, Event<T>},
@@ -67,15 +73,19 @@ frame_support::construct_runtime!(
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
     pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
+    pub const MockRocksDbWeight: RuntimeDbWeight = RuntimeDbWeight {
+        read: 250,
+        write: 1000,
+    };
 }
 
 impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type BlockWeights = ();
     type BlockLength = ();
-    type DbWeight = ();
-    type Origin = Origin;
-    type Call = Call;
+    type DbWeight = MockRocksDbWeight;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Hash = H256;
@@ -83,7 +93,7 @@ impl frame_system::Config for Test {
     type AccountId = AccountId32;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
     type PalletInfo = PalletInfo;
@@ -105,7 +115,7 @@ parameter_types! {
 impl pallet_balances::Config for Test {
     type MaxLocks = MaxLocks;
     type Balance = Balance;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
@@ -129,13 +139,18 @@ parameter_types! {
 }
 
 impl crate::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = crate::weights::SubstrateWeight<Test>;
     type PalletId = MantaSBTPalletId;
     type Currency = Balances;
     type MintsPerReserve = ConstU16<5>;
     type ReservePrice = ConstU128<1000>;
     type SbtMetadataBound = ConstU32<200>;
+    type AdminOrigin = EnsureRoot<AccountId32>;
+    type Now = Timestamp;
+    type RegistryBound = ConstU32<200>;
+    type Signature = MultiSignature;
+    type PublicKey = MultiSigner;
 }
 
 parameter_types! {
@@ -147,7 +162,7 @@ parameter_types! {
 }
 
 impl pallet_assets::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type AssetId = StandardAssetId;
     type Currency = Balances;
@@ -161,6 +176,12 @@ impl pallet_assets::Config for Test {
     type Freezer = ();
     type Extra = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Test>;
+    type RemoveItemsLimit = ConstU32<1000>;
+    type AssetIdParameter = StandardAssetId;
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureNever<AccountId32>>;
+    type CallbackHandle = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
 }
 
 pub struct MantaAssetRegistry;
@@ -181,7 +202,7 @@ impl AssetRegistry for MantaAssetRegistry {
         is_sufficient: bool,
     ) -> DispatchResult {
         Assets::force_create(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             AssetManager::account_id(),
             is_sufficient,
@@ -189,7 +210,7 @@ impl AssetRegistry for MantaAssetRegistry {
         )?;
 
         Assets::force_set_metadata(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             metadata.name,
             metadata.symbol,
@@ -203,7 +224,7 @@ impl AssetRegistry for MantaAssetRegistry {
         metadata: AssetStorageMetadata,
     ) -> DispatchResult {
         Assets::force_set_metadata(
-            Origin::root(),
+            RuntimeOrigin::root(),
             *asset_id,
             metadata.name,
             metadata.symbol,
@@ -221,8 +242,8 @@ parameter_types! {
         VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
         metadata: AssetStorageMetadata {
-            name: b"Dolphin".to_vec(),
-            symbol: b"DOL".to_vec(),
+            name: b"Calamari".to_vec(),
+            symbol: b"KMA".to_vec(),
             decimals: 18,
             is_frozen: false,
         },
@@ -256,12 +277,13 @@ impl AssetConfig<Test> for MantaAssetConfig {
 }
 
 impl pallet_asset_manager::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type AssetId = StandardAssetId;
     type Balance = Balance;
     type Location = AssetLocation;
     type AssetConfig = MantaAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId32>;
+    type SuspenderOrigin = EnsureRoot<AccountId32>;
     type PalletId = AssetManagerPalletId;
     type WeightInfo = ();
 }
@@ -271,7 +293,7 @@ parameter_types! {
 }
 
 impl pallet_manta_pay::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_manta_pay::weights::SubstrateWeight<Test>;
     type PalletId = MantaPayPalletId;
     type AssetConfig = MantaAssetConfig;
@@ -282,12 +304,19 @@ parameter_types! {
 }
 
 impl pallet_tx_pause::Config for Test {
-    type Event = Event;
-    type Call = Call;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
     type MaxCallNames = ConstU32<25>;
     type PauseOrigin = EnsureRoot<AccountId32>;
     type UnpauseOrigin = EnsureRoot<AccountId32>;
     type NonPausablePallets = IsInVec<NonPausablePallets>;
+    type WeightInfo = ();
+}
+
+impl pallet_timestamp::Config for Test {
+    type Moment = u64;
+    type OnTimestampSet = ();
+    type MinimumPeriod = ConstU64<5>;
     type WeightInfo = ();
 }
 

@@ -65,7 +65,7 @@ function next_checkpoint(
 function generate_batched_utxos(per_shard_amount: number, checkpoint: Array<number>){
     const data = [];
     for(let shard_idx = 0; shard_idx < manta_pay_config.shard_number; ++ shard_idx) {
-        for(let utxo_idx  = checkpoint[shard_idx]; utxo_idx < checkpoint[shard_idx] + per_shard_amount; ++ utxo_idx) {
+        for(let utxo_idx = checkpoint[shard_idx]; utxo_idx < checkpoint[shard_idx] + per_shard_amount; ++ utxo_idx) {
             const shards_storage_key = double_map_storage_key(
                 "MantaPay", "Shards", shard_idx, 8, HashType.TwoxConcat, utxo_idx, 64, HashType.TwoxConcat);
             const value_str = u8aToHex(generate_shards_entry(shard_idx, utxo_idx));
@@ -106,7 +106,7 @@ async function insert_utxos_in_batches(
         const {data, checkpoint} = generate_batched_utxos(per_shard_amount, cur_checkpoint);
         cur_checkpoint = checkpoint;
         const callData = api.tx.system.setStorage(data);
-        execute_with_root_via_governance(api, keyring, callData, referendumIndexObject);
+        await execute_with_root_via_governance(api, keyring, callData, referendumIndexObject);
         await delay(5000);
     }
 
@@ -163,7 +163,7 @@ async function insert_void_numbers_in_batch(
         console.log("start vn batch %i", batch_idx);
         const data = generate_vn_insertion_data(sender_idx, amount_per_batch);
         const callData = api.tx.system.setStorage(data);
-        execute_with_root_via_governance(api, keyring, callData, referendumIndexObject);
+        await execute_with_root_via_governance(api, keyring, callData, referendumIndexObject);
         sender_idx += amount_per_batch;
         await delay(5000);
     }
@@ -233,15 +233,23 @@ export async function setup_storage(
     referendumIndexObject: any
 ) {
     const encodedCallData = extrinsicData.method.toHex();
-    await api.tx.democracy.notePreimage(encodedCallData).signAndSend(keyring, {nonce: -1});
+    await api.tx.preimage.notePreimage(encodedCallData).signAndSend(keyring, {nonce: -1});
+    console.log("Runtime upgrade preimage noted ...");
     let encodedCallDataHash = blake2AsHex(encodedCallData);
-    let externalProposeDefault = await api.tx.democracy.externalProposeDefault(encodedCallDataHash);
+    let externalProposeDefault = await api.tx.democracy.externalProposeDefault({
+        Legacy: {
+            hash: encodedCallDataHash
+        }
+    });
     const encodedExternalProposeDefault = externalProposeDefault.method.toHex();
     await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce: -1});
+    console.log("Runtime upgrade governance proposed ...");
     let fastTrackCall = await api.tx.democracy.fastTrack(encodedCallDataHash, 1, 1);
     await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
+    console.log("Runtime upgrade governance fast tracked ...");
     await api.tx.democracy.vote(referendumIndexObject.referendumIndex, {
         Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
     }).signAndSend(keyring, {nonce: -1});
+    console.log("Runtime upgrade governanceZ voted on ...");
     referendumIndexObject.referendumIndex++;
 }

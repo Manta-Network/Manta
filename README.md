@@ -22,13 +22,13 @@ Disclaimer: The code currently hasn't been properly security audited (work in pr
 :point_right: Check out our [technical documentation](https://docs.manta.network). <br>
 :point_right: Get involved in [Manta Community](https://forum.manta.network/). <br>
 
-## Manta/Calamari/Dolphin
-This is the mono-repo for Manta/Calamari/Dolphin nodes.
+## Manta/Calamari
+This is the mono-repo for Manta/Calamari nodes.
 * Manta: Manta's Polkadot parachain network
 * Calamari: Manta's canary network on Kusama
 * Dolphin: Manta's testnet
 
-## Build Manta/Calamari/Dolphin Node
+## Build Manta/Calamari Node
 1. Setup environment
   ```bash
   chmod u+x ./scripts/init.sh
@@ -41,12 +41,12 @@ This is the mono-repo for Manta/Calamari/Dolphin nodes.
 > Tips: The binary will be generated under `target/production/manta`. For less performance critical build, `cargo build --release` is recommended for faster build time.
 3. Run standalone dev chain, useful for local development
   ```bash
-  cargo run -- --chain=dolphin-localdev --alice --tmp
+  cargo run -- --chain=calamari-localdev --alice --tmp
   ```
 > Tip: The chain only produces blocks when you submit extrinsics
 
 ## Semantic Versioning
-Manta/Calamari/Dolphin's version number:
+Manta/Calamari's version number:
 `v<x>.<y>.<z>`
 
 where:

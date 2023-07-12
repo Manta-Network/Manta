@@ -1,0 +1,22 @@
+[package]
+authors = ['Manta Network']
+edition = "2021"
+homepage = "https://manta.network"
+license = "GPL-3.0"
+name = "pallet-farming-rpc-api"
+repository = 'https://github.com/Manta-Network/Manta/'
+version = "4.3.0"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false, features = ["derive"] }
+jsonrpsee = { version = "0.16.2", features = ["server", "macros"] }
+serde = { version = "1.0.140", features = ["derive"] }
+
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+sp-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
+
+manta-primitives = { path = '../../../primitives/manta', default-features = false }
+pallet-farming-rpc-runtime-api = { path = "./runtime-api" }

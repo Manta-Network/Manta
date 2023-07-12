@@ -17,7 +17,8 @@
 //! unit tests for asset-manager
 
 use crate::{
-    self as asset_manager, AssetIdLocation, AssetIdMetadata, Error, LocationAssetId, UnitsPerSecond,
+    self as asset_manager, AssetIdLocation, AssetIdMetadata, AssetIdPairToLp, Error,
+    LocationAssetId, LpToAssetIdPair, UnitsPerSecond,
 };
 use asset_manager::mock::*;
 use frame_support::{
@@ -25,7 +26,10 @@ use frame_support::{
     traits::{fungibles::InspectMetadata, Contains},
     WeakBoundedVec,
 };
-use manta_primitives::assets::{AssetConfig, AssetLocation, FungibleLedger};
+use manta_primitives::{
+    assets::{AssetConfig, AssetLocation, AssetRegistryMetadata, FungibleLedger},
+    types::Balance,
+};
 use orml_traits::GetByKey;
 use sp_runtime::traits::BadOrigin;
 use xcm::{latest::prelude::*, VersionedMultiLocation};
@@ -60,7 +64,7 @@ fn wrong_modifier_origin_should_not_work() {
         let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
         assert_noop!(
             AssetManager::register_asset(
-                Origin::signed([0u8; 32].into()),
+                RuntimeOrigin::signed([0u8; 32].into()),
                 source_location.clone(),
                 asset_metadata.clone()
             ),
@@ -68,7 +72,7 @@ fn wrong_modifier_origin_should_not_work() {
         );
         assert_noop!(
             AssetManager::update_asset_location(
-                Origin::signed([2u8; 32].into()),
+                RuntimeOrigin::signed([2u8; 32].into()),
                 0,
                 source_location
             ),
@@ -76,14 +80,14 @@ fn wrong_modifier_origin_should_not_work() {
         );
         assert_noop!(
             AssetManager::update_asset_metadata(
-                Origin::signed([3u8; 32].into()),
+                RuntimeOrigin::signed([3u8; 32].into()),
                 0,
                 asset_metadata
             ),
             BadOrigin
         );
         assert_noop!(
-            AssetManager::set_units_per_second(Origin::signed([4u8; 32].into()), 0, 0),
+            AssetManager::set_units_per_second(RuntimeOrigin::signed([4u8; 32].into()), 0, 0),
             BadOrigin
         );
     })
@@ -102,7 +106,7 @@ fn register_asset_should_work() {
         let mut counter = <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get();
         // Register relay chain native token
         assert_ok!(AssetManager::register_asset(
-            Origin::root(),
+            RuntimeOrigin::root(),
             source_location.clone(),
             asset_metadata.clone()
         ));
@@ -115,12 +119,16 @@ fn register_asset_should_work() {
         counter += 1;
         // Register twice will fail
         assert_noop!(
-            AssetManager::register_asset(Origin::root(), source_location, asset_metadata.clone()),
+            AssetManager::register_asset(
+                RuntimeOrigin::root(),
+                source_location,
+                asset_metadata.clone()
+            ),
             Error::<Runtime>::LocationAlreadyExists
         );
         // Register a new asset
         assert_ok!(AssetManager::register_asset(
-            Origin::root(),
+            RuntimeOrigin::root(),
             new_location.clone(),
             asset_metadata.clone()
         ));
@@ -152,7 +160,7 @@ fn update_asset() {
         // Register relay chain native token
         let asset_id = <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get();
         assert_ok!(AssetManager::register_asset(
-            Origin::root(),
+            RuntimeOrigin::root(),
             source_location.clone(),
             asset_metadata.clone()
         ));
@@ -164,14 +172,14 @@ fn update_asset() {
         let native_asset_id = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
         assert_noop!(
             AssetManager::update_asset_metadata(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 native_asset_id,
                 new_metadata.clone(),
             ),
             Error::<Runtime>::CannotUpdateNativeAssetMetadata
         );
         assert_ok!(AssetManager::update_asset_metadata(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             new_metadata.clone(),
         ),);
@@ -180,13 +188,13 @@ fn update_asset() {
         assert_eq!(Assets::decimals(&asset_id), new_decimals);
         // Update the asset location
         assert_ok!(AssetManager::update_asset_location(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             new_location.clone()
         ));
         // Update asset units per seconds
         assert_ok!(AssetManager::set_units_per_second(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             125u128
         ));
@@ -195,7 +203,7 @@ fn update_asset() {
         // Update a non-exist asset should fail
         assert_noop!(
             AssetManager::update_asset_location(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 next_asset_id,
                 new_location.clone()
             ),
@@ -203,7 +211,7 @@ fn update_asset() {
         );
         assert_noop!(
             AssetManager::update_asset_metadata(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 next_asset_id,
                 new_metadata.clone()
             ),
@@ -212,13 +220,13 @@ fn update_asset() {
         // Re-registering the original location and metadata should work,
         // as we modified the previous asset.
         assert_ok!(AssetManager::register_asset(
-            Origin::root(),
+            RuntimeOrigin::root(),
             source_location.clone(),
             asset_metadata.clone()
         ));
         // But updating the asset to an existing location will fail.
         assert_noop!(
-            AssetManager::update_asset_location(Origin::root(), next_asset_id, new_location),
+            AssetManager::update_asset_location(RuntimeOrigin::root(), next_asset_id, new_location),
             Error::<Runtime>::LocationAlreadyExists
         );
 
@@ -235,7 +243,7 @@ fn update_asset() {
         assert!(crate::AllowedDestParaIds::<Runtime>::contains_key(para_id));
 
         assert_ok!(AssetManager::update_asset_location(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             new_location_2,
         ));
@@ -258,7 +266,7 @@ fn check_para_id_info_when_update_asset_location() {
 
         // registering manta native asset should work.
         assert_ok!(AssetManager::register_asset(
-            Origin::root(),
+            RuntimeOrigin::root(),
             manta_native_location,
             manta_asset_metadata
         ));
@@ -285,7 +293,7 @@ fn check_para_id_info_when_update_asset_location() {
             )));
         // registering manta non native asset should work.
         assert_ok!(AssetManager::register_asset(
-            Origin::root(),
+            RuntimeOrigin::root(),
             manta_non_native_location,
             manta_non_native_asset_metadata
         ));
@@ -306,7 +314,7 @@ fn check_para_id_info_when_update_asset_location() {
             ),
         )));
         assert_ok!(AssetManager::update_asset_location(
-            Origin::root(),
+            RuntimeOrigin::root(),
             manta_asset_id,
             manta_native_location,
         ));
@@ -331,7 +339,7 @@ fn check_para_id_info_when_update_asset_location() {
             ),
         )));
         assert_ok!(AssetManager::update_asset_location(
-            Origin::root(),
+            RuntimeOrigin::root(),
             manta_non_native_asset_id,
             manta_non_native_location,
         ));
@@ -371,7 +379,7 @@ fn mint_asset() {
         let asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1u128, false, true);
         let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
         assert_ok!(AssetManager::register_asset(
-            Origin::root(),
+            RuntimeOrigin::root(),
             source_location,
             asset_metadata
         ));
@@ -399,7 +407,7 @@ fn filter_asset_location_should_work() {
     new_test_ext().execute_with(|| {
         // Register relay chain native token
         assert_ok!(AssetManager::register_asset(
-            Origin::root(),
+            RuntimeOrigin::root(),
             kusama_location.clone(),
             kusama_asset_metadata.clone()
         ));
@@ -411,7 +419,7 @@ fn filter_asset_location_should_work() {
 
         // Register manta para chain native token
         assert_ok!(AssetManager::register_asset(
-            Origin::root(),
+            RuntimeOrigin::root(),
             manta_location.clone(),
             manta_asset_metadata.clone()
         ));
@@ -492,7 +500,7 @@ fn set_min_xcm_fee_should_work() {
     new_test_ext().execute_with(|| {
         // Register a non native token.
         assert_ok!(AssetManager::register_asset(
-            Origin::root(),
+            RuntimeOrigin::root(),
             manta_location.clone(),
             manta_asset_metadata.clone()
         ));
@@ -507,7 +515,7 @@ fn set_min_xcm_fee_should_work() {
         // normal account cannot set min xcm fee.
         assert_noop!(
             AssetManager::set_min_xcm_fee(
-                Origin::signed([2u8; 32].into()),
+                RuntimeOrigin::signed([2u8; 32].into()),
                 manta_location.clone(),
                 min_xcm_fee,
             ),
@@ -516,7 +524,7 @@ fn set_min_xcm_fee_should_work() {
 
         // only sudo can set it.
         assert_ok!(AssetManager::set_min_xcm_fee(
-            Origin::root(),
+            RuntimeOrigin::root(),
             manta_location.clone(),
             min_xcm_fee,
         ));
@@ -542,4 +550,100 @@ fn set_min_xcm_fee_should_work() {
             None
         );
     })
+}
+
+fn create_asset_and_location(token: &str) -> (AssetRegistryMetadata<Balance>, AssetLocation) {
+    let manta_asset_metadata = create_asset_metadata(token, token, 12, 1u128, false, false);
+    let manta_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+        1,
+        X2(
+            Parachain(2015),
+            GeneralKey(WeakBoundedVec::force_from(token.as_bytes().to_vec(), None)),
+        ),
+    )));
+    (manta_asset_metadata, manta_location)
+}
+
+#[test]
+fn register_lp_asset_should_work() {
+    new_test_ext().execute_with(|| {
+        // Register first non native token.
+        let (manta_asset_metadata8, manta_location8) = create_asset_and_location("Asset8");
+        assert_ok!(AssetManager::register_asset(
+            RuntimeOrigin::root(),
+            manta_location8.clone(),
+            manta_asset_metadata8.clone()
+        ));
+        assert_eq!(AssetIdLocation::<Runtime>::get(8), Some(manta_location8));
+
+        assert_noop!(
+            AssetManager::register_lp_asset(
+                RuntimeOrigin::root(),
+                8,
+                8,
+                manta_asset_metadata8.clone()
+            ),
+            Error::<Runtime>::AssetIdNotDifferent
+        );
+        assert_noop!(
+            AssetManager::register_lp_asset(RuntimeOrigin::root(), 8, 9, manta_asset_metadata8),
+            Error::<Runtime>::AssetIdNotExist
+        );
+
+        let (manta_asset_metadata9, manta_location9) = create_asset_and_location("Asset9");
+        assert_ok!(AssetManager::register_asset(
+            RuntimeOrigin::root(),
+            manta_location9.clone(),
+            manta_asset_metadata9
+        ));
+        assert_eq!(AssetIdLocation::<Runtime>::get(9), Some(manta_location9));
+
+        let manta_asset_metadata10 = create_asset_metadata("LP10", "LP10", 12, 1u128, false, false);
+        assert_ok!(AssetManager::register_lp_asset(
+            RuntimeOrigin::root(),
+            8,
+            9,
+            manta_asset_metadata10.clone()
+        ),);
+        assert_eq!(AssetIdPairToLp::<Runtime>::get((8, 9)), Some(10));
+        assert_eq!(LpToAssetIdPair::<Runtime>::get(10), Some((8, 9)));
+        assert_eq!(
+            AssetIdMetadata::<Runtime>::get(10),
+            Some(manta_asset_metadata10)
+        );
+
+        let (manta_asset_metadata11, manta_location11) = create_asset_and_location("Asset11");
+        assert_noop!(
+            AssetManager::register_lp_asset(
+                RuntimeOrigin::root(),
+                8,
+                9,
+                manta_asset_metadata11.clone()
+            ),
+            Error::<Runtime>::AssetAlreadyRegistered
+        );
+
+        assert_ok!(AssetManager::register_asset(
+            RuntimeOrigin::root(),
+            manta_location11,
+            manta_asset_metadata11
+        ));
+        let manta_asset_metadata12 = create_asset_metadata("LP12", "LP12", 12, 1u128, false, false);
+        // sort asset by order
+        assert_ok!(AssetManager::register_lp_asset(
+            RuntimeOrigin::root(),
+            11,
+            8,
+            manta_asset_metadata12
+        ),);
+        assert_eq!(AssetIdPairToLp::<Runtime>::get((8, 11)), Some(12));
+        assert_eq!(AssetIdPairToLp::<Runtime>::get((11, 8)), None);
+        assert_eq!(LpToAssetIdPair::<Runtime>::get(12), Some((8, 11)));
+
+        let manta_asset_metadata13 = create_asset_metadata("LP13", "LP13", 12, 1u128, false, false);
+        assert_noop!(
+            AssetManager::register_lp_asset(RuntimeOrigin::root(), 12, 8, manta_asset_metadata13),
+            Error::<Runtime>::AssetIdNotExist
+        );
+    });
 }

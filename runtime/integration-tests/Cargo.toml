@@ -1,0 +1,83 @@
+[package]
+authors = ["Manta Network"]
+edition = "2021"
+homepage = "https://manta.network"
+license = "GPL-3.0"
+name = "integration-tests"
+repository = "https://github.com/Manta-Network/Manta/"
+version = "4.3.0"
+
+[dependencies]
+calamari-runtime = { path = "../calamari", optional = true }
+cfg-if = "1.0"
+manta-runtime = { path = "../manta", optional = true }
+
+[dev-dependencies]
+codec = { package = "parity-scale-codec", version = '3.1.2', features = ["derive", "max-encoded-len"] }
+frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37", default-features = false }
+frame-system = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
+lazy_static = "1.4.0"
+pallet-assets = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
+pallet-collective = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
+pallet-democracy = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
+pallet-membership = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
+pallet-scheduler = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
+pallet-session = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
+pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
+pallet-utility = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.37" }
+scale-info = { version = "2.1.2", features = ["derive"] }
+sp-arithmetic = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
+sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
+sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
+sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
+xcm = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.37" }
+xcm-builder = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.37" }
+xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.37" }
+
+polkadot-core-primitives = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.37" }
+polkadot-parachain = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.37" }
+polkadot-runtime-parachains = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.37" }
+xcm-simulator = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.37" }
+
+# Cumulus dependencies
+cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.37" }
+cumulus-pallet-parachain-system = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.37" }
+cumulus-pallet-xcm = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.37" }
+cumulus-pallet-xcmp-queue = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.37" }
+cumulus-primitives-parachain-inherent = { git = "https://github.com/paritytech/cumulus.git", branch = "polkadot-v0.9.37" }
+cumulus-test-relay-sproof-builder = { git = "https://github.com/paritytech/cumulus.git", branch = "polkadot-v0.9.37" }
+parachain-info = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.37" }
+
+# Orml dependencies
+orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.37" }
+orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.37" }
+
+# Self dependencies
+calamari-vesting = { path = '../../pallets/vesting' }
+manta-collator-selection = { path = '../../pallets/collator-selection' }
+pallet-asset-manager = { path = '../../pallets/asset-manager' }
+pallet-manta-pay = { path = '../../pallets/manta-pay', features = ["runtime"] }
+pallet-manta-sbt = { path = '../../pallets/manta-sbt', features = ["runtime"] }
+pallet-parachain-staking = { path = '../../pallets/parachain-staking' }
+pallet-tx-pause = { path = '../../pallets/tx-pause' }
+
+manta-primitives = { path = '../../primitives/manta' }
+manta-support = { package = "pallet-manta-support", path = "../../pallets/manta-support" }
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.8" }
+runtime-common = { path = '../common', features = ["test-helpers"] }
+session-key-primitives = { path = '../../primitives/session-keys' }
+
+[features]
+calamari = [
+  "dep:calamari-runtime",
+]
+default = ["manta"]
+manta = [
+  "dep:manta-runtime",
+]
+runtime-benchmarks = [
+  "pallet-assets/runtime-benchmarks",
+]

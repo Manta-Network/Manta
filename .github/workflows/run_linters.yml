@@ -15,6 +15,7 @@ env:
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
 jobs:
   start-checks:
+    timeout-minutes: 120
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -39,7 +40,7 @@ jobs:
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
-          SCCACHE_VERSION: v0.2.15
+          SCCACHE_VERSION: v0.5.3
         run: |
           SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
           mkdir -p $HOME/.local/bin
@@ -69,7 +70,11 @@ jobs:
         run: sccache --start-server
       - name: init rust toolchain
         # NOTE: We use nightly Rust only to get nightly fmt & clippy
+        # TODO: use nightly after https://github.com/clap-rs/clap/issues/4733 fixed.
         run: |
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install nightly-2023-03-13

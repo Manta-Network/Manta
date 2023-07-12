@@ -17,7 +17,8 @@
 //! Type Definitions for Manta Pay
 
 use alloc::{boxed::Box, vec::Vec};
-use manta_crypto::merkle_tree;
+use core::ops::Add;
+use frame_support::sp_runtime::traits::Zero;
 use manta_pay::{
     config::{
         self,
@@ -26,6 +27,7 @@ use manta_pay::{
     crypto::poseidon::encryption::{self, BlockArray, CiphertextBlock},
     manta_crypto::{
         encryption::{hybrid, EmptyHeader},
+        merkle_tree,
         permutation::duplex,
         signature::schnorr,
     },
@@ -246,6 +248,34 @@ impl Asset {
     #[inline]
     pub fn new(id: AssetId, value: EncodedAssetValue) -> Self {
         Self { id, value }
+    }
+}
+
+impl Zero for Asset {
+    fn zero() -> Self {
+        Self {
+            id: [0u8; 32],
+            value: [0u8; 16],
+        }
+    }
+
+    fn is_zero(&self) -> bool {
+        let zero_asset = Self {
+            id: [0u8; 32],
+            value: [0u8; 16],
+        };
+        *self == zero_asset
+    }
+}
+
+impl Add for Asset {
+    type Output = Asset;
+
+    fn add(self, _rhs: Asset) -> Self::Output {
+        Self {
+            id: [0u8; 32],
+            value: [0u8; 16],
+        }
     }
 }
 
@@ -825,7 +855,12 @@ pub type LeafDigest = [u8; 32];
 pub type InnerDigest = [u8; 32];
 
 /// Merkle Tree Current Path
-#[derive(Clone, Debug, Decode, Default, Encode, Eq, PartialEq, TypeInfo)]
+#[cfg_attr(
+    feature = "serde",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, PartialEq, TypeInfo)]
 pub struct CurrentPath {
     /// Sibling Digest
     pub sibling_digest: LeafDigest,
@@ -899,8 +934,76 @@ pub struct UtxoMerkleTreePath {
 /// Receiver Chunk Data Type
 pub type ReceiverChunk = Vec<(Utxo, FullIncomingNote)>;
 
+/// Utxo Chunk Data Type
+pub type UtxoChunk = Vec<Utxo>;
+
+/// Merkle Tree [`CurrentPath`] Chunk Data Type
+pub type CurrentPathChunk = Vec<CurrentPath>;
+
 /// Sender Chunk Data Type
 pub type SenderChunk = Vec<(NullifierCommitment, OutgoingNote)>;
+
+/// Initial Sync Response
+#[cfg_attr(
+    feature = "serde",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, PartialEq, TypeInfo)]
+pub struct InitialSyncResponse {
+    /// Initial Sync Continuation Flag
+    ///
+    /// The `should_continue` flag is set to `true` if the client should request more data from the
+    /// ledger to finish the pull.
+    pub should_continue: bool,
+
+    /// Ledger Utxo Chunk
+    pub utxo_data: UtxoChunk,
+
+    /// Ledger [`CurrentPath`] Chunk
+    pub membership_proof_data: CurrentPathChunk,
+
+    /// Nullifier Count
+    pub nullifier_count: u128,
+}
+
+/// Ledger Source Dense Pull Response
+#[cfg_attr(
+    feature = "serde",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(Clone, Debug, Encode, Default, Eq, Hash, Decode, PartialEq, TypeInfo)]
+pub struct DenseInitialSyncResponse {
+    /// Pull Continuation Flag
+    ///
+    /// The `should_continue` flag is set to `true` if the client should request more data from the
+    /// ledger to finish the pull.
+    pub should_continue: bool,
+
+    /// Ledger Utxo Chunk
+    #[codec(skip)]
+    pub utxo_data: alloc::string::String,
+
+    /// Ledger [`CurrentPath`] Chunk
+    #[codec(skip)]
+    pub membership_proof_data: alloc::string::String,
+
+    /// Nullifier Count
+    pub nullifier_count: u128,
+}
+
+impl From<InitialSyncResponse> for DenseInitialSyncResponse {
+    #[inline]
+    fn from(resp: InitialSyncResponse) -> DenseInitialSyncResponse {
+        Self {
+            should_continue: resp.should_continue,
+            utxo_data: base64::encode(resp.utxo_data.encode()),
+            membership_proof_data: base64::encode(resp.membership_proof_data.encode()),
+            nullifier_count: resp.nullifier_count,
+        }
+    }
+}
 
 /// Ledger Source Pull Response
 #[cfg_attr(

@@ -1,5 +1,116 @@
 # CHANGELOG
 
+## v4.3.0
+### Added
+- [\#1179](https://github.com/Manta-Network/Manta/pull/1179) Copy Name Service Pallet [CA]
+- [\#1141](https://github.com/Manta-Network/Manta/pull/1141) manta-farming [MACA]
+- [\#1036](https://github.com/Manta-Network/Manta/pull/1036) Pallet Staking Lottery [MACA]
+
+### Changed
+- [\#1150](https://github.com/Manta-Network/Manta/pull/1150) Rebenchmark pallet-mantapay [MACA]
+
+### Fixed
+- [\#1175](https://github.com/Manta-Network/Manta/pull/1175) Fix congestion test CI [MACA]
+- [\#1193](https://github.com/Manta-Network/Manta/pull/1193) Revert to v0942 polkadot binary [MACA]
+- [\#1196](https://github.com/Manta-Network/Manta/pull/1196) Fix dex ed [MA]
+
+### Removed
+- [\#1167](https://github.com/Manta-Network/Manta/pull/1167) Retire dolphin runtime [DO]
+
+## v4.2.0-1
+### Added
+- [\#1166](https://github.com/Manta-Network/Manta/pull/1166) Add Force Calls for zkSBT [MACA]
+
+### Changed
+- [\#1145](https://github.com/Manta-Network/Manta/pull/1145) Bump block fullness to 50% for calamari [CA]
+- [\#1127](https://github.com/Manta-Network/Manta/pull/1127) Add check that public asset is restricted [CA]
+
+### Fixed
+- [\#1169](https://github.com/Manta-Network/Manta/pull/1169) Fix check-tests CI workflow [MACA]
+- [\#1173](https://github.com/Manta-Network/Manta/pull/1173) Add missing runtime-benchmarks features [MACA]
+
+## v4.2.0
+### Added
+- [\#1138](https://github.com/Manta-Network/Manta/pull/1138) Check manta and calamari lease expiration [MACA]
+- [\#1147](https://github.com/Manta-Network/Manta/pull/1147) Add Polkadot Signature Allowlist [MACA]
+
+## v4.1.0
+### Added
+- [\#1122](https://github.com/Manta-Network/Manta/pull/1122) dex amm [CA]
+- [\#1135](https://github.com/Manta-Network/Manta/pull/1135) Add MantaSBT to Manta Runtime [MA]
+- [\#1137](https://github.com/Manta-Network/Manta/pull/1137) Add mantapay to manta runtime [MA]
+
+### Changed
+- [\#1126](https://github.com/Manta-Network/Manta/pull/1126) Unfilter outgoing assets extrinsic [MACA]
+
+### Fixed
+- [\#1121](https://github.com/Manta-Network/Manta/pull/1121) Cleanup Integration Test Import
+- [\#1129](https://github.com/Manta-Network/Manta/pull/1129) Unfilter parachain staking extrinsics [MA]
+- [\#1128](https://github.com/Manta-Network/Manta/pull/1128) fix round change when collatorset is empty + log in runtime [CA]
+- [\#1125](https://github.com/Manta-Network/Manta/pull/1125) Remove UtxoAccumulator from MantaSbt [MACA]
+
+## v4.0.8
+### Added
+- [\#1080](https://github.com/Manta-Network/Manta/pull/1080) Rust integration tests for Manta runtime [MACA]
+- [\#1109](https://github.com/Manta-Network/Manta/pull/1109) feat: add ledger total count api [CA]
+- [\#1087](https://github.com/Manta-Network/Manta/pull/1087) Manta runtime - add governance pallets [MA]
+- [\#1103](https://github.com/Manta-Network/Manta/pull/1103) Add xTokens outgoing transfers filter for MANTA asset [MA]
+- [\#1108](https://github.com/Manta-Network/Manta/pull/1108) Add tx-pause to Manta Runtime [MACA]
+
+### Changed
+- [\#1029](https://github.com/Manta-Network/Manta/pull/1029) Polkadot v0.9.37 [MACADO]
+- [\#1102](https://github.com/Manta-Network/Manta/pull/1102) Add MantaPay RPC to calamari-localdev [CA]
+- [\#1106](https://github.com/Manta-Network/Manta/pull/1106) Remove timeout for check_tests pipeline [MACA]
+- [\#1111](https://github.com/Manta-Network/Manta/pull/1111) Manta Staking Parameters [MA]
+- [\#1089](https://github.com/Manta-Network/Manta/pull/1089) Tune Tx-Payment Parameters for Manta Runtime [MA]
+- [\#1126](https://github.com/Manta-Network/Manta/pull/1126) Unfilter outgoing assets extrinsic [MACA]
+
+### Fixed
+- [\#1104](https://github.com/Manta-Network/Manta/pull/1104) Fix off by 1 erorrs in pull-ledger-diff rpc [MACA]
+- [\#1113](https://github.com/Manta-Network/Manta/pull/1113) Fix integration test compile options, deps cleanup & clippy [MACA]
+- [\#1112](https://github.com/Manta-Network/Manta/pull/1112) Manta assets genesis storage migration [MA]
+- [\#1121](https://github.com/Manta-Network/Manta/pull/1121) Cleanup Integration Test Import
+- [\#1129](https://github.com/Manta-Network/Manta/pull/1129) Unfilter parachain staking extrinsics [MA]
+- [\#1128](https://github.com/Manta-Network/Manta/pull/1128) fix round change when collatorset is empty + log in runtime [CA]
+
+### Removed
+- [\#1100](https://github.com/Manta-Network/Manta/pull/1100) Retire dolphin ci except publish draft release [DO]
+- [\#1099](https://github.com/Manta-Network/Manta/pull/1099) Remove SBT deprecated storage [CA]
+
+## v4.0.7
+### Changed
+- [\#1084](https://github.com/Manta-Network/Manta/pull/1084) Use safe-math in xcm `buy_weight` impl [MACA]
+- [\#1093](https://github.com/Manta-Network/Manta/pull/1093) Enable `democracy.external_propose_majority` on calamari [CA]
+- [\#1086](https://github.com/Manta-Network/Manta/pull/1086) Add SBT Registry [CADO]
+
+### Fixed
+- [\#1078](https://github.com/Manta-Network/Manta/pull/1078) Update stress benchmark test [CADO]
+
+## v4.0.6
+### Added
+- [\#1067](https://github.com/Manta-Network/Manta/pull/1067) Refactor manta genesis files, add `manta-testnet` [MA]
+
+### Changed
+- [\#1071](https://github.com/Manta-Network/Manta/pull/1071) Charge 0-asset XCM instructions as if they were 1-asset [MACADO]
+
+### Fixed
+- [\#1068](https://github.com/Manta-Network/Manta/pull/1068) Do not skip integration tests [CA]
+- [\#1069](https://github.com/Manta-Network/Manta/pull/1069) Enable manta runtime xcm tests [MA]
+
+## v4.0.5
+### Added
+- [\#1012](https://github.com/Manta-Network/Manta/pull/1012) Add zkSBTs [MACADO]
+- [\#1046](https://github.com/Manta-Network/Manta/pull/1046) Initial pull method [MACADO]
+- [\#1057](https://github.com/Manta-Network/Manta/pull/1057) Add Evm Allowlist Feature to SBT Pallet [CADO]
+- [\#1050](https://github.com/Manta-Network/Manta/pull/1050) XCMP, xTokens, Assets, AssetManager and Treasury for Manta [MACA]
+
+### Changed
+- [\#1053](https://github.com/Manta-Network/Manta/pull/1053) Minor: don't fail CI on congestion test failure
+- [\#1058](https://github.com/Manta-Network/Manta/pull/1058) Archive nodes as bootnodes to Manta genesis [MA]
+
+### Fixed
+- [\#1064](https://github.com/Manta-Network/Manta/pull/1064) add chain id [CA]
+
 ## v4.0.4
 ### Fixed
 - [\#1043](https://github.com/Manta-Network/Manta/pull/1043) Add self-bond filter condition when computing new set of collators [CA]

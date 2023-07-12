@@ -15,8 +15,9 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
-    NativeTokenExistentialDeposit, Origin, Runtime, KMA,
+    weights, xcm_config::SelfReserve, AssetManager, Assets, Balances,
+    EnsureRootOrThreeFourthsCouncil, NativeTokenExistentialDeposit, Runtime, RuntimeEvent,
+    RuntimeOrigin, TechnicalCollective, Timestamp, KMA,
 };
 
 use manta_primitives::{
@@ -27,13 +28,13 @@ use manta_primitives::{
     constants::{
         ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL, MANTA_PAY_PALLET_ID, MANTA_SBT_PALLET_ID,
     },
-    types::{AccountId, Balance, CalamariAssetId},
+    types::{AccountId, Balance, CalamariAssetId, Signature, Signer},
 };
 
 use frame_support::{
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{ConstU128, ConstU16, ConstU32},
+    traits::{AsEnsureOriginWithArg, ConstU128, ConstU16, ConstU32, EitherOfDiverse},
     PalletId,
 };
 
@@ -51,7 +52,7 @@ parameter_types! {
 }
 
 impl pallet_assets::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type AssetId = CalamariAssetId;
     type Currency = Balances;
@@ -65,6 +66,15 @@ impl pallet_assets::Config for Runtime {
     type Freezer = ();
     type Extra = ();
     type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
+    type RemoveItemsLimit = ConstU32<1000>;
+    type AssetIdParameter = CalamariAssetId;
+    #[cfg(feature = "runtime-benchmarks")]
+    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
+    #[cfg(not(feature = "runtime-benchmarks"))]
+    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureNever<AccountId>>;
+    type CallbackHandle = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
 }
 
 pub struct CalamariAssetRegistry;
@@ -85,7 +95,7 @@ impl AssetRegistry for CalamariAssetRegistry {
         is_sufficient: bool,
     ) -> DispatchResult {
         Assets::force_create(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             sp_runtime::MultiAddress::Id(AssetManager::account_id()),
             is_sufficient,
@@ -93,7 +103,7 @@ impl AssetRegistry for CalamariAssetRegistry {
         )?;
 
         Assets::force_set_metadata(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             metadata.name,
             metadata.symbol,
@@ -107,7 +117,7 @@ impl AssetRegistry for CalamariAssetRegistry {
         metadata: AssetStorageMetadata,
     ) -> DispatchResult {
         Assets::force_set_metadata(
-            Origin::root(),
+            RuntimeOrigin::root(),
             *asset_id,
             metadata.name,
             metadata.symbol,
@@ -162,12 +172,13 @@ impl AssetConfig<Runtime> for CalamariAssetConfig {
 }
 
 impl pallet_asset_manager::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type AssetId = CalamariAssetId;
     type Balance = Balance;
     type Location = AssetLocation;
     type AssetConfig = CalamariAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId>;
+    type SuspenderOrigin = EnsureRootOrThreeFourthsCouncil;
     type PalletId = AssetManagerPalletId;
     type WeightInfo = weights::pallet_asset_manager::SubstrateWeight<Runtime>;
 }
@@ -177,7 +188,7 @@ parameter_types! {
 }
 
 impl pallet_manta_pay::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
     type AssetConfig = CalamariAssetConfig;
     type PalletId = MantaPayPalletId;
@@ -188,11 +199,19 @@ parameter_types! {
 }
 
 impl pallet_manta_sbt::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type PalletId = MantaSbtPalletId;
     type Currency = Balances;
     type MintsPerReserve = ConstU16<5>;
-    type ReservePrice = ConstU128<{ 100_000 * KMA }>;
+    type ReservePrice = ConstU128<{ 5_000 * KMA }>;
     type SbtMetadataBound = ConstU32<300>;
+    type RegistryBound = ConstU32<300>;
+    type AdminOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>,
+    >;
+    type Now = Timestamp;
+    type Signature = Signature;
+    type PublicKey = Signer;
     type WeightInfo = weights::pallet_manta_sbt::SubstrateWeight<Runtime>;
 }

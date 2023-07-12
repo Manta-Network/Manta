@@ -83,13 +83,13 @@ use manta_pay::{
 use manta_primitives::assets::{self, AssetConfig, FungibleLedger as _};
 use manta_support::manta_pay::{
     asset_value_decode, asset_value_encode, fp_decode, fp_encode, id_from_field, AccountId, Asset,
-    AssetValue, FullIncomingNote, MTParametersError, NullifierCommitment, OutgoingNote,
-    ReceiverChunk, SenderChunk, StandardAssetId, TransferPost, Utxo, UtxoAccumulatorOutput,
-    UtxoItemHashError, UtxoMerkleTreePath, VerifyingContextError, Wrap, WrapPair,
+    AssetValue, Checkpoint, FullIncomingNote, InitialSyncResponse, MTParametersError,
+    NullifierCommitment, OutgoingNote, PullResponse, ReceiverChunk, SenderChunk, StandardAssetId,
+    TransferPost, Utxo, UtxoAccumulatorOutput, UtxoItemHashError, UtxoMerkleTreePath,
+    VerifyingContextError, Wrap, WrapPair,
 };
 use manta_util::codec::Encode;
 
-pub use manta_support::manta_pay::{Checkpoint, PullResponse, RawCheckpoint};
 pub use pallet::*;
 pub use weights::WeightInfo;
 
@@ -118,7 +118,7 @@ pub type FungibleLedgerError = assets::FungibleLedgerError<StandardAssetId, Asse
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use sp_runtime::traits::AccountIdConversion;
+    use sp_runtime::traits::{AccountIdConversion, Zero};
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
@@ -132,7 +132,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Asset Configuration
         type AssetConfig: AssetConfig<Self, AssetId = StandardAssetId, Balance = AssetValue>;
@@ -211,6 +211,13 @@ pub mod pallet {
                     && post.sink_accounts.is_empty(),
                 Error::<T>::InvalidShape
             );
+            if !post.receiver_posts[0].utxo.is_transparent {
+                ensure!(
+                    post.receiver_posts[0].utxo.public_asset == Asset::zero(),
+                    Error::<T>::UnrestrictedPublicAsset
+                );
+            }
+
             // Prevent ledger bloat from zero value transactions
             for source in post.sources.iter() {
                 ensure!(
@@ -236,6 +243,12 @@ pub mod pallet {
                     && post.sink_accounts.len() == 1,
                 Error::<T>::InvalidShape
             );
+            if !post.receiver_posts[0].utxo.is_transparent {
+                ensure!(
+                    post.receiver_posts[0].utxo.public_asset == Asset::zero(),
+                    Error::<T>::UnrestrictedPublicAsset
+                );
+            }
             for sink in post.sinks.iter() {
                 ensure!(asset_value_decode(*sink) > 0u128, Error::<T>::ZeroTransfer);
             }
@@ -270,6 +283,15 @@ pub mod pallet {
                     && post.sink_accounts.is_empty(),
                 Error::<T>::InvalidShape
             );
+            for post in post.receiver_posts.iter() {
+                if !post.utxo.is_transparent {
+                    ensure!(
+                        post.utxo.public_asset == Asset::zero(),
+                        Error::<T>::UnrestrictedPublicAsset
+                    );
+                }
+            }
+
             Self::post_transaction(Some(origin), vec![], vec![], post)
         }
 
@@ -371,6 +393,13 @@ pub mod pallet {
         ///
         /// An asset present in this transfer has already been spent.
         AssetSpent,
+
+        /// UnrestrictedPublicAsset
+        ///
+        /// The public asset of a receiver post utxo cannot be unrestricted,
+        /// Otherwise it gives a potential attacker control over the nullifier
+        /// value for no particular reason
+        UnrestrictedPublicAsset,
 
         /// Invalid UTXO Accumulator Output
         ///
@@ -559,6 +588,25 @@ pub mod pallet {
             Shards::<T>::contains_key(shard_index, max_receiver_index)
         }
 
+        /// Returns the diff of ledger state since the given `checkpoint` and `max_receivers` to
+        /// perform the initial synchronization.
+        #[inline]
+        pub fn initial_pull(checkpoint: Checkpoint, max_receivers: u64) -> InitialSyncResponse {
+            let (should_continue, receivers) =
+                Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
+            let utxo_data = receivers.into_iter().map(|receiver| receiver.0).collect();
+            let membership_proof_data = (0..=255)
+                .map(|i| ShardTrees::<T>::get(i).current_path)
+                .collect();
+            let nullifier_count = NullifierSetSize::<T>::get() as u128;
+            InitialSyncResponse {
+                should_continue,
+                utxo_data,
+                membership_proof_data,
+                nullifier_count,
+            }
+        }
+
         /// Pulls sender data from the ledger starting at the `sender_index`.
         #[inline]
         fn pull_senders(sender_index: usize, max_update_request: u64) -> (bool, SenderChunk) {
@@ -580,6 +628,20 @@ pub mod pallet {
             )
         }
 
+        /// Returns ledger total count
+        /// In the initial state of the ledger, the total value will be 256;
+        /// if we want to get an accurate value, we need to request `pull_receivers` to fix this value;
+        /// but a simple total count interface does not need to add more complicated logic.
+        #[inline]
+        pub fn pull_ledger_total_count() -> [u8; 16] {
+            let receivers_total = (0..=255)
+                .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128)
+                .sum::<u128>()
+                + 256u128;
+            let senders_total = NullifierSetSize::<T>::get() as u128;
+            asset_value_encode(receivers_total + senders_total)
+        }
+
         /// Returns the diff of ledger state since the given `checkpoint`, `max_receivers`, and
         /// `max_senders`.
         #[inline]
@@ -591,15 +653,12 @@ pub mod pallet {
             let (more_receivers, receivers) =
                 Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
             let (more_senders, senders) = Self::pull_senders(checkpoint.sender_index, max_senders);
-            let senders_receivers_total = (0..=255)
-                .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128)
-                .sum::<u128>()
-                + NullifierSetSize::<T>::get() as u128;
+
             PullResponse {
                 should_continue: more_receivers || more_senders,
                 receivers,
                 senders,
-                senders_receivers_total: asset_value_encode(senders_receivers_total),
+                senders_receivers_total: Self::pull_ledger_total_count(),
             }
         }
 

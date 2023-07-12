@@ -21,10 +21,13 @@
 
 pub mod migration;
 
+#[cfg(feature = "test-helpers")]
+pub mod test_helpers;
+
 use frame_support::{parameter_types, weights::Weight};
 use manta_primitives::{constants::WEIGHT_PER_NANOS, types::BlockNumber};
 use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
-use sp_runtime::{FixedPointNumber, Perquintill};
+use sp_runtime::{traits::Bounded, FixedPointNumber, Perquintill};
 
 // From https://github.com/paritytech/polkadot/pull/4332/files?diff=unified&w=1 @ runtime/common/src/lib.rs
 /// Macro to set a value (e.g. when using the `parameter_types` macro) to either a production value
@@ -63,7 +66,8 @@ parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
     /// The portion of the `NORMAL_DISPATCH_RATIO` that we adjust the fees with. Blocks filled less
     /// than this will decrease the weight and more will increase.
-    pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
+    pub const CalamariTargetBlockFullness: Perquintill = Perquintill::from_percent(50);
+    pub const MantaTargetBlockFullness: Perquintill = Perquintill::from_percent(25);
     /// The adjustment variable of the runtime. Higher values will cause `TargetBlockFullness` to
     /// change the fees more rapidly.
     pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(225, 100_000);
@@ -71,12 +75,25 @@ parameter_types! {
     /// that combined with `AdjustmentVariable`, we can recover from the minimum.
     /// See `multiplier_can_grow_from_zero`.
     pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 5_000u128);
+    pub MaximumMultiplier: Multiplier = Bounded::max_value();
 }
 
 /// Parameterized slow adjusting fee updated based on
 /// https://research.web3.foundation/en/latest/polkadot/overview/2-token-economics.html#-2.-slow-adjusting-mechanism
-pub type SlowAdjustingFeeUpdate<R> =
-    TargetedFeeAdjustment<R, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
+pub type CalamariSlowAdjustingFeeUpdate<R> = TargetedFeeAdjustment<
+    R,
+    CalamariTargetBlockFullness,
+    AdjustmentVariable,
+    MinimumMultiplier,
+    MaximumMultiplier,
+>;
+pub type MantaSlowAdjustingFeeUpdate<R> = TargetedFeeAdjustment<
+    R,
+    MantaTargetBlockFullness,
+    AdjustmentVariable,
+    MinimumMultiplier,
+    MaximumMultiplier,
+>;
 
 parameter_types! {
     /// Time to execute an empty block.
@@ -92,7 +109,7 @@ parameter_types! {
     ///   99th: 5_489_273
     ///   95th: 5_433_314
     ///   75th: 5_354_812
-    pub const BlockExecutionWeight: Weight = 5_346_284 * WEIGHT_PER_NANOS;
+    pub const BlockExecutionWeight: Weight = Weight::from_ref_time(WEIGHT_PER_NANOS.saturating_mul(5_346_284));
 }
 
 parameter_types! {
@@ -109,7 +126,7 @@ parameter_types! {
     ///   99th: 86_924
     ///   95th: 86_828
     ///   75th: 86_347
-    pub const ExtrinsicBaseWeight: Weight = 86_298 * WEIGHT_PER_NANOS;
+    pub const ExtrinsicBaseWeight: Weight = Weight::from_ref_time(WEIGHT_PER_NANOS.saturating_mul(98_974));
 }
 
 #[cfg(test)]

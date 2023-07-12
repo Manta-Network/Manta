@@ -33,6 +33,7 @@ jobs:
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
   build-runtimes:
+    timeout-minutes: 180
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-20.04
     env:
@@ -42,7 +43,6 @@ jobs:
         runtime:
           - name: calamari
           - name: manta
-          - name: dolphin
     steps:
       - uses: actions/checkout@v2
       - name: cache target dir
@@ -57,6 +57,7 @@ jobs:
         uses: chevdor/srtool-actions@v0.4.0
         with:
           image: paritytech/srtool
+          tag: 1.66.1
           chain: ${{ matrix.runtime.name }}
       - name: persist srtool digest
         run: >
@@ -77,6 +78,7 @@ jobs:
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
   build-node-current:
+    timeout-minutes: 180
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     needs: start-node-builder-current
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
@@ -87,7 +89,7 @@ jobs:
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
-          SCCACHE_VERSION: v0.2.15
+          SCCACHE_VERSION: v0.5.3
         run: |
           SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
           mkdir -p $HOME/.local/bin
@@ -118,7 +120,8 @@ jobs:
       - name: init
         run: |
           sudo apt update
-          sudo apt install -y pkg-config libssl-dev
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install stable
@@ -180,7 +183,6 @@ jobs:
         runtime:
           - name: calamari
           - name: manta
-          - name: dolphin
     if: startsWith(github.ref, 'refs/tags')
     steps:
       - uses: actions/checkout@v2

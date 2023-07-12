@@ -31,6 +31,7 @@ use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
 use jsonrpsee::RpcModule;
 pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
 
+use sc_consensus::ImportQueue;
 use sc_executor::WasmExecutor;
 use sc_network::{NetworkBlock, NetworkService};
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
@@ -79,20 +80,6 @@ impl sc_executor::NativeExecutionDispatch for CalamariRuntimeExecutor {
     }
 }
 
-/// Native Dolphin Parachain executor instance.
-pub struct DolphinRuntimeExecutor;
-impl sc_executor::NativeExecutionDispatch for DolphinRuntimeExecutor {
-    type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-
-    fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-        dolphin_runtime::api::dispatch(method, data)
-    }
-
-    fn native_version() -> sc_executor::NativeVersion {
-        dolphin_runtime::native_version()
-    }
-}
-
 /// We use wasm executor only now.
 pub type DefaultExecutorType = WasmExecutor<HostFunctions>;
 
@@ -100,7 +87,8 @@ pub type DefaultExecutorType = WasmExecutor<HostFunctions>;
 pub type Client<RuntimeApi> = TFullClient<Block, RuntimeApi, DefaultExecutorType>;
 
 /// Default Import Queue Type
-pub type ImportQueue<RuntimeApi> = sc_consensus::DefaultImportQueue<Block, Client<RuntimeApi>>;
+pub type DefaultImportQueue<RuntimeApi> =
+    sc_consensus::DefaultImportQueue<Block, Client<RuntimeApi>>;
 
 /// Full Transaction Pool Type
 pub type TransactionPool<RuntimeApi> = sc_transaction_pool::FullPool<Block, Client<RuntimeApi>>;
@@ -110,7 +98,7 @@ pub type PartialComponents<RuntimeApi> = sc_service::PartialComponents<
     Client<RuntimeApi>,
     TFullBackend<Block>,
     (),
-    ImportQueue<RuntimeApi>,
+    DefaultImportQueue<RuntimeApi>,
     TransactionPool<RuntimeApi>,
     (Option<Telemetry>, Option<TelemetryWorkerHandle>),
 >;
@@ -173,6 +161,7 @@ where
         // single step block import pipeline, after nimbus/aura seal, import block into client
         client.clone(),
         client.clone(),
+        backend.clone(),
         &task_manager.spawn_essential_handle(),
         config.prometheus_registry(),
         telemetry.as_ref().map(|telemetry| telemetry.handle()),
@@ -215,6 +204,7 @@ where
     BIC: FnOnce(
         ParaId,
         Arc<Client<RuntimeApi>>,
+        Arc<sc_client_db::Backend<Block>>,
         Option<&Registry>,
         Option<TelemetryHandle>,
         &TaskManager,
@@ -253,14 +243,15 @@ where
     let collator = parachain_config.role.is_authority();
     let prometheus_registry = parachain_config.prometheus_registry().cloned();
     let transaction_pool = params.transaction_pool.clone();
-    let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
-    let (network, system_rpc_tx, start_network) =
+    let import_queue = params.import_queue.service();
+
+    let (network, system_rpc_tx, tx_handler_controller, start_network) =
         sc_service::build_network(sc_service::BuildNetworkParams {
             config: &parachain_config,
             client: client.clone(),
             transaction_pool: transaction_pool.clone(),
             spawn_handle: task_manager.spawn_handle(),
-            import_queue: import_queue.clone(),
+            import_queue: params.import_queue,
             block_announce_validator_builder: Some(Box::new(|_| {
                 Box::new(block_announce_validator)
             })),
@@ -292,6 +283,7 @@ where
         backend: backend.clone(),
         network: network.clone(),
         system_rpc_tx,
+        tx_handler_controller,
         telemetry: telemetry.as_mut(),
     })?;
 
@@ -305,6 +297,7 @@ where
         let parachain_consensus = build_consensus(
             id,
             client.clone(),
+            backend,
             prometheus_registry.as_ref(),
             telemetry.as_ref().map(|t| t.handle()),
             &task_manager,
@@ -338,7 +331,6 @@ where
             relay_chain_interface,
             relay_chain_slot_duration,
             import_queue,
-            collator_options,
         })?;
     }
 
@@ -346,7 +338,7 @@ where
     Ok((task_manager, client))
 }
 
-/// Start a calamari/dolphin parachain node.
+/// Start a calamari parachain node.
 pub async fn start_parachain_node<RuntimeApi, FullRpc>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
@@ -405,7 +397,7 @@ where
         other: (_, _),
     } = new_partial::<RuntimeApi>(&config)?;
 
-    let (network, system_rpc_tx, network_starter) =
+    let (network, system_rpc_tx, tx_handler_controller, network_starter) =
         sc_service::build_network(sc_service::BuildNetworkParams {
             config: &config,
             client: client.clone(),
@@ -460,6 +452,7 @@ where
         backend,
         network,
         system_rpc_tx,
+        tx_handler_controller,
         telemetry: None,
     })?;
 

@@ -30,7 +30,7 @@ const SEED: u32 = 0;
 // existential deposit multiplier
 const ED_MULTIPLIER: u32 = 100;
 
-fn assert_has_event<T: Config>(generic_event: <T as Config>::Event) {
+fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
     frame_system::Pallet::<T>::assert_has_event(generic_event.into());
 }
 

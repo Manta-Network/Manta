@@ -16,16 +16,15 @@
 
 #![cfg(feature = "runtime-benchmarks")]
 
-use crate::{Call, Config, Event, Pallet};
+use crate::{Call, Config, Pallet};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
-use frame_support::traits::Get;
 use frame_system::{EventRecord, RawOrigin};
 use manta_primitives::assets::{AssetConfig, TestingDefault, UnitsPerSecond};
 use xcm::latest::prelude::*;
 
-fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
+fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
     let events = frame_system::Pallet::<T>::events();
-    let system_event: <T as frame_system::Config>::Event = generic_event.into();
+    let system_event: <T as frame_system::Config>::RuntimeEvent = generic_event.into();
     let EventRecord { event, .. } = &events[events.len() - 1];
     assert_eq!(event, &system_event);
 }
@@ -38,7 +37,7 @@ benchmarks! {
         let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
     }: _(RawOrigin::Root, location.clone(), metadata)
     verify {
-        assert_eq!(Pallet::<T>::asset_id_location(<T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get()), Some(location));
+        assert_eq!(Pallet::<T>::asset_id_location(crate::NextAssetId::<T>::get() - 1.into()), Some(location));
     }
 
     set_units_per_second {
@@ -95,7 +94,7 @@ benchmarks! {
         let some_valid_asset_id = <T as Config>::AssetId::from(assets_count);
     }: _(RawOrigin::Root, some_valid_asset_id, metadata.clone())
     verify {
-        assert_last_event::<T>(Event::AssetMetadataUpdated { asset_id: some_valid_asset_id, metadata }.into());
+        assert_last_event::<T>(crate::Event::AssetMetadataUpdated { asset_id: some_valid_asset_id, metadata }.into());
     }
 
     mint_asset {
@@ -114,13 +113,12 @@ benchmarks! {
         let some_valid_asset_id = <T as Config>::AssetId::from(assets_count);
     }: _(RawOrigin::Root, <T as Config>::AssetId::from(assets_count), beneficiary.clone(), <T as Config>::Balance::from(amount) )
     verify {
-        assert_last_event::<T>(Event::AssetMinted { asset_id: some_valid_asset_id, beneficiary, amount: <T as Config>::Balance::from(amount) }.into());
+        assert_last_event::<T>(crate::Event::AssetMinted { asset_id: some_valid_asset_id, beneficiary, amount: <T as Config>::Balance::from(amount) }.into());
     }
 
     set_min_xcm_fee {
         let assets_count = 1000;
         for i in 8..assets_count + 8 {
-
             let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
             let location = T::Location::from(location.clone());
             let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
@@ -138,6 +136,36 @@ benchmarks! {
     }: _(RawOrigin::Root, location.clone(), min_xcm_fee)
     verify {
         assert_eq!(Pallet::<T>::get_min_xcm_fee(location), Some(min_xcm_fee));
+    }
+
+    update_outgoing_filtered_assets {
+        let assets_count = 1000;
+        for i in 0..assets_count {
+            let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
+            let location = T::Location::from(location.clone());
+            let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
+            Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
+        }
+        let location: MultiLocation = MultiLocation::new(0, X1(Parachain(1)));
+    }: _(RawOrigin::Root, location.clone().into(), true)
+    verify {
+        assert_last_event::<T>(crate::Event::AssetLocationFilteredForOutgoingTransfers { filtered_location: location.into() }.into());
+    }
+
+    register_lp_asset {
+        let current_asset_id = crate::NextAssetId::<T>::get();
+        let assets_count = 10;
+        for i in 8..assets_count {
+            let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
+            let location = T::Location::from(location.clone());
+            let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
+            Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
+        }
+        let lp_metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
+    }: _(RawOrigin::Root, current_asset_id, current_asset_id + 1.into(), lp_metadata)
+    verify {
+        assert_eq!(Pallet::<T>::asset_id_pair_to_lp((current_asset_id, current_asset_id + 1.into())), Some(current_asset_id + 2.into()));
+        assert_eq!(Pallet::<T>::lp_to_asset_id_pair(current_asset_id + 2.into()), Some((current_asset_id, current_asset_id + 1.into())));
     }
 }
 

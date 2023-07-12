@@ -17,11 +17,7 @@
 //! Manta Protocol Constants
 
 use crate::types::Balance;
-use frame_support::{
-    parameter_types,
-    weights::{RuntimeDbWeight, Weight},
-    PalletId,
-};
+use frame_support::{parameter_types, weights::RuntimeDbWeight, PalletId};
 
 /// Calamari SS58 Prefix
 pub const CALAMARI_SS58PREFIX: u8 = 78;
@@ -41,12 +37,6 @@ pub const MANTA_DECIMAL: u8 = 18;
 /// Manta Token Symbol
 pub const MANTA_TOKEN_SYMBOL: &str = "MANTA";
 
-/// Dolphin Decimals
-pub const DOLPHIN_DECIMAL: u8 = 18;
-
-/// Dolphin Token Symbol
-pub const DOLPHIN_TOKEN_SYMBOL: &str = "DOL";
-
 /// Manta parachain time-related
 pub mod time {
     use crate::types::{BlockNumber, Moment};
@@ -55,12 +45,10 @@ pub mod time {
     ///
     /// This constant is currently set to 12 seconds.
     ///
-    /// This determines the average expected block time that we are targeting. Blocks will be
-    /// produced at a minimum duration defined by [`SLOT_DURATION`]. [`SLOT_DURATION`] is picked up
-    /// by [`pallet_timestamp`] which is in turn picked up by [`pallet_aura`] to implement the
-    /// `slot_duration` function.
-    ///
-    /// Change this to adjust the block time.
+    /// Determines the targeted average expected block time
+    /// It is currently used
+    /// - to inform staking inflation in pallet_parachain_staking
+    /// - to implement the obsolete `slot_duration()` AuraApi using the [`SLOT_DURATION`] constant
     pub const SECONDS_PER_BLOCK: Moment = 12;
 
     /// Milliseconds per Block
@@ -83,6 +71,9 @@ pub mod time {
 pub const ASSET_STRING_LIMIT: u32 = 50;
 
 /// Staking Pallet Identifier
+pub const LOTTERY_PALLET_ID: PalletId = PalletId(*b"LotryPot");
+
+/// Staking Pallet Identifier
 pub const STAKING_PALLET_ID: PalletId = PalletId(*b"PotStake");
 
 /// Treasury Pallet Identifier
@@ -97,6 +88,9 @@ pub const MANTA_PAY_PALLET_ID: PalletId = PalletId(*b"mantapay");
 /// Soul Bound NFT Pallet Identifier
 pub const MANTA_SBT_PALLET_ID: PalletId = PalletId(*b"mantasbt");
 
+/// Name Service Identifier
+pub const NAME_SERVICE_PALLET_ID: PalletId = PalletId(*b"nameserv");
+
 /// Test Default Asset Existential Deposit
 ///
 /// # Warning
@@ -107,13 +101,13 @@ pub const TEST_DEFAULT_ASSET_ED: Balance = 1;
 pub const TEST_DEFAULT_ASSET_ED2: Balance = 2;
 
 /// 1_000_000_000_000
-pub const WEIGHT_PER_SECOND: Weight = 1_000_000_000_000;
+pub const WEIGHT_PER_SECOND: u64 = 1_000_000_000_000;
 /// 1_000_000_000
-pub const WEIGHT_PER_MILLIS: Weight = WEIGHT_PER_SECOND / 1000;
+pub const WEIGHT_PER_MILLIS: u64 = WEIGHT_PER_SECOND / 1000;
 /// 1_000_000
-pub const WEIGHT_PER_MICROS: Weight = WEIGHT_PER_MILLIS / 1000;
+pub const WEIGHT_PER_MICROS: u64 = WEIGHT_PER_MILLIS / 1000;
 /// 1_000
-pub const WEIGHT_PER_NANOS: Weight = WEIGHT_PER_MICROS / 1000;
+pub const WEIGHT_PER_NANOS: u64 = WEIGHT_PER_MICROS / 1000;
 
 parameter_types! {
     /// By default, Substrate uses RocksDB, so this will be the weight used throughout
@@ -141,13 +135,14 @@ mod constants_tests {
     #[test]
     fn sanity_check_weight_per_time_constants() {
         use frame_support::weights::constants::{
-            WEIGHT_PER_MICROS as IMPORTED_WEIGHT_PER_MICROS,
-            WEIGHT_PER_MILLIS as IMPORTED_WEIGHT_PER_MILLIS,
-            WEIGHT_PER_NANOS as IMPORTED_WEIGHT_PER_NANOS,
-            WEIGHT_PER_SECOND as IMPORTED_WEIGHT_PER_SECOND,
+            WEIGHT_REF_TIME_PER_MICROS as IMPORTED_WEIGHT_PER_MICROS,
+            WEIGHT_REF_TIME_PER_MILLIS as IMPORTED_WEIGHT_PER_MILLIS,
+            WEIGHT_REF_TIME_PER_NANOS as IMPORTED_WEIGHT_PER_NANOS,
+            WEIGHT_REF_TIME_PER_SECOND as IMPORTED_WEIGHT_PER_SECOND,
         };
 
         assert_eq!(WEIGHT_PER_SECOND, IMPORTED_WEIGHT_PER_SECOND);
+        assert_ne!(WEIGHT_PER_SECOND, 0);
         assert_eq!(WEIGHT_PER_MILLIS, IMPORTED_WEIGHT_PER_MILLIS);
         assert_eq!(WEIGHT_PER_MICROS, IMPORTED_WEIGHT_PER_MICROS);
         assert_eq!(WEIGHT_PER_NANOS, IMPORTED_WEIGHT_PER_NANOS);

@@ -41,11 +41,11 @@ pub type AccountId = <Signer as IdentifyAccount>::AccountId;
 /// This index is used to look up accounts.
 pub type AccountIndex = u32;
 
+/// Manta Asset Id Type
+pub type MantaAssetId = u128;
+
 /// Calamari Asset Id Type
 pub type CalamariAssetId = u128;
-
-/// Dolphin Asset Id Type
-pub type DolphinAssetId = u128;
 
 /// Balance of an Account
 pub type Balance = u128;
@@ -67,3 +67,6 @@ pub type DigestItem = generic::DigestItem;
 
 /// Moment Type
 pub type Moment = u64;
+
+/// DEX pool ID.
+pub type PoolId = u128;

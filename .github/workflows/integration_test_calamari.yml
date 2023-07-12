@@ -17,7 +17,7 @@ env:
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
-  POLKADOT_BINARY: https://github.com/paritytech/polkadot/releases/download/v0.9.39-1/polkadot
+  POLKADOT_BINARY: https://github.com/paritytech/polkadot/releases/download/v0.9.42/polkadot
 jobs:
   print-rust-versions:
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
@@ -35,6 +35,7 @@ jobs:
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
   build-node-current:
+    timeout-minutes: 120
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
     needs: start-node-builder-current
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
@@ -45,7 +46,7 @@ jobs:
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
-          SCCACHE_VERSION: v0.2.15
+          SCCACHE_VERSION: v0.5.3
         run: |
           SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
           mkdir -p $HOME/.local/bin
@@ -76,12 +77,12 @@ jobs:
       - name: init
         run: |
           sudo apt update
-          sudo apt install -y pkg-config libssl-dev yarn
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
-          rustup toolchain install stable
-          rustup default stable
-          rustup update
+          rustup toolchain install nightly-2023-03-03
+          rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
       - name: build
         env:
@@ -360,44 +361,45 @@ jobs:
         name: test - calamari alice peered successfully
         run: |
           grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9921.log
-      # - name: append manta-pay storage
-      #   run: |
-      #     wget -P ${{ github.workspace }}/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
-      #     mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json ${{ github.workspace }}/Manta/tests/data/fork.json
-      #     cd ${{ github.workspace }}/Manta/tests
-      #     yarn install
-      #     yarn
-      #     node append_storage.js
-      #     cd ../../
-      #     mv ${{ github.workspace }}/Manta/tests/data/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
-      # - name: launch testnet
-      #   run: |
-      #     cd ${{ github.workspace }}/polkadot-launch
-      #     yarn install
-      #     yarn build
-      #     pm2 start dist/cli.js \
-      #       --name polkadot-launch \
-      #       --output ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log \
-      #       --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
-      #       --no-autorestart \
-      #       -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
-      # - name: run stress test
-      #   run: |
-      #     sleep 720
-      #     cd ${{ github.workspace }}/Manta/tests
-      #     yarn install
-      #     yarn
-      #     yarn stress_benchmark_test --address=ws://127.0.0.1:9921 --exit
-      # - name: stop testnet
-      #   run: |
-      #     cd ${{ github.workspace }}/polkadot-launch
-      #     pm2 stop polkadot-launch
-      # - if: always()
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: ${{ matrix.chain-spec.id }}-alice-stress.log
-      #     path: ${{ github.workspace }}/polkadot-launch/9921.log
+      - name: append manta-pay storage
+        run: |
+          wget -P ${{ github.workspace }}/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
+          mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json ${{ github.workspace }}/Manta/tests/data/fork.json
+          cd ${{ github.workspace }}/Manta/tests
+          yarn install
+          yarn
+          node append_storage.js
+          cd ../../
+          mv ${{ github.workspace }}/Manta/tests/data/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
+      - name: launch testnet
+        run: |
+          cd ${{ github.workspace }}/polkadot-launch
+          yarn install
+          yarn build
+          pm2 start dist/cli.js \
+            --name polkadot-launch \
+            --output ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
+            --no-autorestart \
+            -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
+      - name: run stress test
+        run: |
+          sleep 720
+          cd ${{ github.workspace }}/Manta/tests
+          yarn install
+          yarn
+          yarn stress_benchmark_test --address=ws://127.0.0.1:9921 --exit
+      - name: stop testnet
+        run: |
+          cd ${{ github.workspace }}/polkadot-launch
+          pm2 stop polkadot-launch
+      - if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.chain-spec.id }}-alice-stress.log
+          path: ${{ github.workspace }}/polkadot-launch/9921.log
   docker-image-test:
+    timeout-minutes: 120
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
     needs: [build-node-current, start-docker-image-tester]
     runs-on: ubuntu-20.04

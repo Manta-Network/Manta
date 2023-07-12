@@ -104,6 +104,21 @@ pub struct OldAssetRegistrarMetadata {
     pub is_sufficient: bool,
 }
 
+type PreUpgradeTypes<T> = (
+    Vec<(OldAssetId, AssetLocation)>,
+    Vec<(AssetLocation, OldAssetId)>,
+    Vec<(OldAssetId, OldAssetRegistrarMetadata)>,
+    Vec<(OldAssetId, u128)>,
+    u32,
+    Vec<AssetMapKVP<T>>,
+    Vec<(
+        OldAssetId,
+        <T as frame_system::Config>::AccountId,
+        AssetAccountOf<T, ()>,
+    )>,
+    Vec<MetadataMapKVP<T>>,
+);
+
 pub const INITIAL_PALLET_ASSETS_MANAGER_VERSION: u16 = 1;
 pub const INITIAL_PALLET_ASSETS_VERSION: u16 = 0;
 
@@ -125,7 +140,7 @@ where
             || assets_storage_version != INITIAL_PALLET_ASSETS_VERSION
         {
             log::info!("Aborting migration due to unexpected on-chain storage versions for pallet-assets-manager: {:?} and pallet-assets: {:?}. Expectation was: {:?} and {:?}.", asset_manager_storage_version, assets_storage_version, INITIAL_PALLET_ASSETS_MANAGER_VERSION, INITIAL_PALLET_ASSETS_VERSION );
-            return T::DbWeight::get().reads(num_reads as Weight);
+            return T::DbWeight::get().reads(num_reads);
         }
 
         // AssetIdLocation
@@ -253,8 +268,8 @@ where
             Some(value) => value,
             None => {
                 return T::DbWeight::get()
-                    .reads(num_reads as Weight)
-                    .saturating_add(T::DbWeight::get().writes(num_writes as Weight));
+                    .reads(num_reads)
+                    .saturating_add(T::DbWeight::get().writes(num_writes as u64));
             }
         };
         let new_value: NewAssetId = value as NewAssetId;
@@ -350,14 +365,12 @@ where
         log::info!(target: "assets", "✅ Storage migration for Assets has been executed successfully and storage version has been update to: {:?}.", INITIAL_PALLET_ASSETS_VERSION + 1);
 
         T::DbWeight::get()
-            .reads(num_reads as Weight)
-            .saturating_add(T::DbWeight::get().writes(num_writes as Weight))
+            .reads(num_reads)
+            .saturating_add(T::DbWeight::get().writes(num_writes as u64))
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
-        use frame_support::traits::OnRuntimeUpgradeHelpersExt;
-
+    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
         let asset_manager_storage_version =
             <pallet_asset_manager::Pallet<T> as GetStorageVersion>::on_chain_storage_version();
         if asset_manager_storage_version != INITIAL_PALLET_ASSETS_MANAGER_VERSION {
@@ -390,13 +403,12 @@ where
             .count(),
             0
         );
-        let stored_data_old: Vec<_> =
+        let asset_id_location_stored_data_old: Vec<_> =
             storage_key_iter::<OldAssetId, AssetLocation, Blake2_128Concat>(
                 pallet_prefix,
                 storage_item_prefix,
             )
             .collect();
-        Self::set_temp_storage(stored_data_old, "asset_id_location_stored_data_old");
 
         // LocationAssetId
 
@@ -410,13 +422,12 @@ where
             .count(),
             0
         );
-        let stored_data_old: Vec<_> =
+        let location_asset_id_stored_data_old: Vec<_> =
             storage_key_iter::<AssetLocation, OldAssetId, Blake2_128Concat>(
                 pallet_prefix,
                 storage_item_prefix,
             )
             .collect();
-        Self::set_temp_storage(stored_data_old, "location_asset_id_stored_data_old");
 
         // AssetIdMetadata
 
@@ -430,13 +441,12 @@ where
             .count(),
             0
         );
-        let stored_data_old: Vec<_> = storage_key_iter::<
-            OldAssetId,
-            OldAssetRegistrarMetadata,
-            Blake2_128Concat,
-        >(pallet_prefix, storage_item_prefix)
-        .collect();
-        Self::set_temp_storage(stored_data_old, "asset_id_metadata_stored_data_old");
+        let asset_id_metadata_stored_data_old: Vec<_> =
+            storage_key_iter::<OldAssetId, OldAssetRegistrarMetadata, Blake2_128Concat>(
+                pallet_prefix,
+                storage_item_prefix,
+            )
+            .collect();
 
         // UnitsPerSecond
 
@@ -450,21 +460,20 @@ where
             .count(),
             0
         );
-        let stored_data_old: Vec<_> = storage_key_iter::<OldAssetId, u128, Blake2_128Concat>(
-            pallet_prefix,
-            storage_item_prefix,
-        )
+        let units_per_sec_stored_data_old: Vec<_> = storage_key_iter::<
+            OldAssetId,
+            u128,
+            Blake2_128Concat,
+        >(pallet_prefix, storage_item_prefix)
         .collect();
-        Self::set_temp_storage(stored_data_old, "units_per_sec_stored_data_old");
 
         // NextAssetId
 
         let pallet_prefix: &[u8] = b"AssetManager";
         let storage_item_prefix: &[u8] = b"NextAssetId";
         assert!(get_storage_value::<NewAssetId>(pallet_prefix, storage_item_prefix, &[]).is_none());
-        let next_asset_id: OldAssetId =
+        let old_next_asset_id: OldAssetId =
             get_storage_value::<OldAssetId>(pallet_prefix, storage_item_prefix, &[]).unwrap();
-        Self::set_temp_storage(next_asset_id, "next_asset_id");
 
         // Asset
 
@@ -483,7 +492,7 @@ where
             .count(),
             0
         );
-        let stored_data_old: Vec<_> = storage_key_iter::<
+        let asset_map_stored_data_old: Vec<_> = storage_key_iter::<
             OldAssetId,
             pallet_assets::AssetDetails<
                 <T as pallet_assets::Config>::Balance,
@@ -493,7 +502,6 @@ where
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
-        Self::set_temp_storage(stored_data_old, "asset_map_stored_data_old");
 
         // Account
 
@@ -502,11 +510,10 @@ where
             stored_data_new.push(kvp);
         });
         assert_eq!(stored_data_new.len(), 0);
-        let mut stored_data_old: Vec<_> = Vec::new();
+        let mut account_map_stored_data_old: Vec<_> = Vec::new();
         old::Account::<T, ()>::iter().for_each(|kvp| {
-            stored_data_old.push(kvp);
+            account_map_stored_data_old.push(kvp);
         });
-        Self::set_temp_storage(stored_data_old, "account_map_stored_data_old");
 
         // Metadata
 
@@ -524,7 +531,7 @@ where
             .count(),
             0
         );
-        let stored_data_old: Vec<_> = storage_key_iter::<
+        let metadata_map_stored_data_old: Vec<_> = storage_key_iter::<
             OldAssetId,
             pallet_assets::AssetMetadata<
                 DepositBalanceOf<T>,
@@ -533,15 +540,22 @@ where
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
-        Self::set_temp_storage(stored_data_old, "metadata_map_stored_data_old");
 
-        Ok(())
+        Ok((
+            asset_id_location_stored_data_old,
+            location_asset_id_stored_data_old,
+            asset_id_metadata_stored_data_old,
+            units_per_sec_stored_data_old,
+            old_next_asset_id,
+            asset_map_stored_data_old,
+            account_map_stored_data_old,
+            metadata_map_stored_data_old,
+        )
+            .encode())
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
-        use frame_support::traits::OnRuntimeUpgradeHelpersExt;
-
+    fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
         let asset_manager_storage_version =
             <pallet_asset_manager::Pallet<T> as GetStorageVersion>::on_chain_storage_version();
         if asset_manager_storage_version != INITIAL_PALLET_ASSETS_MANAGER_VERSION + 1 {
@@ -562,6 +576,17 @@ where
         // with the old storage keys, as the new u128 asset-id
         // would still decode into the old u32 values.
 
+        let (
+            asset_id_location_stored_data_old,
+            location_asset_id_stored_data_old,
+            asset_id_metadata_stored_data_old,
+            units_per_sec_stored_data_old,
+            old_next_asset_id,
+            asset_map_stored_data_old,
+            account_map_stored_data_old,
+            metadata_map_stored_data_old,
+        ): PreUpgradeTypes<T> =
+            Decode::decode(&mut &state[..]).expect("pre_upgrade provides a valid state; qed");
         // AssetIdLocation
 
         let pallet_prefix: &[u8] = b"AssetManager";
@@ -572,13 +597,16 @@ where
                 storage_item_prefix,
             )
             .collect();
-        let stored_data_old: Vec<(OldAssetId, AssetLocation)> =
-            Self::get_temp_storage("asset_id_location_stored_data_old").unwrap();
-        assert_eq!(stored_data_old.len(), stored_data_new.len());
-        stored_data_old.iter().for_each(|(key, value)| {
-            let check = (*key as NewAssetId, value.clone());
-            assert!(stored_data_new.contains(&check));
-        });
+        assert_eq!(
+            asset_id_location_stored_data_old.len(),
+            stored_data_new.len()
+        );
+        asset_id_location_stored_data_old
+            .iter()
+            .for_each(|(key, value)| {
+                let check = (*key as NewAssetId, value.clone());
+                assert!(stored_data_new.contains(&check));
+            });
         log::info!("✅ Storage migration for AssetManager's AssetIdLocation storage item has been executed successfully.");
 
         let pallet_prefix: &[u8] = b"AssetManager";
@@ -589,13 +617,16 @@ where
                 storage_item_prefix,
             )
             .collect();
-        let stored_data_old: Vec<(AssetLocation, OldAssetId)> =
-            Self::get_temp_storage("location_asset_id_stored_data_old").unwrap();
-        assert_eq!(stored_data_old.len(), stored_data_new.len());
-        stored_data_old.iter().for_each(|(key, value)| {
-            let check = (key.clone(), *value as NewAssetId);
-            assert!(stored_data_new.contains(&check));
-        });
+        assert_eq!(
+            location_asset_id_stored_data_old.len(),
+            stored_data_new.len()
+        );
+        location_asset_id_stored_data_old
+            .iter()
+            .for_each(|(key, value)| {
+                let check = (key.clone(), *value as NewAssetId);
+                assert!(stored_data_new.contains(&check));
+            });
         log::info!("✅ Storage migration for AssetManager's LocationAssetId storage item has been executed successfully.");
 
         // AssetIdMetadata
@@ -608,25 +639,28 @@ where
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
-        let stored_data_old: Vec<(OldAssetId, OldAssetRegistrarMetadata)> =
-            Self::get_temp_storage("asset_id_metadata_stored_data_old").unwrap();
-        assert_eq!(stored_data_old.len(), stored_data_new.len());
-        stored_data_old.iter().for_each(|(key, value)| {
-            let new_storage = (
-                *key as NewAssetId,
-                AssetRegistryMetadata {
-                    metadata: AssetStorageMetadata {
-                        name: value.name.clone(),
-                        symbol: value.symbol.clone(),
-                        decimals: value.decimals,
-                        is_frozen: value.is_frozen,
+        assert_eq!(
+            asset_id_metadata_stored_data_old.len(),
+            stored_data_new.len()
+        );
+        asset_id_metadata_stored_data_old
+            .iter()
+            .for_each(|(key, value)| {
+                let new_storage = (
+                    *key as NewAssetId,
+                    AssetRegistryMetadata {
+                        metadata: AssetStorageMetadata {
+                            name: value.name.clone(),
+                            symbol: value.symbol.clone(),
+                            decimals: value.decimals,
+                            is_frozen: value.is_frozen,
+                        },
+                        min_balance: value.min_balance,
+                        is_sufficient: value.is_sufficient,
                     },
-                    min_balance: value.min_balance,
-                    is_sufficient: value.is_sufficient,
-                },
-            );
-            assert!(stored_data_new.contains(&new_storage));
-        });
+                );
+                assert!(stored_data_new.contains(&new_storage));
+            });
         log::info!("✅ Storage migration for AssetManager's AssetIdMetadata storage item has been executed successfully.");
 
         // UnitsPerSecond
@@ -638,13 +672,13 @@ where
             storage_item_prefix,
         )
         .collect();
-        let stored_data_old: Vec<(OldAssetId, u128)> =
-            Self::get_temp_storage("units_per_sec_stored_data_old").unwrap();
-        assert_eq!(stored_data_old.len(), stored_data_new.len());
-        stored_data_old.iter().for_each(|(key, value)| {
-            let check = (*key as NewAssetId, *value);
-            assert!(stored_data_new.contains(&check));
-        });
+        assert_eq!(units_per_sec_stored_data_old.len(), stored_data_new.len());
+        units_per_sec_stored_data_old
+            .iter()
+            .for_each(|(key, value)| {
+                let check = (*key as NewAssetId, *value);
+                assert!(stored_data_new.contains(&check));
+            });
         log::info!("✅ Storage migration for AssetManager's UnitsPerSecond storage item has been executed successfully.");
 
         // NextAssetId
@@ -653,7 +687,6 @@ where
         let storage_item_prefix: &[u8] = b"NextAssetId";
         let next_asset_id: NewAssetId =
             get_storage_value::<NewAssetId>(pallet_prefix, storage_item_prefix, &[]).unwrap();
-        let old_next_asset_id: u32 = Self::get_temp_storage("next_asset_id").unwrap();
         assert_eq!(old_next_asset_id as u128, next_asset_id);
         log::info!("✅ Storage migration for AssetManager's NextAssetId storage item has been executed successfully.");
 
@@ -671,10 +704,8 @@ where
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
-        let stored_data_old: Vec<AssetMapKVP<T>> =
-            Self::get_temp_storage("asset_map_stored_data_old").unwrap();
-        assert_eq!(stored_data_old.len(), stored_data_new.len());
-        stored_data_old.iter().for_each(|(key, value)| {
+        assert_eq!(asset_map_stored_data_old.len(), stored_data_new.len());
+        asset_map_stored_data_old.iter().for_each(|(key, value)| {
             let check = (*key as NewAssetId, value.clone());
             assert!(stored_data_new.contains(&check));
         });
@@ -688,13 +719,8 @@ where
         Account::<T, ()>::iter().for_each(|(asset_id_key, account_id_key, value)| {
             stored_data_new.push((asset_id_key, account_id_key, value));
         });
-        let stored_data_old: Vec<(
-            OldAssetId,
-            <T as frame_system::Config>::AccountId,
-            AssetAccountOf<T, ()>,
-        )> = Self::get_temp_storage("account_map_stored_data_old").unwrap();
-        assert_eq!(stored_data_old.len(), stored_data_new.len());
-        stored_data_old
+        assert_eq!(account_map_stored_data_old.len(), stored_data_new.len());
+        account_map_stored_data_old
             .iter()
             .for_each(|(asset_id_key, account_id_key, value)| {
                 let check = (
@@ -721,13 +747,13 @@ where
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
-        let stored_data_old: Vec<MetadataMapKVP<T>> =
-            Self::get_temp_storage("metadata_map_stored_data_old").unwrap();
-        assert_eq!(stored_data_old.len(), stored_data_new.len());
-        stored_data_old.iter().for_each(|(key, value)| {
-            let check = (*key as NewAssetId, value.clone());
-            assert!(stored_data_new.contains(&check));
-        });
+        assert_eq!(metadata_map_stored_data_old.len(), stored_data_new.len());
+        metadata_map_stored_data_old
+            .iter()
+            .for_each(|(key, value)| {
+                let check = (*key as NewAssetId, value.clone());
+                assert!(stored_data_new.contains(&check));
+            });
         log::info!(
             "✅ Storage migration for Assets' Metadata storage item has been executed successfully."
         );

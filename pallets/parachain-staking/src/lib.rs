@@ -58,7 +58,7 @@ pub mod weights;
 
 #[cfg(any(test, feature = "runtime-benchmarks"))]
 #[allow(clippy::all)]
-mod benchmarks;
+pub mod benchmarks;
 #[cfg(test)]
 #[allow(clippy::all)]
 mod mock;
@@ -121,14 +121,14 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config + manta_collator_selection::Config {
         /// Overarching event type
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// The currency type
         type Currency: Currency<Self::AccountId>
             + ReservableCurrency<Self::AccountId>
             + LockableCurrency<Self::AccountId>
             + Inspect<Self::AccountId>;
         /// The origin for monetary governance
-        type MonetaryGovernanceOrigin: EnsureOrigin<Self::Origin>;
+        type MonetaryGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
         /// Minimum number of blocks per round
         #[pallet::constant]
         type MinBlocksPerRound: Get<u32>;
@@ -649,7 +649,7 @@ pub mod pallet {
                 );
                 candidate_count = candidate_count.saturating_add(1u32);
                 if let Err(error) = <Pallet<T>>::join_candidates(
-                    T::Origin::from(Some(candidate.clone()).into()),
+                    T::RuntimeOrigin::from(Some(candidate.clone()).into()),
                     balance,
                     candidate_count,
                 ) {
@@ -677,7 +677,7 @@ pub mod pallet {
                     0u32
                 };
                 if let Err(error) = <Pallet<T>>::delegate(
-                    T::Origin::from(Some(delegator.clone()).into()),
+                    T::RuntimeOrigin::from(Some(delegator.clone()).into()),
                     target.clone(),
                     balance,
                     cd_count,
@@ -1440,7 +1440,7 @@ pub mod pallet {
                     <Error<T>>::InsufficientBalance
                 );
                 if let Err(error) = <Pallet<T>>::join_candidates(
-                    T::Origin::from(Some(candidate.clone()).into()),
+                    T::RuntimeOrigin::from(Some(candidate.clone()).into()),
                     whitelist_bond,
                     candidate_count,
                 ) {
@@ -1570,7 +1570,7 @@ pub mod pallet {
 
             // don't underflow uint
             if now < delay {
-                return 0u64.into();
+                return Weight::zero();
             }
 
             let paid_for_round = now.saturating_sub(delay);
@@ -1585,7 +1585,7 @@ pub mod pallet {
                 }
                 result.1 // weight consumed by pay_one_collator_reward
             } else {
-                0u64.into()
+                Weight::zero()
             }
         }
 
@@ -1607,7 +1607,7 @@ pub mod pallet {
                 // 2. we called pay_one_collator_reward when we were actually done with deferred
                 //    payouts
                 log::warn!("pay_one_collator_reward called with no <Points<T>> for the round!");
-                return (None, 0u64.into());
+                return (None, Weight::zero());
             }
 
             let mint = |amt: BalanceOf<T>, to: T::AccountId| {
@@ -1627,7 +1627,7 @@ pub mod pallet {
             if let Some((collator, pts)) =
                 <AwardedPts<T>>::iter_prefix(paid_for_round).drain().next()
             {
-                let mut extra_weight = 0;
+                let mut extra_weight = Weight::zero();
                 let pct_due = Perbill::from_rational(pts, total_points);
                 let total_paid = pct_due * payout_info.total_staking_reward;
                 let mut amt_due = total_paid;
@@ -1672,7 +1672,7 @@ pub mod pallet {
             } else {
                 // Note that we don't clean up storage here; it is cleaned up in
                 // handle_delayed_payouts()
-                (None, 0u64.into())
+                (None, Weight::zero())
             }
         }
 
@@ -1711,7 +1711,7 @@ pub mod pallet {
             // choose the top TotalSelected qualified candidates, ordered by stake
             let collators = Self::compute_top_candidates();
             if collators.is_empty() {
-                // SELECTION FAILED TO SELECT >=1 COLLATOR => select collators from previous round
+                log::error!("FAILED TO SELECT >=1 COLLATOR => using collators from previous round");
                 let last_round = now.saturating_sub(1u32);
                 let mut total_per_candidate: BTreeMap<T::AccountId, BalanceOf<T>> = BTreeMap::new();
                 // set this round AtStake to last round AtStake

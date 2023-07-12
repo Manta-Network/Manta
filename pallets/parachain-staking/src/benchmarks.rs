@@ -26,20 +26,21 @@ use frame_support::traits::{tokens::fungible::Inspect, Currency, Get, OnFinalize
 use frame_system::RawOrigin;
 use sp_runtime::{Perbill, Percent};
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
+
 /// Minimum collator candidate stake
-fn min_candidate_stk<T: Config>() -> BalanceOf<T> {
+pub fn min_candidate_stk<T: Config>() -> BalanceOf<T> {
     <<T as Config>::MinCandidateStk as Get<BalanceOf<T>>>::get()
 }
 
 /// Minimum delegator stake
-fn min_delegator_stk<T: Config>() -> BalanceOf<T> {
+pub fn min_delegator_stk<T: Config>() -> BalanceOf<T> {
     <<T as Config>::MinDelegatorStk as Get<BalanceOf<T>>>::get()
 }
 
 /// Create a funded user.
 /// Extra + min_candidate_stk is total minted funds
 /// Returns tuple (id, balance)
-fn create_funded_user<T: Config>(
+pub fn create_funded_user<T: Config>(
     string: &'static str,
     n: u32,
     extra: BalanceOf<T>,
@@ -54,7 +55,7 @@ fn create_funded_user<T: Config>(
 }
 
 /// Create a funded delegator.
-fn create_funded_delegator<T: Config>(
+pub fn create_funded_delegator<T: Config>(
     string: &'static str,
     n: u32,
     extra: BalanceOf<T>,
@@ -79,7 +80,7 @@ fn create_funded_delegator<T: Config>(
 }
 
 /// Create a funded collator.
-fn create_funded_collator<T: Config>(
+pub fn create_funded_collator<T: Config>(
     string: &'static str,
     n: u32,
     extra: BalanceOf<T>,
@@ -102,7 +103,7 @@ fn create_funded_collator<T: Config>(
 }
 
 // Simulate staking on finalize by manually setting points
-fn parachain_staking_on_finalize<T: Config>(author: T::AccountId) {
+pub fn parachain_staking_on_finalize<T: Config>(author: T::AccountId) {
     let now = <Round<T>>::get().current;
     let score_plus_20 = <AwardedPts<T>>::get(now, &author).saturating_add(20);
     <AwardedPts<T>>::insert(now, author, score_plus_20);
@@ -110,7 +111,7 @@ fn parachain_staking_on_finalize<T: Config>(author: T::AccountId) {
 }
 
 /// Run to end block and author
-fn roll_to_and_author<T: Config>(round_delay: u32, author: T::AccountId) {
+pub fn roll_to_and_author<T: Config>(round_delay: u32, author: T::AccountId) {
     let total_rounds = round_delay + 1u32;
     let round_length: T::BlockNumber = Pallet::<T>::round().length.into();
     let mut now = <frame_system::Pallet<T>>::block_number() + 1u32.into();

@@ -4,11 +4,10 @@ on:
     inputs:
       reference_binary:
         description: The link to the reference binary, which should be the previous release.
-        default: https://github.com/Manta-Network/Manta/releases/download/v4.0.3/manta
         required: true
       chain:
         description: The name of the chain under test. Usually, you would pass a local chain
-        default: calamari-local
+        default: manta-local
         required: true
 env:
   AWS_REGION: us-east-1
@@ -20,6 +19,7 @@ env:
   REF_BINARY: ${{github.event.inputs.reference_binary}}
 jobs:
   start-checks:
+    timeout-minutes: 120
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -42,7 +42,7 @@ jobs:
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
-          SCCACHE_VERSION: v0.2.15
+          SCCACHE_VERSION: v0.5.3
         run: |
           SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
           mkdir -p $HOME/.local/bin
@@ -72,11 +72,13 @@ jobs:
         run: sccache --start-server
       - name: init
         run: |
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
-          rustup toolchain install stable
-          rustup default stable
-          rustup update
+          rustup toolchain install nightly-2023-03-03
+          rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
       - name: Build New Binary
         env:
@@ -98,11 +100,11 @@ jobs:
       - name: Start old node
         run: |
           echo Running on $CHAIN
-          $HOME/manta-old --chain=$CHAIN --port 30444 --ws-port 9944 -- --chain kusama &
+          $HOME/manta-old --chain=$CHAIN --port 30444 --base-path ./temp1 --ws-port 9944 -- --chain kusama &
       - name: Start new node
         run: |
           echo Running on $CHAIN
-          target/release/manta --chain=$CHAIN --port 30555 --ws-port 9955 -- --chain kusama &
+          target/release/manta --chain=$CHAIN --port 30555 --base-path ./temp2 --ws-port 9955 -- --chain kusama &
       - name: Prepare output
         run: |
           VERSION=$(./target/release/manta --version)
@@ -112,10 +114,11 @@ jobs:
           echo "Chain: $CHAIN" >> output.txt
           echo "----------------------------------------------------------------------" >> output.txt
       - name: Pull polkadot-js-tools image
-        run: docker pull jacogr/polkadot-js-tools
+        run: docker pull wilwade/polkadot-js-tools
+
       - name: Compare the metadata
         run: |
-          CMD="docker run --pull always --network host jacogr/polkadot-js-tools metadata ws://localhost:9944 ws://localhost:9955"
+          CMD="docker run --pull always --network host wilwade/polkadot-js-tools metadata ws://localhost:9944 ws://localhost:9955"
           echo -e "Running:\n$CMD"
           $CMD >> output.txt
           sed -z -i 's/\n\n/\n/g' output.txt
