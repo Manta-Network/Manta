@@ -186,11 +186,38 @@ jobs:
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /usr/share/dotnet
           df -h
-      - name: create-chainspec
+      - name: build benchmarking binary
         run: |
           RUSTC_BOOTSTRAP=1 cargo build --release --features runtime-benchmarks
+      - name: create-calamari-chainspec
+        run: |
           ${{ github.workspace }}/target/release/manta build-spec --chain calamari-dev --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
-      - name: append manta-pay storage
+      - name: append manta-pay storage for Calamari
+        run: |
+          wget -P ${{ github.workspace }}/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
+          cd ${{ github.workspace }}/tests
+          yarn install
+          yarn
+          node append_storage.js
+      - name: Run live benchmarks test
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          SCCACHE_CACHE_SIZE: 120G
+          SCCACHE_DIR: /home/runner/.cache/sccache
+        run: |
+          ${{ github.workspace }}/target/release/manta \
+          benchmark \
+            pallet \
+            --chain=${{ github.workspace }}/tests/data/fork.json \
+            --pallet=* \
+            --extrinsic=* \
+            --repeat=1 \
+            --steps=2
+      - name: create-manta-dev-chainspec
+        run: |
+          ${{ github.workspace }}/target/release/manta build-spec --chain manta-dev --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
+      - name: append manta-pay storage for Manta
         run: |
           wget -P ${{ github.workspace }}/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
           cd ${{ github.workspace }}/tests
