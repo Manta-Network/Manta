@@ -190,7 +190,7 @@ fn xcmp_transact_from_sibling_tests() {
         id: ALICE.into(),
     });
     let alice_derived_account_on_b =
-        xcm_builder::Account32Hash::<RelayNetwork, AccountId>::convert_ref(&MultiLocation {
+        xcm_builder::Account32Hash::<RelayNetwork, AccountId>::convert_ref(MultiLocation {
             parents: 1,
             interior: X2(
                 Parachain(PARA_A_ID),
