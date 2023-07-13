@@ -422,9 +422,8 @@ jobs:
               existingComment = newComment;
             }
             // Update comment text with CI status
-            const status = '${{ job.steps.congestion_test.outcome }}';
             echo "---------------------------------------------------------"
-            echo status
+            echo '${{ job.steps.congestion_test.outcome }}'
             echo "---------------------------------------------------------"
             const statusIcon = status === 'success' ? ':white_check_mark:' : ':warning:';
             const above = status === 'success' ? 'is above' : 'is NOT above';
