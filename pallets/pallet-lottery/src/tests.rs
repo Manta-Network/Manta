@@ -637,9 +637,13 @@ fn multiround_withdraw_partial_deposit_works2() {
                 quarter_balance
             ));
             roll_to_round_begin(3);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(3, *BOB, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(3, *CHARLIE, 20);
             assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
             assert_eq!(2, Lottery::withdrawal_request_queue().len());
             roll_to_round_begin(4);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(4, *BOB, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(4, *CHARLIE, 20);
             assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
             assert_eq!(0, Lottery::unlocked_unstaking_funds());
             assert!(Lottery::withdrawal_request_queue().is_empty());

@@ -43,6 +43,12 @@ impl<T: Config> Pallet<T> {
             new_deposit
         );
         if new_deposit < <T as pallet_parachain_staking::Config>::MinDelegation::get() {
+            log::trace!(function_name!());
+            log::debug!(
+                "Leftover unstaking funds of {:?} below limit for restaking of {:?}. Keeping in pallet",
+                new_deposit,
+                Self::min_deposit(),
+            );
             return vec![];
         }
         let mut deposits: Vec<(T::AccountId, BalanceOf<T>)> = vec![];
