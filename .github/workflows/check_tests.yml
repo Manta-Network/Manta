@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [manta]
   push:
-    branches: [manta]
+    branches: [ghzlatarev/cong-test]
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -423,6 +423,9 @@ jobs:
             }
             // Update comment text with CI status
             const status = '${{ job.steps.congestion_test.outcome }}';
+            echo "---------------------------------------------------------"
+            echo status
+            echo "---------------------------------------------------------"
             const statusIcon = status === 'success' ? ':white_check_mark:' : ':warning:';
             const above = status === 'success' ? 'is above' : 'is NOT above';
             const updatedComment = `${statusIcon} ${comment_text} ${above} target_daily_congestion_cost_kma`;
