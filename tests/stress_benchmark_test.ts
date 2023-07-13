@@ -69,6 +69,9 @@ describe("Node RPC Test", () => {
     let startTime = performance.now();
     let totalTime = 0;
     let lastBlock = 0;
+    
+    const firstHeader = await api.rpc.chain.getHeader();
+    const firstBlock = firstHeader.number.toNumber();
 
     for (
       let i = test_config.start_iteration;
@@ -268,12 +271,12 @@ describe("Node RPC Test", () => {
         let tps = (test_config.tests_iterations * 7) / totalTime;
         console.log("Tps is: ", tps);
         assert(tps >= test_config.expected_tps);
-        const lastHeader = await api.rpc.chain.getHeader();
         
+        const lastHeader = await api.rpc.chain.getHeader();
         lastBlock = lastHeader.number.toNumber();
-        const averageBlockTime = lastBlock / totalTime;
+        const averageBlockTime = totalTime / (lastBlock - firstBlock);
         console.log("Total time: ", totalTime);
-        console.log("Last block number: ", lastBlock);
+        console.log("Number of blocks: ", (lastBlock - firstBlock));
         console.log("Average block time: ", averageBlockTime);
         assert(averageBlockTime < test_config.expected_average_block_time);
 
