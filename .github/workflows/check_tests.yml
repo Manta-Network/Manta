@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [manta]
   push:
-    branches: [ghzlatarev/cong-test]
+    branches: [manta]
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
