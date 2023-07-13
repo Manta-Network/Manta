@@ -737,7 +737,10 @@ pub mod pallet {
             if !winning_claim.is_zero() && !participating_funds.is_zero() {
                 ensure!(
                     // Sanity check: Prevent allocating funds as winnings to a user that would have to be paid from user deposits
-                    winning_claim <= Self::surplus_funds(),
+                    Self::sum_of_deposits()                                 // all users' deposits (staked and unstaking)
+                        .saturating_add(Self::total_unclaimed_winnings())   // all prior winnings
+                        .saturating_add(winning_claim)                      // and the current winner's new claim
+                        <= total_funds_in_pallet, // don't exceed funds in the pallet
                     Error::<T>::PotBalanceTooLow
                 );
                 Self::select_winner(winning_claim)?;
