@@ -651,6 +651,15 @@ fn register_lp_asset_should_work() {
 #[test]
 fn permissionless_edge_cases() {
     new_test_ext().execute_with(|| {
+        let native_asset_id = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
+        assert_ok!(
+            <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::deposit_minting(
+                native_asset_id,
+                &ALICE,
+                1_000_000
+            )
+        );
+
         // cannot create asset with zero supply
         assert_noop!(
             AssetManager::permissionless_register_asset(
@@ -680,6 +689,15 @@ fn permissionless_edge_cases() {
 #[test]
 fn permissionless_register_asset_works() {
     new_test_ext().execute_with(|| {
+        let native_asset_id = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
+        assert_ok!(
+            <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::deposit_minting(
+                native_asset_id,
+                &ALICE,
+                1_000_000
+            )
+        );
+
         assert_ok!(AssetManager::permissionless_register_asset(
             RuntimeOrigin::signed(ALICE),
             "dog token".as_bytes().to_vec().try_into().unwrap(),

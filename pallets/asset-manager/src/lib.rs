@@ -46,7 +46,7 @@ pub mod pallet {
     use crate::weights::WeightInfo;
     use frame_support::{
         pallet_prelude::*,
-        traits::{Contains, StorageVersion},
+        traits::{tokens::ExistenceRequirement, Contains, StorageVersion},
         transactional, PalletId,
     };
     use frame_system::pallet_prelude::*;
@@ -129,6 +129,9 @@ pub mod pallet {
 
         /// Max length of token symbol
         type TokenSymbolMaxLen: Get<u32>;
+
+        /// Cost of regersting a permissionless asset in native token
+        type PermissionlessAssetRegistryCost: Get<Balance>;
     }
 
     /// Asset Manager Pallet
@@ -709,6 +712,16 @@ pub mod pallet {
         ) -> DispatchResult {
             let who = ensure_signed(origin.clone())?;
             let location = <T::AssetConfig as AssetConfig<T>>::NativeAssetLocation::get();
+
+            let native_asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
+            <T::AssetConfig as AssetConfig<T>>::FungibleLedger::transfer(
+                native_asset_id,
+                &who,
+                &Self::account_id(),
+                T::PermissionlessAssetRegistryCost::get(),
+                ExistenceRequirement::AllowDeath,
+            )
+            .map_err(|_| Error::<T>::MintError)?;
 
             let asset_id = Self::next_permissionless_asset_id_and_increment()?;
             let min_balance: Balance = total_supply
