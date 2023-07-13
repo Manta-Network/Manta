@@ -262,7 +262,7 @@ describe("Node RPC Test", () => {
 
     const lastHeader = await api.rpc.chain.getHeader();
     const currentTime = performance.now();
-    const averageBlockTime = lastHeader.number.toNumber() / currentTime;
+    const averageBlockTime = lastHeader.number.toNumber() / (currentTime - startTime);
 
     // wait all txs finalized
     for (let i = 0; i < test_config.max_wait_time_sec; i++) {
