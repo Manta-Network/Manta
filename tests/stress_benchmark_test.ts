@@ -22,6 +22,7 @@ const test_config = {
   transfer_size: 1291,
   reclaim_size: 1001,
   expected_tps: 0.5,
+  expected_average_block_time: 13000
 };
 
 describe("Node RPC Test", () => {
@@ -259,6 +260,10 @@ describe("Node RPC Test", () => {
       console.log("\n Transactions sent: ", txsCount);
     }
 
+    const lastHeader = await api.rpc.chain.getHeader();
+    const currentTime = performance.now();
+    const averageBlockTime = lastHeader.number.toNumber() / currentTime;
+
     // wait all txs finalized
     for (let i = 0; i < test_config.max_wait_time_sec; i++) {
       await delay(1000);
@@ -276,6 +281,9 @@ describe("Node RPC Test", () => {
       console.log("allSuccesses Count: ", allSuccesses);
       assert(false);
     }
+
+    console.log("Average block time: ", averageBlockTime);
+    assert(averageBlockTime < test_config.expected_average_block_time);
 
     api.disconnect();
   }).timeout(test_config.timeout);
