@@ -1071,10 +1071,12 @@ pub mod pallet {
                 return Ok(());
             }
             let collator_balance_pairs = Self::calculate_deposit_distribution(restakable_balance);
-            ensure!(
-                !collator_balance_pairs.is_empty(),
-                Error::<T>::NoCollatorForDeposit
-            );
+            if collator_balance_pairs.is_empty() {
+                log::debug!(
+                    "No collators for redepositing available (likely all currently unstaking)"
+                );
+                return Ok(());
+            }
             for (collator, amount_to_stake) in collator_balance_pairs {
                 Self::do_stake_one_collator(collator.clone(), amount_to_stake)?;
                 log::debug!(
