@@ -223,8 +223,6 @@ describe("Node RPC Test", () => {
                   allSuccesses++;
                 }
               });
-              const lastHeader = await api.rpc.chain.getHeader();
-              lastBlock = lastHeader.number.toNumber();
             } else if (status.isFinalized) {
               lastFinalized = true;
               let endTime = performance.now();
@@ -270,6 +268,15 @@ describe("Node RPC Test", () => {
         let tps = (test_config.tests_iterations * 7) / totalTime;
         console.log("Tps is: ", tps);
         assert(tps >= test_config.expected_tps);
+        const lastHeader = await api.rpc.chain.getHeader();
+        
+        lastBlock = lastHeader.number.toNumber();
+        const averageBlockTime = lastBlock / totalTime;
+        console.log("Total time: ", totalTime);
+        console.log("Last block number: ", lastBlock);
+        console.log("Average block time: ", averageBlockTime);
+        assert(averageBlockTime < test_config.expected_average_block_time);
+
         break;
       }
     }
@@ -280,12 +287,6 @@ describe("Node RPC Test", () => {
       console.log("allSuccesses Count: ", allSuccesses);
       assert(false);
     }
-
-    const averageBlockTime = lastBlock / totalTime;
-    console.log("Total time: ", totalTime);
-    console.log("Last block number: ", lastBlock);
-    console.log("Average block time: ", averageBlockTime);
-    assert(averageBlockTime < test_config.expected_average_block_time);
 
     api.disconnect();
   }).timeout(test_config.timeout);
