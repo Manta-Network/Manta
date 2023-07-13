@@ -282,6 +282,8 @@ describe("Node RPC Test", () => {
       assert(false);
     }
 
+    console.log("Total time: ", totalTime);
+    console.log("Last header: ", lastHeader);
     console.log("Average block time: ", averageBlockTime);
     assert(averageBlockTime < test_config.expected_average_block_time);
 
