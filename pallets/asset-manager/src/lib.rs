@@ -121,8 +121,14 @@ pub mod pallet {
         /// Weight information for the extrinsics in this pallet.
         type WeightInfo: crate::weights::WeightInfo;
 
-        /// Permissionless
+        /// AssetId where Permissionless Assets start is less than, the
         type PermissionlessStartId: Get<Self::AssetId>;
+
+        /// Max length of token name
+        type TokenNameMaxLen: Get<u32>;
+
+        /// Max length of token symbol
+        type TokenSymbolMaxLen: Get<u32>;
     }
 
     /// Asset Manager Pallet
@@ -696,7 +702,9 @@ pub mod pallet {
         #[transactional]
         pub fn permissionless_register_asset(
             origin: OriginFor<T>,
-            metadata: AssetStorageMetadata,
+            name: BoundedVec<u8, T::TokenNameMaxLen>,
+            symbol: BoundedVec<u8, T::TokenSymbolMaxLen>,
+            decimals: u8,
             total_supply: Balance,
         ) -> DispatchResult {
             let who = ensure_signed(origin.clone())?;
@@ -707,6 +715,12 @@ pub mod pallet {
                 .checked_div(POSSIBLE_ACCOUNTS_PER_ASSET)
                 .ok_or(ArithmeticError::DivisionByZero)?;
 
+            let metadata = AssetStorageMetadata {
+                name: name.into(),
+                symbol: symbol.into(),
+                decimals,
+                is_frozen: false,
+            };
             // create asset and mint total supply to creator
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
                 asset_id,

@@ -649,12 +649,47 @@ fn register_lp_asset_should_work() {
 }
 
 #[test]
+fn permissionless_edge_cases() {
+    new_test_ext().execute_with(|| {
+        // cannot create asset with zero supply
+        assert_noop!(
+            AssetManager::permissionless_register_asset(
+                RuntimeOrigin::signed(ALICE),
+                "dog token".as_bytes().to_vec().try_into().unwrap(),
+                "dog".as_bytes().to_vec().try_into().unwrap(),
+                12,
+                0,
+            ),
+            Error::<Runtime>::ErrorCreatingAsset
+        );
+
+        // cannot create asset with total supply less than decimcals
+        assert_noop!(
+            AssetManager::permissionless_register_asset(
+                RuntimeOrigin::signed(ALICE),
+                "dog token".as_bytes().to_vec().try_into().unwrap(),
+                "dog".as_bytes().to_vec().try_into().unwrap(),
+                12,
+                1,
+            ),
+            Error::<Runtime>::ErrorCreatingAsset
+        );
+    });
+}
+
+#[test]
 fn permissionless_register_asset_works() {
     new_test_ext().execute_with(|| {
         assert_ok!(AssetManager::permissionless_register_asset(
             RuntimeOrigin::signed(ALICE),
-            create_asset_metadata("dog token", "dog", 12, 1, false, false).into(),
+            "dog token".as_bytes().to_vec().try_into().unwrap(),
+            "dog".as_bytes().to_vec().try_into().unwrap(),
+            12,
             1_000_000_000_000_000,
         ));
+        let asset_id = AssetManager::next_permissionless_asset_id();
+
+        // asset created gives alice the token
+        assert_eq!(Assets::balance(asset_id - 1, &ALICE), 1_000_000_000_000_000);
     });
 }
