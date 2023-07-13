@@ -432,7 +432,7 @@ jobs:
             const status = `${{ steps.congestion_test.outcome }}`;
             const statusIcon = status === 'success' ? ':white_check_mark:' : ':warning:';
             const above = status === 'success' ? 'is above' : 'is NOT above';
-            const updatedComment = `${statusIcon} ${comment_text} ${above} target_daily_congestion_cost_kma`;
+            const updatedComment = `${statusIcon} ${comment_text} ${above} the target daily congestion cost`;
             await octokit.rest.issues.updateComment({ owner, repo, comment_id: existingComment.id, body: updatedComment });
   stop-congestion-test-checks:
     timeout-minutes: 15
