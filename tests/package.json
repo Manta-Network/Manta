@@ -9,6 +9,7 @@
     "stress_benchmark_test": "mocha -r ts-node/register stress_benchmark_test.ts",
     "runtime_upgrade_test": "mocha -r ts-node/register runtime_upgrade_test.ts",
     "parachain_lease_test": "mocha -r ts-node/register check_parachain_lease_expiration.ts",
+    "test_farming": "mocha -r ts-node/register test-farming.ts",
     "lint": "eslint ."
   },
   "keywords": [],

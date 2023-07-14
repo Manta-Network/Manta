@@ -60,3 +60,26 @@ export const rpc_api = {
         }
     }
 }
+
+export const farming_types = {
+    FarmingRewards: 'Vec<(u128, u128)>'
+}
+
+export const farming_rpc_api = {
+    farming: {
+        getFarmingRewards: {
+            description: 'farming reward',
+            params: [
+                {
+                    name: 'who',
+                    type: 'String'
+                },
+                {
+                    name: 'pid',
+                    type: 'u128'
+                }
+            ],
+            type: 'FarmingRewards'
+        }
+    }
+}
