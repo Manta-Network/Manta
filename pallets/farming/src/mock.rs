@@ -35,7 +35,7 @@ use manta_primitives::{
     currencies::Currencies,
     types::CalamariAssetId,
 };
-use sp_core::{ConstU32, H256};
+use sp_core::{ConstU128, ConstU32, H256};
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
@@ -251,10 +251,8 @@ impl BalanceType for MantaAssetConfig {
 impl AssetConfig<Runtime> for MantaAssetConfig {
     type NativeAssetId = NativeAssetId;
     type StartNonNativeAssetId = StartNonNativeAssetId;
-    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
-    type StorageMetadata = AssetStorageMetadata;
     type AssetRegistry = MantaAssetRegistry;
     type FungibleLedger = NativeAndNonNative<Runtime, MantaAssetConfig, Balances, Assets>;
 }
@@ -262,13 +260,16 @@ impl AssetConfig<Runtime> for MantaAssetConfig {
 impl pallet_asset_manager::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = CalamariAssetId;
-    type Balance = Balance;
     type Location = AssetLocation;
     type AssetConfig = MantaAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId32>;
     type SuspenderOrigin = EnsureRoot<AccountId32>;
     type PalletId = AssetManagerPalletId;
     type WeightInfo = ();
+    type PermissionlessStartId = ConstU128<100>;
+    type TokenNameMaxLen = ConstU32<100>;
+    type TokenSymbolMaxLen = ConstU32<100>;
+    type PermissionlessAssetRegistryCost = ConstU128<1000>;
 }
 
 parameter_types! {

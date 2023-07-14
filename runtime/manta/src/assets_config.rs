@@ -160,18 +160,19 @@ impl AssetIdType for MantaAssetConfig {
 impl AssetConfig<Runtime> for MantaAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type NativeAssetId = NativeAssetId;
-    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
-    type StorageMetadata = AssetStorageMetadata;
     type AssetRegistry = MantaAssetRegistry;
     type FungibleLedger = MantaConcreteFungibleLedger;
 }
 
 impl pallet_asset_manager::Config for Runtime {
+    type PermissionlessStartId = ConstU128<1_000_000_000>;
+    type TokenNameMaxLen = ConstU32<200>;
+    type TokenSymbolMaxLen = ConstU32<10>;
+    type PermissionlessAssetRegistryCost = ConstU128<{ 50 * MANTA }>;
     type RuntimeEvent = RuntimeEvent;
     type AssetId = MantaAssetId;
-    type Balance = Balance;
     type Location = AssetLocation;
     type AssetConfig = MantaAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId>;

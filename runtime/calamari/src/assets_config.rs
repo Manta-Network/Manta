@@ -163,18 +163,19 @@ impl AssetIdType for CalamariAssetConfig {
 impl AssetConfig<Runtime> for CalamariAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type NativeAssetId = NativeAssetId;
-    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
-    type StorageMetadata = AssetStorageMetadata;
     type AssetRegistry = CalamariAssetRegistry;
     type FungibleLedger = CalamariConcreteFungibleLedger;
 }
 
 impl pallet_asset_manager::Config for Runtime {
+    type PermissionlessStartId = ConstU128<1_000_000_000>;
+    type TokenNameMaxLen = ConstU32<200>;
+    type TokenSymbolMaxLen = ConstU32<10>;
+    type PermissionlessAssetRegistryCost = ConstU128<{ 1_000 * KMA }>;
     type RuntimeEvent = RuntimeEvent;
     type AssetId = CalamariAssetId;
-    type Balance = Balance;
     type Location = AssetLocation;
     type AssetConfig = CalamariAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId>;
