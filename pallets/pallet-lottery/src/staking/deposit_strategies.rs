@@ -49,10 +49,10 @@ pub(super) fn reactivate_bottom_collators<T: Config>(
             );
             // Ensure we don't try to stake a smaller than allowed delegation to a collator
             if remaining_deposit.saturating_sub(this_deposit) < crate::Pallet::<T>::min_deposit() {
-                deposits.push((collator.clone(), remaining_deposit)); // put the full remaining balance in this collator
+                deposits.push((collator, remaining_deposit)); // put the full remaining balance in this collator
                 break;
             } else {
-                deposits.push((collator.clone(), this_deposit)); // put just what's needed to get back into the top delegators
+                deposits.push((collator, this_deposit)); // put just what's needed to get back into the top delegators
                 remaining_deposit = remaining_deposit.saturating_sub(this_deposit);
             }
         }
