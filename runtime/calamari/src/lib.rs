@@ -250,7 +250,7 @@ impl Contains<RuntimeCall> for BaseFilter {
                                 | orml_xtokens::Call::transfer_multiasset_with_fee {..}
                                 | orml_xtokens::Call::transfer_multiassets {..})
             // Filter callables from XCM pallets, we use XTokens exclusively
-            | RuntimeCall::XcmpQueue(_) | RuntimeCall::PolkadotXcm(_) | RuntimeCall::DmpQueue(_) => false,
+            | RuntimeCall::XcmpQueue(_) | RuntimeCall::DmpQueue(_) => false,
 
             // Explicitly ALLOWED calls
             | RuntimeCall::Authorship(_)
@@ -312,6 +312,7 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::ZenlinkProtocol(_)
             | RuntimeCall::Farming(_)
             | RuntimeCall::AssetManager(pallet_asset_manager::Call::update_outgoing_filtered_assets {..})
+            | RuntimeCall::PolkadotXcm(pallet_xcm::Call::send {..})
             | RuntimeCall::Utility(_) => true,
 
             // DISALLOW anything else

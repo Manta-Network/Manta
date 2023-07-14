@@ -276,6 +276,7 @@ impl Contains<RuntimeCall> for MantaFilter {
             | RuntimeCall::TransactionPause(_)
             | RuntimeCall::ZenlinkProtocol(_)
             | RuntimeCall::Farming(_)
+            | RuntimeCall::PolkadotXcm(pallet_xcm::Call::send {..})
             | RuntimeCall::AssetManager(pallet_asset_manager::Call::update_outgoing_filtered_assets {..})
             | RuntimeCall::Utility(_) => true,
 
