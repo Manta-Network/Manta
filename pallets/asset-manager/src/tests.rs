@@ -17,10 +17,9 @@
 //! unit tests for asset-manager
 
 use crate::{
-    self as asset_manager, AssetIdLocation, AssetIdMetadata, AssetIdPairToLp, Error,
-    LocationAssetId, LpToAssetIdPair, UnitsPerSecond,
+    mock::*, AssetIdLocation, AssetIdMetadata, AssetIdPairToLp, Error, LocationAssetId,
+    LpToAssetIdPair, NextAssetId, UnitsPerSecond,
 };
-use asset_manager::mock::*;
 use frame_support::{
     assert_noop, assert_ok,
     traits::{fungibles::InspectMetadata, Contains},
@@ -31,6 +30,7 @@ use manta_primitives::{
     types::Balance,
 };
 use orml_traits::GetByKey;
+use sp_core::Get;
 use sp_runtime::{traits::BadOrigin, ArithmeticError};
 use xcm::{latest::prelude::*, VersionedMultiLocation};
 
@@ -754,5 +754,33 @@ fn permissionless_register_asset_works() {
             6,
             u128::MAX,
         ));
+    });
+}
+
+#[test]
+fn counters_test() {
+    new_test_ext().execute_with(|| {
+        let last_id: Balance = <Runtime as crate::pallet::Config>::PermissionlessStartId::get();
+        let last_id_minus_one = last_id - 1;
+        let last_id_plus_one = last_id + 1;
+        NextAssetId::<Runtime>::put(last_id_minus_one);
+
+        assert_eq!(
+            AssetManager::next_asset_id_and_increment().unwrap(),
+            last_id_minus_one
+        );
+        assert_noop!(
+            AssetManager::next_asset_id_and_increment(),
+            Error::<Runtime>::AssetIdOverflow
+        );
+
+        assert_eq!(
+            AssetManager::next_permissionless_asset_id_and_increment().unwrap(),
+            last_id
+        );
+        assert_eq!(
+            AssetManager::next_permissionless_asset_id_and_increment().unwrap(),
+            last_id_plus_one
+        );
     });
 }

@@ -225,7 +225,7 @@ pub mod pallet {
             let metadata = <T::AssetConfig as AssetConfig<T>>::NativeAssetMetadata::get();
             let location = <T::AssetConfig as AssetConfig<T>>::NativeAssetLocation::get();
             AssetIdLocation::<T>::insert(asset_id, &location);
-            AssetIdMetadata::<T>::insert(asset_id, &metadata);
+            AssetIdMetadata::<T>::insert(asset_id, metadata);
             LocationAssetId::<T>::insert(&location, asset_id);
         }
     }
@@ -617,7 +617,7 @@ pub mod pallet {
             <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(
                 asset_id,
                 &beneficiary,
-                amount.clone(),
+                amount,
                 true,
             )
             .map_err(|_| Error::<T>::MintError)?;
@@ -773,7 +773,7 @@ pub mod pallet {
             .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
 
             let register_metadata = AssetRegistryMetadata::<Balance> {
-                metadata: metadata.clone(),
+                metadata,
                 min_balance,
                 is_sufficient: true,
             };
@@ -813,7 +813,7 @@ pub mod pallet {
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
                 asset_id,
                 metadata.clone().into(),
-                metadata.min_balance().clone(),
+                *metadata.min_balance(),
                 metadata.is_sufficient(),
             )
             .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
@@ -827,7 +827,7 @@ pub mod pallet {
 
         /// Returns and increments the [`NextAssetId`] by one. Fails if it hits the upper limit of `PermissionlessStartId`
         #[inline]
-        fn next_asset_id_and_increment() -> Result<T::AssetId, DispatchError> {
+        pub(super) fn next_asset_id_and_increment() -> Result<T::AssetId, DispatchError> {
             NextAssetId::<T>::try_mutate(|current| {
                 if *current >= T::PermissionlessStartId::get() {
                     Err(Error::<T>::AssetIdOverflow.into())
@@ -843,7 +843,8 @@ pub mod pallet {
 
         /// Returns and increments the [`NextPermssionlessAssetId`] by one.
         #[inline]
-        fn next_permissionless_asset_id_and_increment() -> Result<T::AssetId, DispatchError> {
+        pub(super) fn next_permissionless_asset_id_and_increment(
+        ) -> Result<T::AssetId, DispatchError> {
             NextPermissionlessAssetId::<T>::try_mutate(|current| {
                 if current.is_zero() {
                     let id = T::PermissionlessStartId::get();
