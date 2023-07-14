@@ -723,7 +723,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(8)]
-        #[pallet::weight(T::WeightInfo::register_asset())]
+        #[pallet::weight(T::WeightInfo::permissionless_register_asset())]
         #[transactional]
         pub fn permissionless_register_asset(
             origin: OriginFor<T>,

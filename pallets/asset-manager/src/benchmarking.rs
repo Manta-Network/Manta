@@ -178,7 +178,7 @@ benchmarks! {
         let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
             native_asset_id,
             &caller,
-            1_000_000
+            1_000_000_000_000_000_000_000u128
         );
     }: _(RawOrigin::Signed(caller), vec![].try_into().unwrap(), vec![].try_into().unwrap(), 12, 1_000_000_000_000_000)
 }
