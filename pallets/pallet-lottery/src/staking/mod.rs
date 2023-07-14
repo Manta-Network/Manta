@@ -18,11 +18,7 @@ mod deposit_strategies;
 mod withdraw_strategies;
 
 use super::*;
-use frame_support::{
-    dispatch::RawOrigin,
-    ensure,
-    traits::{EstimateCallFee, Get},
-};
+use frame_support::{dispatch::RawOrigin, ensure, traits::EstimateCallFee};
 use pallet_parachain_staking::BalanceOf;
 use sp_runtime::{
     traits::{Saturating, Zero},

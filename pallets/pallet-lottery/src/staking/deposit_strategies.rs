@@ -15,7 +15,6 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use frame_support::traits::Get;
 #[cfg(not(feature = "runtime-benchmarks"))]
 use frame_support::traits::Randomness;
 use pallet_parachain_staking::BalanceOf;
