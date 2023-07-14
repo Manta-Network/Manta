@@ -219,9 +219,6 @@ impl<T: Config> Pallet<T> {
     ) -> DispatchResult {
         log::trace!(function_name!());
         // preconditions
-        if Self::surplus_funds().is_zero() {
-            return Err(Error::<T>::PotBalanceTooLow.into());
-        }
         let candidate_delegation_count;
         if let Some(info) = pallet_parachain_staking::Pallet::<T>::candidate_info(&collator) {
             candidate_delegation_count = info.delegation_count;
