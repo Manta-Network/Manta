@@ -273,7 +273,6 @@ impl pallet_xcm::Config for Runtime {
     type XcmRouter = XcmRouter;
     type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     /// This means that no location will pass XcmExecuteFilter, so a dispatched `execute` message will be filtered.
-    /// This shouldn't be reachable since `LocalOriginToLocation = ();`, but let's be on the safe side.
     type XcmExecuteFilter = Nothing;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type XcmTeleportFilter = Nothing;
