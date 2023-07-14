@@ -320,6 +320,14 @@ pub mod pallet {
             /// The asset location which can be transferred out
             filtered_location: T::Location,
         },
+        /// A new asset was registered
+        PermissionlessAssetRegistered {
+            /// Asset Id of new Asset
+            asset_id: T::AssetId,
+
+            /// Metadata Registered to Asset Manager
+            metadata: AssetRegistryMetadata<Balance>,
+        },
     }
 
     /// Asset Manager Error
@@ -725,7 +733,6 @@ pub mod pallet {
             total_supply: Balance,
         ) -> DispatchResult {
             let who = ensure_signed(origin.clone())?;
-            let location = <T::AssetConfig as AssetConfig<T>>::NativeAssetLocation::get();
             let decimal_num =
                 u128::checked_pow(10, decimals.into()).ok_or(ArithmeticError::Overflow)?;
 
@@ -779,9 +786,8 @@ pub mod pallet {
             )
             .map_err(|_| Error::<T>::MintError)?;
 
-            Self::deposit_event(Event::<T>::AssetRegistered {
+            Self::deposit_event(Event::<T>::PermissionlessAssetRegistered {
                 asset_id,
-                location,
                 metadata: register_metadata,
             });
             Ok(())
