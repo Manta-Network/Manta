@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## v4.3.0
+### Added
+- [\#1179](https://github.com/Manta-Network/Manta/pull/1179) Copy Name Service Pallet [CA]
+- [\#1141](https://github.com/Manta-Network/Manta/pull/1141) manta-farming [MACA]
+- [\#1036](https://github.com/Manta-Network/Manta/pull/1036) Pallet Staking Lottery [MACA]
+
+### Changed
+- [\#1150](https://github.com/Manta-Network/Manta/pull/1150) Rebenchmark pallet-mantapay [MACA]
+
+### Fixed
+- [\#1175](https://github.com/Manta-Network/Manta/pull/1175) Fix congestion test CI [MACA]
+- [\#1193](https://github.com/Manta-Network/Manta/pull/1193) Revert to v0942 polkadot binary [MACA]
+- [\#1196](https://github.com/Manta-Network/Manta/pull/1196) Fix dex ed [MA]
+
+### Removed
+- [\#1167](https://github.com/Manta-Network/Manta/pull/1167) Retire dolphin runtime [DO]
+
 ## v4.2.0-1
 ### Added
 - [\#1166](https://github.com/Manta-Network/Manta/pull/1166) Add Force Calls for zkSBT [MACA]
