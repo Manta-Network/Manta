@@ -383,6 +383,10 @@ pub mod pallet {
                 Self::not_in_drawing_freezeout(),
                 Error::<T>::TooCloseToDrawing
             );
+            ensure! { // Sanity check: make sure we dont accept deposits that will fail in staking
+                Self::min_deposit() >= <T as pallet_parachain_staking::Config>::MinDelegation::get(),
+                Error::<T>::PalletMisconfigured
+            };
 
             // Transfer funds to pot
             <T as pallet_parachain_staking::Config>::Currency::transfer(
@@ -1069,8 +1073,12 @@ pub mod pallet {
                 .unwrap_or_else(|| 0u32.into());
             let restakable_balance =
                 Self::unlocked_unstaking_funds().saturating_sub(outstanding_balance_to_withdraw);
-            if restakable_balance.is_zero() {
-                log::debug!("Nothing to restake");
+            if restakable_balance < Self::min_deposit() {
+                log::debug!(
+                    "Restakable balance of {:?} is below staking minimum of {:?}. Not restaking",
+                    restakable_balance,
+                    Self::min_deposit()
+                );
                 return Ok(());
             }
             let collator_balance_pairs = Self::calculate_deposit_distribution(restakable_balance);

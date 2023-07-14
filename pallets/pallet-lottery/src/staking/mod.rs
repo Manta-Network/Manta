@@ -42,10 +42,9 @@ impl<T: Config> Pallet<T> {
             "Calculating distribution for deposit of {:?} tokens",
             new_deposit
         );
-        if new_deposit < <T as pallet_parachain_staking::Config>::MinDelegation::get() {
-            log::trace!(function_name!());
+        if new_deposit < Self::min_deposit() {
             log::debug!(
-                "Leftover unstaking funds of {:?} below limit for restaking of {:?}. Keeping in pallet",
+                "Requested deposit of {:?} is below limit for staking of {:?}. Skipping assignment",
                 new_deposit,
                 Self::min_deposit(),
             );
@@ -87,15 +86,16 @@ impl<T: Config> Pallet<T> {
             deposit_eligible_collators.as_slice(),
             new_deposit,
         ));
+        // `reactivate_bottom_collators` has only distributed the funds needed for reactivation, we can have some left over
         remaining_deposit -= deposits
             .iter()
             .map(|deposit| deposit.1)
             .reduce(|sum, elem| sum + elem)
             .unwrap_or_else(|| 0u32.into());
-        // If we have any collators to re-activate, we distribute all tokens to those and call it a day
+
+        // If we have re-activated any collators and have leftover funds, we just distribute all surplus tokens to them evenly and call it a day
         if !deposits.is_empty() {
             if !remaining_deposit.is_zero() {
-                // distribute remaining tokens evenly
                 let deposit_per_collator =
                     Percent::from_rational(1, deposits.len()).mul_ceil(remaining_deposit); // this overshoots the amount if there's a remainder
                 for deposit in &mut deposits {
@@ -106,6 +106,7 @@ impl<T: Config> Pallet<T> {
             }
             return deposits;
         }
+
         // second concern: We want to maximize staking APY earned, so we want to balance the staking pools with our deposits while conserving gas
         deposits.append(
             &mut deposit_strategies::split_to_underallocated_collators::<T>(
