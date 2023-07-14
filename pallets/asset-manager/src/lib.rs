@@ -121,7 +121,7 @@ pub mod pallet {
         /// Weight information for the extrinsics in this pallet.
         type WeightInfo: crate::weights::WeightInfo;
 
-        /// AssetId where Permissionless Assets start is less than, the
+        /// AssetId where Permissionless Assets start, must be greater than `StartNonNativeAssetId`
         type PermissionlessStartId: Get<Self::AssetId>;
 
         /// Max length of token name
@@ -130,7 +130,7 @@ pub mod pallet {
         /// Max length of token symbol
         type TokenSymbolMaxLen: Get<u32>;
 
-        /// Cost of regersting a permissionless asset in native token
+        /// Cost of registering a permissionless asset in native token
         type PermissionlessAssetRegistryCost: Get<Balance>;
     }
 
@@ -351,7 +351,7 @@ pub mod pallet {
         AssetIdOverflow,
 
         /// Account does not have enough native funds
-        NoNativeFunds,
+        NotEnoughNativeFunds,
 
         /// Total Supply is less than decimal value
         TotalSupplyTooLow,
@@ -735,7 +735,7 @@ pub mod pallet {
                 T::PermissionlessAssetRegistryCost::get(),
                 ExistenceRequirement::AllowDeath,
             )
-            .map_err(|_| Error::<T>::NoNativeFunds)?;
+            .map_err(|_| Error::<T>::NotEnoughNativeFunds)?;
 
             let asset_id = Self::next_permissionless_asset_id_and_increment()?;
             let mut min_balance: Balance = total_supply

@@ -696,7 +696,7 @@ fn permissionless_edge_cases() {
             Error::<Runtime>::DecimalIsZero
         );
 
-        // cannot create asset with zero supply
+        // overflows when decimal is too high
         assert_noop!(
             AssetManager::permissionless_register_asset(
                 RuntimeOrigin::signed(ALICE),
@@ -746,6 +746,7 @@ fn permissionless_register_asset_works() {
         // asset created gives alice the token
         assert_eq!(Assets::balance(asset_id - 1, &ALICE), 1_000_000_000_000_000);
 
+        // Max balance works
         assert_ok!(AssetManager::permissionless_register_asset(
             RuntimeOrigin::signed(ALICE),
             "dog token".as_bytes().to_vec().try_into().unwrap(),
