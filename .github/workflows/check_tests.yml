@@ -403,6 +403,13 @@ jobs:
           source ${HOME}/.cargo/env
           RUSTC_BOOTSTRAP=1 cargo test --package ${{ matrix.runtime.name }} --lib -- fee::multiplier_tests::multiplier_growth_simulator_and_congestion_budget_test --exact --nocapture --ignored
         continue-on-error: true
+      - name: Print res
+        id: congestion_test_res
+        run: |
+          echo "---------------------------------------------------------"
+          echo ${{ steps.congestion_test.outcome }}
+          echo "---------------------------------------------------------"
+        continue-on-error: true
       - name: Comment on PR whether congestion test failed
         uses: actions/github-script@v6
         with:
@@ -422,10 +429,10 @@ jobs:
               existingComment = newComment;
             }
             // Update comment text with CI status
-            const status = '${{ job.steps.congestion_test.outcome }}';
+            const status = `${{ steps.congestion_test.outcome }}`;
             const statusIcon = status === 'success' ? ':white_check_mark:' : ':warning:';
             const above = status === 'success' ? 'is above' : 'is NOT above';
-            const updatedComment = `${statusIcon} ${comment_text} ${above} target_daily_congestion_cost_kma`;
+            const updatedComment = `${statusIcon} ${comment_text} ${above} the target daily congestion cost`;
             await octokit.rest.issues.updateComment({ owner, repo, comment_id: existingComment.id, body: updatedComment });
   stop-congestion-test-checks:
     timeout-minutes: 15
