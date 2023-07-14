@@ -215,6 +215,11 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         #[inline]
         fn build(&self) {
+            assert!(
+                T::PermissionlessStartId::get()
+                    > <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(),
+                "Permissionless start id must be greater than non native id start"
+            );
             NextAssetId::<T>::set(self.start_id);
             let asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
             let metadata = <T::AssetConfig as AssetConfig<T>>::NativeAssetMetadata::get();
