@@ -649,3 +649,71 @@ fn multiround_withdraw_partial_deposit_works2() {
             assert!(Lottery::withdrawal_request_queue().is_empty());
         });
 }
+
+#[test]
+fn many_deposit_withdrawals_work() {
+    let balance = 50_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![
+            (*ALICE, HIGH_BALANCE),
+            (*BOB, HIGH_BALANCE),
+            (*CHARLIE, HIGH_BALANCE),
+            (*DAVE, HIGH_BALANCE),
+            (*EVE, HIGH_BALANCE),
+        ])
+        .with_candidates(vec![
+            (*ALICE, HIGH_BALANCE),
+            (*BOB, HIGH_BALANCE),
+            (*CHARLIE, HIGH_BALANCE),
+            (*DAVE, HIGH_BALANCE),
+            (*EVE, HIGH_BALANCE),
+        ])
+        .with_funded_lottery_account(HIGH_BALANCE)
+        .build()
+        .execute_with(|| {
+            assert!(HIGH_BALANCE > balance);
+            for user in 1..=1000 {
+                const USER_SEED: u32 = 696_969;
+                let (depositor, _) = crate::mock::from_bench::create_funded_user::<Test>(
+                    "depositor",
+                    USER_SEED - user,
+                    HIGH_BALANCE,
+                );
+                assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
+                assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
+                assert_ok!(Lottery::request_withdraw(
+                    Origin::signed(depositor),
+                    balance
+                ));
+                assert_ok!(Lottery::request_withdraw(
+                    Origin::signed(depositor),
+                    balance
+                ));
+                assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
+                assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
+                assert_ok!(Lottery::request_withdraw(
+                    Origin::signed(depositor),
+                    balance
+                ));
+                assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
+                assert_ok!(Lottery::request_withdraw(
+                    Origin::signed(depositor),
+                    balance
+                ));
+                assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
+                assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
+                assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
+                assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
+                assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
+                assert_ok!(Lottery::request_withdraw(
+                    Origin::signed(depositor),
+                    balance
+                ));
+                assert_eq!(Lottery::sum_of_deposits(), user as u128 * 10 * balance);
+                assert_eq!(Lottery::total_pot(), user as u128 * (10 - 5) * balance);
+                if user % 6 == 0 {
+                    roll_one_block();
+                }
+            }
+        });
+}
