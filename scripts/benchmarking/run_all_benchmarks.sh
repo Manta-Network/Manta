@@ -116,14 +116,14 @@ rm -f $MACHINE_OUTPUT
 
 # Benchmark each frame pallet.
 for PALLET in "${PALLETS[@]}"; do
-  # If `-p` is used, skip benchmarks until the start pallet.
-  if [ ! -z "$start_pallet" ] && [ "$start_pallet" != "$PALLET" ]
-  then
-    echo "[+] Skipping ${PALLET}..."
-    continue
-  else
-    unset start_pallet
-  fi
+  # # If `-p` is used, skip benchmarks until the start pallet.
+  # if [ ! -z "$start_pallet" ] && [ "$start_pallet" != "$PALLET" ]
+  # then
+  #   echo "[+] Skipping ${PALLET}..."
+  #   continue
+  # else
+  #   unset start_pallet
+  # fi
 
   FOLDER="$(echo "${PALLET#*_}" | tr '_' '-')";
   WEIGHT_FILE="./${FRAME_WEIGHTS_OUTPUT}/${PALLET}.rs"
@@ -135,6 +135,9 @@ for PALLET in "${PALLETS[@]}"; do
     OUTPUT_NAME=$(echo $PALLET | sed -r 's/[:]+/_/g')
     WEIGHT_FILE="./${XCM_WEIGHTS_OUTPUT}/${OUTPUT_NAME}.rs"
     TEMPLATE_FILE=".github/resources/xcm-weight-template.hbs"
+  else
+    echo "[+] Skipping ${PALLET}..."
+    continue
   fi
 
   OUTPUT=$(
