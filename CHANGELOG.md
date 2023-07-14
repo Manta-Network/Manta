@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v4.3.1
+### Added
+- [\#1197](https://github.com/Manta-Network/Manta/pull/1197) check-tests CI workflow benchmark tests for manta-dev
+- [\#1055](https://github.com/Manta-Network/Manta/pull/1055) Allow xcm-transacts from all chains [MACA]
+
 ## v4.3.0
 ### Added
 - [\#1179](https://github.com/Manta-Network/Manta/pull/1179) Copy Name Service Pallet [CA]
