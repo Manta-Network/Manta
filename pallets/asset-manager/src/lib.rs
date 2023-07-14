@@ -349,6 +349,15 @@ pub mod pallet {
 
         /// AssetIdOverflow
         AssetIdOverflow,
+
+        /// Account does not have enough native funds
+        NoNativeFunds,
+
+        /// Total Supply is less than decimal value
+        TotalSupplyTooLow,
+
+        /// Decimals cannot be set to zero
+        DecimalIsZero,
     }
 
     /// [`AssetId`](AssetConfig::AssetId) to [`MultiLocation`] Map
@@ -712,6 +721,11 @@ pub mod pallet {
         ) -> DispatchResult {
             let who = ensure_signed(origin.clone())?;
             let location = <T::AssetConfig as AssetConfig<T>>::NativeAssetLocation::get();
+            let decimal_num =
+                u128::checked_pow(10, decimals.into()).ok_or(ArithmeticError::Overflow)?;
+
+            ensure!(total_supply >= decimal_num, Error::<T>::TotalSupplyTooLow);
+            ensure!(!decimals.is_zero(), Error::<T>::DecimalIsZero);
 
             let native_asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
             <T::AssetConfig as AssetConfig<T>>::FungibleLedger::transfer(
@@ -721,12 +735,15 @@ pub mod pallet {
                 T::PermissionlessAssetRegistryCost::get(),
                 ExistenceRequirement::AllowDeath,
             )
-            .map_err(|_| Error::<T>::MintError)?;
+            .map_err(|_| Error::<T>::NoNativeFunds)?;
 
             let asset_id = Self::next_permissionless_asset_id_and_increment()?;
-            let min_balance: Balance = total_supply
+            let mut min_balance: Balance = total_supply
                 .checked_div(POSSIBLE_ACCOUNTS_PER_ASSET)
                 .ok_or(ArithmeticError::DivisionByZero)?;
+            if min_balance.is_zero() {
+                min_balance = One::one();
+            }
 
             let metadata = AssetStorageMetadata {
                 name: name.into(),

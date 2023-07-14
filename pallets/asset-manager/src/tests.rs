@@ -31,7 +31,7 @@ use manta_primitives::{
     types::Balance,
 };
 use orml_traits::GetByKey;
-use sp_runtime::traits::BadOrigin;
+use sp_runtime::{traits::BadOrigin, ArithmeticError};
 use xcm::{latest::prelude::*, VersionedMultiLocation};
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
@@ -666,13 +666,49 @@ fn permissionless_edge_cases() {
                 RuntimeOrigin::signed(ALICE),
                 "dog token".as_bytes().to_vec().try_into().unwrap(),
                 "dog".as_bytes().to_vec().try_into().unwrap(),
-                12,
-                0,
+                0_u8,
+                0_u128,
             ),
-            Error::<Runtime>::ErrorCreatingAsset
+            Error::<Runtime>::TotalSupplyTooLow
         );
 
-        // cannot create asset with total supply less than decimcals
+        // cannot create asset with zero supply
+        assert_noop!(
+            AssetManager::permissionless_register_asset(
+                RuntimeOrigin::signed(ALICE),
+                "dog token".as_bytes().to_vec().try_into().unwrap(),
+                "dog".as_bytes().to_vec().try_into().unwrap(),
+                1_u8,
+                0_u128,
+            ),
+            Error::<Runtime>::TotalSupplyTooLow
+        );
+
+        // cannot create asset with zero decimals
+        assert_noop!(
+            AssetManager::permissionless_register_asset(
+                RuntimeOrigin::signed(ALICE),
+                "dog token".as_bytes().to_vec().try_into().unwrap(),
+                "dog".as_bytes().to_vec().try_into().unwrap(),
+                0_u8,
+                1_u128,
+            ),
+            Error::<Runtime>::DecimalIsZero
+        );
+
+        // cannot create asset with zero supply
+        assert_noop!(
+            AssetManager::permissionless_register_asset(
+                RuntimeOrigin::signed(ALICE),
+                "dog token".as_bytes().to_vec().try_into().unwrap(),
+                "dog".as_bytes().to_vec().try_into().unwrap(),
+                u8::MAX,
+                u128::MAX,
+            ),
+            ArithmeticError::Overflow
+        );
+
+        // cannot create asset with too small total supply
         assert_noop!(
             AssetManager::permissionless_register_asset(
                 RuntimeOrigin::signed(ALICE),
@@ -681,7 +717,7 @@ fn permissionless_edge_cases() {
                 12,
                 1,
             ),
-            Error::<Runtime>::ErrorCreatingAsset
+            Error::<Runtime>::TotalSupplyTooLow,
         );
     });
 }
@@ -709,5 +745,13 @@ fn permissionless_register_asset_works() {
 
         // asset created gives alice the token
         assert_eq!(Assets::balance(asset_id - 1, &ALICE), 1_000_000_000_000_000);
+
+        assert_ok!(AssetManager::permissionless_register_asset(
+            RuntimeOrigin::signed(ALICE),
+            "dog token".as_bytes().to_vec().try_into().unwrap(),
+            "dog".as_bytes().to_vec().try_into().unwrap(),
+            6,
+            u128::MAX,
+        ));
     });
 }
