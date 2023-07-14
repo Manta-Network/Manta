@@ -22,6 +22,7 @@ const test_config = {
   transfer_size: 1291,
   reclaim_size: 1001,
   expected_tps: 0.5,
+  expected_average_block_time: 13000
 };
 
 describe("Node RPC Test", () => {
@@ -67,7 +68,11 @@ describe("Node RPC Test", () => {
     let txsCount = 0;
     let startTime = performance.now();
     let totalTime = 0;
+    let lastBlock = 0;
     
+    const firstHeader = await api.rpc.chain.getHeader();
+    const firstBlock = firstHeader.number.toNumber();
+
     for (
       let i = test_config.start_iteration;
       i < test_config.start_iteration + test_config.tests_iterations;
@@ -266,6 +271,15 @@ describe("Node RPC Test", () => {
         let tps = (test_config.tests_iterations * 7) / totalTime;
         console.log("Tps is: ", tps);
         assert(tps >= test_config.expected_tps);
+        
+        const lastHeader = await api.rpc.chain.getHeader();
+        lastBlock = lastHeader.number.toNumber();
+        const averageBlockTime = totalTime / (lastBlock - firstBlock);
+        console.log("Total time: ", totalTime);
+        console.log("Number of blocks: ", (lastBlock - firstBlock));
+        console.log("Average block time: ", averageBlockTime);
+        assert(averageBlockTime < test_config.expected_average_block_time);
+
         break;
       }
     }
