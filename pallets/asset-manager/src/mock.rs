@@ -224,7 +224,7 @@ impl pallet_asset_manager::Config for Runtime {
     type ModifierOrigin = EnsureRoot<AccountId>;
     type SuspenderOrigin = EnsureRoot<AccountId>;
     type PalletId = AssetManagerPalletId;
-    type PermissionlessStartId = ConstU128<100>;
+    type PermissionlessStartId = ConstU128<1_000_000>;
     type TokenNameMaxLen = ConstU32<100>;
     type TokenSymbolMaxLen = ConstU32<100>;
     type PermissionlessAssetRegistryCost = ConstU128<1000>;
