@@ -3,7 +3,7 @@
 ## v4.3.1
 ### Added
 - [\#1197](https://github.com/Manta-Network/Manta/pull/1197) check-tests CI workflow benchmark tests for manta-dev
-- [\#1055](https://github.com/Manta-Network/Manta/pull/1055) Allow xcm-transacts from all chains [MACA]
+- [\#1055](https://github.com/Manta-Network/Manta/pull/1055) Allow xcm-transacts from all chains [MACADO]
 
 ### Fixed
 - [\#1208](https://github.com/Manta-Network/Manta/pull/1208) Fix wrong reports of congestion test results
