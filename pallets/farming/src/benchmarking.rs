@@ -77,7 +77,7 @@ benchmarks! {
         let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
             8.into(),
             &caller,
-            INITIAL_VALUE.try_into().unwrap(),
+            INITIAL_VALUE,
         );
         // assert_ok!(Farming::<T>::charge(RawOrigin::Signed(caller.clone()).into(), 0, charge_rewards));
     }: _(RawOrigin::Signed(caller.clone()), 0, charge_rewards)
@@ -110,7 +110,7 @@ benchmarks! {
         let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
             8.into(),
             &caller,
-            INITIAL_VALUE.try_into().unwrap(),
+            INITIAL_VALUE,
         );
         assert_ok!(Farming::<T>::charge(RawOrigin::Signed(caller.clone()).into(), 0, charge_rewards));
     }: _(RawOrigin::Signed(caller.clone()), 0, token_amount, None)
@@ -141,7 +141,7 @@ benchmarks! {
         let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
             8.into(),
             &caller,
-            INITIAL_VALUE.try_into().unwrap(),
+            INITIAL_VALUE,
         );
         let charge_rewards = vec![(ksm_asset_id,BalanceOf::<T>::unique_saturated_from(300000u128))];
         assert_ok!(Farming::<T>::charge(RawOrigin::Signed(caller.clone()).into(), 0, charge_rewards));
@@ -174,7 +174,7 @@ benchmarks! {
         let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
             8.into(),
             &caller,
-            INITIAL_VALUE.try_into().unwrap(),
+            INITIAL_VALUE,
         );
         let charge_rewards = vec![(ksm_asset_id,BalanceOf::<T>::unique_saturated_from(300000u128))];
         assert_ok!(Farming::<T>::charge(RawOrigin::Signed(caller.clone()).into(), 0, charge_rewards));
@@ -209,7 +209,7 @@ benchmarks! {
         let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
             8.into(),
             &caller,
-            INITIAL_VALUE.try_into().unwrap(),
+            INITIAL_VALUE,
         );
         let charge_rewards = vec![(ksm_asset_id,BalanceOf::<T>::unique_saturated_from(300000u128))];
         assert_ok!(Farming::<T>::charge(RawOrigin::Signed(caller.clone()).into(), 0, charge_rewards));

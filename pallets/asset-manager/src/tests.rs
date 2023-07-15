@@ -765,9 +765,9 @@ fn permissionless_register_asset_works() {
         assert_eq!(Balances::free_balance(&ALICE), amount - registry_cost);
 
         let metadata = AssetIdMetadata::<Runtime>::get(asset_id).unwrap();
-        assert_eq!(metadata.is_sufficient, true);
+        assert!(metadata.is_sufficient);
         assert_eq!(metadata.min_balance, 100_000);
-        assert_eq!(metadata.metadata.is_frozen, false);
+        assert!(!metadata.metadata.is_frozen);
         assert_eq!(metadata.metadata.decimals, 12);
         assert_eq!(metadata.metadata.name, "dog token".as_bytes().to_vec());
         assert_eq!(metadata.metadata.symbol, "dog".as_bytes().to_vec());
