@@ -17,8 +17,8 @@
 use crate::{
     assert_last_event,
     mock::{
-        roll_one_block, roll_to, roll_to_round_begin, AccountId, Balance, Balances, ExtBuilder,
-        Lottery, ParachainStaking, RuntimeOrigin as Origin, System, Test,
+        roll_one_block, roll_to, roll_to_round_begin, roll_to_round_end, AccountId, Balance,
+        Balances, ExtBuilder, Lottery, ParachainStaking, RuntimeOrigin as Origin, System, Test,
     },
     Config, Error,
 };
@@ -332,10 +332,13 @@ fn unstaking_works_with_0_collators_left() {
                 Origin::signed(*ALICE),
                 balance * 2
             ));
-            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 0);
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 2);
+            assert_eq!(Lottery::withdrawal_request_queue().len(), 1);
             assert_ok!(Lottery::start_lottery(RawOrigin::Root.into()));
             roll_to_round_begin(3);
+            // assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
             // by now the withdrawal should have happened by way of lottery drawing
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 0);
             assert_eq!(Balances::free_balance(*ALICE), HIGH_BALANCE);
         });
 }
@@ -462,7 +465,8 @@ fn deposit_withdraw_deposit_works() {
                 }
             ));
             assert_ok!(Lottery::request_withdraw(Origin::signed(*ALICE), balance));
-            assert_eq!(0, Lottery::staked_collators(*BOB));
+            assert_eq!(balance, Lottery::staked_collators(*BOB));
+            assert_eq!(1, Lottery::withdrawal_request_queue().len());
             // join a new collator because BOB is now ineligible to receive deposits
             let (new_collator, _) = crate::mock::from_bench::create_funded_user::<Test>(
                 "collator",
@@ -511,10 +515,10 @@ fn withdraw_partial_deposit_works() {
                 Origin::signed(*ALICE),
                 quarter_balance
             ));
-            assert_eq!(0, Lottery::staked_collators(*BOB));
+            assert_eq!(balance, Lottery::staked_collators(*BOB));
             assert_eq!(quarter_balance, Lottery::surplus_unstaking_balance());
-            roll_to_round_begin(3);
             pallet_parachain_staking::AwardedPts::<Test>::insert(2, *BOB, 20);
+            roll_to_round_begin(3);
             // funds should be unlocked now and BOB is finished unstaking, so it's eligible for redepositing
             assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
             assert_eq!(
@@ -556,7 +560,8 @@ fn multiround_withdraw_partial_deposit_works() {
                 Origin::signed(*ALICE),
                 half_balance
             ));
-            assert_eq!(0, Lottery::staked_collators(*BOB));
+            assert_eq!(balance, Lottery::staked_collators(*BOB));
+            assert_eq!(1, Lottery::withdrawal_request_queue().len());
             assert_eq!(half_balance, Lottery::surplus_unstaking_balance());
 
             // withdrawing funds are still locked
@@ -568,7 +573,7 @@ fn multiround_withdraw_partial_deposit_works() {
                 quarter_balance
             ));
             assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
-            assert_eq!(0, Lottery::staked_collators(*BOB));
+            assert_eq!(balance, Lottery::staked_collators(*BOB));
             assert_eq!(
                 half_balance - quarter_balance,
                 Lottery::surplus_unstaking_balance()
@@ -653,6 +658,7 @@ fn multiround_withdraw_partial_deposit_works2() {
 #[test]
 fn many_deposit_withdrawals_work() {
     let balance = 50_000_000 * UNIT;
+    let mut round_count = 2;
     ExtBuilder::default()
         .with_balances(vec![
             (*ALICE, HIGH_BALANCE),
@@ -672,7 +678,11 @@ fn many_deposit_withdrawals_work() {
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance);
-            for user in 1..=1000 {
+            let all_collators = &[*ALICE, *BOB, *CHARLIE, *DAVE, *EVE];
+            reward_collators_for_round(round_count - 1, all_collators);
+            roll_to_round_end(1);
+            assert_ok!(Lottery::start_lottery(RawOrigin::Root.into()));
+            for user in 0..500 {
                 const USER_SEED: u32 = 696_969;
                 let (depositor, _) = crate::mock::from_bench::create_funded_user::<Test>(
                     "depositor",
@@ -691,16 +701,6 @@ fn many_deposit_withdrawals_work() {
                 ));
                 assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
                 assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
-                assert_ok!(Lottery::request_withdraw(
-                    Origin::signed(depositor),
-                    balance
-                ));
-                assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
-                assert_ok!(Lottery::request_withdraw(
-                    Origin::signed(depositor),
-                    balance
-                ));
-                assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
                 assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
                 assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
                 assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
@@ -709,11 +709,35 @@ fn many_deposit_withdrawals_work() {
                     Origin::signed(depositor),
                     balance
                 ));
-                assert_eq!(Lottery::sum_of_deposits(), user as u128 * 10 * balance);
-                assert_eq!(Lottery::total_pot(), user as u128 * (10 - 5) * balance);
-                if user % 6 == 0 {
-                    roll_one_block();
-                }
+                assert_ok!(Lottery::request_withdraw(
+                    Origin::signed(depositor),
+                    balance
+                ));
+                assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
+                assert_ok!(Lottery::deposit(Origin::signed(depositor), balance));
+
+                assert_eq!(Lottery::active_balance_per_user(depositor), 6 * balance);
+                // we only have 5 collators available
+                // if all 5 are unstaking, further deposits fail
+                // forward the chain until they are unstaked
+                reward_collators_for_round(round_count, all_collators);
+                round_count += 1;
+                roll_to_round_begin((round_count * 2) - 1);
+                reward_collators_for_round(round_count * 2 - 2, all_collators);
+                roll_to_round_begin(round_count * 2);
+                reward_collators_for_round(round_count * 2 - 1, all_collators);
+                // drawing happens (twice), all unstaking collators have finished unstaking
+                // ensure lottery doesnt run out of gas (it's not getting staking rewards in test)
+                <Test as pallet_parachain_staking::Config>::Currency::deposit_into_existing(
+                    &crate::Pallet::<Test>::account_id(),
+                    crate::Pallet::<Test>::gas_reserve(),
+                );
             }
         });
+}
+
+fn reward_collators_for_round(round: u32, collators: &[AccountId]) {
+    for c in collators {
+        pallet_parachain_staking::AwardedPts::<Test>::insert(round as u32, c, 20);
+    }
 }

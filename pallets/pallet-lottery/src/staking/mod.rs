@@ -159,7 +159,7 @@ impl<T: Config> Pallet<T> {
         let mut withdrawals = vec![];
         let mut remaining_balance = withdrawal_amount;
 
-        // Only unstake collators we're staked to and not already unstaking from
+        // Only unstake collators we're staked to **and not already unstaking from**
         let staked_collators: Vec<_> = StakedCollators::<T>::iter_keys().collect();
         let collators_we_are_unstaking_from: Vec<_> = UnstakingCollators::<T>::get()
             .iter()
@@ -234,7 +234,7 @@ impl<T: Config> Pallet<T> {
         if let Some(info) = pallet_parachain_staking::Pallet::<T>::candidate_info(&collator) {
             candidate_delegation_count = info.delegation_count;
         } else {
-            return Err(Error::<T>::NoCollatorForDeposit.into());
+            return Err(Error::<T>::NoCollatorForStake.into());
         };
         let delegation_count = StakedCollators::<T>::iter_keys().count() as u32;
 
@@ -310,7 +310,7 @@ impl<T: Config> Pallet<T> {
         some_collator: T::AccountId,
     ) -> DispatchResult {
         log::trace!(function_name!());
-        let delegated_amount_to_be_unstaked = StakedCollators::<T>::take(some_collator.clone());
+        let delegated_amount_to_be_unstaked = StakedCollators::<T>::get(some_collator.clone());
         if delegated_amount_to_be_unstaked.is_zero() {
             log::error!("requested to unstake a collator that isn't staked");
             return Err(Error::<T>::NoCollatorForWithdrawal.into());
