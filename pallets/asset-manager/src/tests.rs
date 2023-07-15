@@ -719,21 +719,38 @@ fn permissionless_edge_cases() {
             ),
             Error::<Runtime>::TotalSupplyTooLow,
         );
+
+        // really small total supply is one
+        let asset_id: u128 = <Runtime as crate::pallet::Config>::PermissionlessStartId::get();
+        assert_ok!(AssetManager::permissionless_register_asset(
+            RuntimeOrigin::signed(ALICE),
+            "dog token".as_bytes().to_vec().try_into().unwrap(),
+            "dog".as_bytes().to_vec().try_into().unwrap(),
+            1,
+            1_000,
+        ));
+
+        let metadata = AssetIdMetadata::<Runtime>::get(asset_id).unwrap();
+        assert_eq!(metadata.min_balance, 1);
     });
 }
 
 #[test]
 fn permissionless_register_asset_works() {
     new_test_ext().execute_with(|| {
+        let amount = 1_000_000;
+        let registry_cost: Balance =
+            <Runtime as crate::pallet::Config>::PermissionlessAssetRegistryCost::get();
         let native_asset_id = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
         assert_ok!(
             <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::deposit_minting(
                 native_asset_id,
                 &ALICE,
-                1_000_000
+                amount,
             )
         );
 
+        let asset_id = <Runtime as crate::pallet::Config>::PermissionlessStartId::get();
         assert_ok!(AssetManager::permissionless_register_asset(
             RuntimeOrigin::signed(ALICE),
             "dog token".as_bytes().to_vec().try_into().unwrap(),
@@ -741,10 +758,19 @@ fn permissionless_register_asset_works() {
             12,
             1_000_000_000_000_000,
         ));
-        let asset_id = AssetManager::next_permissionless_asset_id();
 
         // asset created gives alice the token
-        assert_eq!(Assets::balance(asset_id - 1, &ALICE), 1_000_000_000_000_000);
+        assert_eq!(Assets::balance(asset_id, &ALICE), 1_000_000_000_000_000);
+        // cost native token
+        assert_eq!(Balances::free_balance(&ALICE), amount - registry_cost);
+
+        let metadata = AssetIdMetadata::<Runtime>::get(asset_id).unwrap();
+        assert_eq!(metadata.is_sufficient, true);
+        assert_eq!(metadata.min_balance, 100_000);
+        assert_eq!(metadata.metadata.is_frozen, false);
+        assert_eq!(metadata.metadata.decimals, 12);
+        assert_eq!(metadata.metadata.name, "dog token".as_bytes().to_vec());
+        assert_eq!(metadata.metadata.symbol, "dog".as_bytes().to_vec());
 
         // Max balance works
         assert_ok!(AssetManager::permissionless_register_asset(
