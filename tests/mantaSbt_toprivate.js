@@ -30,6 +30,8 @@ async function main() {
 
     const transactions = [];
 
+    // forceToPrivate
+    // set next id to how many coins
     for (let i = 0; i < total_iterations; i++) {
         const mints_start = mints_offset + i * mint_size;
         const mint = api.tx.mantaSbt.forceToPrivate(
@@ -56,6 +58,104 @@ async function main() {
         await new Promise(resolve => setTimeout(resolve, 12000));
         transactions.length = 0;
     }
+
+    // to_private
+    // reserve_account, and after 4 mint, do it again
+    for (let i = 0; i < total_iterations; i++) {
+        const mints_start = mints_offset + i * mint_size;
+        const mint = api.tx.mantaSbt.toPrivate(
+            null,
+            null,
+            null,
+            mints_buffer.subarray(mints_start, mints_start + mint_size),
+            '123',
+        );
+        transactions.push(mint);
+
+        await api.tx.utility.forceBatch(transactions).signAndSend(sender, {
+            nonce: -1
+        }, ({
+            events = [],
+            status
+        }) => {
+            if (status.isFinalized) {
+                console.log("tx %i success.", status.nonce);
+            }
+            if (status.isDropped || status.isUsurped || status.isFinalityTimeout || status.isRetracted) {
+                console.log(`tx %i ${status.type}.`, status.nonce);
+            }
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 12000));
+        transactions.length = 0;
+    }
+
+    // mint_sbt_eth
+    // allowlist account
+    for (let i = 0; i < total_iterations; i++) {
+        const mints_start = mints_offset + i * mint_size;
+        const mint = api.tx.mantaSbt.mintSbtEth(
+            mints_buffer.subarray(mints_start, mints_start + mint_size),
+            0,
+            'sig',
+            0,
+            0,
+            0,
+            '123',
+        );
+        transactions.push(mint);
+
+        await api.tx.utility.forceBatch(transactions).signAndSend(sender, {
+            nonce: -1
+        }, ({
+            events = [],
+            status
+        }) => {
+            if (status.isFinalized) {
+                console.log("tx %i success.", status.nonce);
+            }
+            if (status.isDropped || status.isUsurped || status.isFinalityTimeout || status.isRetracted) {
+                console.log(`tx %i ${status.type}.`, status.nonce);
+            }
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 12000));
+        transactions.length = 0;
+    }
+
+    // force_mint_sbt_eth
+    for (let i = 0; i < total_iterations; i++) {
+        const mints_start = mints_offset + i * mint_size;
+        const mint = api.tx.mantaSbt.forceMintSbtEth(
+            mints_buffer.subarray(mints_start, mints_start + mint_size),
+            0,
+            'sig',
+            0,
+            0,
+            0,
+            '123',
+        );
+        transactions.push(mint);
+
+        await api.tx.utility.forceBatch(transactions).signAndSend(sender, {
+            nonce: -1
+        }, ({
+            events = [],
+            status
+        }) => {
+            if (status.isFinalized) {
+                console.log("tx %i success.", status.nonce);
+            }
+            if (status.isDropped || status.isUsurped || status.isFinalityTimeout || status.isRetracted) {
+                console.log(`tx %i ${status.type}.`, status.nonce);
+            }
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 12000));
+        transactions.length = 0;
+    }
+
+    await api.disconnect();
 }
 
 main().catch(console.error);
