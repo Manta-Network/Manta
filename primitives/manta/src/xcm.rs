@@ -417,6 +417,62 @@ where
     }
 }
 
+use xcm::latest::{Instruction::*, Weight};
+
+/// Allows execution from `origin` if it is contained in `T` (i.e. `T::Contains(origin)`) taking
+/// payments into account.
+///
+/// Only allows for `TeleportAsset`, `WithdrawAsset`, `ClaimAsset` and `ReserveAssetDeposit` XCMs
+/// because they are the only ones that place assets in the Holding Register to pay for execution.
+pub struct AllowTopLevelPaidExecutionFrom<T>(PhantomData<T>);
+impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionFrom<T> {
+    fn should_execute<RuntimeCall>(
+        origin: &MultiLocation,
+        message: &mut Xcm<RuntimeCall>,
+        max_weight: Weight,
+        _weight_credit: &mut Weight,
+    ) -> Result<(), ()> {
+        log::trace!(
+            target: "xcm::barriers",
+            "AllowTopLevelPaidExecutionFrom origin: {:?}, message: {:?}, max_weight: {:?}, weight_credit: {:?}",
+            origin, message, max_weight, _weight_credit,
+        );
+        ensure!(T::contains(origin), ());
+        let mut iter = message.0.iter_mut();
+        let i = iter.next().ok_or(())?;
+        match i {
+            ReceiveTeleportedAsset(..)
+            | WithdrawAsset(..)
+            | ReserveAssetDeposited(..)
+            | TransferReserveAsset { .. }
+            | InitiateReserveWithdraw { .. }
+            | ClaimAsset { .. } => (),
+            _ => return Err(()),
+        }
+        let mut i = iter.next().ok_or(())?;
+        while let ClearOrigin = i {
+            i = iter.next().ok_or(())?;
+        }
+        match i {
+            BuyExecution {
+                weight_limit: Limited(ref mut weight),
+                ..
+            } if *weight >= max_weight => {
+                *weight = max_weight;
+                Ok(())
+            }
+            BuyExecution {
+                ref mut weight_limit,
+                ..
+            } if weight_limit == &Unlimited => {
+                *weight_limit = Limited(max_weight);
+                Ok(())
+            }
+            _ => Err(()),
+        }
+    }
+}
+
 /// Barrier allowing a top level paid message with DescendOrigin instruction first
 pub struct AllowTopLevelPaidExecutionDescendOriginFirst<T>(PhantomData<T>);
 impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionDescendOriginFirst<T> {
