@@ -98,6 +98,16 @@ fn diff_tx_fees() {
         record
     });
 
+    // check whether there's new pallet introduced
+    test_runner.execute_with(|| {
+        let opaque_metadata = crate::Runtime::metadata();
+        let pallets = match opaque_metadata.1 {
+            frame_support::metadata::RuntimeMetadata::V14(metadata) => metadata.pallets,
+            _ => unreachable!(),
+        };
+        assert_eq!(pallets.len(), 39);
+    });
+
     let fee_multipliers = fee_multipliers();
     for multiplier in fee_multipliers {
         test_runner.execute_with(|| {
@@ -119,7 +129,6 @@ fn diff_tx_fees() {
                                 Percent::from_float(diff_value.to_float())
                             }
                         };
-                        dbg!(&fluctuation);
                         let _multiplier = found.fee_multiplier;
                         assert!(fluctuation <= TX_FEE_FLUCTUATION, "The tx fee fluctuation for the extrinsic {extrinsic_name} is {fluctuation:?}, bigger than {TX_FEE_FLUCTUATION:?} with multiplier {_multiplier}.");
                     }
@@ -1755,10 +1764,17 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             minting_account: ALICE.clone(),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("pallet_manta_sbt", "force_to_private", dispatch_info, call_len));
+        calamari_runtime_calls.push((
+            "pallet_manta_sbt",
+            "force_to_private",
+            dispatch_info,
+            call_len,
+        ));
 
         // reserve_sbt
-        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::reserve_sbt { reservee: Default::default() });
+        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::reserve_sbt {
+            reservee: Default::default(),
+        });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_manta_sbt", "reserve_sbt", dispatch_info, call_len));
 
@@ -1788,10 +1804,11 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         ));
 
         // remove_allowlist_evm_account
-        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::remove_allowlist_evm_account {
-            mint_id: 1,
-            evm_address: Default::default(),
-        });
+        let call =
+            crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::remove_allowlist_evm_account {
+                mint_id: 1,
+                evm_address: Default::default(),
+            });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_manta_sbt",
@@ -1801,9 +1818,10 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         ));
 
         // change_free_reserve_account
-        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::change_free_reserve_account {
-            account: Some(ALICE.clone()),
-        });
+        let call =
+            crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::change_free_reserve_account {
+                account: Some(ALICE.clone()),
+            });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_manta_sbt",
@@ -1830,8 +1848,8 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             call_len,
         ));
 
-         // change_force_account
-         let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::change_force_account {
+        // change_force_account
+        let call = crate::RuntimeCall::MantaSbt(pallet_manta_sbt::Call::change_force_account {
             account: Some(ALICE.clone()),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -2540,9 +2558,15 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             "Please update new extrinsic here."
         );
         // set_babe_randomness_results
-        let call = crate::RuntimeCall::Randomness(pallet_randomness::Call::set_babe_randomness_results {});
+        let call =
+            crate::RuntimeCall::Randomness(pallet_randomness::Call::set_babe_randomness_results {});
         let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("pallet_randomness", "set_babe_randomness_results", dispatch_info, call_len));
+        calamari_runtime_calls.push((
+            "pallet_randomness",
+            "set_babe_randomness_results",
+            dispatch_info,
+            call_len,
+        ));
     }
 
     // pallet_name_service
@@ -2566,7 +2590,12 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             registrant: ALICE.clone().into(),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("pallet_name_service", "accept_register", dispatch_info, call_len));
+        calamari_runtime_calls.push((
+            "pallet_name_service",
+            "accept_register",
+            dispatch_info,
+            call_len,
+        ));
 
         // set_primary_name
         let call = crate::RuntimeCall::NameService(pallet_name_service::Call::set_primary_name {
@@ -2574,15 +2603,26 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             registrant: ALICE.clone().into(),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("pallet_name_service", "set_primary_name", dispatch_info, call_len));
+        calamari_runtime_calls.push((
+            "pallet_name_service",
+            "set_primary_name",
+            dispatch_info,
+            call_len,
+        ));
 
         // cancel_pending_register
-        let call = crate::RuntimeCall::NameService(pallet_name_service::Call::cancel_pending_register {
-            username: "test".as_bytes().to_vec(),
-            registrant: ALICE.clone().into(),
-        });
+        let call =
+            crate::RuntimeCall::NameService(pallet_name_service::Call::cancel_pending_register {
+                username: "test".as_bytes().to_vec(),
+                registrant: ALICE.clone().into(),
+            });
         let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("pallet_name_service", "cancel_pending_register", dispatch_info, call_len));
+        calamari_runtime_calls.push((
+            "pallet_name_service",
+            "cancel_pending_register",
+            dispatch_info,
+            call_len,
+        ));
 
         // remove_register
         let call = crate::RuntimeCall::NameService(pallet_name_service::Call::remove_register {
@@ -2590,7 +2630,529 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             registrant: ALICE.clone().into(),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("pallet_name_service", "remove_register", dispatch_info, call_len));
+        calamari_runtime_calls.push((
+            "pallet_name_service",
+            "remove_register",
+            dispatch_info,
+            call_len,
+        ));
+    }
+
+    // pallet_farming
+    {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("Farming").len(),
+            14,
+            "Please update new extrinsic here."
+        );
+        // create_farming_pool
+        let call = crate::RuntimeCall::Farming(pallet_farming::Call::create_farming_pool {
+            tokens_proportion: vec![
+                (1, Perbill::from_percent(20)),
+                (2, Perbill::from_percent(40)),
+            ],
+            basic_rewards: vec![(1, 64), (2, 128)],
+            gauge_init: None,
+            min_deposit_to_start: 10,
+            after_block_to_start: 100,
+            withdraw_limit_time: 200,
+            claim_limit_time: 300,
+            withdraw_limit_count: 6,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_farming",
+            "create_farming_pool",
+            dispatch_info,
+            call_len,
+        ));
+
+        // charge
+        let call = crate::RuntimeCall::Farming(pallet_farming::Call::charge {
+            pool_id: 1,
+            rewards: vec![(1, 64), (2, 128)],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_farming", "charge", dispatch_info, call_len));
+
+        // deposit
+        let call = crate::RuntimeCall::Farming(pallet_farming::Call::deposit {
+            pool_id: 1,
+            add_value: 100,
+            gauge_info: Some((10, 64)),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_farming", "deposit", dispatch_info, call_len));
+
+        // withdraw
+        let call = crate::RuntimeCall::Farming(pallet_farming::Call::withdraw {
+            pool_id: 1,
+            remove_value: Some(100),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_farming", "withdraw", dispatch_info, call_len));
+
+        // claim
+        let call = crate::RuntimeCall::Farming(pallet_farming::Call::claim { pool_id: 1 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_farming", "claim", dispatch_info, call_len));
+
+        // withdraw_claim
+        let call = crate::RuntimeCall::Farming(pallet_farming::Call::withdraw_claim { pool_id: 1 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_farming", "withdraw_claim", dispatch_info, call_len));
+
+        // close_pool
+        let call = crate::RuntimeCall::Farming(pallet_farming::Call::close_pool { pool_id: 1 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_farming", "close_pool", dispatch_info, call_len));
+
+        // set_retire_limit
+        let call =
+            crate::RuntimeCall::Farming(pallet_farming::Call::set_retire_limit { limit: 16 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_farming",
+            "set_retire_limit",
+            dispatch_info,
+            call_len,
+        ));
+
+        // retire_pool
+        let call = crate::RuntimeCall::Farming(pallet_farming::Call::retire_pool { pool_id: 1 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_farming", "retire_pool", dispatch_info, call_len));
+
+        // reset_pool
+        let call = crate::RuntimeCall::Farming(pallet_farming::Call::reset_pool {
+            pool_id: 1,
+            basic_rewards: Some(vec![(1, 64), (2, 128)]),
+            min_deposit_to_start: Some(10),
+            after_block_to_start: Some(100),
+            withdraw_limit_time: Some(200),
+            claim_limit_time: Some(300),
+            withdraw_limit_count: Some(6),
+            gauge_init: None,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_farming", "reset_pool", dispatch_info, call_len));
+
+        // kill_pool
+        let call = crate::RuntimeCall::Farming(pallet_farming::Call::kill_pool { pool_id: 1 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_farming", "kill_pool", dispatch_info, call_len));
+
+        // edit_pool
+        let call = crate::RuntimeCall::Farming(pallet_farming::Call::edit_pool {
+            pool_id: 1,
+            basic_rewards: Some(vec![(1, 64), (2, 128)]),
+            withdraw_limit_time: Some(200),
+            claim_limit_time: Some(300),
+            gauge_basic_rewards: Some(vec![(1, 64), (2, 128)]),
+            withdraw_limit_count: Some(6),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_farming", "edit_pool", dispatch_info, call_len));
+
+        // gauge_withdraw
+        let call = crate::RuntimeCall::Farming(pallet_farming::Call::gauge_withdraw { gid: 1 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_farming", "gauge_withdraw", dispatch_info, call_len));
+
+        // force_gauge_claim
+        let call = crate::RuntimeCall::Farming(pallet_farming::Call::force_gauge_claim { gid: 1 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_farming",
+            "force_gauge_claim",
+            dispatch_info,
+            call_len,
+        ));
+    }
+
+    // pallet_lottery
+    {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("Lottery").len(),
+            12,
+            "Please update new extrinsic here."
+        );
+        t.execute_with(|| {
+            // deposit
+            let call = crate::RuntimeCall::Lottery(pallet_lottery::Call::deposit { amount: 10 });
+            let (dispatch_info, call_len) = get_call_details(&call);
+            calamari_runtime_calls.push(("pallet_lottery", "deposit", dispatch_info, call_len));
+            // request_withdraw
+            let call =
+                crate::RuntimeCall::Lottery(pallet_lottery::Call::request_withdraw { amount: 10 });
+            let (dispatch_info, call_len) = get_call_details(&call);
+            calamari_runtime_calls.push((
+                "pallet_lottery",
+                "request_withdraw",
+                dispatch_info,
+                call_len,
+            ));
+
+            // claim_my_winnings
+            let call = crate::RuntimeCall::Lottery(pallet_lottery::Call::claim_my_winnings {});
+            let (dispatch_info, call_len) = get_call_details(&call);
+            calamari_runtime_calls.push((
+                "pallet_lottery",
+                "claim_my_winnings",
+                dispatch_info,
+                call_len,
+            ));
+            // rebalance_stake
+            let call = crate::RuntimeCall::Lottery(pallet_lottery::Call::rebalance_stake {});
+            let (dispatch_info, call_len) = get_call_details(&call);
+            calamari_runtime_calls.push((
+                "pallet_lottery",
+                "rebalance_stake",
+                dispatch_info,
+                call_len,
+            ));
+
+            // start_lottery
+            let call = crate::RuntimeCall::Lottery(pallet_lottery::Call::start_lottery {});
+            let (dispatch_info, call_len) = get_call_details(&call);
+            calamari_runtime_calls.push((
+                "pallet_lottery",
+                "start_lottery",
+                dispatch_info,
+                call_len,
+            ));
+
+            // stop_lottery
+            let call = crate::RuntimeCall::Lottery(pallet_lottery::Call::stop_lottery {});
+            let (dispatch_info, call_len) = get_call_details(&call);
+            calamari_runtime_calls.push((
+                "pallet_lottery",
+                "stop_lottery",
+                dispatch_info,
+                call_len,
+            ));
+
+            // draw_lottery
+            let call = crate::RuntimeCall::Lottery(pallet_lottery::Call::draw_lottery {});
+            let (dispatch_info, call_len) = get_call_details(&call);
+            calamari_runtime_calls.push((
+                "pallet_lottery",
+                "draw_lottery",
+                dispatch_info,
+                call_len,
+            ));
+
+            // process_matured_withdrawals
+            let call =
+                crate::RuntimeCall::Lottery(pallet_lottery::Call::process_matured_withdrawals {});
+            let (dispatch_info, call_len) = get_call_details(&call);
+            calamari_runtime_calls.push((
+                "pallet_lottery",
+                "process_matured_withdrawals",
+                dispatch_info,
+                call_len,
+            ));
+
+            // liquidate_lottery
+            let call = crate::RuntimeCall::Lottery(pallet_lottery::Call::liquidate_lottery {});
+            let (dispatch_info, call_len) = get_call_details(&call);
+            calamari_runtime_calls.push((
+                "pallet_lottery",
+                "liquidate_lottery",
+                dispatch_info,
+                call_len,
+            ));
+
+            // set_min_deposit
+            let call = crate::RuntimeCall::Lottery(pallet_lottery::Call::set_min_deposit {
+                min_deposit: 10,
+            });
+            let (dispatch_info, call_len) = get_call_details(&call);
+            calamari_runtime_calls.push((
+                "pallet_lottery",
+                "set_min_deposit",
+                dispatch_info,
+                call_len,
+            ));
+
+            // set_min_withdraw
+            let call = crate::RuntimeCall::Lottery(pallet_lottery::Call::set_min_withdraw {
+                min_withdraw: 10,
+            });
+            let (dispatch_info, call_len) = get_call_details(&call);
+            calamari_runtime_calls.push((
+                "pallet_lottery",
+                "set_min_withdraw",
+                dispatch_info,
+                call_len,
+            ));
+
+            // set_gas_reserve
+            let call = crate::RuntimeCall::Lottery(pallet_lottery::Call::set_gas_reserve {
+                gas_reserve: 10,
+            });
+            let (dispatch_info, call_len) = get_call_details(&call);
+            calamari_runtime_calls.push((
+                "pallet_lottery",
+                "set_gas_reserve",
+                dispatch_info,
+                call_len,
+            ));
+        });
+    }
+
+    // zenlink_protocol
+    {
+        use zenlink_protocol::{
+            AssetBalance, AssetId as ZenlinkAssetId, GenerateLpAssetId, LocalAssetHandler,
+            ZenlinkMultiAssets, LOCAL,
+        };
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("ZenlinkProtocol").len(),
+            16,
+            "Please update new extrinsic here."
+        );
+        // set_fee_receiver
+        let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::set_fee_receiver {
+            send_to: Some(ALICE.clone().into()),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "zenlink_protocol",
+            "set_fee_receiver",
+            dispatch_info,
+            call_len,
+        ));
+
+        // set_fee_point
+        let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::set_fee_point {
+            fee_point: 8,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("zenlink_protocol", "set_fee_point", dispatch_info, call_len));
+
+        // transfer
+        let asset_id = ZenlinkAssetId {
+            chain_id: 2084,
+            asset_type: 0,
+            asset_index: 10, // native token
+        };
+        let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::transfer {
+            asset_id: asset_id,
+            recipient: ALICE.clone().into(),
+            amount: 10,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("zenlink_protocol", "transfer", dispatch_info, call_len));
+
+        // create_pair
+        let asset_1 = ZenlinkAssetId {
+            chain_id: 2084,
+            asset_type: 1,
+            asset_index: 45, // non native token
+        };
+        let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::create_pair {
+            asset_0: asset_id,
+            asset_1: asset_1,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("zenlink_protocol", "transfer", dispatch_info, call_len));
+
+        // add_liquidity
+        let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::add_liquidity {
+            asset_0: asset_id,
+            asset_1: asset_1,
+            amount_0_desired: 2,
+            amount_1_desired: 4,
+            amount_0_min: 1,
+            amount_1_min: 3,
+            deadline: 20,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("zenlink_protocol", "add_liquidity", dispatch_info, call_len));
+
+        // remove_liquidity
+        let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::remove_liquidity {
+            asset_0: asset_id,
+            asset_1: asset_1,
+            liquidity: 4,
+            amount_0_min: 1,
+            amount_1_min: 3,
+            recipient: ALICE.clone().into(),
+            deadline: 20,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "zenlink_protocol",
+            "remove_liquidity",
+            dispatch_info,
+            call_len,
+        ));
+
+        // swap_exact_assets_for_assets
+        let asset_2 = ZenlinkAssetId {
+            chain_id: 2084,
+            asset_type: 8,
+            asset_index: 45, // non native token
+        };
+        let call = crate::RuntimeCall::ZenlinkProtocol(
+            zenlink_protocol::Call::swap_exact_assets_for_assets {
+                amount_in: 1,
+                amount_out_min: 4,
+                path: vec![asset_id, asset_2, asset_1],
+                recipient: ALICE.clone().into(),
+                deadline: 20,
+            },
+        );
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "zenlink_protocol",
+            "swap_exact_assets_for_assets",
+            dispatch_info,
+            call_len,
+        ));
+
+        // swap_assets_for_exact_assets
+        let call = crate::RuntimeCall::ZenlinkProtocol(
+            zenlink_protocol::Call::swap_assets_for_exact_assets {
+                amount_out: 1,
+                amount_in_max: 4,
+                path: vec![asset_id, asset_2, asset_1],
+                recipient: ALICE.clone().into(),
+                deadline: 20,
+            },
+        );
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "zenlink_protocol",
+            "swap_assets_for_exact_assets",
+            dispatch_info,
+            call_len,
+        ));
+
+        // bootstrap_create
+        let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::bootstrap_create {
+            asset_0: asset_id,
+            asset_1: asset_1,
+            target_supply_0: 1000,
+            target_supply_1: 5000,
+            capacity_supply_0: 1000000,
+            capacity_supply_1: 5000000,
+            end: 20,
+            rewards: vec![asset_2, asset_1],
+            limits: vec![(asset_1, 50000), (asset_2, 60000)],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "zenlink_protocol",
+            "bootstrap_create",
+            dispatch_info,
+            call_len,
+        ));
+
+        // bootstrap_contribute
+        let call =
+            crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::bootstrap_contribute {
+                asset_0: asset_id,
+                asset_1: asset_1,
+                amount_0_contribute: 100,
+                amount_1_contribute: 500,
+                deadline: 20,
+            });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "zenlink_protocol",
+            "bootstrap_contribute",
+            dispatch_info,
+            call_len,
+        ));
+
+        // bootstrap_claim
+        let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::bootstrap_claim {
+            recipient: ALICE.clone().into(),
+            asset_0: asset_id,
+            asset_1: asset_1,
+            deadline: 20,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "zenlink_protocol",
+            "bootstrap_claim",
+            dispatch_info,
+            call_len,
+        ));
+
+        // bootstrap_end
+        let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::bootstrap_end {
+            asset_0: asset_id,
+            asset_1: asset_1,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("zenlink_protocol", "bootstrap_end", dispatch_info, call_len));
+
+        // bootstrap_update
+        let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::bootstrap_update {
+            asset_0: asset_id,
+            asset_1: asset_1,
+            target_supply_0: 1500,
+            target_supply_1: 7500,
+            capacity_supply_0: 10000000,
+            capacity_supply_1: 50000000,
+            end: 100,
+            rewards: vec![asset_2, asset_1],
+            limits: vec![(asset_1, 100000), (asset_2, 600000)],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "zenlink_protocol",
+            "bootstrap_update",
+            dispatch_info,
+            call_len,
+        ));
+
+        // bootstrap_refund
+        let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::bootstrap_refund {
+            asset_0: asset_id,
+            asset_1: asset_1,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "zenlink_protocol",
+            "bootstrap_refund",
+            dispatch_info,
+            call_len,
+        ));
+
+        // bootstrap_charge_reward
+        let call =
+            crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::bootstrap_charge_reward {
+                asset_0: asset_id,
+                asset_1: asset_1,
+                charge_rewards: vec![(asset_1, 1000), (asset_id, 6000)],
+            });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "zenlink_protocol",
+            "bootstrap_charge_reward",
+            dispatch_info,
+            call_len,
+        ));
+
+        // bootstrap_withdraw_reward
+        let call = crate::RuntimeCall::ZenlinkProtocol(
+            zenlink_protocol::Call::bootstrap_withdraw_reward {
+                asset_0: asset_id,
+                asset_1: asset_1,
+                recipient: ALICE.clone().into(),
+            },
+        );
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "zenlink_protocol",
+            "bootstrap_withdraw_reward",
+            dispatch_info,
+            call_len,
+        ));
     }
 
     (calamari_runtime_calls, t)
