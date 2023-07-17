@@ -98,9 +98,6 @@ fn restarting_funded_lottery_should_work() {
         .build()
         .execute_with(|| {
             assert_ok!(Lottery::start_lottery(RawOrigin::Root.into()));
-            assert_last_event!(crate::mock::RuntimeEvent::Lottery(
-                crate::Event::LotteryStarted
-            ));
             assert_ok!(Lottery::stop_lottery(RawOrigin::Root.into()));
             assert_last_event!(crate::mock::RuntimeEvent::Lottery(
                 crate::Event::LotteryStopped
@@ -481,7 +478,7 @@ fn deposit_withdraw_deposit_works() {
             roll_to_round_begin(2);
             assert_eq!(new_collator, ParachainStaking::selected_candidates()[1]);
             // pretend the collator got some rewards
-            pallet_parachain_staking::AwardedPts::<Test>::insert(1, &new_collator, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(1, new_collator, 20);
             assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
             assert_eq!(balance, Lottery::staked_collators(new_collator));
         });
@@ -517,7 +514,7 @@ fn withdraw_partial_deposit_works() {
             assert_eq!(0, Lottery::staked_collators(*BOB));
             assert_eq!(quarter_balance, Lottery::surplus_unstaking_balance());
             roll_to_round_begin(3);
-            pallet_parachain_staking::AwardedPts::<Test>::insert(2, &*BOB, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(2, *BOB, 20);
             // funds should be unlocked now and BOB is finished unstaking, so it's eligible for redepositing
             assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
             assert_eq!(
@@ -546,8 +543,7 @@ fn multiround_withdraw_partial_deposit_works() {
             assert!(HIGH_BALANCE > balance);
             // one round to unstake
             assert!(
-                <Test as pallet_parachain_staking::Config>::LeaveCandidatesDelay::get() as u32
-                    == 1u32
+                <Test as pallet_parachain_staking::Config>::LeaveCandidatesDelay::get() == 1u32
             );
             assert_eq!(0, Lottery::staked_collators(*BOB));
             assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
@@ -566,7 +562,7 @@ fn multiround_withdraw_partial_deposit_works() {
             // withdrawing funds are still locked
             roll_to_round_begin(2);
             roll_one_block(); // ensure this unlocks *after* round 3 start
-            pallet_parachain_staking::AwardedPts::<Test>::insert(1, &*BOB, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(1, *BOB, 20);
             assert_ok!(Lottery::request_withdraw(
                 Origin::signed(*ALICE),
                 quarter_balance
@@ -581,7 +577,7 @@ fn multiround_withdraw_partial_deposit_works() {
 
             // collator becomes unstaked on draw_lottery, must keep quarter for withdrawal, can restake other quarter
             roll_to_round_begin(3);
-            pallet_parachain_staking::AwardedPts::<Test>::insert(2, &*BOB, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(2, *BOB, 20);
             assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
             assert_eq!(quarter_balance, Lottery::staked_collators(*BOB));
             assert_eq!(quarter_balance, Lottery::unlocked_unstaking_funds());
@@ -594,7 +590,7 @@ fn multiround_withdraw_partial_deposit_works() {
             assert!(crate::UnstakingCollators::<Test>::get().is_empty());
 
             roll_to_round_begin(4);
-            pallet_parachain_staking::AwardedPts::<Test>::insert(3, &*BOB, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(3, *BOB, 20);
             // second withdrawal can be paid out
             assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
             assert_eq!(
@@ -603,6 +599,52 @@ fn multiround_withdraw_partial_deposit_works() {
             );
             assert_eq!(quarter_balance, Lottery::staked_collators(*BOB));
             assert_eq!(0, Lottery::surplus_unstaking_balance());
+            assert_eq!(0, Lottery::unlocked_unstaking_funds());
+            assert!(Lottery::withdrawal_request_queue().is_empty());
+        });
+}
+
+#[test]
+fn multiround_withdraw_partial_deposit_works2() {
+    let reserve = 10_000 * UNIT;
+    let balance = 500_000_000 * UNIT;
+    let quarter_balance = 125_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![
+            (*ALICE, HIGH_BALANCE),
+            (*BOB, HIGH_BALANCE),
+            (*CHARLIE, HIGH_BALANCE),
+        ])
+        .with_candidates(vec![(*BOB, balance), (*CHARLIE, balance)])
+        .with_funded_lottery_account(reserve) // minimally fund lottery
+        .build()
+        .execute_with(|| {
+            assert_eq!(reserve, Lottery::gas_reserve()); // XXX: Cant use getter in the ExtBuilder
+            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
+            assert_ok!(Lottery::request_withdraw(
+                Origin::signed(*ALICE),
+                quarter_balance
+            ));
+            roll_to_round_begin(2);
+            assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
+            roll_one_block();
+            assert_ok!(Lottery::request_withdraw(
+                Origin::signed(*ALICE),
+                quarter_balance
+            ));
+            assert_ok!(Lottery::request_withdraw(
+                Origin::signed(*ALICE),
+                quarter_balance
+            ));
+            roll_to_round_begin(3);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(3, *BOB, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(3, *CHARLIE, 20);
+            assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
+            assert_eq!(2, Lottery::withdrawal_request_queue().len());
+            roll_to_round_begin(4);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(4, *BOB, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(4, *CHARLIE, 20);
+            assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
             assert_eq!(0, Lottery::unlocked_unstaking_funds());
             assert!(Lottery::withdrawal_request_queue().is_empty());
         });

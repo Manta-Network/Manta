@@ -62,8 +62,8 @@ use frame_system::{
 };
 use manta_primitives::{
     constants::{
-        time::*, RocksDbWeight, LOTTERY_PALLET_ID, STAKING_PALLET_ID, TREASURY_PALLET_ID,
-        WEIGHT_PER_SECOND,
+        time::*, RocksDbWeight, LOTTERY_PALLET_ID, NAME_SERVICE_PALLET_ID, STAKING_PALLET_ID,
+        TREASURY_PALLET_ID, WEIGHT_PER_SECOND,
     },
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, PoolId, Signature},
 };
@@ -143,7 +143,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("manta"),
     impl_name: create_runtime_str!("manta"),
     authoring_version: 1,
-    spec_version: 4201,
+    spec_version: 4310,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 3,
@@ -272,9 +272,11 @@ impl Contains<RuntimeCall> for MantaFilter {
             | RuntimeCall::Preimage(_)
             | RuntimeCall::MantaPay(_)
             | RuntimeCall::MantaSbt(_)
+            | RuntimeCall::NameService(_)
             | RuntimeCall::TransactionPause(_)
             | RuntimeCall::ZenlinkProtocol(_)
             | RuntimeCall::Farming(_)
+            | RuntimeCall::PolkadotXcm(pallet_xcm::Call::send {..})
             | RuntimeCall::AssetManager(pallet_asset_manager::Call::update_outgoing_filtered_assets {..})
             | RuntimeCall::Utility(_) => true,
 
@@ -399,9 +401,9 @@ impl pallet_randomness::Config for Runtime {
 parameter_types! {
     pub const LotteryPotId: PalletId = LOTTERY_PALLET_ID;
     /// Time in blocks between lottery drawings
-    pub DrawingInterval: BlockNumber = prod_or_fast!(7 * DAYS, 3 * MINUTES);
+    pub DrawingInterval: BlockNumber = prod_or_fast!(7 * DAYS, 10 * MINUTES);
     /// Time in blocks *before* a drawing in which modifications of the win-eligble pool are prevented
-    pub DrawingFreezeout: BlockNumber = prod_or_fast!(1 * DAYS, 1 * MINUTES);
+    pub DrawingFreezeout: BlockNumber = prod_or_fast!(1 * DAYS, 3 * MINUTES);
     /// Time in blocks until a collator is done unstaking
     pub UnstakeLockTime: BlockNumber = LeaveDelayRounds::get() * DefaultBlocksPerRound::get();
 }
@@ -867,6 +869,20 @@ impl pallet_farming::Config for Runtime {
     type WeightInfo = weights::pallet_farming::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub const NameServicePalletId: PalletId = NAME_SERVICE_PALLET_ID;
+}
+
+impl pallet_name_service::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type PalletId = NameServicePalletId;
+    type RegisterWaitingPeriod = ConstU32<2>;
+    /// Register pricing around 5$ with estimated MANTA/USD
+    type RegisterPrice = ConstU128<{ 15 * MANTA }>;
+    type WeightInfo = weights::pallet_name_service::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -928,6 +944,7 @@ construct_runtime!(
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
         MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
+        NameService: pallet_name_service::{Pallet, Call, Storage, Event<T>} = 52,
 
         ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 51,
         Farming: pallet_farming::{Pallet, Call, Storage, Event<T>} = 54,
@@ -1010,6 +1027,7 @@ mod benches {
         [pallet_lottery, Lottery]
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
+        [pallet_name_service, NameService]
         [zenlink_protocol, ZenlinkProtocol]
         [pallet_farming, Farming]
         // Nimbus pallets

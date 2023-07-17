@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'calamari-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '4.2.0'
+version = '4.3.1'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = '3.4.0', default-features = false, features = ["derive", "max-encoded-len"] }
@@ -94,9 +94,9 @@ manta-collator-selection = { path = '../../pallets/collator-selection', default-
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 manta-support = { package = "pallet-manta-support", path = "../../pallets/manta-support", default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
-pallet-lottery = { path = '../../pallets/pallet-lottery', default-features = false }
 pallet-farming = { path = '../../pallets/farming', default-features = false }
 pallet-farming-rpc-runtime-api = { path = '../../pallets/farming/rpc/runtime-api', default-features = false }
+pallet-lottery = { path = '../../pallets/pallet-lottery', default-features = false }
 pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
 pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
 pallet-name-service = { path = '../../pallets/name-service', default-features = false }
@@ -297,6 +297,7 @@ std = [
   'orml-xtokens/std',
   'pallet-manta-pay/std',
   'pallet-manta-sbt/std',
+  'pallet-name-service/std',
   'manta-support/std',
   "zenlink-protocol/std",
   "zenlink-protocol-runtime-api/std",

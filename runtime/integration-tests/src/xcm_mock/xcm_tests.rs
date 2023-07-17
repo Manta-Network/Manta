@@ -38,8 +38,9 @@ use xcm_simulator::TestExt;
 use super::{
     parachain,
     parachain::{
-        create_asset_location, create_asset_metadata, register_assets_on_parachain, AssetManager,
-        ParaTokenPerSecond, XcmExecutorConfig as ParaXcmExecutorConfig, PALLET_ASSET_INDEX,
+        create_asset_location, create_asset_metadata, register_assets_on_parachain, AccountId,
+        AssetManager, ParaTokenPerSecond, RelayNetwork, XcmExecutorConfig as ParaXcmExecutorConfig,
+        PALLET_ASSET_INDEX,
     },
     relay_chain, MockNet, ParaA, ParaB, ParaC, Relay, *,
 };
@@ -129,6 +130,141 @@ fn dmp_transact_from_parent_should_pass_barrier() {
         assert!(System::events().iter().any(|r| matches!(
             r.event,
             RuntimeEvent::System(frame_system::Event::Remarked { .. })
+        )));
+    });
+}
+
+#[test]
+fn xcmp_transact_from_sibling_tests() {
+    MockNet::reset();
+
+    let para_a_source_location = create_asset_location(1, PARA_A_ID);
+    let para_b_source_location = create_asset_location(1, PARA_B_ID);
+
+    let amount = INITIAL_BALANCE - 1000;
+
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, false);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, false);
+
+    let _ = register_assets_on_parachain::<ParaA>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(0u128),
+        None,
+    );
+    let b_asset_id_on_a = register_assets_on_parachain::<ParaA>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
+
+    let _ = register_assets_on_parachain::<ParaB>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
+    let _ = register_assets_on_parachain::<ParaB>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(0u128),
+        None,
+    );
+
+    let remark = parachain::RuntimeCall::System(
+        frame_system::Call::<parachain::Runtime>::remark_with_event {
+            remark: vec![1, 2, 3],
+        },
+    );
+    let dummy_asset = MultiAsset {
+        id: Concrete(MultiLocation {
+            parents: 1,
+            interior: X1(Parachain(PARA_B_ID)),
+        }),
+        fun: Fungible(1000000000),
+    };
+    let dummy_assets = MultiAssets::from(vec![dummy_asset.clone()]);
+    let origin_location_interior = X1(AccountId32 {
+        network: Any,
+        id: ALICE.into(),
+    });
+    let alice_derived_account_on_b =
+        xcm_builder::Account32Hash::<RelayNetwork, AccountId>::convert_ref(MultiLocation {
+            parents: 1,
+            interior: X2(
+                Parachain(PARA_A_ID),
+                AccountId32 {
+                    network: Any,
+                    id: ALICE.into(),
+                },
+            ),
+        })
+        .unwrap();
+
+    ParaB::execute_with(|| {
+        assert_ok!(pallet_balances::Pallet::<parachain::Runtime>::set_balance(
+            parachain::RuntimeOrigin::root(),
+            alice_derived_account_on_b.clone(),
+            amount,
+            0
+        ));
+    });
+
+    ParaA::execute_with(|| {
+        assert_ok!(parachain::Assets::mint_into(
+            b_asset_id_on_a,
+            &ALICE,
+            amount
+        ));
+        assert_ok!(ParachainPalletXcm::send_xcm(
+            Here,
+            (Parent, Parachain(PARA_B_ID)),
+            Xcm(vec![
+                DescendOrigin(origin_location_interior),
+                WithdrawAsset(dummy_assets.clone()),
+                BuyExecution {
+                    fees: dummy_asset.clone(),
+                    weight_limit: Unlimited,
+                },
+                Transact {
+                    origin_type: OriginKind::SovereignAccount,
+                    require_weight_at_most: INITIAL_BALANCE as u64,
+                    call: remark.encode().into(),
+                }
+            ]),
+        ));
+    });
+
+    ParaB::execute_with(|| {
+        use parachain::{RuntimeEvent, System};
+        assert!(System::events().iter().any(|r| matches!(
+            r.event,
+            RuntimeEvent::System(frame_system::Event::Remarked { .. })
+        )));
+    });
+
+    ParaA::execute_with(|| {
+        assert_ok!(ParachainPalletXcm::send_xcm(
+            Here,
+            (Parent, Parachain(PARA_B_ID)),
+            Xcm(vec![Transact {
+                origin_type: OriginKind::SovereignAccount,
+                require_weight_at_most: INITIAL_BALANCE as u64,
+                call: remark.encode().into(),
+            }]),
+        ));
+    });
+
+    ParaB::execute_with(|| {
+        use parachain::{RuntimeEvent, System};
+        assert!(System::events().iter().any(|r| matches!(
+            r.event,
+            RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail {
+                message_hash: _,
+                error: XcmError::Barrier,
+                weight: _
+            })
         )));
     });
 }

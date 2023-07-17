@@ -141,7 +141,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 4201,
+    spec_version: 4310,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 14,
@@ -250,7 +250,7 @@ impl Contains<RuntimeCall> for BaseFilter {
                                 | orml_xtokens::Call::transfer_multiasset_with_fee {..}
                                 | orml_xtokens::Call::transfer_multiassets {..})
             // Filter callables from XCM pallets, we use XTokens exclusively
-            | RuntimeCall::XcmpQueue(_) | RuntimeCall::PolkadotXcm(_) | RuntimeCall::DmpQueue(_) => false,
+            | RuntimeCall::XcmpQueue(_) | RuntimeCall::DmpQueue(_) => false,
 
             // Explicitly ALLOWED calls
             | RuntimeCall::Authorship(_)
@@ -312,6 +312,7 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::ZenlinkProtocol(_)
             | RuntimeCall::Farming(_)
             | RuntimeCall::AssetManager(pallet_asset_manager::Call::update_outgoing_filtered_assets {..})
+            | RuntimeCall::PolkadotXcm(pallet_xcm::Call::send {..})
             | RuntimeCall::Utility(_) => true,
 
             // DISALLOW anything else
@@ -402,7 +403,7 @@ impl pallet_randomness::GetBabeData<u64, Option<Hash>> for BabeDataGetter {
         }
         relay_chain_state_proof()
             .read_optional_entry(
-                cumulus_primitives_core::relay_chain::well_known_keys::TWO_EPOCHS_AGO_RANDOMNESS,
+                cumulus_primitives_core::relay_chain::well_known_keys::ONE_EPOCH_AGO_RANDOMNESS,
             )
             .ok()
             .flatten()
@@ -419,7 +420,7 @@ parameter_types! {
     /// Time in blocks *before* a drawing in which modifications of the win-eligble pool are prevented
     pub DrawingFreezeout: BlockNumber = prod_or_fast!(1 * DAYS, 3 * MINUTES);
     /// Time in blocks until a collator is done unstaking
-    pub UnstakeLockTime: BlockNumber = 10 * MINUTES;
+    pub UnstakeLockTime: BlockNumber = LeaveDelayRounds::get() * DefaultBlocksPerRound::get();
 }
 impl pallet_lottery::Config for Runtime {
     type RuntimeCall = RuntimeCall;
