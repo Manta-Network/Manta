@@ -444,8 +444,6 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionFro
             ReceiveTeleportedAsset(..)
             | WithdrawAsset(..)
             | ReserveAssetDeposited(..)
-            | TransferReserveAsset { .. }
-            | InitiateReserveWithdraw { .. }
             | ClaimAsset { .. } => (),
             _ => return Err(()),
         }
@@ -459,17 +457,63 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionFro
                 ..
             } if *weight >= max_weight => {
                 *weight = max_weight;
-                Ok(())
+                ()
             }
             BuyExecution {
                 ref mut weight_limit,
                 ..
             } if weight_limit == &Unlimited => {
                 *weight_limit = Limited(max_weight);
-                Ok(())
+                ()
             }
-            _ => Err(()),
+            _ => {
+                return Err(());
+            }
         }
+
+        for elem in iter {
+            if let InitiateReserveWithdraw {
+                assets: _assets,
+                reserve,
+                ..
+            } = elem
+            {
+                if reserve != &MultiLocation::here()
+                    && reserve != &MultiLocation::new(1, X1(Parachain(2104)))
+                {
+                    return Ok(());
+                } else {
+                    return Err(());
+                }
+            }
+            if let TransferReserveAsset {
+                assets: _assets,
+                dest,
+                ..
+            } = elem
+            {
+                return Err(());
+            }
+            if let DepositReserveAsset { assets, .. } = elem {
+                match assets {
+                    xcm::latest::MultiAssetFilter::Definite(assets) => {
+                        for asset in assets.inner() {
+                            if asset.id != Concrete(MultiLocation::here())
+                                && asset.id != Concrete(MultiLocation::new(1, X1(Parachain(2104))))
+                            {
+                                return Ok(());
+                            } else {
+                                return Err(());
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            // Do nothing otherwise
+        }
+
+        Ok(())
     }
 }
 
