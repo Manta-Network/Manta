@@ -26,12 +26,18 @@ use sp_std::marker::PhantomData;
 
 use crate::assets::{AssetIdLocationMap, UnitsPerSecond};
 use frame_support::{
+    ensure,
     pallet_prelude::Get,
-    traits::{fungibles::Mutate, tokens::ExistenceRequirement},
+    traits::{fungibles::Mutate, tokens::ExistenceRequirement, Contains},
 };
 use frame_system::Config;
 use xcm::{
-    latest::{prelude::Concrete, Error as XcmError},
+    latest::{
+        prelude::{BuyExecution, Concrete, DescendOrigin, WithdrawAsset},
+        Error as XcmError,
+        WeightLimit::{Limited, Unlimited},
+        Xcm,
+    },
     v1::{
         AssetId as XcmAssetId, Fungibility,
         Junction::{AccountId32, Parachain},
@@ -43,7 +49,7 @@ use xcm_builder::TakeRevenue;
 use xcm_executor::{
     traits::{
         Convert as XcmConvert, FilterAssetLocation, MatchesFungible, MatchesFungibles,
-        TransactAsset, WeightTrader,
+        ShouldExecute, TransactAsset, WeightTrader,
     },
     Assets,
 };
@@ -408,5 +414,54 @@ where
         )
         .map_err(|_| XcmError::FailedToTransactAsset("Failed Burn"))?;
         Ok(asset.clone().into())
+    }
+}
+
+/// Barrier allowing a top level paid message with DescendOrigin instruction first
+pub struct AllowTopLevelPaidExecutionDescendOriginFirst<T>(PhantomData<T>);
+impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionDescendOriginFirst<T> {
+    fn should_execute<Call>(
+        origin: &MultiLocation,
+        message: &mut Xcm<Call>,
+        max_weight: u64,
+        _weight_credit: &mut u64,
+    ) -> Result<(), ()> {
+        log::trace!(
+            target: "xcm::barriers",
+            "AllowTopLevelPaidExecutionDescendOriginFirst origin:
+            {:?}, message: {:?}, max_weight: {:?}, weight_credit: {:?}",
+            origin, message, max_weight, _weight_credit,
+        );
+        ensure!(T::contains(origin), ());
+        let mut iter = message.0.iter_mut();
+        // Make sure the first instruction is DescendOrigin
+        iter.next()
+            .filter(|instruction| matches!(instruction, DescendOrigin(_)))
+            .ok_or(())?;
+
+        // Then WithdrawAsset
+        iter.next()
+            .filter(|instruction| matches!(instruction, WithdrawAsset(_)))
+            .ok_or(())?;
+
+        // Then BuyExecution
+        let i = iter.next().ok_or(())?;
+        match i {
+            BuyExecution {
+                weight_limit: Limited(ref mut weight),
+                ..
+            } if *weight >= max_weight => {
+                *weight = max_weight;
+                Ok(())
+            }
+            BuyExecution {
+                ref mut weight_limit,
+                ..
+            } if weight_limit == &Unlimited => {
+                *weight_limit = Limited(max_weight);
+                Ok(())
+            }
+            _ => Err(()),
+        }
     }
 }

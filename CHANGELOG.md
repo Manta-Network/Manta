@@ -1,8 +1,17 @@
 # CHANGELOG
 
+## v4.3.1
+### Added
+- [\#1197](https://github.com/Manta-Network/Manta/pull/1197) check-tests CI workflow benchmark tests for manta-dev
+- [\#1055](https://github.com/Manta-Network/Manta/pull/1055) Allow xcm-transacts from all chains [MACADO]
+- [\#1207](https://github.com/Manta-Network/Manta/pull/1207) Add mantapay rpc tests to manta runtime [MACA]
+
+### Fixed
+- [\#1208](https://github.com/Manta-Network/Manta/pull/1208) Fix wrong reports of congestion test results
+
 ## v4.3.0
 ### Added
-- [\#1179](https://github.com/Manta-Network/Manta/pull/1179) Name Service Pallet [CA]
+- [\#1179](https://github.com/Manta-Network/Manta/pull/1179) Copy Name Service Pallet [CA]
 - [\#1141](https://github.com/Manta-Network/Manta/pull/1141) manta-farming [MACA]
 - [\#1036](https://github.com/Manta-Network/Manta/pull/1036) Pallet Staking Lottery [MACA]
 
@@ -11,6 +20,8 @@
 
 ### Fixed
 - [\#1175](https://github.com/Manta-Network/Manta/pull/1175) Fix congestion test CI [MACA]
+- [\#1193](https://github.com/Manta-Network/Manta/pull/1193) Revert to v0942 polkadot binary [MACA]
+- [\#1196](https://github.com/Manta-Network/Manta/pull/1196) Fix dex ed [MA]
 
 ### Removed
 - [\#1167](https://github.com/Manta-Network/Manta/pull/1167) Retire dolphin runtime [DO]
