@@ -2,6 +2,8 @@ import {ApiPromise} from "@polkadot/api";
 import {KeyringPair} from "@polkadot/keyring/types";
 import {blake2AsHex} from "@polkadot/util-crypto";
 
+export const timer = (ms: number) => new Promise(res => setTimeout(res, ms))
+
 /**
  * Execute an extrinsic with Root origin via governance.
  * @param api API object connecting to node.
@@ -33,8 +35,44 @@ export async function execute_with_root_via_governance(
     await api.tx.democracy.vote(referendumIndexObject.referendumIndex, {
         Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
     }).signAndSend(keyring, {nonce: -1});
-    console.log("Runtime upgrade governanceZ voted on ...");
+    console.log("Runtime upgrade governance voted on ...");
     referendumIndexObject.referendumIndex++;
+}
+
+export async function execute_via_governance(
+    api: ApiPromise,
+    keyring: KeyringPair,
+    extrinsicData: any,
+    referendumIndexObject: any
+) {
+    const encodedCallData = extrinsicData.method.toHex();
+    await api.tx.preimage.notePreimage(encodedCallData).signAndSend(keyring, {nonce: -1});
+    await timer(300);
+
+    let encodedCallDataHash = blake2AsHex(encodedCallData);
+    let externalProposeDefault = await api.tx.democracy.externalProposeDefault({
+        Legacy: {
+            hash: encodedCallDataHash
+        }
+    });
+    const encodedExternalProposeDefault = externalProposeDefault.method.toHex();
+    await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce: -1});
+    await timer(300);
+
+    let fastTrackCall = await api.tx.democracy.fastTrack(encodedCallDataHash, 3, 2);
+    await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
+    await timer(300);
+
+    await api.tx.democracy.vote(referendumIndexObject.referendumIndex, {
+        Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
+    }).signAndSend(keyring, {nonce: -1});
+    await timer(300);
+
+    referendumIndexObject.referendumIndex++;
+    for (let i = 0; i < 5; i++) {
+        await api.tx.system.remark("0x00").signAndSend(keyring, {nonce: -1});
+        await timer(300);
+    }
 }
 
 export async function execute_transaction(
