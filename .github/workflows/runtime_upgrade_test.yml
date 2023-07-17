@@ -45,10 +45,10 @@ jobs:
             srtool-target-${{ env.RUNTIME }}
       - name: build runtime
         id: srtool-build
-        uses: chevdor/srtool-actions@v0.4.0
+        uses: chevdor/srtool-actions@v0.7.0
         with:
           image: paritytech/srtool
-          tag: 1.66.1
+          tag: 1.70.0
           chain: ${{ env.RUNTIME }}
       - name: persist srtool digest
         run: >
