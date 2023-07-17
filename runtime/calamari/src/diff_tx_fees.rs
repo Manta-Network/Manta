@@ -1748,7 +1748,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             mint_id: None,
             chain_id: None,
             signature: None,
-            post: to_private_post.clone(),
+            post: to_private_post,
             metadata: Default::default(),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -2903,10 +2903,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
 
     // zenlink_protocol
     {
-        use zenlink_protocol::{
-            AssetBalance, AssetId as ZenlinkAssetId, GenerateLpAssetId, LocalAssetHandler,
-            ZenlinkMultiAssets, LOCAL,
-        };
+        use zenlink_protocol::AssetId as ZenlinkAssetId;
         assert_eq!(
             crate::RuntimeCall::get_call_names("ZenlinkProtocol").len(),
             16,
@@ -2914,7 +2911,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         );
         // set_fee_receiver
         let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::set_fee_receiver {
-            send_to: Some(ALICE.clone().into()),
+            receiver: Some(ALICE.clone()),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -2938,8 +2935,8 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             asset_index: 10, // native token
         };
         let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::transfer {
-            asset_id: asset_id,
-            recipient: ALICE.clone().into(),
+            asset_id,
+            recipient: ALICE.clone(),
             amount: 10,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -2953,7 +2950,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         };
         let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::create_pair {
             asset_0: asset_id,
-            asset_1: asset_1,
+            asset_1,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("zenlink_protocol", "transfer", dispatch_info, call_len));
@@ -2961,7 +2958,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         // add_liquidity
         let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::add_liquidity {
             asset_0: asset_id,
-            asset_1: asset_1,
+            asset_1,
             amount_0_desired: 2,
             amount_1_desired: 4,
             amount_0_min: 1,
@@ -2974,11 +2971,11 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         // remove_liquidity
         let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::remove_liquidity {
             asset_0: asset_id,
-            asset_1: asset_1,
+            asset_1,
             liquidity: 4,
             amount_0_min: 1,
             amount_1_min: 3,
-            recipient: ALICE.clone().into(),
+            recipient: ALICE.clone(),
             deadline: 20,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -3000,7 +2997,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
                 amount_in: 1,
                 amount_out_min: 4,
                 path: vec![asset_id, asset_2, asset_1],
-                recipient: ALICE.clone().into(),
+                recipient: ALICE.clone(),
                 deadline: 20,
             },
         );
@@ -3018,7 +3015,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
                 amount_out: 1,
                 amount_in_max: 4,
                 path: vec![asset_id, asset_2, asset_1],
-                recipient: ALICE.clone().into(),
+                recipient: ALICE.clone(),
                 deadline: 20,
             },
         );
@@ -3033,7 +3030,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         // bootstrap_create
         let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::bootstrap_create {
             asset_0: asset_id,
-            asset_1: asset_1,
+            asset_1,
             target_supply_0: 1000,
             target_supply_1: 5000,
             capacity_supply_0: 1000000,
@@ -3054,7 +3051,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         let call =
             crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::bootstrap_contribute {
                 asset_0: asset_id,
-                asset_1: asset_1,
+                asset_1,
                 amount_0_contribute: 100,
                 amount_1_contribute: 500,
                 deadline: 20,
@@ -3069,9 +3066,9 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
 
         // bootstrap_claim
         let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::bootstrap_claim {
-            recipient: ALICE.clone().into(),
+            recipient: ALICE.clone(),
             asset_0: asset_id,
-            asset_1: asset_1,
+            asset_1,
             deadline: 20,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -3085,7 +3082,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         // bootstrap_end
         let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::bootstrap_end {
             asset_0: asset_id,
-            asset_1: asset_1,
+            asset_1,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("zenlink_protocol", "bootstrap_end", dispatch_info, call_len));
@@ -3093,7 +3090,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         // bootstrap_update
         let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::bootstrap_update {
             asset_0: asset_id,
-            asset_1: asset_1,
+            asset_1,
             target_supply_0: 1500,
             target_supply_1: 7500,
             capacity_supply_0: 10000000,
@@ -3113,7 +3110,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         // bootstrap_refund
         let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::bootstrap_refund {
             asset_0: asset_id,
-            asset_1: asset_1,
+            asset_1,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -3127,7 +3124,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         let call =
             crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::bootstrap_charge_reward {
                 asset_0: asset_id,
-                asset_1: asset_1,
+                asset_1,
                 charge_rewards: vec![(asset_1, 1000), (asset_id, 6000)],
             });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -3142,8 +3139,8 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         let call = crate::RuntimeCall::ZenlinkProtocol(
             zenlink_protocol::Call::bootstrap_withdraw_reward {
                 asset_0: asset_id,
-                asset_1: asset_1,
-                recipient: ALICE.clone().into(),
+                asset_1,
+                recipient: ALICE.clone(),
             },
         );
         let (dispatch_info, call_len) = get_call_details(&call);
