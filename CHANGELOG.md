@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## v4.3.1
+### Added
+- [\#1197](https://github.com/Manta-Network/Manta/pull/1197) check-tests CI workflow benchmark tests for manta-dev
+- [\#1055](https://github.com/Manta-Network/Manta/pull/1055) Allow xcm-transacts from all chains [MACADO]
+- [\#1207](https://github.com/Manta-Network/Manta/pull/1207) Add mantapay rpc tests to manta runtime [MACA]
+
+### Fixed
+- [\#1208](https://github.com/Manta-Network/Manta/pull/1208) Fix wrong reports of congestion test results
+
 ## v4.3.0
 ### Added
 - [\#1179](https://github.com/Manta-Network/Manta/pull/1179) Copy Name Service Pallet [CA]
