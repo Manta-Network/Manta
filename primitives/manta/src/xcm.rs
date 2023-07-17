@@ -471,46 +471,11 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionFro
             }
         }
 
-        for elem in iter {
-            if let InitiateReserveWithdraw {
-                assets: _assets,
-                reserve,
-                ..
-            } = elem
-            {
-                if reserve != &MultiLocation::here()
-                    && reserve != &MultiLocation::new(1, X1(Parachain(2104)))
-                {
-                    return Ok(());
-                } else {
-                    return Err(());
-                }
-            }
-            if let TransferReserveAsset {
-                assets: _assets,
-                dest,
-                ..
-            } = elem
-            {
+        for next in iter {
+            if let TransferReserveAsset { .. } = next {
+                // We've currently blocked transfers of MANTA on the instruction level
                 return Err(());
             }
-            if let DepositReserveAsset { assets, .. } = elem {
-                match assets {
-                    xcm::latest::MultiAssetFilter::Definite(assets) => {
-                        for asset in assets.inner() {
-                            if asset.id != Concrete(MultiLocation::here())
-                                && asset.id != Concrete(MultiLocation::new(1, X1(Parachain(2104))))
-                            {
-                                return Ok(());
-                            } else {
-                                return Err(());
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-            }
-            // Do nothing otherwise
         }
 
         Ok(())
