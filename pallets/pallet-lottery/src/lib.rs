@@ -327,12 +327,17 @@ pub mod pallet {
         LotteryIsRunning,
         /// Pre-drawing freeze in effect, can't modify balances
         TooCloseToDrawing,
-        /// Not enough funds in pallet to pay winnings
+        /// FATAL: Assigning/Transferring winning claims
+        /// would **remove** user deposited funds from pallet
         PotBalanceTooLow,
         /// Pallet balance is lower than the needed gas fee buffer
         PotBalanceBelowGasReserve,
         /// Pallet balance is too low to submit a needed transaction
         PotBalanceTooLowToPayTxFee,
+        /// No funds eligible to win
+        NobodyPlaying,
+        /// No funds to win in pool
+        NothingToWin,
         /// Fatal: No winner could be selected
         NoWinnerFound,
         /// Deposit amount is below minimum amount
@@ -378,6 +383,10 @@ pub mod pallet {
                 Self::not_in_drawing_freezeout(),
                 Error::<T>::TooCloseToDrawing
             );
+            ensure! { // Sanity check: make sure we dont accept deposits that will fail in staking
+                Self::min_deposit() >= <T as pallet_parachain_staking::Config>::MinDelegation::get(),
+                Error::<T>::PalletMisconfigured
+            };
 
             // Transfer funds to pot
             <T as pallet_parachain_staking::Config>::Currency::transfer(
@@ -560,6 +569,7 @@ pub mod pallet {
                             &Self::account_id(),
                         );
                     ensure!(
+                        // Sanity check: Never pay out funds that would draw on user deposits
                         all_funds_in_pallet.saturating_sub(winnings) >= Self::sum_of_deposits(),
                         Error::<T>::PotBalanceTooLow
                     );
@@ -720,21 +730,30 @@ pub mod pallet {
                 );
             // all surplus tokens accrued at this point can be paid out to the winner
             let winning_claim = Self::current_prize_pool();
+            let participating_funds = Self::total_pot();
             log::debug!(
-                "total funds: {:?}, surplus funds/winner payout: {:?}",
+                "drawing: total funds: {:?}, participating funds: {:?}, surplus funds/winner payout: {:?}",
                 total_funds_in_pallet.clone(),
+                participating_funds.clone(),
                 winning_claim.clone()
             );
-            if !winning_claim.is_zero() {
+            // If there's nothing to win or nobody is playing we skip the drawing logic
+            if !winning_claim.is_zero() && !participating_funds.is_zero() {
                 ensure!(
-                    // Prevent granting funds to a user that would have to be paid from deposit money (we're a casino, not a bank)
-                    total_funds_in_pallet
-                        .saturating_sub(winning_claim)
-                        .saturating_sub(Self::total_unclaimed_winnings())
-                        >= Self::sum_of_deposits(),
+                    // Sanity check: Prevent allocating funds as winnings to a user that would have to be paid from user deposits
+                    Self::sum_of_deposits()                                 // all users' deposits (staked and unstaking)
+                        .saturating_add(Self::total_unclaimed_winnings())   // all prior winnings
+                        .saturating_add(winning_claim)                      // and the current winner's new claim
+                        <= total_funds_in_pallet, // don't exceed funds in the pallet
                     Error::<T>::PotBalanceTooLow
                 );
                 Self::select_winner(winning_claim)?;
+            } else {
+                log::debug!(
+                    "drawing: skipped due to zero winning claim {:?} or participating funds {:?}",
+                    winning_claim,
+                    participating_funds,
+                );
             }
             // unstake, pay out tokens due for withdrawals and restake excess funds
             // At this point, all excess funds except for `gas_reserve` have been reserved for the current winner
@@ -922,16 +941,16 @@ pub mod pallet {
             Ok(winning_balance)
         }
         fn select_winner(payout_for_winner: BalanceOf<T>) -> DispatchResult {
-            if Self::total_pot().is_zero() {
-                log::warn!(
-                    "No funds eligible for drawing at block {:?} ",
-                    <frame_system::Pallet<T>>::block_number()
-                );
-                return Ok(());
+            if payout_for_winner.is_zero() {
+                return Err(Error::<T>::NothingToWin.into());
+            }
+            let participating_funds = Self::total_pot();
+            if participating_funds.is_zero() {
+                return Err(Error::<T>::NobodyPlaying.into());
             }
             // Match random number to winner. We select a winning **balance** and then just add up accounts in the order they're stored until the sum of balance exceeds the winning amount
             // IMPORTANT: This order and active balances must be locked to modification after the random seed is created (relay BABE randomness, 2 epochs ago)
-            let winning_balance = Self::select_winning_balance(Self::total_pot())?;
+            let winning_balance = Self::select_winning_balance(participating_funds)?;
             let mut maybe_winner: Option<T::AccountId> = None;
             let mut count: BalanceOf<T> = 0u32.into();
             for (account, balance) in ActiveBalancePerUser::<T>::iter() {
@@ -1054,15 +1073,21 @@ pub mod pallet {
                 .unwrap_or_else(|| 0u32.into());
             let restakable_balance =
                 Self::unlocked_unstaking_funds().saturating_sub(outstanding_balance_to_withdraw);
-            if restakable_balance.is_zero() {
-                log::debug!("Nothing to restake");
+            if restakable_balance < Self::min_deposit() {
+                log::debug!(
+                    "Restakable balance of {:?} is below staking minimum of {:?}. Not restaking",
+                    restakable_balance,
+                    Self::min_deposit()
+                );
                 return Ok(());
             }
             let collator_balance_pairs = Self::calculate_deposit_distribution(restakable_balance);
-            ensure!(
-                !collator_balance_pairs.is_empty(),
-                Error::<T>::NoCollatorForDeposit
-            );
+            if collator_balance_pairs.is_empty() {
+                log::debug!(
+                    "No collators for redepositing available (likely all currently unstaking)"
+                );
+                return Ok(());
+            }
             for (collator, amount_to_stake) in collator_balance_pairs {
                 Self::do_stake_one_collator(collator.clone(), amount_to_stake)?;
                 log::debug!(
@@ -1171,18 +1196,20 @@ pub mod pallet {
         pub fn next_drawing_at() -> Option<T::BlockNumber> {
             T::Scheduler::next_dispatch_time(Self::lottery_schedule_id()).ok()
         }
-        /// funds in the lottery that are not staked or assigned to previous winners ( can be used to pay TX fees )
+        /// funds in the lottery that are not staked, unstaked-pending-restaking or assigned to previous winners ( can be used to pay TX fees )
         pub(crate) fn surplus_funds() -> BalanceOf<T> {
-            // Returns funds that are not locked in staking.
+            // Returns all funds the pallet holds that are not locked in staking
             // Notably excludes `ActiveBalancePerUser` and the still locked part of `SurplusUnstakingBalance`
-            // the latter only get unlocked in `finish_unstaking_collators` if out of staking timelock
             let non_staked_funds =
                 pallet_parachain_staking::Pallet::<T>::get_delegator_stakable_free_balance(
                     &Self::account_id(),
                 );
             // unclaimed winnings are unlocked balance sitting in the pallet until a user claims, ensure we don't touch these
             let unclaimed = Self::total_unclaimed_winnings();
-            // if unlocked funds are meant for future withdrawals, we must not touch them either until the withdrawal is out of timelock
+            // Parts of `SurplusUnstakingBalance` become unlocked in `finish_unstaking_collators` once out of staking timelock
+            // It is possible they are only partially restaked in the same TX, the other part staying unlocked,
+            // waiting to serve a pending withdrawal in the next cycle.
+            // These free funds must not be touched until then, so we don't consider this balance a surplus
             let unlocked = Self::unlocked_unstaking_funds();
 
             non_staked_funds

@@ -15,7 +15,6 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use frame_support::traits::Get;
 #[cfg(not(feature = "runtime-benchmarks"))]
 use frame_support::traits::Randomness;
 use pallet_parachain_staking::BalanceOf;
@@ -47,10 +46,13 @@ pub(super) fn reactivate_bottom_collators<T: Config>(
                 remaining_deposit,
                 info.lowest_top_delegation_amount - staked + 1u32.into(),
             );
-            deposits.push((collator.clone(), this_deposit));
-            remaining_deposit -= this_deposit;
-            if remaining_deposit.is_zero() {
+            // Ensure we don't try to stake a smaller than allowed delegation to a collator
+            if remaining_deposit.saturating_sub(this_deposit) < crate::Pallet::<T>::min_deposit() {
+                deposits.push((collator, remaining_deposit)); // put the full remaining balance in this collator
                 break;
+            } else {
+                deposits.push((collator, this_deposit)); // put just what's needed to get back into the top delegators
+                remaining_deposit = remaining_deposit.saturating_sub(this_deposit);
             }
         }
     }
@@ -163,7 +165,7 @@ pub(super) fn split_to_underallocated_collators<T: Config>(
             total_underallocation,
             underallocated_collators
         );
-        for (account, tokens_to_reach_median) in underallocated_collators {
+        for (account, tokens_to_reach_median) in underallocated_collators.clone() {
             // If a proportional deposit is over the min deposit and can get us into the top balance, deposit it, if not just skip it
             let info = pallet_parachain_staking::Pallet::<T>::candidate_info(account.clone())
                 .expect("is active collator, therefor it has collator info. qed");
@@ -172,7 +174,7 @@ pub(super) fn split_to_underallocated_collators<T: Config>(
             let to_reach_mean = collator_proportion.mul_ceil(new_deposit);
             let to_deposit = to_reach_mean.min(remaining_deposit);
             let our_stake = StakedCollators::<T>::get(account.clone());
-            if to_deposit > <T as pallet_parachain_staking::Config>::MinDelegation::get()
+            if to_deposit > crate::Pallet::<T>::min_deposit()
                 && to_deposit + our_stake > info.lowest_top_delegation_amount
             {
                 let this_deposit = core::cmp::min(to_deposit, remaining_deposit);
@@ -184,19 +186,42 @@ pub(super) fn split_to_underallocated_collators<T: Config>(
                     to_deposit
                 );
             };
-            if remaining_deposit.is_zero() {
+            if remaining_deposit < crate::Pallet::<T>::min_deposit() {
                 break;
             }
         }
     }
-    // if we had to skip a collator above due to not getting into the top deposit, we just lump the rest into the collator with the lowest stake
-    if !deposits.is_empty() && !remaining_deposit.is_zero() {
-        let mut underallocated_collators = deposits
-            .pop()
-            .expect("we checked that deposits is not empty, therefore pop will return Some. qed");
-        underallocated_collators.1 += remaining_deposit;
-        remaining_deposit.set_zero();
-        deposits.push(underallocated_collators);
+    // if we had to skip a collator above due to not getting into the top deposit or because the deposit was below minimum
+    // we just lump the rest into the collator with the lowest stake
+    if !remaining_deposit.is_zero() {
+        if !deposits.is_empty() {
+            let mut last_new_deposit = deposits.pop().expect(
+                "we checked that deposits is not empty, therefore pop will return Some. qed",
+            );
+            last_new_deposit.1 += remaining_deposit;
+            remaining_deposit.set_zero();
+            deposits.push(last_new_deposit);
+        } else if !underallocated_collators.is_empty() {
+            // i.e. no collator could be staked above but underallocated ones exist
+            let deposit = (
+                underallocated_collators
+                    .first()
+                    .expect("underallocated_collators is not empty. qed")
+                    .clone()
+                    .0,
+                remaining_deposit,
+            );
+            remaining_deposit.set_zero();
+            deposits.push(deposit);
+        }
+        if !remaining_deposit.is_zero() {
+            log::error!("FATAL: Have {:?} tokens left over after depositing. active collators {:?}, underallocated collators {:?}, deposits {:?}",
+            remaining_deposit,
+            active_collators.len(),
+            underallocated_collators.len(),
+            deposits.len()
+        );
+        }
     }
     deposits
 }
