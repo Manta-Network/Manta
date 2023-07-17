@@ -154,6 +154,8 @@ describe('Node RPC Test', () => {
         await timer(1000);
 
         // add liquidity to dex
+        const number = await api.query.system.number();
+        console.log("Before AddLiquidity block:" + number);
         callData = api.tx.zenlinkProtocol.addLiquidity([2104,2,8], [2104,2,9],
             new BN("10000000000000"), new BN("100000000000000000"), new BN("10000000000000"), new BN("100000000000000000"), 75);
         await execute_transaction(api, alice, callData, false);
@@ -178,7 +180,8 @@ describe('Node RPC Test', () => {
         await timer(1000);
         let state = await api.query.zenlinkProtocol.pairStatuses([[2104,2,8], [2104,2,9]]);
         let json = JSON.parse(JSON.stringify(state));
-        expect(new BN(json.trading.totalSupply.toString())).to.deep.equal(new BN("1000000000000000"));
+        console.log("Pair status:" + JSON.stringify(state));
+        expect(new BN(json.trading["totalSupply"].toString())).to.deep.equal(new BN("1000000000000000"));
 
         state = await api.query.farming.poolInfos(0);
         json = JSON.parse(JSON.stringify(state));
