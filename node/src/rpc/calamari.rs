@@ -93,7 +93,7 @@ where
         .merge(FarmingRpc::new(client.clone()).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
-        module
+    module
         .merge(Lottery::new(client).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
     Ok(module)
