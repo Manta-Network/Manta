@@ -157,7 +157,7 @@ describe('Node RPC Test', () => {
         const number = await api.query.system.number();
         console.log("Before AddLiquidity block:" + number);
         callData = api.tx.zenlinkProtocol.addLiquidity([2104,2,8], [2104,2,9],
-            new BN("10000000000000"), new BN("100000000000000000"), new BN("10000000000000"), new BN("100000000000000000"), 75);
+            new BN("10000000000000"), new BN("100000000000000000"), new BN("10000000000000"), new BN("100000000000000000"), 9);
         await execute_transaction(api, alice, callData, false);
         await timer(1000);
 
