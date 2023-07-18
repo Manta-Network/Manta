@@ -75,7 +75,7 @@ export async function execute_via_governance(
     referendumIndexObject.referendumIndex++;
     for (let i = 0; i < 5; i++) {
         await api.tx.system.remark("0x00").signAndSend(keyring, {nonce: -1});
-        await timer(200);
+        await timer(12000);
     }
 }
 

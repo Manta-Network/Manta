@@ -179,9 +179,6 @@ describe('Node RPC Test', () => {
 
         console.log(new Date() + " Create Pair block:" + Number(await api.query.system.number()));
 
-        state = await api.query.zenlinkProtocol.pairStatuses([[parachainId,2,8], [parachainId,2,9]]);
-        console.log(new Date() + " Create Pair status0:" + JSON.stringify(state));
-
         callData = api.tx.assetManager.mintAsset(8, alice.address, new BN("20000000000000"));
         await execute_via_governance(api, alice, callData, referendumIndexObject);
         callData = api.tx.assetManager.mintAsset(9, alice.address, new BN("200000000000000000"));
@@ -191,16 +188,23 @@ describe('Node RPC Test', () => {
 
         console.log(new Date() + " Mint Asset block:" + Number(await api.query.system.number()));
 
+        state = await api.query.zenlinkProtocol.pairStatuses([[parachainId,2,8], [parachainId,2,9]]);
+        console.log(new Date() + " Pair status0:" + JSON.stringify(state));
+
         // add liquidity to dex
         callData = api.tx.zenlinkProtocol.addLiquidity([2104,2,8], [2104,2,9],
             new BN("10000000000000"), new BN("100000000000000000"), new BN("10000000000000"), new BN("100000000000000000"), 1000);
         await execute_transaction(api, alice, callData, false);
+
+        await timer(12000);
 
         console.log(new Date() + " Add Liquidity block:" + Number(await api.query.system.number()));
 
         // create farming pool: stake 11(LP), reward 10(MANDEX)
         callData = api.tx.farming.createFarmingPool([[11, 1000000000]], [[10, new BN("1000000000000000000")]], null, 10000000000000, 1, 0, 0, 2);
         await execute_via_governance(api, alice, callData, referendumIndexObject);
+
+        await timer(12000);
 
         // charge reward token to farming pool account
         callData = api.tx.farming.charge(0, [[10, new BN("1000000000000000000000")]]);
@@ -213,7 +217,8 @@ describe('Node RPC Test', () => {
         callData = api.tx.system.remark("0x00");
         await execute_transaction(api, alice, callData, false);
 
-        await timer(1000);
+        await timer(12000);
+        
         state = await api.query.zenlinkProtocol.pairStatuses([[parachainId,2,8], [parachainId,2,9]]);
         let json = JSON.parse(JSON.stringify(state));
         console.log(new Date() + " After AddLiquidity Pair status1:" + JSON.stringify(state));
