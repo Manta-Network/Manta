@@ -257,14 +257,14 @@ jobs:
         with:
           repository: Manta-Network/Manta
           path: Manta
-      # - name: run test suites
-      #   run: |
-      #     sleep 120
-      #     cd ${{ github.workspace }}/Manta/tests
-      #     yarn install
-      #     yarn
-      #     yarn correctness_test --address=ws://127.0.0.1:9921 --exit
-      #     yarn performance_test --address=ws://127.0.0.1:9921 --exit
+      - name: run test suites
+        run: |
+          sleep 120
+          cd ${{ github.workspace }}/Manta/tests
+          yarn install
+          yarn
+          yarn correctness_test --address=ws://127.0.0.1:9921 --exit
+          yarn performance_test --address=ws://127.0.0.1:9921 --exit
       - name: check if target block is finalized
         run: |
           cd ${{ github.workspace }}/dev-tools-manta/check-finalized-block
