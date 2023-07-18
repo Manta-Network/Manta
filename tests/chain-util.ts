@@ -75,7 +75,7 @@ export async function execute_via_governance(
     referendumIndexObject.referendumIndex++;
     for (let i = 0; i < 5; i++) {
         await api.tx.system.remark("0x00").signAndSend(keyring, {nonce: -1});
-        await timer(12000);
+        await timer(13000);
     }
 }
 
@@ -96,7 +96,7 @@ export async function execute_transaction(
         // @ts-ignore
         await extrinsicData.signAndSend(alice, {nonce: -1}, async ({ events = [], status, txHash, dispatchError }) => {
             if (dispatchError) {
-                console.log(`extrinsic has error: ${dispatchError.toString()}`);
+                console.log(`extrinsic has error: ${dispatchError.toString()}, hex:${extrinsicData.toHex()}`);
             }
         });
     }
