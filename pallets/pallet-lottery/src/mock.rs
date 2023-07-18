@@ -276,7 +276,7 @@ impl block_author::Config for Test {}
 
 use frame_support::PalletId;
 use frame_system::EnsureRoot;
-use manta_primitives::constants::{time::MINUTES, LOTTERY_PALLET_ID};
+use manta_primitives::constants::LOTTERY_PALLET_ID;
 parameter_types! {
     pub const LotteryPotId: PalletId = LOTTERY_PALLET_ID; // ensure we don't deposit/withdraw in the drawing block
     /// Time in blocks between lottery drawings
