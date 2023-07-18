@@ -1,6 +1,7 @@
 import {ApiPromise} from "@polkadot/api";
 import {KeyringPair} from "@polkadot/keyring/types";
 import {blake2AsHex} from "@polkadot/util-crypto";
+import {BN} from "@polkadot/util";
 
 export const timer = (ms: number) => new Promise(res => setTimeout(res, ms))
 
@@ -60,8 +61,15 @@ export async function execute_via_governance(
     let fastTrackCall = await api.tx.democracy.fastTrack(encodedCallDataHash, 3, 2);
     await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
 
+    // vote balance based on current network
+    const parachainId = Number(await api.query.parachainInfo.parachainId());
+    let balance = new BN("1000000000000"); // Calamari: 12
+    if (parachainId != 2084) {
+        balance = new BN("1000000000000000000"); // Manta: 18
+    }
+
     await api.tx.democracy.vote(referendumIndexObject.referendumIndex, {
-        Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
+        Standard: { balance, vote: { aye: true, conviction: 1 } },
     }).signAndSend(keyring, {nonce: -1});
 
     referendumIndexObject.referendumIndex++;
