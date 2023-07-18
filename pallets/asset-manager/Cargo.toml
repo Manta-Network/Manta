@@ -19,6 +19,8 @@ sp-arithmetic = { git = "https://github.com/paritytech/substrate.git", branch = 
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false }
 xcm = { git = "https://github.com/paritytech/polkadot.git", default-features = false, branch = "release-v0.9.37" }
+pallet-fuso-mapobridge = {path = "../mapobridge", default-features = false}
+fuso-support = { path = "../fuso-support", default-features = false }
 
 # 3rd party dependencies
 orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, branch = "polkadot-v0.9.37" }
@@ -49,6 +51,7 @@ std = [
   "sp-std/std",
   "sp-arithmetic/std",
   "xcm/std",
+  "pallet-fuso-mapobridge/std",
 ]
 try-runtime = [
   "frame-support/try-runtime",

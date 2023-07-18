@@ -87,7 +87,14 @@ pub mod pallet {
             + Copy;
 
         /// Balance Type
-        type Balance: Default + Member + Parameter + TypeInfo;
+        type Balance: Default
+            + Member
+            + Parameter
+            + TypeInfo
+            + MaxEncodedLen
+            + MaybeSerializeDeserialize
+            + AtLeast32BitUnsigned
+            + Copy;
 
         /// Location Type
         type Location: Default
@@ -806,6 +813,306 @@ pub mod pallet {
         #[inline]
         fn get(location: &MultiLocation) -> Option<u128> {
             MinXcmFee::<T>::get(&T::Location::from(location.clone()))
+        }
+    }
+
+    use fuso_support::{
+        chainbridge::{AssetIdResourceIdProvider, EthereumCompatibleAddress},
+        constants::STANDARD_DECIMALS,
+        external_chain::XToken,
+        traits::{DecimalsTransformer, PriceOracle, Token},
+        ChainId,
+    };
+
+    impl<T: Config> Token<T::AccountId> for Pallet<T> {
+        type Balance = T::Balance;
+        type TokenId = T::AssetId;
+
+        #[transactional]
+        fn create(mut token_info: XToken<T::Balance>) -> Result<Self::TokenId, DispatchError> {
+            let id = Self::next_token_id();
+            match token_info {
+                XToken::NEP141(
+                    ref symbol,
+                    ref contract,
+                    ref mut total,
+                    ref mut stable,
+                    decimals,
+                ) => {
+                    ensure!(decimals <= MAX_DECIMALS, Error::<T>::InvalidDecimals);
+                    let name = AsciiStr::from_ascii(&symbol);
+                    ensure!(name.is_ok(), Error::<T>::InvalidTokenName);
+                    let name = name.unwrap();
+                    ensure!(
+                        name.len() >= 2 && name.len() <= 8,
+                        Error::<T>::InvalidTokenName
+                    );
+                    ensure!(
+                        contract.len() < 120 && contract.len() > 2,
+                        Error::<T>::ContractError
+                    );
+                    ensure!(
+                        !TokenByName::<T>::contains_key(&contract),
+                        Error::<T>::ContractError
+                    );
+                    *total = Zero::zero();
+                    *stable = false;
+                    TokenByName::<T>::insert(contract.clone(), id);
+                }
+                XToken::ERC20(
+                    ref symbol,
+                    ref contract,
+                    ref mut total,
+                    ref mut stable,
+                    decimals,
+                )
+                | XToken::POLYGON(
+                    ref symbol,
+                    ref contract,
+                    ref mut total,
+                    ref mut stable,
+                    decimals,
+                )
+                | XToken::BEP20(
+                    ref symbol,
+                    ref contract,
+                    ref mut total,
+                    ref mut stable,
+                    decimals,
+                ) => {
+                    ensure!(decimals <= MAX_DECIMALS, Error::<T>::InvalidDecimals);
+                    let name = AsciiStr::from_ascii(&symbol);
+                    ensure!(name.is_ok(), Error::<T>::InvalidTokenName);
+                    let name = name.unwrap();
+                    ensure!(
+                        name.len() >= 2 && name.len() <= 8,
+                        Error::<T>::InvalidTokenName
+                    );
+                    ensure!(contract.len() == 20, Error::<T>::ContractError);
+                    *total = Zero::zero();
+                    *stable = false;
+                }
+                XToken::FND10(ref symbol, ref mut total) => {
+                    let name = AsciiStr::from_ascii(&symbol);
+                    ensure!(name.is_ok(), Error::<T>::InvalidTokenName);
+                    let name = name.unwrap();
+                    ensure!(
+                        name.len() >= 2 && name.len() <= 8,
+                        Error::<T>::InvalidTokenName
+                    );
+                    *total = Zero::zero();
+                }
+            }
+            NextTokenId::<T>::mutate(|id| *id += One::one());
+            Tokens::<T>::insert(id, token_info);
+            Ok(id)
+        }
+
+        #[transactional]
+        fn transfer_token(
+            origin: &T::AccountId,
+            token: Self::TokenId,
+            amount: Self::Balance,
+            target: &T::AccountId,
+        ) -> Result<Self::Balance, DispatchError> {
+            if amount.is_zero() {
+                return Ok(amount);
+            }
+            if origin == target {
+                return Ok(amount);
+            }
+            if token == Self::native_token_id() {
+                return <pallet_balances::Pallet<T> as Currency<T::AccountId>>::transfer(
+                    origin,
+                    target,
+                    amount,
+                    ExistenceRequirement::KeepAlive,
+                )
+                .map(|_| amount);
+            }
+            Balances::<T>::try_mutate_exists((&token, &origin), |from| -> DispatchResult {
+                ensure!(from.is_some(), Error::<T>::BalanceZero);
+                let mut account = from.take().unwrap();
+                account.free = account
+                    .free
+                    .checked_sub(&amount)
+                    .ok_or(Error::<T>::InsufficientBalance)?;
+                match account.free == Zero::zero() && account.reserved == Zero::zero() {
+                    true => {}
+                    false => {
+                        from.replace(account);
+                    }
+                }
+                Balances::<T>::try_mutate_exists((&token, &target), |to| -> DispatchResult {
+                    let mut account = to.take().unwrap_or(TokenAccountData {
+                        free: Zero::zero(),
+                        reserved: Zero::zero(),
+                    });
+                    account.free = account
+                        .free
+                        .checked_add(&amount)
+                        .ok_or(Error::<T>::Overflow)?;
+                    to.replace(account);
+                    Ok(())
+                })?;
+                Ok(())
+            })?;
+            Self::deposit_event(Event::TokenTransfered(
+                token,
+                origin.clone(),
+                target.clone(),
+                amount,
+            ));
+            Ok(amount)
+        }
+
+        fn try_mutate_account<R>(
+            token: &Self::TokenId,
+            who: &T::AccountId,
+            f: impl FnOnce(&mut (Self::Balance, Self::Balance)) -> Result<R, DispatchError>,
+        ) -> Result<R, DispatchError> {
+            if *token == Self::native_token_id() {
+                // // We can just use transfer to special account instead of reserving/unreserving
+
+                // pallet_balances::Pallet::<T>::mutate_account(who, |b| -> Result<R, DispatchError> {
+                //     let mut v = (b.free, b.reserved);
+                //     let r = f(&mut v)?;
+                //     b.free = v.0;
+                //     b.reserved = v.1;
+                //     Ok(r)
+                // })?
+            } else {
+                // // We can just use transfer to reserve account instead of reserving/unreserving
+
+                // Balances::<T>::try_mutate_exists((token, who), |t| -> Result<R, DispatchError> {
+                //     let mut b = t.take().unwrap_or_default();
+                //     let mut v = (b.free, b.reserved);
+                //     let r = f(&mut v)?;
+                //     b.free = v.0;
+                //     b.reserved = v.1;
+                //     match b.free == Zero::zero() && b.reserved == Zero::zero() {
+                //         true => {}
+                //         false => {
+                //             t.replace(b);
+                //         }
+                //     }
+                //     Ok(r)
+                // })
+            }
+        }
+
+        fn try_mutate_issuance(
+            token: &Self::TokenId,
+            f: impl FnOnce(&mut Self::Balance) -> Result<(), DispatchError>,
+        ) -> Result<(), DispatchError> {
+            if *token == Self::native_token_id() {
+                <pallet_balances::TotalIssuance<T>>::try_mutate(|total| f(total))
+            } else {
+                Err(DispatchError::Other("can't update the token issuance"))
+            }
+        }
+
+        fn exists(token: &Self::TokenId) -> bool {
+            *token == Self::native_token_id() || Tokens::<T>::contains_key(token)
+        }
+
+        fn native_token_id() -> Self::TokenId {
+            T::NativeTokenId::get()
+        }
+
+        fn is_stable(token: &Self::TokenId) -> bool {
+            if *token == Self::native_token_id() {
+                false
+            } else {
+                Self::get_token_info(token)
+                    .map(|t| t.is_stable())
+                    .unwrap_or(false)
+            }
+        }
+
+        fn free_balance(token: &Self::TokenId, who: &T::AccountId) -> Self::Balance {
+            if *token == Self::native_token_id() {
+                return pallet_balances::Pallet::<T>::free_balance(who);
+            }
+            Self::get_token_balance((token, who)).free
+        }
+
+        fn total_issuance(token: &Self::TokenId) -> Self::Balance {
+            if *token == Self::native_token_id() {
+                return pallet_balances::Pallet::<T>::total_issuance();
+            }
+            let token_info = Self::get_token_info(token);
+            if token_info.is_some() {
+                let token = token_info.unwrap();
+                match token {
+                    XToken::NEP141(_, _, total, _, _)
+                    | XToken::ERC20(_, _, total, _, _)
+                    | XToken::POLYGON(_, _, total, _, _)
+                    | XToken::BEP20(_, _, total, _, _) => total,
+                    XToken::FND10(_, total) => total,
+                }
+            } else {
+                Zero::zero()
+            }
+        }
+
+        fn token_external_decimals(token: &Self::TokenId) -> Result<u8, DispatchError> {
+            if *token == Self::native_token_id() {
+                return Ok(STANDARD_DECIMALS);
+            }
+            let token_info = Self::get_token_info(token);
+            if token_info.is_some() {
+                let token = token_info.unwrap();
+                match token {
+                    XToken::NEP141(_, _, _, _, decimals)
+                    | XToken::ERC20(_, _, _, _, decimals)
+                    | XToken::POLYGON(_, _, _, _, decimals)
+                    | XToken::BEP20(_, _, _, _, decimals) => Ok(decimals),
+                    XToken::FND10(_, _) => Err(Error::<T>::TokenNotFound.into()),
+                }
+            } else {
+                Err(Error::<T>::TokenNotFound.into())
+            }
+        }
+    }
+
+    impl<T: Config> DecimalsTransformer<T::Balance> for Pallet<T>
+    where
+        T::Balance: From<u128> + Into<u128>,
+    {
+        fn transform_decimals_to_standard(amount: T::Balance, external_decimals: u8) -> T::Balance
+        where
+            T::Balance: From<u128> + Into<u128>,
+        {
+            let mut amount: u128 = amount.into();
+            if external_decimals > STANDARD_DECIMALS {
+                let diff = external_decimals - STANDARD_DECIMALS;
+                for _i in 0..diff {
+                    amount /= 10
+                }
+            } else {
+                let diff = STANDARD_DECIMALS - external_decimals;
+                for _i in 0..diff {
+                    amount *= 10
+                }
+            }
+            amount.into()
+        }
+
+        fn transform_decimals_to_external(amount: T::Balance, external_decimals: u8) -> T::Balance {
+            let mut amount: u128 = amount.into();
+            if external_decimals > STANDARD_DECIMALS {
+                let diff = external_decimals - STANDARD_DECIMALS;
+                for _i in 0..diff {
+                    amount *= 10
+                }
+            } else {
+                let diff = STANDARD_DECIMALS - external_decimals;
+                for _i in 0..diff {
+                    amount /= 10
+                }
+            }
+            amount.into()
         }
     }
 }

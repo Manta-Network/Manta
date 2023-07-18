@@ -99,6 +99,8 @@ pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-f
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
+pallet-fuso-mapobridge = {path = "../../pallets/mapobridge", default-features = false}
+fuso-support = { path = "../../pallets/fuso-support", default-features = false }
 
 [dev-dependencies]
 polkadot-core-primitives = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.37" }
@@ -258,6 +260,7 @@ std = [
   'orml-xtokens/std',
   'pallet-manta-sbt/std',
   'manta-support/std',
+  'pallet-fuso-mapobridge/std',
 ]
 # A feature that should be enabled when the runtime should be build for on-chain
 # deployment. This will disable stuff that shouldn't be part of the on-chain wasm

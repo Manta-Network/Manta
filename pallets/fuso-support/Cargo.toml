@@ -1,0 +1,66 @@
+[package]
+name = "fuso-support"
+version = "4.0.2"
+authors = ["UINB Tech"]
+edition = "2021"
+license = "Apache-2.0"
+homepage = "https://www.fusotao.org"
+repository = "https://github.com/uinb/fusotao"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dev-dependencies.serde]
+version = '1.0.119'
+
+[dependencies.codec]
+package = 'parity-scale-codec'
+version = '3.0.0'
+default-features = false
+features = ['derive']
+
+[dependencies.sp-core]
+default-features = false
+git = "https://github.com/paritytech/substrate.git"
+branch = "polkadot-v0.9.37"
+
+[dependencies.bit-vec]
+version = "0.6"
+default-features = false
+
+[dependencies.byteorder]
+version = "1"
+default-features = false
+
+[dependencies.sp-io]
+default-features = false
+git = "https://github.com/paritytech/substrate.git"
+branch = "polkadot-v0.9.37"
+
+[dependencies.sp-runtime]
+default-features = false
+git = "https://github.com/paritytech/substrate.git"
+branch = "polkadot-v0.9.37"
+
+[dependencies.frame-system]
+default-features = false
+git = "https://github.com/paritytech/substrate.git"
+branch = "polkadot-v0.9.37"
+
+[dependencies.frame-support]
+default-features = false
+git = "https://github.com/paritytech/substrate.git"
+branch = "polkadot-v0.9.37"
+
+[dependencies.sp-std]
+default-features = false
+git = "https://github.com/paritytech/substrate.git"
+branch = "polkadot-v0.9.37"
+
+[dependencies.scale-info]
+version = "2.0.1"
+default-features = false
+features = ["derive"]
+
+[dev-dependencies.hex-literal]
+version = "0.3.3"

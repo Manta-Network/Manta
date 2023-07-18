@@ -62,7 +62,7 @@ use frame_system::{
 };
 use manta_primitives::{
     constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
-    types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
+    types::{AccountId, Balance, BlockNumber, Hash, Header, Index, MantaAssetId, Signature},
 };
 use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
 pub use pallet_parachain_staking::{InflationInfo, Range};
@@ -272,6 +272,59 @@ impl Contains<RuntimeCall> for MantaFilter {
             | _ => false
         }
     }
+}
+
+use fuso_support::{
+    chainbridge::{AssetIdResourceIdProvider, EthereumCompatibleAddress},
+    traits::{DecimalsTransformer, PriceOracle, Token},
+    ChainId,
+};
+
+// impl<T: Config> fuso_support::chainbridge::AssetIdResourceIdProvider<T::AssetId> for Pallet<T> {
+//     type Err = ();
+
+//     fn try_get_asset_id(
+//         chain_id: ChainId,
+//         contract_id: impl AsRef<[u8]>,
+//     ) -> Result<T::AssetId, Self::Err> {
+//         Self::get_token_from_chainbridge((chain_id, contract_id.as_ref().to_vec())).ok_or(())
+//     }
+// }
+
+// struct AssetIdResourceIdProviderTest;
+// /// used by the chainbridge
+// impl fuso_support::chainbridge::AssetIdResourceIdProvider<BridgeAssetId>
+//     for AssetIdResourceIdProviderTest
+// {
+//     type Err = ();
+
+//     fn try_get_asset_id(
+//         chain_id: ChainId,
+//         contract_id: impl AsRef<[u8]>,
+//     ) -> R
+//         let asset_id =
+//             AssetManager::get_token_from_chainbridge((chain_id, contract_id.as_ref().to_vec()))
+//                 .ok_or(());
+//         let bridge_asset: BridgeAssetId = BridgeAssetId::from(asset_id);
+//     }
+// }
+
+// /// Expose customizable associated type of asset transfer, lock and unlock
+// /// Expose customizable associated type of asset transfer, lock and unlock
+// type Fungibles: Mutate<Self::AccountId, AssetId = AssetId<Self>, Balance = BalanceOf<Self>>
+//     + Token<Self::AccountId>
+//     + DecimalsTransformer<BalanceOf<Self>>;
+
+// /// Map of cross-chain asset ID & name
+// type AssetIdByName: AssetIdResourceIdProvider<AssetId<Self>>;
+// // type TokenImpl<T: Mutate, S: Token>;
+
+struct TokenImplConcrete<A: Mutate, M: Token + DecimalsTransformer<Balance>>;
+
+impl pallet_fuso_mapobridge::Config for Runtime {
+    type AssetIdByName = AssetManager;
+    type Fungibles = TokenImplConcrete<Assets, AssetManager>;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -816,6 +869,8 @@ construct_runtime!(
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
         MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
+
+        // Mapo: pallet_fuso_mapobridge::{Pallet, Call, Storage, Event<T>} = 50,
     }
 );
 
