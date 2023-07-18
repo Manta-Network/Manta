@@ -205,30 +205,36 @@ describe('Node RPC Test', () => {
         callData = api.tx.farming.createFarmingPool([[lpAssetId, 1000000000]], [[mandexId, new BN("1000000000000000000")]], null, 10000000000000, 1, 0, 0, 2);
         await execute_via_governance(api, alice, callData, referendumIndexObject);
 
-        await timer(13000);
-
         state = await api.query.farming.poolInfos(0);
+        while(state.isNone) {
+            state = await api.query.farming.poolInfos(0);
+            await timer(3000);
+        }
         console.log(new Date() + " Query farming pool0:" + JSON.stringify(state));
 
         // charge reward token to farming pool account
         callData = api.tx.farming.charge(0, [[mandexId, new BN("1000000000000000000000")]]);
         await execute_transaction(api, alice, callData, false);
 
-        await timer(13000);
+        let json = JSON.parse(JSON.stringify(state));
+        let stateString = json.state.toString();
+        while(stateString != "Charged") {
+            state = await api.query.farming.poolInfos(0);
+            json = JSON.parse(JSON.stringify(state));
+            stateString = json.state.toString();
+            await timer(3000);
+        }
+        console.log(new Date() + " Query farming pool1:" + JSON.stringify(state));
+        expect(json.state).to.deep.equal("Charged");
 
         // mock new block
         callData = api.tx.system.remark("0x00");
         await execute_transaction(api, alice, callData, false);
 
         state = await api.query.zenlinkProtocol.pairStatuses([[parachainId,2,8], [parachainId,2,9]]);
-        let json = JSON.parse(JSON.stringify(state));
+        json = JSON.parse(JSON.stringify(state));
         console.log(new Date() + " After AddLiquidity Pair status1:" + JSON.stringify(state));
         expect(new BN(json.trading["totalSupply"].toString())).to.deep.equal(new BN("1000000000000000"));
-
-        state = await api.query.farming.poolInfos(0);
-        json = JSON.parse(JSON.stringify(state));
-        console.log(new Date() + " Query farming pool1:" + JSON.stringify(state));
-        expect(json.state).to.deep.equal("Charged");
 
         // user deposit lp token to farming pool
         callData = api.tx.farming.deposit(0, new BN("10000000000000"), null);
@@ -238,10 +244,15 @@ describe('Node RPC Test', () => {
         callData = api.tx.system.remark("0x00");
         await execute_transaction(api, alice, callData, false);
 
-        await timer(13000);
-
         state = await api.query.farming.poolInfos(0);
         json = JSON.parse(JSON.stringify(state));
+        stateString = json.state.toString();
+        while(stateString != "Ongoing") {
+            state = await api.query.farming.poolInfos(0);
+            json = JSON.parse(JSON.stringify(state));
+            stateString = json.state.toString();
+            await timer(3000);
+        }
         console.log(new Date() + " Query farming pool2:" + JSON.stringify(state));
         expect(json.state).to.deep.equal("Ongoing");
 
@@ -255,7 +266,7 @@ describe('Node RPC Test', () => {
         callData = api.tx.system.remark("0x00");
         await execute_transaction(api, alice, callData, false);
 
-        await timer(1000);
+        await timer(13000);
         response = await (api.rpc as any).farming.getFarmingRewards(alice.address, 0);
         expect(new BN(response[0][1].toString())).to.deep.equal(new BN("2000000000000000000"));
 
