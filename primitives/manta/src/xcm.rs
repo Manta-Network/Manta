@@ -517,16 +517,27 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionDes
                 ..
             } if *weight >= max_weight => {
                 *weight = max_weight;
-                Ok(())
+                ()
             }
             BuyExecution {
                 ref mut weight_limit,
                 ..
             } if weight_limit == &Unlimited => {
                 *weight_limit = Limited(max_weight);
-                Ok(())
+                ()
             }
-            _ => Err(()),
+            _ => {
+                return Err(());
+            }
         }
+
+        for next in iter {
+            if let TransferReserveAsset { .. } = next {
+                // We've currently blocked transfers of MANTA on the instruction level
+                return Err(());
+            }
+        }
+
+        Ok(())
     }
 }
