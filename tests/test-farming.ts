@@ -6,7 +6,6 @@ import { expect } from 'chai';
 import minimist, { ParsedArgs } from 'minimist';
 import {execute_transaction, execute_via_governance,timer } from "./chain-util";
 
-// ./target/release/manta --chain=manta-localdev --alice --ws-port 9800 --rpc-cors all --execution=native
 const test_config = {
     ws_address: "ws://127.0.0.1:9800",
     timeout: 2000000
