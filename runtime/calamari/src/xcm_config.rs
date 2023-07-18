@@ -34,7 +34,7 @@ use manta_primitives::{
     xcm::{
         AccountIdToMultiLocation, AllowTopLevelPaidExecutionDescendOriginFirst,
         AllowTopLevelPaidExecutionFrom, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,
-        MultiNativeAsset,
+        MultiNativeAsset, XcmFeesToAccount,
     },
 };
 use orml_traits::location::AbsoluteReserveProvider;
@@ -206,7 +206,7 @@ impl TakeRevenue for XcmNativeFeeToTreasury {
     }
 }
 
-pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
+pub type CalamariXcmFeesToAccount = XcmFeesToAccount<
     AccountId,
     Assets,
     ConvertedConcreteAssetId<
@@ -243,7 +243,7 @@ impl Config for XcmExecutorConfig {
     // i.e. units_per_second in `AssetManager`
     type Trader = (
         FixedRateOfFungible<ParaTokenPerSecond, XcmNativeFeeToTreasury>,
-        FirstAssetTrader<AssetManager, XcmFeesToAccount>,
+        FirstAssetTrader<AssetManager, CalamariXcmFeesToAccount>,
     );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
