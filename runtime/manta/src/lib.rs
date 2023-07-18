@@ -405,7 +405,7 @@ parameter_types! {
     /// Time in blocks *before* a drawing in which modifications of the win-eligble pool are prevented
     pub DrawingFreezeout: BlockNumber = prod_or_fast!(1 * DAYS, 3 * MINUTES);
     /// Time in blocks until a collator is done unstaking
-    pub UnstakeLockTime: BlockNumber = LeaveDelayRounds::get() * DefaultBlocksPerRound::get();
+    pub UnstakeLockTime: BlockNumber = DrawingInterval::get();
 }
 impl pallet_lottery::Config for Runtime {
     type RuntimeCall = RuntimeCall;
