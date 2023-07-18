@@ -79,8 +79,17 @@ export async function execute_transaction(
 ) {
     if (sudo) {
         const rootCall = api.tx.sudo.sudo(extrinsicData);
-        await rootCall.signAndSend(alice, {nonce: -1}, async ({ events = [], status, txHash, dispatchError }) => {});
+        await rootCall.signAndSend(alice, {nonce: -1}, async ({ events = [], status, txHash, dispatchError }) => {
+            if (dispatchError) {
+                console.log(`sudo extrinsic has error: ${dispatchError.toString()}`);
+            }
+        });
     } else {
-        await extrinsicData.signAndSend(alice, {nonce: -1});
+        // @ts-ignore
+        await extrinsicData.signAndSend(alice, {nonce: -1}, async ({ events = [], status, txHash, dispatchError }) => {
+            if (dispatchError) {
+                console.log(`extrinsic has error: ${dispatchError.toString()}`);
+            }
+        });
     }
 }
