@@ -145,7 +145,7 @@ describe('Node RPC Test', () => {
         callData = api.tx.zenlinkProtocol.createPair([2104,2,8], [2104,2,9]);
         await execute_via_governance(api, alice, callData, referendumIndexObject);
         let state = await api.query.zenlinkProtocol.pairStatuses([[2104,2,8], [2104,2,9]]);
-        console.log("Pair status0:" + JSON.stringify(state));
+        console.log("Create Pair status0:" + JSON.stringify(state));
 
         callData = api.tx.assetManager.mintAsset(8, alice.address, new BN("20000000000000"));
         await execute_via_governance(api, alice, callData, referendumIndexObject);
@@ -179,7 +179,7 @@ describe('Node RPC Test', () => {
         await timer(1000);
         state = await api.query.zenlinkProtocol.pairStatuses([[2104,2,8], [2104,2,9]]);
         let json = JSON.parse(JSON.stringify(state));
-        console.log("Pair status1:" + JSON.stringify(state));
+        console.log("After AddLiquidity Pair status1:" + JSON.stringify(state));
         expect(new BN(json.trading["totalSupply"].toString())).to.deep.equal(new BN("1000000000000000"));
 
         state = await api.query.farming.poolInfos(0);
