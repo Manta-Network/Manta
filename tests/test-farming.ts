@@ -151,20 +151,17 @@ describe('Node RPC Test', () => {
         await execute_via_governance(api, alice, callData, referendumIndexObject);
         callData = api.tx.assetManager.mintAsset(10, alice.address, new BN("1000000000000000000000000"));
         await execute_via_governance(api, alice, callData, referendumIndexObject);
-        await timer(1000);
 
         // add liquidity to dex
-        const number = await api.query.system.number();
+        let number = await api.query.system.number();
         console.log("Before AddLiquidity block:" + number);
         callData = api.tx.zenlinkProtocol.addLiquidity([2104,2,8], [2104,2,9],
-            new BN("10000000000000"), new BN("100000000000000000"), new BN("10000000000000"), new BN("100000000000000000"), 9);
+            new BN("10000000000000"), new BN("100000000000000000"), new BN("10000000000000"), new BN("100000000000000000"), 1000);
         await execute_transaction(api, alice, callData, false);
-        await timer(1000);
 
         // create farming pool: stake 11(LP), reward 10(MANDEX)
         callData = api.tx.farming.createFarmingPool([[11, 1000000000]], [[10, new BN("1000000000000000000")]], null, 10000000000000, 1, 0, 0, 2);
         await execute_via_governance(api, alice, callData, referendumIndexObject);
-        await timer(1000);
 
         // charge reward token to farming pool account
         callData = api.tx.farming.charge(0, [[10, new BN("1000000000000000000000")]]);
