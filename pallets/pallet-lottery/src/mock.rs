@@ -276,13 +276,13 @@ impl block_author::Config for Test {}
 
 use frame_support::PalletId;
 use frame_system::EnsureRoot;
-use manta_primitives::constants::{time::MINUTES, LOTTERY_PALLET_ID};
+use manta_primitives::constants::LOTTERY_PALLET_ID;
 parameter_types! {
-    pub const LotteryPotId: PalletId = LOTTERY_PALLET_ID;
+    pub const LotteryPotId: PalletId = LOTTERY_PALLET_ID; // ensure we don't deposit/withdraw in the drawing block
     /// Time in blocks between lottery drawings
-    pub DrawingInterval: BlockNumber =  3 * MINUTES;
+    pub DrawingInterval: BlockNumber = DefaultBlocksPerRound::get();
     /// Time in blocks *before* a drawing in which modifications of the win-eligble pool are prevented
-    pub DrawingFreezeout: BlockNumber = /*1*/ MINUTES;
+    pub DrawingFreezeout: BlockNumber = 5;
     /// Time in blocks until a collator is done unstaking
     pub UnstakeLockTime: BlockNumber = LeaveDelayRounds::get() * DefaultBlocksPerRound::get();
 }
