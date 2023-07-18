@@ -457,14 +457,12 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionFro
                 ..
             } if *weight >= max_weight => {
                 *weight = max_weight;
-                ()
             }
             BuyExecution {
                 ref mut weight_limit,
                 ..
             } if weight_limit == &Unlimited => {
                 *weight_limit = Limited(max_weight);
-                ()
             }
             _ => {
                 return Err(());
@@ -517,14 +515,12 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionDes
                 ..
             } if *weight >= max_weight => {
                 *weight = max_weight;
-                ()
             }
             BuyExecution {
                 ref mut weight_limit,
                 ..
             } if weight_limit == &Unlimited => {
                 *weight_limit = Limited(max_weight);
-                ()
             }
             _ => {
                 return Err(());

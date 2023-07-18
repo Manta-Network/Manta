@@ -3624,7 +3624,7 @@ fn transfer_reserve_asset_instruction_from_parachains_is_blocked() {
             Here,
             (Parent, Parachain(PARA_B_ID)),
             Xcm(vec![
-                WithdrawAsset(dummy_assets.clone()),
+                WithdrawAsset(dummy_assets),
                 BuyExecution {
                     fees: dummy_asset.clone(),
                     weight_limit: Unlimited,
