@@ -330,6 +330,8 @@ pub mod pallet {
         /// FATAL: Assigning/Transferring winning claims
         /// would **remove** user deposited funds from pallet
         PotBalanceTooLow,
+        /// FATAL: Can't stake the requested amount with available funds
+        PotBalanceTooLowToStake,
         /// Pallet balance is lower than the needed gas fee buffer
         PotBalanceBelowGasReserve,
         /// Pallet balance is too low to submit a needed transaction
