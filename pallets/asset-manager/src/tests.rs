@@ -703,7 +703,7 @@ fn permissionless_edge_cases() {
                 "dog token".as_bytes().to_vec().try_into().unwrap(),
                 "dog".as_bytes().to_vec().try_into().unwrap(),
                 u8::MAX,
-                u128::MAX,
+                1_000_000_000_000_000_000_u128,
             ),
             ArithmeticError::Overflow
         );
