@@ -236,13 +236,21 @@ describe('Node RPC Test', () => {
         console.log(new Date() + " After AddLiquidity Pair status1:" + JSON.stringify(state));
         expect(new BN(json.trading["totalSupply"].toString())).to.deep.equal(new BN("1000000000000000"));
 
+        let block1 = await api.query.system.number();
+
         // user deposit lp token to farming pool
         callData = api.tx.farming.deposit(0, new BN("10000000000000"), null);
         await execute_transaction(api, alice, callData, false);
 
         // mock new block
-        callData = api.tx.system.remark("0x00");
-        await execute_transaction(api, alice, callData, false);
+        let block2 = await api.query.system.number();
+        while(block1 != block2) {
+            callData = api.tx.system.remark("0x00");
+            await execute_transaction(api, alice, callData, false);
+            await timer(3000);
+            block2 = await api.query.system.number();  
+        }
+        console.log("farming deposit before:" + block1 + ",after:" + block2);
 
         state = await api.query.farming.poolInfos(0);
         json = JSON.parse(JSON.stringify(state));
@@ -256,18 +264,27 @@ describe('Node RPC Test', () => {
         console.log(new Date() + " Query farming pool2:" + JSON.stringify(state));
         expect(json.state).to.deep.equal("Ongoing");
 
+        block1 = await api.query.system.number();
+
         state = await api.query.farming.sharesAndWithdrawnRewards(0, alice.address);
         expect(new BN(JSON.parse(JSON.stringify(state)).share.toString())).to.deep.equal(new BN("10000000000000"));
 
         // get farming reward
         let response = await (api.rpc as any).farming.getFarmingRewards(alice.address, 0);
+        console.log("farming reward0:" + JSON.stringify(response));
         expect(new BN(response[0][1].toString())).to.deep.equal(new BN("1000000000000000000"));
 
-        callData = api.tx.system.remark("0x00");
-        await execute_transaction(api, alice, callData, false);
+        block2 = await api.query.system.number();
+        while(block1 != block2) {
+            callData = api.tx.system.remark("0x00");
+            await execute_transaction(api, alice, callData, false);
+            await timer(3000);
+            block2 = await api.query.system.number();
+        }
+        console.log("second reward before:" + block1 + ",after:" + block2);
 
-        await timer(13000);
         response = await (api.rpc as any).farming.getFarmingRewards(alice.address, 0);
+        console.log("farming reward1:" + JSON.stringify(response));
         expect(new BN(response[0][1].toString())).to.deep.equal(new BN("2000000000000000000"));
 
         api.disconnect();
