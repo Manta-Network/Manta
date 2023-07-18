@@ -336,7 +336,6 @@ fn unstaking_works_with_0_collators_left() {
             assert_eq!(Lottery::withdrawal_request_queue().len(), 1);
             assert_ok!(Lottery::start_lottery(RawOrigin::Root.into()));
             roll_to_round_begin(3);
-            // assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
             // by now the withdrawal should have happened by way of lottery drawing
             assert_eq!(crate::StakedCollators::<Test>::iter().count(), 0);
             assert_eq!(Balances::free_balance(*ALICE), HIGH_BALANCE);
