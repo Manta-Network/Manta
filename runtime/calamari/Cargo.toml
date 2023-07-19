@@ -121,9 +121,11 @@ substrate-wasm-builder = { git = 'https://github.com/paritytech/substrate.git', 
 
 [dev-dependencies]
 # Generic 3rd-party dependencies
+csv = "1.2.1"
 lazy_static = "1.4.0"
 reqwest = { version = "0.11.6", features = ["blocking"] }
 serde_json = "1.0"
+version-compare = "0.1.1"
 
 # Substrate 3rd-party dependencies
 cumulus-primitives-parachain-inherent = { git = "https://github.com/paritytech/cumulus.git", branch = "polkadot-v0.9.37" }
