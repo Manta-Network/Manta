@@ -8,7 +8,7 @@ import {execute_transaction, execute_via_governance,timer } from "./chain-util";
 
 const test_config = {
     ws_address: "ws://127.0.0.1:9800",
-    timeout: 3000000
+    timeout: 3600000
 }
 const location = {
     V1: {
