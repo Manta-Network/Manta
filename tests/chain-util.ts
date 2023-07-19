@@ -34,8 +34,13 @@ export async function execute_with_root_via_governance(
     let fastTrackCall = await api.tx.democracy.fastTrack(encodedCallDataHash, 1, 1);
     await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
     console.log("Runtime upgrade governance fast tracked ...");
+    const parachainId = Number(await api.query.parachainInfo.parachainId());
+    let balance = new BN("1000000000000"); // Calamari: 12
+    if (parachainId != 2084) {
+        balance = new BN("1000000000000000000"); // Manta: 18
+    }
     await api.tx.democracy.vote(referendumIndexObject.referendumIndex, {
-        Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
+        Standard: { balance, vote: { aye: true, conviction: 1 } },
     }).signAndSend(keyring, {nonce: -1});
     console.log("Runtime upgrade governance voted on ...");
     referendumIndexObject.referendumIndex++;
@@ -71,11 +76,14 @@ export async function execute_via_governance(
     await api.tx.democracy.vote(referendumIndexObject.referendumIndex, {
         Standard: { balance, vote: { aye: true, conviction: 1 } },
     }).signAndSend(keyring, {nonce: -1});
-
     referendumIndexObject.referendumIndex++;
-    for (let i = 0; i < 5; i++) {
-        await api.tx.system.remark("0x00").signAndSend(keyring, {nonce: -1});
-        await timer(13000);
+
+    // time passing 5 block.
+    let block1 = Number(await api.query.system.number());
+    let block2 = Number(await api.query.system.number()) + 5;
+    while(block1 != block2) {
+        await timer(3000);
+        block1 = Number(await api.query.system.number());
     }
 }
 
