@@ -5,18 +5,19 @@ import {BN} from "@polkadot/util";
 
 export const timer = (ms: number) => new Promise(res => setTimeout(res, ms))
 
+// Global referendum index
+var referendumIndexObject = { referendumIndex: 0 };
+
 /**
  * Execute an extrinsic with Root origin via governance.
  * @param api API object connecting to node.
  * @param keyring keyring to sign extrinsics.
  * @param extrinsicData the callData of the extrinsic that will be executed
- * @param referendumIndexObject the index of the referendum that will be executed
  */
 export async function execute_with_root_via_governance(
     api: ApiPromise,
     keyring: KeyringPair,
     extrinsicData: any,
-    referendumIndexObject: any
 ) {
     const encodedCallData = extrinsicData.method.toHex();
     await api.tx.preimage.notePreimage(encodedCallData).signAndSend(keyring, {nonce: -1});
@@ -44,7 +45,6 @@ export async function execute_via_governance(
     api: ApiPromise,
     keyring: KeyringPair,
     extrinsicData: any,
-    referendumIndexObject: any
 ) {
     const encodedCallData = extrinsicData.method.toHex();
     await api.tx.preimage.notePreimage(encodedCallData).signAndSend(keyring, {nonce: -1});

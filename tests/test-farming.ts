@@ -86,7 +86,6 @@ const lp_metadata = {
     minBalance: 1,
     isSufficient: true
 };
-var referendumIndexObject = { referendumIndex: 0 };
 
 function local_asset(parachainId: number, generalKey: string) {
     let location = {
@@ -131,7 +130,7 @@ describe('Node RPC Test', () => {
 
         // register asset 8(decimal:6)
         let callData = api.tx.assetManager.registerAsset(location, metadata);
-        await execute_via_governance(api, alice, callData, referendumIndexObject);
+        await execute_via_governance(api, alice, callData);
 
         let state: any = await api.query.assetManager.assetIdMetadata(8);
         while(state.isNone) {
@@ -142,7 +141,7 @@ describe('Node RPC Test', () => {
 
         // 9(decimal:10)
         callData = api.tx.assetManager.registerAsset(location2, metadata2);
-        await execute_via_governance(api, alice, callData, referendumIndexObject);
+        await execute_via_governance(api, alice, callData);
         state = await api.query.assetManager.assetIdMetadata(9);
         while(state.isNone) {
             state = await api.query.assetManager.assetIdMetadata(9);
@@ -152,7 +151,7 @@ describe('Node RPC Test', () => {
 
         // 10(decimal:18)
         callData = api.tx.assetManager.registerAsset(local_asset(parachainId, "MANDEX"), metadata3);
-        await execute_via_governance(api, alice, callData, referendumIndexObject);
+        await execute_via_governance(api, alice, callData);
         let mandexId = 10;
         state = await api.query.assetManager.assetIdMetadata(mandexId);
         while(state.isNone) {
@@ -163,7 +162,7 @@ describe('Node RPC Test', () => {
 
         // register lp asset 11(decimal:12)
         callData = api.tx.assetManager.registerLpAsset(8, 9, lp_metadata);
-        await execute_via_governance(api, alice, callData, referendumIndexObject);
+        await execute_via_governance(api, alice, callData);
         let lpAssetId = 11;
         state = await api.query.assetManager.assetIdMetadata(lpAssetId);
         while(state.isNone) {
@@ -176,16 +175,16 @@ describe('Node RPC Test', () => {
 
         // create dex pair
         callData = api.tx.zenlinkProtocol.createPair([parachainId,2,8], [parachainId,2,9]);
-        await execute_via_governance(api, alice, callData, referendumIndexObject);
+        await execute_via_governance(api, alice, callData);
 
         console.log(new Date() + " Create Pair block:" + Number(await api.query.system.number()));
 
         callData = api.tx.assetManager.mintAsset(8, alice.address, new BN("20000000000000"));
-        await execute_via_governance(api, alice, callData, referendumIndexObject);
+        await execute_via_governance(api, alice, callData);
         callData = api.tx.assetManager.mintAsset(9, alice.address, new BN("200000000000000000"));
-        await execute_via_governance(api, alice, callData, referendumIndexObject);
+        await execute_via_governance(api, alice, callData);
         callData = api.tx.assetManager.mintAsset(mandexId, alice.address, new BN("1000000000000000000000000"));
-        await execute_via_governance(api, alice, callData, referendumIndexObject);
+        await execute_via_governance(api, alice, callData);
 
         console.log(new Date() + " Mint Asset block:" + Number(await api.query.system.number()));
 
@@ -203,7 +202,7 @@ describe('Node RPC Test', () => {
 
         // create farming pool: stake 11(LP), reward 10(MANDEX)
         callData = api.tx.farming.createFarmingPool([[lpAssetId, 1000000000]], [[mandexId, new BN("1000000000000000000")]], null, 10000000000000, 1, 0, 0, 2);
-        await execute_via_governance(api, alice, callData, referendumIndexObject);
+        await execute_via_governance(api, alice, callData);
 
         state = await api.query.farming.poolInfos(0);
         while(state.isNone) {
