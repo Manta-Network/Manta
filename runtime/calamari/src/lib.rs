@@ -247,8 +247,7 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::XTokens(
                                 orml_xtokens::Call::transfer_with_fee {..}
                                 | orml_xtokens::Call::transfer_multiasset {..}
-                                | orml_xtokens::Call::transfer_multiasset_with_fee {..}
-                                | orml_xtokens::Call::transfer_multiassets {..})
+                                | orml_xtokens::Call::transfer_multiasset_with_fee {..})
             // Filter callables from XCM pallets, we use XTokens exclusively
             | RuntimeCall::XcmpQueue(_) | RuntimeCall::DmpQueue(_) => false,
 
@@ -307,7 +306,8 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::MantaSbt(_)
             | RuntimeCall::NameService(_)
             | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..}
-                | orml_xtokens::Call::transfer_multicurrencies {..})
+                | orml_xtokens::Call::transfer_multicurrencies {..}
+                | orml_xtokens::Call::transfer_multiassets {..})
             | RuntimeCall::TransactionPause(_)
             | RuntimeCall::ZenlinkProtocol(_)
             | RuntimeCall::Farming(_)
