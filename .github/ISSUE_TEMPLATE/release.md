@@ -34,6 +34,7 @@ These checks should be performed on the codebase prior to freezing our release c
   - [ ] Check that a draft release has been created on the [release page](https://github.com/Manta-Network/Manta/releases) and add relevant [release notes](#release-notes)
   - [ ] Check that build artifacts have been added to the draft-release
   - [ ] Promote the draft to a Pre-Release on github
+  - [ ] If there's any new extrinsic or pallet introduced, please add it to [runtime/calamari/src/diff_tx_fees.rs](../../runtime/calamari/src/diff_tx_fees.rs), then follow [tx-fees-data/README](../../runtime/calamari/tx-fees-data/README.md) to generate a new tx fees sheet.
 
 # Deploy to internal testnets ( fast runtime )
 
