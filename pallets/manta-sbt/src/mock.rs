@@ -22,7 +22,7 @@ use frame_support::{
         AsEnsureOriginWithArg, ConstU128, ConstU16, ConstU32, ConstU64, Everything, GenesisBuild,
         IsInVec,
     },
-    weights::{RuntimeDbWeight, Weight},
+    weights::RuntimeDbWeight,
     PalletId,
 };
 
@@ -38,7 +38,7 @@ use manta_primitives::{
 use sp_core::H256;
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
-    AccountId32, DispatchResult,
+    AccountId32, DispatchResult, MultiSignature, MultiSigner,
 };
 use xcm::{
     prelude::{Parachain, X1},
@@ -136,7 +136,6 @@ parameter_types! {
 parameter_types! {
     pub const MantaSBTPalletId: PalletId = MANTA_SBT_PALLET_ID;
     pub const CustodialAccount: AccountId32 = ALICE;
-    pub const MinimumWeightRemainInBlock: Weight = Weight::from_ref_time(10000);
 }
 
 impl crate::Config for Test {
@@ -150,7 +149,8 @@ impl crate::Config for Test {
     type AdminOrigin = EnsureRoot<AccountId32>;
     type Now = Timestamp;
     type RegistryBound = ConstU32<200>;
-    type MinimumWeightRemainInBlock = MinimumWeightRemainInBlock;
+    type Signature = MultiSignature;
+    type PublicKey = MultiSigner;
 }
 
 parameter_types! {
@@ -242,8 +242,8 @@ parameter_types! {
         VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
         metadata: AssetStorageMetadata {
-            name: b"Dolphin".to_vec(),
-            symbol: b"DOL".to_vec(),
+            name: b"Calamari".to_vec(),
+            symbol: b"KMA".to_vec(),
             decimals: 18,
             is_frozen: false,
         },

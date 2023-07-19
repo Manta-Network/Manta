@@ -66,7 +66,8 @@ parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
     /// The portion of the `NORMAL_DISPATCH_RATIO` that we adjust the fees with. Blocks filled less
     /// than this will decrease the weight and more will increase.
-    pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
+    pub const CalamariTargetBlockFullness: Perquintill = Perquintill::from_percent(50);
+    pub const MantaTargetBlockFullness: Perquintill = Perquintill::from_percent(25);
     /// The adjustment variable of the runtime. Higher values will cause `TargetBlockFullness` to
     /// change the fees more rapidly.
     pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(225, 100_000);
@@ -79,9 +80,16 @@ parameter_types! {
 
 /// Parameterized slow adjusting fee updated based on
 /// https://research.web3.foundation/en/latest/polkadot/overview/2-token-economics.html#-2.-slow-adjusting-mechanism
-pub type SlowAdjustingFeeUpdate<R> = TargetedFeeAdjustment<
+pub type CalamariSlowAdjustingFeeUpdate<R> = TargetedFeeAdjustment<
     R,
-    TargetBlockFullness,
+    CalamariTargetBlockFullness,
+    AdjustmentVariable,
+    MinimumMultiplier,
+    MaximumMultiplier,
+>;
+pub type MantaSlowAdjustingFeeUpdate<R> = TargetedFeeAdjustment<
+    R,
+    MantaTargetBlockFullness,
     AdjustmentVariable,
     MinimumMultiplier,
     MaximumMultiplier,

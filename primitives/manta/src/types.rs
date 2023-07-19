@@ -47,9 +47,6 @@ pub type MantaAssetId = u128;
 /// Calamari Asset Id Type
 pub type CalamariAssetId = u128;
 
-/// Dolphin Asset Id Type
-pub type DolphinAssetId = u128;
-
 /// Balance of an Account
 pub type Balance = u128;
 
@@ -70,3 +67,6 @@ pub type DigestItem = generic::DigestItem;
 
 /// Moment Type
 pub type Moment = u64;
+
+/// DEX pool ID.
+pub type PoolId = u128;

@@ -9,7 +9,7 @@ license = 'GPL-3.0'
 name = 'manta'
 repository = 'https://github.com/Manta-Network/Manta/'
 rust-version = '1.62'
-version = '4.0.8'
+version = '4.3.1'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -35,6 +35,12 @@ frame-rpc-system = { package = "substrate-frame-rpc-system", git = "https://gith
 jsonrpsee = { version = "0.16.2", features = ["server"] }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+
+pallet-farming-rpc-api = { path = "../pallets/farming/rpc" }
+pallet-farming-rpc-runtime-api = { path = "../pallets/farming/rpc/runtime-api" }
+zenlink-protocol = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37" }
+zenlink-protocol-rpc = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37" }
+zenlink-protocol-runtime-api = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37" }
 
 # Substrate client dependencies
 sc-basic-authorship = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
@@ -104,9 +110,9 @@ xcm = { git = "https://github.com/paritytech/polkadot.git", branch = "release-v0
 
 # Self dependencies
 calamari-runtime = { path = '../runtime/calamari' }
-dolphin-runtime = { path = '../runtime/dolphin' }
 manta-primitives = { path = '../primitives/manta' }
 manta-runtime = { path = '../runtime/manta' }
+pallet-lottery = { path = '../pallets/pallet-lottery', features = ["rpc"] }
 pallet-manta-pay = { path = '../pallets/manta-pay', features = ["rpc", "runtime"] }
 pallet-manta-sbt = { path = '../pallets/manta-sbt', features = ["rpc", "runtime"] }
 pallet-parachain-staking = { path = '../pallets/parachain-staking' }

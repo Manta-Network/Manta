@@ -1,5 +1,63 @@
 # CHANGELOG
 
+## v4.3.1
+### Added
+- [\#1197](https://github.com/Manta-Network/Manta/pull/1197) check-tests CI workflow benchmark tests for manta-dev
+- [\#1055](https://github.com/Manta-Network/Manta/pull/1055) Allow xcm-transacts from all chains [MACADO]
+- [\#1207](https://github.com/Manta-Network/Manta/pull/1207) Add mantapay rpc tests to manta runtime [MACA]
+
+### Fixed
+- [\#1208](https://github.com/Manta-Network/Manta/pull/1208) Fix wrong reports of congestion test results
+
+## v4.3.0
+### Added
+- [\#1179](https://github.com/Manta-Network/Manta/pull/1179) Copy Name Service Pallet [CA]
+- [\#1141](https://github.com/Manta-Network/Manta/pull/1141) manta-farming [MACA]
+- [\#1036](https://github.com/Manta-Network/Manta/pull/1036) Pallet Staking Lottery [MACA]
+
+### Changed
+- [\#1150](https://github.com/Manta-Network/Manta/pull/1150) Rebenchmark pallet-mantapay [MACA]
+
+### Fixed
+- [\#1175](https://github.com/Manta-Network/Manta/pull/1175) Fix congestion test CI [MACA]
+- [\#1193](https://github.com/Manta-Network/Manta/pull/1193) Revert to v0942 polkadot binary [MACA]
+- [\#1196](https://github.com/Manta-Network/Manta/pull/1196) Fix dex ed [MA]
+
+### Removed
+- [\#1167](https://github.com/Manta-Network/Manta/pull/1167) Retire dolphin runtime [DO]
+
+## v4.2.0-1
+### Added
+- [\#1166](https://github.com/Manta-Network/Manta/pull/1166) Add Force Calls for zkSBT [MACA]
+
+### Changed
+- [\#1145](https://github.com/Manta-Network/Manta/pull/1145) Bump block fullness to 50% for calamari [CA]
+- [\#1127](https://github.com/Manta-Network/Manta/pull/1127) Add check that public asset is restricted [CA]
+
+### Fixed
+- [\#1169](https://github.com/Manta-Network/Manta/pull/1169) Fix check-tests CI workflow [MACA]
+- [\#1173](https://github.com/Manta-Network/Manta/pull/1173) Add missing runtime-benchmarks features [MACA]
+
+## v4.2.0
+### Added
+- [\#1138](https://github.com/Manta-Network/Manta/pull/1138) Check manta and calamari lease expiration [MACA]
+- [\#1147](https://github.com/Manta-Network/Manta/pull/1147) Add Polkadot Signature Allowlist [MACA]
+
+## v4.1.0
+### Added
+- [\#1122](https://github.com/Manta-Network/Manta/pull/1122) dex amm [CA]
+- [\#1135](https://github.com/Manta-Network/Manta/pull/1135) Add MantaSBT to Manta Runtime [MA]
+- [\#1137](https://github.com/Manta-Network/Manta/pull/1137) Add mantapay to manta runtime [MA]
+
+### Changed
+- [\#1126](https://github.com/Manta-Network/Manta/pull/1126) Unfilter outgoing assets extrinsic [MACA]
+
+### Fixed
+- [\#1121](https://github.com/Manta-Network/Manta/pull/1121) Cleanup Integration Test Import
+- [\#1129](https://github.com/Manta-Network/Manta/pull/1129) Unfilter parachain staking extrinsics [MA]
+- [\#1128](https://github.com/Manta-Network/Manta/pull/1128) fix round change when collatorset is empty + log in runtime [CA]
+- [\#1125](https://github.com/Manta-Network/Manta/pull/1125) Remove UtxoAccumulator from MantaSbt [MACA]
+
 ## v4.0.8
 ### Added
 - [\#1080](https://github.com/Manta-Network/Manta/pull/1080) Rust integration tests for Manta runtime [MACA]
@@ -14,11 +72,15 @@
 - [\#1106](https://github.com/Manta-Network/Manta/pull/1106) Remove timeout for check_tests pipeline [MACA]
 - [\#1111](https://github.com/Manta-Network/Manta/pull/1111) Manta Staking Parameters [MA]
 - [\#1089](https://github.com/Manta-Network/Manta/pull/1089) Tune Tx-Payment Parameters for Manta Runtime [MA]
+- [\#1126](https://github.com/Manta-Network/Manta/pull/1126) Unfilter outgoing assets extrinsic [MACA]
 
 ### Fixed
 - [\#1104](https://github.com/Manta-Network/Manta/pull/1104) Fix off by 1 erorrs in pull-ledger-diff rpc [MACA]
 - [\#1113](https://github.com/Manta-Network/Manta/pull/1113) Fix integration test compile options, deps cleanup & clippy [MACA]
 - [\#1112](https://github.com/Manta-Network/Manta/pull/1112) Manta assets genesis storage migration [MA]
+- [\#1121](https://github.com/Manta-Network/Manta/pull/1121) Cleanup Integration Test Import
+- [\#1129](https://github.com/Manta-Network/Manta/pull/1129) Unfilter parachain staking extrinsics [MA]
+- [\#1128](https://github.com/Manta-Network/Manta/pull/1128) fix round change when collatorset is empty + log in runtime [CA]
 
 ### Removed
 - [\#1100](https://github.com/Manta-Network/Manta/pull/1100) Retire dolphin ci except publish draft release [DO]

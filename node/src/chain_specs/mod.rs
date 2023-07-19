@@ -31,19 +31,14 @@ use serde::{Deserialize, Serialize};
 use sp_core::sr25519;
 
 pub mod calamari;
-pub mod dolphin;
 pub mod manta;
 
-pub use self::{calamari::*, dolphin::*, manta::*};
+pub use self::{calamari::*, manta::*};
 pub use calamari_runtime::currency::KMA;
-pub use dolphin_runtime::currency::DOL;
 pub use manta_runtime::currency::MANTA;
 
 /// Calamari Endowment: 10 endowment so that total supply is 10B
 pub const CALAMARI_ENDOWMENT: Balance = 1_000_000_000 * KMA;
-
-/// Dolphin Endowment: 10 endowment so that total supply is 10B
-pub const DOLPHIN_ENDOWMENT: Balance = 1_000_000_000 * DOL;
 
 /// Manta Endowment: 10 endowment so that total supply is 1B
 pub const MANTA_ENDOWMENT: Balance = 100_000_000 * MANTA;

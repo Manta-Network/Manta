@@ -47,39 +47,51 @@ pub fn genesis_spec_dev() -> MantaChainSpec {
     )
 }
 
-pub fn genesis_spec_local() -> MantaChainSpec {
-    let genesis_collators: Vec<Collator> = vec![
-        Collator::new(
+pub fn genesis_spec_local(localdev: bool) -> MantaChainSpec {
+    let genesis_collators: Vec<Collator> = if localdev {
+        vec![Collator::new(
             unchecked_account_id::<sr25519::Public>("Alice"),
             None,
             SessionKeys::from_seed_unchecked("Alice"),
-        ),
-        Collator::new(
-            unchecked_account_id::<sr25519::Public>("Bob"),
-            None,
-            SessionKeys::from_seed_unchecked("Bob"),
-        ),
-        Collator::new(
-            unchecked_account_id::<sr25519::Public>("Charlie"),
-            None,
-            SessionKeys::from_seed_unchecked("Charlie"),
-        ),
-        Collator::new(
-            unchecked_account_id::<sr25519::Public>("Dave"),
-            None,
-            SessionKeys::from_seed_unchecked("Dave"),
-        ),
-        Collator::new(
-            unchecked_account_id::<sr25519::Public>("Eve"),
-            None,
-            SessionKeys::from_seed_unchecked("Eve"),
-        ),
-    ];
+        )]
+    } else {
+        vec![
+            Collator::new(
+                unchecked_account_id::<sr25519::Public>("Alice"),
+                None,
+                SessionKeys::from_seed_unchecked("Alice"),
+            ),
+            Collator::new(
+                unchecked_account_id::<sr25519::Public>("Bob"),
+                None,
+                SessionKeys::from_seed_unchecked("Bob"),
+            ),
+            Collator::new(
+                unchecked_account_id::<sr25519::Public>("Charlie"),
+                None,
+                SessionKeys::from_seed_unchecked("Charlie"),
+            ),
+            Collator::new(
+                unchecked_account_id::<sr25519::Public>("Dave"),
+                None,
+                SessionKeys::from_seed_unchecked("Dave"),
+            ),
+            Collator::new(
+                unchecked_account_id::<sr25519::Public>("Eve"),
+                None,
+                SessionKeys::from_seed_unchecked("Eve"),
+            ),
+        ]
+    };
     let genesis_collators_clone = genesis_collators.clone(); // so we can move it into the constructor closure
-
+    let id = if localdev {
+        "manta_localdev"
+    } else {
+        "manta_local"
+    };
     MantaChainSpec::from_genesis(
         "Manta Parachain Local",
-        "manta",
+        id,
         ChainType::Local,
         move || manta_devnet_genesis(genesis_collators_clone.clone()),
         genesis_collators
