@@ -505,7 +505,7 @@ pub mod pallet {
         pub fn update_asset_metadata(
             origin: OriginFor<T>,
             asset_id: T::AssetId,
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+            metadata: <<T as Config>::AssetConfig as AssetConfig<T>>::StorageMetadata,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
@@ -517,11 +517,14 @@ pub mod pallet {
                 Error::<T>::UpdateNonExistentAsset
             );
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::update_asset_metadata(
-                &asset_id,
-                metadata.clone().into(),
+                &asset_id, metadata,
             )?;
-            AssetIdMetadata::<T>::insert(asset_id, &metadata);
-            Self::deposit_event(Event::<T>::AssetMetadataUpdated { asset_id, metadata });
+            let updated_registry_metadata = Self::asset_id_metadata(asset_id)
+                .expect("we just successfully updated the asset, so it exists. qed");
+            Self::deposit_event(Event::<T>::AssetMetadataUpdated {
+                asset_id,
+                metadata: updated_registry_metadata,
+            });
             Ok(())
         }
 

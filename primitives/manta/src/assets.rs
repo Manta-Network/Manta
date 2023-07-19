@@ -106,7 +106,7 @@ pub trait AssetRegistry: AssetIdType + BalanceType {
 
     /// Update asset metadata by `AssetId`.
     ///
-    /// * `asset_id`: the asset id to be created.
+    /// * `asset_id`: the asset id to be updated.
     /// * `metadata`: the metadata that the implementation layer stores.
     fn update_asset_metadata(
         asset_id: &Self::AssetId,
@@ -120,7 +120,7 @@ where
     C: Config,
 {
     /// Metadata type that required in token storage: e.g. AssetMetadata in Pallet-Assets.
-    type StorageMetadata: From<Self::AssetRegistryMetadata>;
+    type StorageMetadata: From<Self::AssetRegistryMetadata> + Parameter;
 
     /// The Asset Metadata type stored in this pallet.
     type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance> + Parameter + TestingDefault;
