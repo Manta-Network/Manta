@@ -258,6 +258,8 @@ pub mod pallet {
     pub(super) type WithdrawalRequestQueue<T: Config> =
         StorageValue<_, Vec<Request<T::AccountId, T::BlockNumber, BalanceOf<T>>>, ValueQuery>;
 
+    /// Incremented whenever delegating tokens to a collator
+    /// Collators are removed from here when their funds are unlocked in [`Call::finish_unstaking_collators`]
     #[pallet::storage]
     #[pallet::getter(fn staked_collators)]
     pub(super) type StakedCollators<T: Config> =
@@ -330,6 +332,8 @@ pub mod pallet {
         /// FATAL: Assigning/Transferring winning claims
         /// would **remove** user deposited funds from pallet
         PotBalanceTooLow,
+        /// FATAL: Can't stake the requested amount with available funds
+        PotBalanceTooLowToStake,
         /// Pallet balance is lower than the needed gas fee buffer
         PotBalanceBelowGasReserve,
         /// Pallet balance is too low to submit a needed transaction
@@ -350,6 +354,8 @@ pub mod pallet {
         NoDepositForAccount,
         /// Fatal: No collators found to assign this deposit to
         NoCollatorForDeposit,
+        /// Fatal: No collators found to assign this deposit to
+        NoCollatorForStake,
         /// Fatal: No collators found to withdraw from
         NoCollatorForWithdrawal,
         /// Fatal: A calculation that must not be negative would underflow
