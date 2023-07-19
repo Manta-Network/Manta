@@ -280,46 +280,111 @@ use fuso_support::{
     ChainId,
 };
 
-// impl<T: Config> fuso_support::chainbridge::AssetIdResourceIdProvider<T::AssetId> for Pallet<T> {
-//     type Err = ();
+struct TokenImplConcrete<
+    A: frame_support::traits::fungibles::Mutate<AccountId>,
+    M: Token<AccountId>
+        + DecimalsTransformer<Balance>
+        + fuso_support::traits::Token<sp_runtime::AccountId32>,
+> {
+    _marker: sp_std::marker::PhantomData<(A, M)>,
+}
 
-//     fn try_get_asset_id(
-//         chain_id: ChainId,
-//         contract_id: impl AsRef<[u8]>,
-//     ) -> Result<T::AssetId, Self::Err> {
-//         Self::get_token_from_chainbridge((chain_id, contract_id.as_ref().to_vec())).ok_or(())
-//     }
-// }
+type TokenImplConcreteType = TokenImplConcrete<Assets, AssetManager>;
 
-// struct AssetIdResourceIdProviderTest;
-// /// used by the chainbridge
-// impl fuso_support::chainbridge::AssetIdResourceIdProvider<BridgeAssetId>
-//     for AssetIdResourceIdProviderTest
-// {
-//     type Err = ();
+use fuso_support::{constants::STANDARD_DECIMALS, external_chain::XToken};
 
-//     fn try_get_asset_id(
-//         chain_id: ChainId,
-//         contract_id: impl AsRef<[u8]>,
-//     ) -> R
-//         let asset_id =
-//             AssetManager::get_token_from_chainbridge((chain_id, contract_id.as_ref().to_vec()))
-//                 .ok_or(());
-//         let bridge_asset: BridgeAssetId = BridgeAssetId::from(asset_id);
-//     }
-// }
+impl<A, M> DecimalsTransformer<Balance> for TokenImplConcrete<A, M>
+where
+    A: frame_support::traits::fungibles::Mutate<AccountId>,
+    M: Token<AccountId>
+        + DecimalsTransformer<Balance>
+        + fuso_support::traits::Token<sp_runtime::AccountId32>,
+{
+    // implement the methods required by the DecimalsTransformer trait here
+    // probably by delegating to self.1
+    fn transform_decimals_to_standard(amount: Balance, external_decimals: u8) -> Balance {
+        M::transform_decimals_to_standard(amount, external_decimals)
+    }
 
-// /// Expose customizable associated type of asset transfer, lock and unlock
-// /// Expose customizable associated type of asset transfer, lock and unlock
-// type Fungibles: Mutate<Self::AccountId, AssetId = AssetId<Self>, Balance = BalanceOf<Self>>
-//     + Token<Self::AccountId>
-//     + DecimalsTransformer<BalanceOf<Self>>;
+    fn transform_decimals_to_external(amount: Balance, external_decimals: u8) -> Balance {
+        M::transform_decimals_to_external(amount, external_decimals)
+    }
+}
 
-// /// Map of cross-chain asset ID & name
-// type AssetIdByName: AssetIdResourceIdProvider<AssetId<Self>>;
-// // type TokenImpl<T: Mutate, S: Token>;
+impl<A, M> Token<AccountId> for TokenImplConcrete<A, M>
+where
+    A: frame_support::traits::fungibles::Mutate<AccountId>
+        + frame_support::traits::fungibles::Inspect<AccountId>
+        + frame_support::traits::fungibles::Mutate<sp_runtime::AccountId32>,
+    M: Token<AccountId>
+        + DecimalsTransformer<Balance>
+        + fuso_support::traits::Token<sp_runtime::AccountId32>
+        + pallet_asset_manager::Config,
+{
+    type Balance = <M as pallet_asset_manager::Config>::Balance;
+    type TokenId = <M as pallet_asset_manager::Config>::AssetId;
 
-struct TokenImplConcrete<A: Mutate, M: Token + DecimalsTransformer<Balance>>;
+    fn create(mut token_info: XToken<Balance>) -> Result<Self::TokenId, DispatchError> {
+        M::create(token_info)
+    }
+
+    fn transfer_token(
+        origin: &AccountId,
+        token: Self::TokenId,
+        amount: Self::Balance,
+        target: &AccountId,
+    ) -> Result<Self::Balance, DispatchError> {
+        M::transfer_token(origin, token, amount, target)
+    }
+
+    fn try_mutate_account<R>(
+        token: &Self::TokenId,
+        who: &AccountId,
+        f: impl FnOnce(&mut (Self::Balance, Self::Balance)) -> Result<R, DispatchError>,
+    ) -> Result<R, DispatchError> {
+        M::try_mutate_account(token, who, f)
+    }
+
+    fn try_mutate_issuance(
+        token: &Self::TokenId,
+        f: impl FnOnce(&mut Self::Balance) -> Result<(), DispatchError>,
+    ) -> Result<(), DispatchError> {
+        M::try_mutate_issuance(token, f)
+    }
+
+    fn exists(token: &Self::TokenId) -> bool {
+        //*token == Self::native_token_id() || Tokens::<T>::contains_key(token)
+        M::exists(token)
+    }
+
+    fn native_token_id() -> Self::TokenId {
+        //T::NativeTokenId::get()
+        M::native_token_id()
+    }
+
+    fn is_stable(token: &Self::TokenId) -> bool {
+        M::is_stable(token)
+    }
+
+    fn free_balance(token: &Self::TokenId, who: &AccountId) -> Self::Balance {
+        // if *token == Self::native_token_id() {
+        //     return pallet_balances::Pallet::<T>::free_balance(who);
+        // }
+        // Self::get_token_balance((token, who)).free
+        M::free_balance(token, who)
+    }
+
+    fn total_issuance(token: &Self::TokenId) -> Self::Balance {
+        M::total_issuance(token)
+    }
+
+    fn token_external_decimals(token: &Self::TokenId) -> Result<u8, DispatchError> {
+        //M::token_external_decimals(token)
+        Ok(0u8)
+    }
+}
+
+use frame_support::pallet_prelude::DispatchError;
 
 impl pallet_fuso_mapobridge::Config for Runtime {
     type AssetIdByName = AssetManager;
