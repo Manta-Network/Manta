@@ -85,6 +85,8 @@ pub use sp_runtime::BuildStorage;
 
 pub mod assets_config;
 pub mod currency;
+#[cfg(test)]
+mod diff_tx_fees;
 pub mod fee;
 pub mod impls;
 pub mod migrations;
