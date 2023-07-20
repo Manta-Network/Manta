@@ -1164,7 +1164,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
     {
         assert_eq!(
             crate::RuntimeCall::get_call_names("AssetManager").len(),
-            8,
+            9,
             "Please update new extrinsic here."
         );
         // register_asset
@@ -1275,6 +1275,23 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         calamari_runtime_calls.push((
             "pallet_asset_manager",
             "register_lp_asset",
+            dispatch_info,
+            call_len,
+        ));
+
+        // permissionless_register_asset
+        let call = crate::RuntimeCall::AssetManager(
+            pallet_asset_manager::Call::permissionless_register_asset {
+                name: vec![].try_into().unwrap(),
+                symbol: vec![].try_into().unwrap(),
+                decimals: 12,
+                total_supply: 1_000_000_000_000_000,
+            },
+        );
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_asset_manager",
+            "permissionless_register_asset",
             dispatch_info,
             call_len,
         ));
