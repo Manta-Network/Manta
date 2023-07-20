@@ -32,8 +32,9 @@ use manta_primitives::{
     assets::AssetIdLocationConvert,
     types::{AccountId, MantaAssetId},
     xcm::{
-        AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,
-        MultiNativeAsset,
+        AccountIdToMultiLocation, AllowTopLevelPaidExecutionDescendOriginFirst,
+        AllowTopLevelPaidExecutionFrom, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,
+        MultiNativeAsset, XcmFeesToAccount,
     },
 };
 use orml_traits::location::AbsoluteReserveProvider;
@@ -44,16 +45,13 @@ use sp_runtime::traits::Convert;
 use sp_std::marker::PhantomData;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    EnsureXcmOrigin, FixedRateOfFungible, LocationInverter, ParentAsSuperuser, ParentIsPreset,
-    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeRevenue,
-    TakeWeightCredit, WeightInfoBounds,
+    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
+    ConvertedConcreteAssetId, EnsureXcmOrigin, FixedRateOfFungible, LocationInverter,
+    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+    SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit, WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
-
-use manta_primitives::xcm::AllowTopLevelPaidExecutionDescendOriginFirst;
 
 parameter_types! {
     pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
@@ -193,7 +191,7 @@ impl TakeRevenue for XcmNativeFeeToTreasury {
         }
     }
 }
-pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
+pub type MantaXcmFeesToAccount = XcmFeesToAccount<
     AccountId,
     Assets,
     ConvertedConcreteAssetId<MantaAssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
@@ -225,7 +223,7 @@ impl Config for XcmExecutorConfig {
     // i.e. units_per_second in `AssetManager`
     type Trader = (
         FixedRateOfFungible<ParaTokenPerSecond, XcmNativeFeeToTreasury>,
-        FirstAssetTrader<AssetManager, XcmFeesToAccount>,
+        FirstAssetTrader<AssetManager, MantaXcmFeesToAccount>,
     );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
