@@ -28,14 +28,16 @@ use sp_runtime::{
     AccountId32,
 };
 
-use manta_primitives::types::{BlockNumber, Header};
+use manta_primitives::{
+    types::{BlockNumber, Header},
+    xcm::AllowTopLevelPaidExecutionFrom,
+};
 use polkadot_parachain::primitives::Id as ParaId;
 use polkadot_runtime_parachains::{configuration, origin, shared, ump};
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ChildParachainAsNative,
-    ChildParachainConvertsVia, ChildSystemParachainAsSuperuser,
+    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
+    ChildParachainAsNative, ChildParachainConvertsVia, ChildSystemParachainAsSuperuser,
     CurrencyAdapter as XcmCurrencyAdapter, FixedRateOfFungible, FixedWeightBounds, IsConcrete,
     LocationInverter, SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation,
     TakeWeightCredit,
