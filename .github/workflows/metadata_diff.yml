@@ -105,6 +105,8 @@ jobs:
           chmod +x target/release/manta
       - name: stop sccache server
         run: sccache --stop-server || true
+      - name: Install pm2
+        run: npm install -g pm2
       - name: Start latest manta node
         run: |
           echo Running on $CHAIN
@@ -115,7 +117,7 @@ jobs:
             RELAYCHAIN=polkadot
             echo "It's going to diff runtime metadata for $CHAIN with endpoint $ENDPOINT."
           fi;
-          target/release/manta --chain=$CHAIN --port 30555 --base-path ./temp1 --ws-port 9955 -- --chain $RELAYCHAIN &
+          pm2 start --name diff-metadata "target/release/manta --chain=$CHAIN --port 30555 --base-path ./temp1 --ws-port 9955 -- --chain $RELAYCHAIN"
       - name: Prepare output
         run: |
           VERSION=$(./target/release/manta --version)
