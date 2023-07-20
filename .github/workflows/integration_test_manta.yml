@@ -387,6 +387,33 @@ jobs:
         with:
           name: ${{ matrix.chain-spec.id }}-alice-stress.log
           path: ${{ github.workspace }}/polkadot-launch/9921.log
+      - name: launch testnet
+        run: |
+          cd ${{ github.workspace }}/polkadot-launch
+          yarn install
+          yarn build
+          pm2 start dist/cli.js \
+            --name polkadot-launch \
+            --output ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
+            --no-autorestart \
+            -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
+      - name: run farming test
+        run: |
+          sleep 720
+          cd ${{ github.workspace }}/Manta/tests
+          yarn install
+          yarn
+          yarn test_farming --address=ws://127.0.0.1:9921 --exit
+      - name: stop testnet
+        run: |
+          cd ${{ github.workspace }}/polkadot-launch
+          pm2 stop polkadot-launch
+      - if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.chain-spec.id }}-alice-stress.log
+          path: ${{ github.workspace }}/polkadot-launch/9921.log
   docker-image-test:
     timeout-minutes: 120
     if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')

@@ -1,12 +1,12 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
 import { manta_pay_types, rpc_api } from './types';
-import {execute_with_root_via_governance } from './manta_pay';
 import { delay } from './test-util';
 import { assert } from 'chai';
 import minimist, { ParsedArgs } from 'minimist';
 import { blake2AsHex } from "@polkadot/util-crypto";
 import * as fs from 'fs';
+import {execute_with_root_via_governance} from "./chain-util";
 
 const test_config = {
     ws_address: "ws://127.0.0.1:9801",
@@ -40,8 +40,7 @@ describe('Node RPC Test', () => {
         const code = fs.readFileSync('calamari.wasm').toString('hex');
         let codeHash = blake2AsHex(`0x${code}`);
         const authorizeUpgradeCallData = api.tx.parachainSystem.authorizeUpgrade(codeHash);
-        var referendumIndexObject = { referendumIndex: 0 };
-        execute_with_root_via_governance(api, aliceKeyPair, authorizeUpgradeCallData, referendumIndexObject);
+        execute_with_root_via_governance(api, aliceKeyPair, authorizeUpgradeCallData);
         await delay(60000);
         api.tx.parachainSystem.enactAuthorizedUpgrade(`0x${code}`).signAndSend(aliceKeyPair, {nonce: -1});
         await delay(120000);
