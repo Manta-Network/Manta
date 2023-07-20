@@ -826,6 +826,19 @@ pub mod pallet {
         ChainId,
     };
 
+    /// used by the chainbridge
+    impl<T: Config> fuso_support::chainbridge::AssetIdResourceIdProvider<T::AssetId> for Pallet<T> {
+        type Err = ();
+
+        fn try_get_asset_id(
+            chain_id: ChainId,
+            contract_id: impl AsRef<[u8]>,
+        ) -> Result<T::AssetId, Self::Err> {
+            //Self::get_token_from_chainbridge((chain_id, contract_id.as_ref().to_vec())).ok_or(())
+            Ok(T::AssetId::one())
+        }
+    }
+
     impl<T: Config> Token<T::AccountId> for Pallet<T> {
         type Balance = T::Balance;
         type TokenId = T::AssetId;

@@ -289,8 +289,6 @@ struct TokenImplConcrete<
     _marker: sp_std::marker::PhantomData<(A, M)>,
 }
 
-type TokenImplConcreteType = TokenImplConcrete<Assets, AssetManager>;
-
 use fuso_support::{constants::STANDARD_DECIMALS, external_chain::XToken};
 
 impl<A, M> DecimalsTransformer<Balance> for TokenImplConcrete<A, M>
@@ -314,17 +312,16 @@ where
 impl<A, M> Token<AccountId> for TokenImplConcrete<A, M>
 where
     A: frame_support::traits::fungibles::Mutate<AccountId>
-        + frame_support::traits::fungibles::Inspect<AccountId>
+        + frame_support::traits::fungibles::Inspect<sp_runtime::AccountId32>
         + frame_support::traits::fungibles::Mutate<sp_runtime::AccountId32>,
     M: Token<AccountId>
         + DecimalsTransformer<Balance>
-        + fuso_support::traits::Token<sp_runtime::AccountId32>
-        + pallet_asset_manager::Config,
+        + fuso_support::traits::Token<sp_runtime::AccountId32>,
 {
-    type Balance = <M as pallet_asset_manager::Config>::Balance;
-    type TokenId = <M as pallet_asset_manager::Config>::AssetId;
+    type Balance = <M as Token<AccountId>>::Balance;
+    type TokenId = <M as Token<AccountId>>::TokenId;
 
-    fn create(mut token_info: XToken<Balance>) -> Result<Self::TokenId, DispatchError> {
+    fn create(mut token_info: XToken<Self::Balance>) -> Result<Self::TokenId, DispatchError> {
         M::create(token_info)
     }
 
@@ -383,6 +380,28 @@ where
         Ok(0u8)
     }
 }
+
+// impl<A, M> frame_support::traits::fungibles::Mutate<AccountId> for TokenImplConcrete<A, M>
+// where
+//     A: frame_support::traits::fungibles::Mutate<AccountId>
+//         + frame_support::traits::fungibles::Inspect<sp_runtime::AccountId32>
+//         + frame_support::traits::fungibles::Mutate<sp_runtime::AccountId32>,
+//     M: Token<AccountId>
+//         + DecimalsTransformer<Balance>
+//         + fuso_support::traits::Token<sp_runtime::AccountId32>,
+// {
+// }
+
+// impl<A, M> frame_support::traits::fungibles::Inspect<AccountId> for TokenImplConcrete<A, M>
+// where
+//     A: frame_support::traits::fungibles::Mutate<AccountId>
+//         + frame_support::traits::fungibles::Inspect<sp_runtime::AccountId32>
+//         + frame_support::traits::fungibles::Mutate<sp_runtime::AccountId32>,
+//     M: Token<AccountId>
+//         + DecimalsTransformer<Balance>
+//         + fuso_support::traits::Token<sp_runtime::AccountId32>,
+// {
+// }
 
 use frame_support::pallet_prelude::DispatchError;
 
