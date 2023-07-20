@@ -24,7 +24,7 @@ use frame_support::{
     assert_ok, construct_runtime, match_types,
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU32, Contains, Currency, Everything, Nothing},
+    traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, Everything, Nothing},
     weights::Weight,
     PalletId,
 };
@@ -621,10 +621,8 @@ impl BalanceType for ParachainAssetConfig {
 impl AssetConfig<Runtime> for ParachainAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type NativeAssetId = NativeAssetId;
-    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
-    type StorageMetadata = AssetStorageMetadata;
     type AssetRegistry = CalamariAssetRegistry;
     type FungibleLedger = NativeAndNonNative<Runtime, ParachainAssetConfig, Balances, Assets>;
 }
@@ -632,13 +630,16 @@ impl AssetConfig<Runtime> for ParachainAssetConfig {
 impl pallet_asset_manager::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = CalamariAssetId;
-    type Balance = Balance;
     type Location = AssetLocation;
     type AssetConfig = ParachainAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId>;
     type SuspenderOrigin = EnsureRoot<AccountId>;
     type PalletId = AssetManagerPalletId;
     type WeightInfo = ();
+    type PermissionlessStartId = ConstU128<1_000_000_000>;
+    type TokenNameMaxLen = ConstU32<100>;
+    type TokenSymbolMaxLen = ConstU32<100>;
+    type PermissionlessAssetRegistryCost = ConstU128<1000>;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {

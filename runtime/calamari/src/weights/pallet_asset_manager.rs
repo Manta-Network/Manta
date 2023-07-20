@@ -54,6 +54,7 @@ pub trait WeightInfo {
     fn set_min_xcm_fee() -> Weight;
     fn update_outgoing_filtered_assets() -> Weight;
     fn register_lp_asset() -> Weight;
+	fn permissionless_register_asset() -> Weight;
 }
 
 /// Weights for pallet_asset_manager using the Substrate node and recommended hardware.
@@ -132,6 +133,18 @@ impl<T: frame_system::Config> pallet_asset_manager::WeightInfo for SubstrateWeig
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(6))
 	}
+	// Storage: System Account (r:1 w:1)
+	// Storage: AssetManager NextPermissionlessAssetId (r:1 w:1)
+	// Storage: Assets Asset (r:1 w:1)
+	// Storage: Assets Metadata (r:1 w:1)
+	// Storage: Assets Account (r:1 w:1)
+	// Storage: AssetManager AssetIdMetadata (r:0 w:1)
+	fn permissionless_register_asset() -> Weight {
+		// Minimum execution time: 81_474 nanoseconds.
+		Weight::from_ref_time(83_160_000)
+			.saturating_add(T::DbWeight::get().reads(5))
+			.saturating_add(T::DbWeight::get().writes(6))
+	}
 }
 
 // For backwards compatibility and tests
@@ -207,6 +220,18 @@ impl WeightInfo for () {
 		// Minimum execution time: 61_931 nanoseconds.
 		Weight::from_ref_time(67_434_000)
 			.saturating_add(RocksDbWeight::get().reads(6))
+			.saturating_add(RocksDbWeight::get().writes(6))
+	}
+	// Storage: System Account (r:1 w:1)
+	// Storage: AssetManager NextPermissionlessAssetId (r:1 w:1)
+	// Storage: Assets Asset (r:1 w:1)
+	// Storage: Assets Metadata (r:1 w:1)
+	// Storage: Assets Account (r:1 w:1)
+	// Storage: AssetManager AssetIdMetadata (r:0 w:1)
+	fn permissionless_register_asset() -> Weight {
+		// Minimum execution time: 81_474 nanoseconds.
+		Weight::from_ref_time(83_160_000)
+			.saturating_add(RocksDbWeight::get().reads(5))
 			.saturating_add(RocksDbWeight::get().writes(6))
 	}
 }

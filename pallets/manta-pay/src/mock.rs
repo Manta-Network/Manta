@@ -17,7 +17,7 @@
 use frame_support::{
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU32, IsInVec},
+    traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, IsInVec},
     PalletId,
 };
 use frame_system::{EnsureNever, EnsureRoot};
@@ -239,10 +239,8 @@ impl BalanceType for MantaAssetConfig {
 impl AssetConfig<Test> for MantaAssetConfig {
     type NativeAssetId = NativeAssetId;
     type StartNonNativeAssetId = StartNonNativeAssetId;
-    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
-    type StorageMetadata = AssetStorageMetadata;
     type AssetRegistry = MantaAssetRegistry;
     type FungibleLedger = NativeAndNonNative<Test, MantaAssetConfig, Balances, Assets>;
 }
@@ -250,13 +248,16 @@ impl AssetConfig<Test> for MantaAssetConfig {
 impl pallet_asset_manager::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = StandardAssetId;
-    type Balance = Balance;
     type Location = AssetLocation;
     type AssetConfig = MantaAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId32>;
     type SuspenderOrigin = EnsureRoot<AccountId32>;
     type PalletId = AssetManagerPalletId;
     type WeightInfo = ();
+    type PermissionlessStartId = ConstU128<100>;
+    type TokenNameMaxLen = ConstU32<100>;
+    type TokenSymbolMaxLen = ConstU32<100>;
+    type PermissionlessAssetRegistryCost = ConstU128<1000>;
 }
 
 parameter_types! {
