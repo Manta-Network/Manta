@@ -400,7 +400,7 @@ jobs:
             -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
       - name: run farming test
         run: |
-          sleep 720
+          sleep 120
           cd ${{ github.workspace }}/Manta/tests
           yarn install
           yarn
