@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## v4.4.0
+### Added
+- [\#1083](https://github.com/Manta-Network/Manta/pull/1083) tx fees diff support [MACA]
+- [\#1217](https://github.com/Manta-Network/Manta/pull/1217) farming rpc test [MACA]
+- [\#1212](https://github.com/Manta-Network/Manta/pull/1212) Add Permissionless Asset Registry Feature [MACA]
+
+### Changed
+- [\#1221](https://github.com/Manta-Network/Manta/pull/1221) Uncomment MantaPay RPC correctness and performance tests [MA]
+- [\#1226](https://github.com/Manta-Network/Manta/pull/1226) Unfilter xTokens transfer-multiassets [MACA]
+- [\#1223](https://github.com/Manta-Network/Manta/pull/1223) Block outgoing MANTA transfers on the XCM instruction level [MACA]
+
+### Fixed
+- [\#1211](https://github.com/Manta-Network/Manta/pull/1211) fix(lottery): prevent depositing below min_deposit, don't fail drawing on no available collators, clarify sanity checks (no difference in behavior) [MACA]
+- [\#1220](https://github.com/Manta-Network/Manta/pull/1220) Fix release binary building [MACA]
+- [\#1218](https://github.com/Manta-Network/Manta/pull/1218) fix(lottery): drawings fail when restaking unstaked funds [MA]
+- [\#1219](https://github.com/Manta-Network/Manta/pull/1219) fix(lottery): `TooLowDelegationCountToDelegate` fails when funds withdrawing [MA]
+- [\#1227](https://github.com/Manta-Network/Manta/pull/1227) Roll srtool image back to 1.66.1 [MACA]
+
 ## v4.3.1
 ### Added
 - [\#1197](https://github.com/Manta-Network/Manta/pull/1197) check-tests CI workflow benchmark tests for manta-dev
