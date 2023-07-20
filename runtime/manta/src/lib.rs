@@ -276,11 +276,13 @@ impl Contains<RuntimeCall> for MantaFilter {
 
 use fuso_support::{
     chainbridge::{AssetIdResourceIdProvider, EthereumCompatibleAddress},
+    constants::STANDARD_DECIMALS,
+    external_chain::XToken,
     traits::{DecimalsTransformer, PriceOracle, Token},
     ChainId,
 };
 
-struct TokenImplConcrete<
+pub struct TokenImplConcrete<
     A: frame_support::traits::fungibles::Mutate<AccountId>,
     M: Token<AccountId>
         + DecimalsTransformer<Balance>
@@ -288,8 +290,6 @@ struct TokenImplConcrete<
 > {
     _marker: sp_std::marker::PhantomData<(A, M)>,
 }
-
-use fuso_support::{constants::STANDARD_DECIMALS, external_chain::XToken};
 
 impl<A, M> DecimalsTransformer<Balance> for TokenImplConcrete<A, M>
 where
@@ -381,27 +381,118 @@ where
     }
 }
 
-// impl<A, M> frame_support::traits::fungibles::Mutate<AccountId> for TokenImplConcrete<A, M>
-// where
-//     A: frame_support::traits::fungibles::Mutate<AccountId>
-//         + frame_support::traits::fungibles::Inspect<sp_runtime::AccountId32>
-//         + frame_support::traits::fungibles::Mutate<sp_runtime::AccountId32>,
-//     M: Token<AccountId>
-//         + DecimalsTransformer<Balance>
-//         + fuso_support::traits::Token<sp_runtime::AccountId32>,
-// {
-// }
+use sp_runtime::DispatchResult;
+impl<A, M> frame_support::traits::fungibles::Mutate<AccountId> for TokenImplConcrete<A, M>
+where
+    A: frame_support::traits::fungibles::Mutate<AccountId>
+        + frame_support::traits::fungibles::Inspect<sp_runtime::AccountId32>
+        + frame_support::traits::fungibles::Mutate<sp_runtime::AccountId32>,
+    M: Token<AccountId>
+        + DecimalsTransformer<Balance>
+        + fuso_support::traits::Token<sp_runtime::AccountId32>,
+{
+    fn mint_into(
+        asset: <A as frame_support::traits::fungibles::Inspect<AccountId>>::AssetId,
+        who: &AccountId,
+        amount: <A as frame_support::traits::fungibles::Inspect<AccountId>>::Balance,
+    ) -> DispatchResult {
+        <A as frame_support::traits::fungibles::Mutate<AccountId>>::mint_into(asset, who, amount)
+    }
 
-// impl<A, M> frame_support::traits::fungibles::Inspect<AccountId> for TokenImplConcrete<A, M>
-// where
-//     A: frame_support::traits::fungibles::Mutate<AccountId>
-//         + frame_support::traits::fungibles::Inspect<sp_runtime::AccountId32>
-//         + frame_support::traits::fungibles::Mutate<sp_runtime::AccountId32>,
-//     M: Token<AccountId>
-//         + DecimalsTransformer<Balance>
-//         + fuso_support::traits::Token<sp_runtime::AccountId32>,
-// {
-// }
+    fn burn_from(
+        asset: <A as frame_support::traits::fungibles::Inspect<AccountId>>::AssetId,
+        who: &AccountId,
+        amount: <A as frame_support::traits::fungibles::Inspect<AccountId>>::Balance,
+    ) -> Result<<A as frame_support::traits::fungibles::Inspect<AccountId>>::Balance, DispatchError>
+    {
+        <A as frame_support::traits::fungibles::Mutate<AccountId>>::burn_from(asset, who, amount)
+    }
+
+    fn slash(
+        asset: <A as frame_support::traits::fungibles::Inspect<AccountId>>::AssetId,
+        who: &AccountId,
+        amount: <A as frame_support::traits::fungibles::Inspect<AccountId>>::Balance,
+    ) -> Result<<A as frame_support::traits::fungibles::Inspect<AccountId>>::Balance, DispatchError>
+    {
+        <A as frame_support::traits::fungibles::Mutate<AccountId>>::slash(asset, who, amount)
+    }
+}
+
+use frame_support::traits::tokens::{DepositConsequence, WithdrawConsequence};
+
+impl<A, M> frame_support::traits::fungibles::Inspect<AccountId> for TokenImplConcrete<A, M>
+where
+    A: frame_support::traits::fungibles::Mutate<AccountId>
+        + frame_support::traits::fungibles::Inspect<sp_runtime::AccountId32>
+        + frame_support::traits::fungibles::Mutate<sp_runtime::AccountId32>,
+    M: Token<AccountId>
+        + DecimalsTransformer<Balance>
+        + fuso_support::traits::Token<sp_runtime::AccountId32>,
+{
+    type AssetId = <A as frame_support::traits::fungibles::Inspect<AccountId>>::AssetId;
+    type Balance = <A as frame_support::traits::fungibles::Inspect<AccountId>>::Balance;
+
+    fn total_issuance(asset: Self::AssetId) -> Self::Balance {
+        //<Self as Token<T::AccountId>>::total_issuance(&asset)
+        <A as frame_support::traits::fungibles::Inspect<AccountId>>::total_issuance(asset)
+    }
+
+    fn minimum_balance(_asset: Self::AssetId) -> Self::Balance {
+        // TODO sybil attack
+        // One::one()
+        <A as frame_support::traits::fungibles::Inspect<AccountId>>::minimum_balance(_asset)
+    }
+
+    fn balance(asset: Self::AssetId, who: &AccountId) -> Self::Balance {
+        // let balance = Balances::<T>::get((asset, who));
+        // balance.free + balance.reserved
+        <A as frame_support::traits::fungibles::Inspect<AccountId>>::balance(asset, who)
+    }
+
+    fn reducible_balance(
+        asset: Self::AssetId,
+        who: &AccountId,
+        _keep_alive: bool,
+    ) -> Self::Balance {
+        //<Self as Token<AccountId>>::free_balance(&asset, &who)
+        <A as frame_support::traits::fungibles::Inspect<AccountId>>::reducible_balance(
+            asset,
+            who,
+            _keep_alive,
+        )
+    }
+
+    fn can_deposit(
+        asset: Self::AssetId,
+        _who: &AccountId,
+        _amount: Self::Balance,
+        _mint: bool,
+    ) -> DepositConsequence {
+        // match Self::get_token_info(asset) {
+        //     Some(_) => DepositConsequence::Success,
+        //     None => DepositConsequence::UnknownAsset,
+        // }
+        A::can_deposit(asset, _who, _amount, _mint)
+    }
+
+    fn can_withdraw(
+        asset: Self::AssetId,
+        who: &AccountId,
+        amount: Self::Balance,
+    ) -> WithdrawConsequence<Self::Balance> {
+        // let free = <Self as Token<T::AccountId>>::free_balance(&asset, who);
+        // match free >= amount {
+        //     true => WithdrawConsequence::Success,
+        //     false => WithdrawConsequence::NoFunds,
+        // }
+        <A as frame_support::traits::fungibles::Inspect<AccountId>>::can_withdraw(
+            asset, who, amount,
+        )
+    }
+    fn asset_exists(asset: Self::AssetId) -> bool {
+        true
+    }
+}
 
 use frame_support::pallet_prelude::DispatchError;
 
@@ -954,7 +1045,7 @@ construct_runtime!(
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
         MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
 
-        // Mapo: pallet_fuso_mapobridge::{Pallet, Call, Storage, Event<T>} = 50,
+        Mapo: pallet_fuso_mapobridge::{Pallet, Call, Storage, Event<T>} = 50,
     }
 );
 
