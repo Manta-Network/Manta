@@ -1,8 +1,8 @@
 import { ApiPromise } from '@polkadot/api';
 import { KeyringPair } from '@polkadot/keyring/types';
-import { blake2AsHex } from "@polkadot/util-crypto";
 import { u8aToHex, numberToU8a } from '@polkadot/util';
 import { single_map_storage_key, double_map_storage_key, delay, HashType } from './test-util';
+import {execute_with_root_via_governance} from "./chain-util";
 
 // number of shards at MantaPay
 export const manta_pay_config = {
@@ -76,8 +76,6 @@ function generate_batched_utxos(per_shard_amount: number, checkpoint: Array<numb
     return {data: data, checkpoint: new_checkpoint};
 }
 
-var referendumIndexObject = { referendumIndex: 0 };
-
 /**
  *  Insert utxos in batches
  * @param api api object connecting to node.
@@ -106,7 +104,7 @@ async function insert_utxos_in_batches(
         const {data, checkpoint} = generate_batched_utxos(per_shard_amount, cur_checkpoint);
         cur_checkpoint = checkpoint;
         const callData = api.tx.system.setStorage(data);
-        await execute_with_root_via_governance(api, keyring, callData, referendumIndexObject);
+        await execute_with_root_via_governance(api, keyring, callData);
         await delay(5000);
     }
 
@@ -163,7 +161,7 @@ async function insert_void_numbers_in_batch(
         console.log("start vn batch %i", batch_idx);
         const data = generate_vn_insertion_data(sender_idx, amount_per_batch);
         const callData = api.tx.system.setStorage(data);
-        await execute_with_root_via_governance(api, keyring, callData, referendumIndexObject);
+        await execute_with_root_via_governance(api, keyring, callData);
         sender_idx += amount_per_batch;
         await delay(5000);
     }
@@ -217,39 +215,4 @@ export async function setup_storage(
         config.vn_batch_size, config.vn_batch_number);
     const vn_batch_done = await insert_void_numbers_in_batch(api, keyring, config.vn_batch_size, config.vn_batch_number, 0, 250);
     console.log(">>>> Complete inserting %i void numbers", vn_batch_done * config.vn_batch_size);
-}
-
-/**
- * Execute an extrinsic with Root origin via governance.
- * @param api API object connecting to node.
- * @param keyring keyring to sign extrinsics.
- * @param extrinsicData the callData of the extrinsic that will be executed
- * @param referendumIndexObject the index of the referendum that will be executed
- */
- export async function execute_with_root_via_governance(
-    api: ApiPromise,
-    keyring: KeyringPair,
-    extrinsicData: any,
-    referendumIndexObject: any
-) {
-    const encodedCallData = extrinsicData.method.toHex();
-    await api.tx.preimage.notePreimage(encodedCallData).signAndSend(keyring, {nonce: -1});
-    console.log("Runtime upgrade preimage noted ...");
-    let encodedCallDataHash = blake2AsHex(encodedCallData);
-    let externalProposeDefault = await api.tx.democracy.externalProposeDefault({
-        Legacy: {
-            hash: encodedCallDataHash
-        }
-    });
-    const encodedExternalProposeDefault = externalProposeDefault.method.toHex();
-    await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce: -1});
-    console.log("Runtime upgrade governance proposed ...");
-    let fastTrackCall = await api.tx.democracy.fastTrack(encodedCallDataHash, 1, 1);
-    await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
-    console.log("Runtime upgrade governance fast tracked ...");
-    await api.tx.democracy.vote(referendumIndexObject.referendumIndex, {
-        Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
-    }).signAndSend(keyring, {nonce: -1});
-    console.log("Runtime upgrade governanceZ voted on ...");
-    referendumIndexObject.referendumIndex++;
 }
