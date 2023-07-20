@@ -126,7 +126,7 @@ describe('Node RPC Test', () => {
         const alice = new Keyring({type: 'sr25519'}).addFromUri("//Alice");
 
         const parachainId = Number(await api.query.parachainInfo.parachainId());
-        console.log("parachain:" + parachainId);
+        console.log(new Date() + " parachain:" + parachainId);
 
         // register asset 8(decimal:6)
         let callData = api.tx.assetManager.registerAsset(location, metadata);
