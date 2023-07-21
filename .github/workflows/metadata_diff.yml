@@ -4,10 +4,11 @@ on:
     inputs:
       endpoint:
         description: The endpoint to the calamari or manta mainnet.
+        default: wss://ws.manta.systems
         required: false
       chain:
-        description: The name of the chain under test. Usually, you would pass a local chain
-        default: manta-local
+        description: The name of the chain under test. Usually, you would pass a dev chain
+        default: manta-dev
         required: true
 env:
   AWS_REGION: us-east-1
@@ -102,25 +103,45 @@ jobs:
         run: |
           source ${HOME}/.cargo/env
           RUSTC_BOOTSTRAP=1 cargo build --release
-          chmod +x target/release/manta
+          cp target/release/manta $HOME/manta
+          chmod +x $HOME/manta
+      - name: Fetch and chmod old release binary
+        run: |
+          curl -L -o $HOME/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.42/polkadot
+          chmod +x $HOME/polkadot
+          ls -ahl $HOME/
       - name: stop sccache server
         run: sccache --stop-server || true
       - name: Install pm2
         run: npm install -g pm2
-      - name: Start latest manta node
+      - uses: actions/checkout@v2
+        with:
+          repository: paritytech/polkadot-launch
+          path: polkadot-launch
+      - name: create launch config
         run: |
-          echo Running on $CHAIN
-          RELAYCHAIN=kusama
-          ENDPOINT=wss://calamari.systems
-          if [[ "$CHAIN" == *"manta"* ]]; then
-            ENDPOINT=wss://ws.manta.systems
-            RELAYCHAIN=polkadot
-            echo "It's going to diff runtime metadata for $CHAIN with endpoint $ENDPOINT."
-          fi;
-          pm2 start --name diff-metadata "target/release/manta --chain=$CHAIN --port 30555 --base-path ./temp1 --ws-port 9955 -- --chain $RELAYCHAIN"
+          cd ${{ github.workspace }}/polkadot-launch
+          cat ${{ github.workspace }}/.github/resources/config-for-integration-test.json | \
+            jq \
+              --arg relaychain_bin $HOME/polkadot \
+              --arg parachains_bin $HOME/manta \
+              --arg parachains_spec $CHAIN \
+              '.relaychain.bin = $relaychain_bin
+              | .parachains[0].bin = $parachains_bin
+              | .parachains[].chain = $parachains_spec
+              ' > ${{ github.workspace }}/.github/resources/diff-metadata.json
+      - name: launch testnet
+        run: |
+          cd ${{ github.workspace }}/polkadot-launch
+          yarn install
+          yarn build
+          pm2 start dist/cli.js --name polkadot-launch \
+            --output ${{ github.workspace }}/stdout.log \
+            --error ${{ github.workspace }}/stderr.log \
+            -- ${{ github.workspace }}/.github/resources/diff-metadata.json
       - name: Prepare output
         run: |
-          VERSION=$(./target/release/manta --version)
+          VERSION=$($HOME/manta --version)
           echo "Metadata comparison:" >> output.txt
           echo "Date: $(date)" >> output.txt
           echo "Target version: $VERSION" >> output.txt
@@ -132,6 +153,8 @@ jobs:
           path: tools
       - name: Compare the metadata
         run: |
+          cat ${{ github.workspace }}/stdout.log
+          cat ${{ github.workspace }}/stderr.log
           ENDPOINT=wss://calamari.systems
           if [[ "$CHAIN" == *"manta"* ]]; then
             ENDPOINT=wss://ws.manta.systems
@@ -139,13 +162,13 @@ jobs:
           echo $ENDPOINT
           cd ${{ github.workspace }}/tools
           yarn
-          CMD="yarn run:metadata $ENDPOINT ws://localhost:9955"
+          CMD="yarn run:metadata $ENDPOINT ws://127.0.0.1:9921"
           echo -e "Running:\n$CMD"
           $CMD >> output.txt
           sed -z -i 's/\n\n/\n/g' output.txt
           cat output.txt | egrep -n -i ''
-          chmod +x ./scripts/github/extrinsic-ordering-filter.sh
-          SUMMARY=$(./scripts/github/extrinsic-ordering-filter.sh output.txt)
+          chmod +x ${{ github.workspace }}/scripts/github/extrinsic-ordering-filter.sh
+          SUMMARY=$(${{ github.workspace }}/scripts/github/extrinsic-ordering-filter.sh output.txt)
           echo -e $SUMMARY
           echo -e $SUMMARY >> output.txt
       - name: Show result
