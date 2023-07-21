@@ -274,6 +274,13 @@ impl Contains<RuntimeCall> for MantaFilter {
     }
 }
 
+use frame_support::{
+    pallet_prelude::DispatchError,
+    traits::{
+        fungibles::{Inspect, Mutate},
+        tokens::{DepositConsequence, WithdrawConsequence},
+    },
+};
 use fuso_support::{
     chainbridge::{AssetIdResourceIdProvider, EthereumCompatibleAddress},
     constants::STANDARD_DECIMALS,
@@ -281,22 +288,19 @@ use fuso_support::{
     traits::{DecimalsTransformer, PriceOracle, Token},
     ChainId,
 };
+use sp_runtime::{AccountId32, DispatchResult};
 
 pub struct TokenImplConcrete<
-    A: frame_support::traits::fungibles::Mutate<AccountId>,
-    M: Token<AccountId>
-        + DecimalsTransformer<Balance>
-        + fuso_support::traits::Token<sp_runtime::AccountId32>,
+    A: Mutate<AccountId32>,
+    M: DecimalsTransformer<Balance> + Token<AccountId32>,
 > {
     _marker: sp_std::marker::PhantomData<(A, M)>,
 }
 
 impl<A, M> DecimalsTransformer<Balance> for TokenImplConcrete<A, M>
 where
-    A: frame_support::traits::fungibles::Mutate<AccountId>,
-    M: Token<AccountId>
-        + DecimalsTransformer<Balance>
-        + fuso_support::traits::Token<sp_runtime::AccountId32>,
+    A: Mutate<AccountId32>,
+    M: DecimalsTransformer<Balance> + fuso_support::traits::Token<AccountId32>,
 {
     // implement the methods required by the DecimalsTransformer trait here
     // probably by delegating to self.1
@@ -311,12 +315,8 @@ where
 
 impl<A, M> Token<AccountId> for TokenImplConcrete<A, M>
 where
-    A: frame_support::traits::fungibles::Mutate<AccountId>
-        + frame_support::traits::fungibles::Inspect<sp_runtime::AccountId32>
-        + frame_support::traits::fungibles::Mutate<sp_runtime::AccountId32>,
-    M: Token<AccountId>
-        + DecimalsTransformer<Balance>
-        + fuso_support::traits::Token<sp_runtime::AccountId32>,
+    A: Inspect<AccountId32> + Mutate<AccountId32>,
+    M: DecimalsTransformer<Balance> + fuso_support::traits::Token<AccountId32>,
 {
     type Balance = <M as Token<AccountId>>::Balance;
     type TokenId = <M as Token<AccountId>>::TokenId;
@@ -381,72 +381,59 @@ where
     }
 }
 
-use sp_runtime::DispatchResult;
-impl<A, M> frame_support::traits::fungibles::Mutate<AccountId> for TokenImplConcrete<A, M>
+impl<A, M> Mutate<AccountId> for TokenImplConcrete<A, M>
 where
-    A: frame_support::traits::fungibles::Mutate<AccountId>
-        + frame_support::traits::fungibles::Inspect<sp_runtime::AccountId32>
-        + frame_support::traits::fungibles::Mutate<sp_runtime::AccountId32>,
-    M: Token<AccountId>
-        + DecimalsTransformer<Balance>
-        + fuso_support::traits::Token<sp_runtime::AccountId32>,
+    A: Inspect<AccountId32> + Mutate<AccountId32>,
+    M: DecimalsTransformer<Balance> + fuso_support::traits::Token<AccountId32>,
 {
     fn mint_into(
-        asset: <A as frame_support::traits::fungibles::Inspect<AccountId>>::AssetId,
+        asset: <A as Inspect<AccountId>>::AssetId,
         who: &AccountId,
-        amount: <A as frame_support::traits::fungibles::Inspect<AccountId>>::Balance,
+        amount: <A as Inspect<AccountId>>::Balance,
     ) -> DispatchResult {
-        <A as frame_support::traits::fungibles::Mutate<AccountId>>::mint_into(asset, who, amount)
+        <A as Mutate<AccountId>>::mint_into(asset, who, amount)
     }
 
     fn burn_from(
-        asset: <A as frame_support::traits::fungibles::Inspect<AccountId>>::AssetId,
+        asset: <A as Inspect<AccountId>>::AssetId,
         who: &AccountId,
-        amount: <A as frame_support::traits::fungibles::Inspect<AccountId>>::Balance,
-    ) -> Result<<A as frame_support::traits::fungibles::Inspect<AccountId>>::Balance, DispatchError>
-    {
-        <A as frame_support::traits::fungibles::Mutate<AccountId>>::burn_from(asset, who, amount)
+        amount: <A as Inspect<AccountId>>::Balance,
+    ) -> Result<<A as Inspect<AccountId>>::Balance, DispatchError> {
+        <A as Mutate<AccountId>>::burn_from(asset, who, amount)
     }
 
     fn slash(
-        asset: <A as frame_support::traits::fungibles::Inspect<AccountId>>::AssetId,
+        asset: <A as Inspect<AccountId>>::AssetId,
         who: &AccountId,
-        amount: <A as frame_support::traits::fungibles::Inspect<AccountId>>::Balance,
-    ) -> Result<<A as frame_support::traits::fungibles::Inspect<AccountId>>::Balance, DispatchError>
-    {
-        <A as frame_support::traits::fungibles::Mutate<AccountId>>::slash(asset, who, amount)
+        amount: <A as Inspect<AccountId>>::Balance,
+    ) -> Result<<A as Inspect<AccountId>>::Balance, DispatchError> {
+        <A as Mutate<AccountId>>::slash(asset, who, amount)
     }
 }
 
-use frame_support::traits::tokens::{DepositConsequence, WithdrawConsequence};
-
-impl<A, M> frame_support::traits::fungibles::Inspect<AccountId> for TokenImplConcrete<A, M>
+impl<A, M> Inspect<AccountId> for TokenImplConcrete<A, M>
 where
-    A: frame_support::traits::fungibles::Mutate<AccountId>
-        + frame_support::traits::fungibles::Inspect<sp_runtime::AccountId32>
-        + frame_support::traits::fungibles::Mutate<sp_runtime::AccountId32>,
-    M: Token<AccountId>
-        + DecimalsTransformer<Balance>
-        + fuso_support::traits::Token<sp_runtime::AccountId32>,
+    A: Inspect<AccountId32> + Mutate<AccountId32>,
+    M: DecimalsTransformer<Balance> + fuso_support::traits::Token<AccountId32>,
 {
-    type AssetId = <A as frame_support::traits::fungibles::Inspect<AccountId>>::AssetId;
-    type Balance = <A as frame_support::traits::fungibles::Inspect<AccountId>>::Balance;
+    type AssetId = <A as Inspect<AccountId>>::AssetId;
+    type Balance = <A as Inspect<AccountId>>::Balance;
 
     fn total_issuance(asset: Self::AssetId) -> Self::Balance {
         //<Self as Token<T::AccountId>>::total_issuance(&asset)
-        <A as frame_support::traits::fungibles::Inspect<AccountId>>::total_issuance(asset)
+        <A as Inspect<AccountId>>::total_issuance(asset)
     }
 
     fn minimum_balance(_asset: Self::AssetId) -> Self::Balance {
         // TODO sybil attack
         // One::one()
-        <A as frame_support::traits::fungibles::Inspect<AccountId>>::minimum_balance(_asset)
+        <A as Inspect<AccountId>>::minimum_balance(_asset)
     }
 
     fn balance(asset: Self::AssetId, who: &AccountId) -> Self::Balance {
         // let balance = Balances::<T>::get((asset, who));
         // balance.free + balance.reserved
-        <A as frame_support::traits::fungibles::Inspect<AccountId>>::balance(asset, who)
+        <A as Inspect<AccountId>>::balance(asset, who)
     }
 
     fn reducible_balance(
@@ -455,11 +442,7 @@ where
         _keep_alive: bool,
     ) -> Self::Balance {
         //<Self as Token<AccountId>>::free_balance(&asset, &who)
-        <A as frame_support::traits::fungibles::Inspect<AccountId>>::reducible_balance(
-            asset,
-            who,
-            _keep_alive,
-        )
+        <A as Inspect<AccountId>>::reducible_balance(asset, who, _keep_alive)
     }
 
     fn can_deposit(
@@ -485,16 +468,12 @@ where
         //     true => WithdrawConsequence::Success,
         //     false => WithdrawConsequence::NoFunds,
         // }
-        <A as frame_support::traits::fungibles::Inspect<AccountId>>::can_withdraw(
-            asset, who, amount,
-        )
+        <A as Inspect<AccountId>>::can_withdraw(asset, who, amount)
     }
     fn asset_exists(asset: Self::AssetId) -> bool {
         true
     }
 }
-
-use frame_support::pallet_prelude::DispatchError;
 
 impl pallet_fuso_mapobridge::Config for Runtime {
     type AssetIdByName = AssetManager;
