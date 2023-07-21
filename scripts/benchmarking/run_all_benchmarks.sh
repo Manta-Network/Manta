@@ -77,6 +77,7 @@ MANTA=./target/production/manta
 
 # Manually exclude some pallets.
 EXCLUDED_PALLETS=(
+  "pallet-lottery"
 )
 
 # Load all pallet names in an array.
