@@ -48,6 +48,8 @@ parameter_types! {
     pub const MetadataDepositPerByte: Balance = 0;
 }
 
+type StringLimit = ConstU32<50>;
+
 impl pallet_assets::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
@@ -59,7 +61,7 @@ impl pallet_assets::Config for Runtime {
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
     type ApprovalDeposit = ApprovalDeposit;
-    type StringLimit = ConstU32<50>;
+    type StringLimit = StringLimit;
     type Freezer = ();
     type Extra = ();
     type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
@@ -160,18 +162,19 @@ impl AssetIdType for MantaAssetConfig {
 impl AssetConfig<Runtime> for MantaAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type NativeAssetId = NativeAssetId;
-    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
-    type StorageMetadata = AssetStorageMetadata;
     type AssetRegistry = MantaAssetRegistry;
     type FungibleLedger = MantaConcreteFungibleLedger;
 }
 
 impl pallet_asset_manager::Config for Runtime {
+    type PermissionlessStartId = ConstU128<1_000_000_000>;
+    type TokenNameMaxLen = StringLimit;
+    type TokenSymbolMaxLen = ConstU32<10>;
+    type PermissionlessAssetRegistryCost = ConstU128<{ 50 * MANTA }>;
     type RuntimeEvent = RuntimeEvent;
     type AssetId = MantaAssetId;
-    type Balance = Balance;
     type Location = AssetLocation;
     type AssetConfig = MantaAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId>;

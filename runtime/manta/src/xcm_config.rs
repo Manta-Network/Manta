@@ -32,8 +32,9 @@ use manta_primitives::{
     assets::AssetIdLocationConvert,
     types::{AccountId, MantaAssetId},
     xcm::{
-        AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,
-        MultiNativeAsset,
+        AccountIdToMultiLocation, AllowTopLevelPaidExecutionDescendOriginFirst,
+        AllowTopLevelPaidExecutionFrom, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,
+        MultiNativeAsset, XcmFeesToAccount,
     },
 };
 use orml_traits::location::AbsoluteReserveProvider;
@@ -44,12 +45,11 @@ use sp_runtime::traits::Convert;
 use sp_std::marker::PhantomData;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    EnsureXcmOrigin, FixedRateOfFungible, LocationInverter, ParentAsSuperuser, ParentIsPreset,
-    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit,
-    WeightInfoBounds,
+    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
+    ConvertedConcreteAssetId, EnsureXcmOrigin, FixedRateOfFungible, LocationInverter,
+    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+    SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit, WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
@@ -87,9 +87,11 @@ pub type LocationToAccountId = (
     SiblingParachainConvertsVia<Sibling, AccountId>,
     // Straight up local `AccountId32` origins just alias directly to `AccountId`.
     AccountId32Aliases<RelayNetwork, AccountId>,
+    // Converts multilocation into a 32 byte hash for local `AccountId`s
+    xcm_builder::Account32Hash<RelayNetwork, AccountId>,
 );
 
-/// This is the type to convert an (incoming) XCM origin into a local `RuntimeOrigin` instance,
+/// This is the type to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`.
 /// It uses some Rust magic macro to do the pattern matching sequentially.
 /// There is an `OriginKind` which can biases the kind of local `RuntimeOrigin` it will become.
@@ -153,6 +155,9 @@ match_types! {
 pub type Barrier = (
     // Allows local origin messages which call weight_credit >= weight_limit.
     TakeWeightCredit,
+    // Allows execution of Transact XCM instruction from configurable set of origins
+    // as long as the message is in the format DescendOrigin + WithdrawAsset + BuyExecution
+    AllowTopLevelPaidExecutionDescendOriginFirst<Everything>,
     // Allows non-local origin messages, for example from from the xcmp queue,
     // which have the ability to deposit assets and pay for their own execution.
     AllowTopLevelPaidExecutionFrom<Everything>,
@@ -186,7 +191,7 @@ impl TakeRevenue for XcmNativeFeeToTreasury {
         }
     }
 }
-pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
+pub type MantaXcmFeesToAccount = XcmFeesToAccount<
     AccountId,
     Assets,
     ConvertedConcreteAssetId<MantaAssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
@@ -218,7 +223,7 @@ impl Config for XcmExecutorConfig {
     // i.e. units_per_second in `AssetManager`
     type Trader = (
         FixedRateOfFungible<ParaTokenPerSecond, XcmNativeFeeToTreasury>,
-        FirstAssetTrader<AssetManager, XcmFeesToAccount>,
+        FirstAssetTrader<AssetManager, MantaXcmFeesToAccount>,
     );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
@@ -227,8 +232,8 @@ impl Config for XcmExecutorConfig {
     type SubscriptionService = PolkadotXcm;
 }
 
-/// No one is allowed to dispatch XCM sends/executions.
-pub type LocalOriginToLocation = ();
+/// Converts a Signed Local Origin into a MultiLocation
+pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, RelayNetwork>;
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
@@ -246,9 +251,8 @@ impl pallet_xcm::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type XcmRouter = XcmRouter;
-    type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+    type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, ()>;
     /// This means that no location will pass XcmExecuteFilter, so a dispatched `execute` message will be filtered.
-    /// This shouldn't be reachable since `LocalOriginToLocation = ();`, but let's be on the safe side.
     type XcmExecuteFilter = Nothing;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type XcmTeleportFilter = Nothing;

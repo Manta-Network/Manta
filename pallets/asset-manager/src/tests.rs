@@ -17,10 +17,9 @@
 //! unit tests for asset-manager
 
 use crate::{
-    self as asset_manager, AssetIdLocation, AssetIdMetadata, AssetIdPairToLp, Error,
-    LocationAssetId, LpToAssetIdPair, UnitsPerSecond,
+    mock::*, AssetIdLocation, AssetIdMetadata, AssetIdPairToLp, Error, LocationAssetId,
+    LpToAssetIdPair, NextAssetId, UnitsPerSecond,
 };
-use asset_manager::mock::*;
 use frame_support::{
     assert_noop, assert_ok,
     traits::{fungibles::InspectMetadata, Contains},
@@ -31,7 +30,8 @@ use manta_primitives::{
     types::Balance,
 };
 use orml_traits::GetByKey;
-use sp_runtime::traits::BadOrigin;
+use sp_core::Get;
+use sp_runtime::{traits::BadOrigin, ArithmeticError};
 use xcm::{latest::prelude::*, VersionedMultiLocation};
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
@@ -644,6 +644,169 @@ fn register_lp_asset_should_work() {
         assert_noop!(
             AssetManager::register_lp_asset(RuntimeOrigin::root(), 12, 8, manta_asset_metadata13),
             Error::<Runtime>::AssetIdNotExist
+        );
+    });
+}
+
+#[test]
+fn permissionless_edge_cases() {
+    new_test_ext().execute_with(|| {
+        let native_asset_id = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
+        assert_ok!(
+            <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::deposit_minting(
+                native_asset_id,
+                &ALICE,
+                1_000_000
+            )
+        );
+
+        // cannot create asset with zero supply
+        assert_noop!(
+            AssetManager::permissionless_register_asset(
+                RuntimeOrigin::signed(ALICE),
+                "dog token".as_bytes().to_vec().try_into().unwrap(),
+                "dog".as_bytes().to_vec().try_into().unwrap(),
+                0_u8,
+                0_u128,
+            ),
+            Error::<Runtime>::TotalSupplyTooLow
+        );
+
+        // cannot create asset with zero supply
+        assert_noop!(
+            AssetManager::permissionless_register_asset(
+                RuntimeOrigin::signed(ALICE),
+                "dog token".as_bytes().to_vec().try_into().unwrap(),
+                "dog".as_bytes().to_vec().try_into().unwrap(),
+                1_u8,
+                0_u128,
+            ),
+            Error::<Runtime>::TotalSupplyTooLow
+        );
+
+        // cannot create asset with zero decimals
+        assert_noop!(
+            AssetManager::permissionless_register_asset(
+                RuntimeOrigin::signed(ALICE),
+                "dog token".as_bytes().to_vec().try_into().unwrap(),
+                "dog".as_bytes().to_vec().try_into().unwrap(),
+                0_u8,
+                1_u128,
+            ),
+            Error::<Runtime>::DecimalIsZero
+        );
+
+        // overflows when decimal is too high
+        assert_noop!(
+            AssetManager::permissionless_register_asset(
+                RuntimeOrigin::signed(ALICE),
+                "dog token".as_bytes().to_vec().try_into().unwrap(),
+                "dog".as_bytes().to_vec().try_into().unwrap(),
+                u8::MAX,
+                1_000_000_000_000_000_000_u128,
+            ),
+            ArithmeticError::Overflow
+        );
+
+        // cannot create asset with too small total supply
+        assert_noop!(
+            AssetManager::permissionless_register_asset(
+                RuntimeOrigin::signed(ALICE),
+                "dog token".as_bytes().to_vec().try_into().unwrap(),
+                "dog".as_bytes().to_vec().try_into().unwrap(),
+                12,
+                1,
+            ),
+            Error::<Runtime>::TotalSupplyTooLow,
+        );
+
+        // really small total supply is one
+        let asset_id: u128 = <Runtime as crate::pallet::Config>::PermissionlessStartId::get();
+        assert_ok!(AssetManager::permissionless_register_asset(
+            RuntimeOrigin::signed(ALICE),
+            "dog token".as_bytes().to_vec().try_into().unwrap(),
+            "dog".as_bytes().to_vec().try_into().unwrap(),
+            1,
+            1_000,
+        ));
+
+        let metadata = AssetIdMetadata::<Runtime>::get(asset_id).unwrap();
+        assert_eq!(metadata.min_balance, 1);
+    });
+}
+
+#[test]
+fn permissionless_register_asset_works() {
+    new_test_ext().execute_with(|| {
+        let amount = 1_000_000;
+        let registry_cost: Balance =
+            <Runtime as crate::pallet::Config>::PermissionlessAssetRegistryCost::get();
+        let native_asset_id = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
+        assert_ok!(
+            <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::deposit_minting(
+                native_asset_id,
+                &ALICE,
+                amount,
+            )
+        );
+
+        let asset_id = <Runtime as crate::pallet::Config>::PermissionlessStartId::get();
+        assert_ok!(AssetManager::permissionless_register_asset(
+            RuntimeOrigin::signed(ALICE),
+            "dog token".as_bytes().to_vec().try_into().unwrap(),
+            "dog".as_bytes().to_vec().try_into().unwrap(),
+            12,
+            1_000_000_000_000_000,
+        ));
+
+        // asset created gives alice the token
+        assert_eq!(Assets::balance(asset_id, &ALICE), 1_000_000_000_000_000);
+        // cost native token
+        assert_eq!(Balances::free_balance(&ALICE), amount - registry_cost);
+
+        let metadata = AssetIdMetadata::<Runtime>::get(asset_id).unwrap();
+        assert!(metadata.is_sufficient);
+        assert_eq!(metadata.min_balance, 100_000);
+        assert!(!metadata.metadata.is_frozen);
+        assert_eq!(metadata.metadata.decimals, 12);
+        assert_eq!(metadata.metadata.name, "dog token".as_bytes().to_vec());
+        assert_eq!(metadata.metadata.symbol, "dog".as_bytes().to_vec());
+
+        // Max balance works
+        assert_ok!(AssetManager::permissionless_register_asset(
+            RuntimeOrigin::signed(ALICE),
+            "dog token".as_bytes().to_vec().try_into().unwrap(),
+            "dog".as_bytes().to_vec().try_into().unwrap(),
+            6,
+            u128::MAX,
+        ));
+    });
+}
+
+#[test]
+fn counters_test() {
+    new_test_ext().execute_with(|| {
+        let last_id: Balance = <Runtime as crate::pallet::Config>::PermissionlessStartId::get();
+        let last_id_minus_one = last_id - 1;
+        let last_id_plus_one = last_id + 1;
+        NextAssetId::<Runtime>::put(last_id_minus_one);
+
+        assert_eq!(
+            AssetManager::next_asset_id_and_increment().unwrap(),
+            last_id_minus_one
+        );
+        assert_noop!(
+            AssetManager::next_asset_id_and_increment(),
+            Error::<Runtime>::AssetIdOverflow
+        );
+
+        assert_eq!(
+            AssetManager::next_permissionless_asset_id_and_increment().unwrap(),
+            last_id
+        );
+        assert_eq!(
+            AssetManager::next_permissionless_asset_id_and_increment().unwrap(),
+            last_id_plus_one
         );
     });
 }

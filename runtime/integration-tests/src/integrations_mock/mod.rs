@@ -43,7 +43,7 @@ cfg_if::cfg_if! {
             InflationInfo, LaunchPeriod, LeaveDelayRounds, NativeTokenExistentialDeposit, RuntimeOrigin,
             ParachainStaking, PolkadotXcm, Range, Runtime, Scheduler, Session, System,
             TechnicalCommittee, Timestamp, TransactionPause, TransactionPayment, Treasury,
-            VotingPeriod, Preimage, NonPausablePallets, AllPalletsWithSystem
+            VotingPeriod, Preimage, NonPausablePallets, AllPalletsWithSystem, MantaPay,
         };
         type RuntimeAssetConfig = calamari_runtime::assets_config::CalamariAssetConfig;
         type RuntimeConcreteFungibleLedger =
@@ -61,7 +61,7 @@ cfg_if::cfg_if! {
             DefaultBlocksPerRound, RuntimeEvent, InflationInfo, LeaveDelayRounds, NativeTokenExistentialDeposit,
             RuntimeOrigin, ParachainStaking, PolkadotXcm, Range, Runtime, Session, System, Timestamp, TransactionPause,
             TransactionPayment, Treasury, Utility, TechnicalCommittee, Council, EnactmentPeriod, VotingPeriod,
-            LaunchPeriod, Preimage, Democracy, Scheduler, Aura, Multisig, ParachainSystem, ParachainInfo,
+            LaunchPeriod, Preimage, Democracy, Scheduler, Aura, Multisig, ParachainSystem, ParachainInfo, MantaPay,
             XTokens, DmpQueue, CumulusXcm, XcmpQueue, AuraAuthorFilter, NonPausablePallets, AllPalletsWithSystem
         };
         type RuntimeAssetConfig = manta_runtime::assets_config::MantaAssetConfig;
