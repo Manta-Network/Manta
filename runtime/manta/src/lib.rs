@@ -269,7 +269,9 @@ impl Contains<RuntimeCall> for MantaFilter {
                 | pallet_parachain_staking::Call::schedule_delegator_bond_less{..}
                 | pallet_parachain_staking::Call::execute_delegation_request{..}
                 | pallet_parachain_staking::Call::cancel_delegation_request{..})
-            | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..} | orml_xtokens::Call::transfer_multiassets {..})
+            | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..} 
+                | orml_xtokens::Call::transfer_multiassets {..} 
+                | orml_xtokens::Call::transfer_multiasset_with_fee {..})
             | RuntimeCall::Balances(_)
             | RuntimeCall::Preimage(_)
             | RuntimeCall::MantaPay(_)
