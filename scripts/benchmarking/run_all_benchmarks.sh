@@ -117,20 +117,13 @@ rm -f $MACHINE_OUTPUT
 # Benchmark each frame pallet.
 for PALLET in "${PALLETS[@]}"; do
   # If `-p` is used, skip benchmarks until the start pallet.
-  if [ ! -z "$start_pallet" ] && [ "$start_pallet" != "$PALLET" ]
+  if [ "pallet_lottery" != "$PALLET" ]
   then
     echo "[+] Skipping ${PALLET}..."
     continue
   else
     unset start_pallet
   fi
-
-  if [ "pallet_lottery" == "$PALLET" ]
-  then
-    echo "skip lottery: $PALLET"
-    continue
-  fi
-
 
   FOLDER="$(echo "${PALLET#*_}" | tr '_' '-')";
   WEIGHT_FILE="./${FRAME_WEIGHTS_OUTPUT}/${PALLET}.rs"
@@ -147,8 +140,8 @@ for PALLET in "${PALLETS[@]}"; do
   OUTPUT=$(
     $MANTA benchmark pallet \
     --chain=$chain_spec \
-    --steps=50 \
-    --repeat=40 \
+    --steps=25 \
+    --repeat=20 \
     --pallet="$PALLET" \
     --extrinsic="*" \
     --execution=wasm \
