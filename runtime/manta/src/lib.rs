@@ -145,10 +145,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("manta"),
     impl_name: create_runtime_str!("manta"),
     authoring_version: 1,
-    spec_version: 4310,
+    spec_version: 4400,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 3,
+    transaction_version: 4,
     state_version: 1,
 };
 
@@ -269,7 +269,9 @@ impl Contains<RuntimeCall> for MantaFilter {
                 | pallet_parachain_staking::Call::schedule_delegator_bond_less{..}
                 | pallet_parachain_staking::Call::execute_delegation_request{..}
                 | pallet_parachain_staking::Call::cancel_delegation_request{..})
-            | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..} | orml_xtokens::Call::transfer_multiassets {..})
+            | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..}
+                | orml_xtokens::Call::transfer_multiassets {..}
+                | orml_xtokens::Call::transfer_multiasset_with_fee {..})
             | RuntimeCall::Balances(_)
             | RuntimeCall::Preimage(_)
             | RuntimeCall::MantaPay(_)
