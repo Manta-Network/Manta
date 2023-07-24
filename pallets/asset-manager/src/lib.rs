@@ -405,7 +405,7 @@ pub mod pallet {
 
     /// used by the chainbridge. access should be permissioned
     #[pallet::storage]
-    #[pallet::getter(fn get_token_from_chainbridge)]
+    #[pallet::getter(fn get_asset_from_chainbridge)]
     pub type AssetByContract<T: Config> =
         StorageMap<_, Blake2_128Concat, (ChainId, Vec<u8>), T::AssetId, OptionQuery>;
 
@@ -854,7 +854,7 @@ pub mod pallet {
             chain_id: ChainId,
             contract_id: impl AsRef<[u8]>,
         ) -> Result<T::AssetId, Self::Err> {
-            Self::get_token_from_chainbridge((chain_id, contract_id.as_ref().to_vec())).ok_or(())
+            Self::get_asset_from_chainbridge((chain_id, contract_id.as_ref().to_vec())).ok_or(())
         }
     }
 
