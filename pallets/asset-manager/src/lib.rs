@@ -972,6 +972,14 @@ pub mod pallet {
             amount: Self::Balance,
             target: &T::AccountId,
         ) -> Result<Self::Balance, DispatchError> {
+            let _res = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::transfer(
+                token, //id_from_field(asset.id).ok_or(Error::<T>::InvalidAssetId)?,
+                &origin,
+                &target,
+                amount,
+                ExistenceRequirement::KeepAlive,
+            );
+
             // if amount.is_zero() {
             //     return Ok(amount);
             // }
@@ -1028,6 +1036,12 @@ pub mod pallet {
             who: &T::AccountId,
             f: impl FnOnce(&mut (Self::Balance, Self::Balance)) -> Result<R, DispatchError>,
         ) -> Result<R, DispatchError> {
+            // TODO:
+            // read free and locked balance for account
+            // pass it to the FnOnce
+            // if result is positive locked then send from who to pallet account
+            // otherwise send from pallet account to who
+
             // if *token == Self::native_token_id() {
             // // We can just use transfer to special account instead of reserving/unreserving
 
@@ -1078,24 +1092,21 @@ pub mod pallet {
         }
 
         fn exists(token: &Self::TokenId) -> bool {
-            //*token == Self::native_token_id() || Tokens::<T>::contains_key(token)
-            true
+            *token == Self::native_token_id() || Tokens::<T>::contains_key(token)
         }
 
         fn native_token_id() -> Self::TokenId {
-            //T::NativeTokenId::get()
-            <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get()
+            <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get()
         }
 
         fn is_stable(token: &Self::TokenId) -> bool {
-            // if *token == Self::native_token_id() {
-            //     false
-            // } else {
-            //     Self::get_token_info(token)
-            //         .map(|t| t.is_stable())
-            //         .unwrap_or(false)
-            // }
-            true
+            if *token == Self::native_token_id() {
+                false
+            } else {
+                Self::get_token_info(token)
+                    .map(|t| t.is_stable())
+                    .unwrap_or(false)
+            }
         }
 
         fn free_balance(token: &Self::TokenId, who: &T::AccountId) -> Self::Balance {
@@ -1103,7 +1114,7 @@ pub mod pallet {
             //     return pallet_balances::Pallet::<T>::free_balance(who);
             // }
             // Self::get_token_balance((token, who)).free
-            <T as Config>::Balance::from(1u32)
+            <T::AssetConfig as AssetConfig<T>>::FungibleLedger::balance(*token, who)
         }
 
         fn total_issuance(token: &Self::TokenId) -> Self::Balance {
@@ -1123,7 +1134,11 @@ pub mod pallet {
             // } else {
             //     Zero::zero()
             // }
-            <T as Config>::Balance::from(1u32)
+
+            // TODO:
+            // get TokenInfo , if it exists use the above logic
+            // else use the below logic
+            <T::AssetConfig as AssetConfig<T>>::FungibleLedger::supply(*token)
         }
 
         fn token_external_decimals(token: &Self::TokenId) -> Result<u8, DispatchError> {
