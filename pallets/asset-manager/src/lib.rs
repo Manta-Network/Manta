@@ -346,6 +346,7 @@ pub mod pallet {
         InvalidTokenName,
         InvalidDecimals,
         ContractError,
+        TokenNotFound,
     }
 
     /// [`AssetId`](AssetConfig::AssetId) to [`MultiLocation`] Map
@@ -427,6 +428,16 @@ pub mod pallet {
     pub type Tokens<T: Config> =
         StorageMap<_, Twox64Concat, T::AssetId, XToken<BalanceOf<T>>, OptionQuery>;
 
+    #[pallet::storage]
+    /// The holdings of a specific account for a specific asset.
+    pub(super) type ReservedBalance<T: Config> = StorageDoubleMap<
+        _,
+        Blake2_128Concat,
+        T::AssetId,
+        Blake2_128Concat,
+        T::AccountId,
+        BalanceOf<T>,
+    >;
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Register a new asset in the asset manager.
@@ -1036,12 +1047,6 @@ pub mod pallet {
             who: &T::AccountId,
             f: impl FnOnce(&mut (Self::Balance, Self::Balance)) -> Result<R, DispatchError>,
         ) -> Result<R, DispatchError> {
-            // TODO:
-            // read free and locked balance for account
-            // pass it to the FnOnce
-            // if result is positive locked then send from who to pallet account
-            // otherwise send from pallet account to who
-
             // if *token == Self::native_token_id() {
             // // We can just use transfer to special account instead of reserving/unreserving
 
@@ -1071,11 +1076,24 @@ pub mod pallet {
             // })
             //}
 
-            let mut v = (
-                <T as Config>::Balance::from(1u32),
-                <T as Config>::Balance::from(1u32),
-            );
+            // TODO:
+            // read free and locked balance for account
+            // pass it to the FnOnce
+            // if result is positive locked then send from who to pallet account
+            // otherwise send from pallet account to
+            let free = Self::free_balance(token, who);
+            let reserved = ReservedBalance::<T>::get(token, who).unwrap();
+
+            let mut v = (free, reserved);
             let r = f(&mut v)?;
+            let amacct = Self::account_id();
+            let diff = v.0 - free;
+            if diff >= Zero::zero() {
+                Self::transfer_token(&amacct, *token, diff, who);
+            } else {
+                // TODO: has to be reverse diff
+                Self::transfer_token(who, *token, diff, &amacct);
+            }
             Ok(r)
         }
 
@@ -1142,23 +1160,22 @@ pub mod pallet {
         }
 
         fn token_external_decimals(token: &Self::TokenId) -> Result<u8, DispatchError> {
-            // if *token == Self::native_token_id() {
-            //     return Ok(STANDARD_DECIMALS);
-            // }
-            // let token_info = Self::get_token_info(token);
-            // if token_info.is_some() {
-            //     let token = token_info.unwrap();
-            //     match token {
-            //         XToken::NEP141(_, _, _, _, decimals)
-            //         | XToken::ERC20(_, _, _, _, decimals)
-            //         | XToken::POLYGON(_, _, _, _, decimals)
-            //         | XToken::BEP20(_, _, _, _, decimals) => Ok(decimals),
-            //         XToken::FND10(_, _) => Err(Error::<T>::TokenNotFound.into()),
-            //     }
-            // } else {
-            //     Err(Error::<T>::TokenNotFound.into())
-            // }
-            Ok(0u8)
+            if *token == Self::native_token_id() {
+                return Ok(STANDARD_DECIMALS);
+            }
+            let token_info = Self::get_token_info(token);
+            if token_info.is_some() {
+                let token = token_info.unwrap();
+                match token {
+                    XToken::NEP141(_, _, _, _, decimals)
+                    | XToken::ERC20(_, _, _, _, decimals)
+                    | XToken::POLYGON(_, _, _, _, decimals)
+                    | XToken::BEP20(_, _, _, _, decimals) => Ok(decimals),
+                    XToken::FND10(_, _) => Err(Error::<T>::TokenNotFound.into()),
+                }
+            } else {
+                Err(Error::<T>::TokenNotFound.into())
+            }
         }
     }
 
