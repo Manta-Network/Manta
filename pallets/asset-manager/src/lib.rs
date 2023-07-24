@@ -44,9 +44,10 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
     use crate::weights::WeightInfo;
+    use ascii::AsciiStr;
     use frame_support::{
         pallet_prelude::*,
-        traits::{Contains, StorageVersion},
+        traits::{Contains, ExistenceRequirement, StorageVersion},
         transactional, PalletId,
     };
     use frame_system::pallet_prelude::*;
@@ -58,6 +59,7 @@ pub mod pallet {
     use sp_runtime::{
         traits::{
             AccountIdConversion, AtLeast32BitUnsigned, CheckedAdd, MaybeSerializeDeserialize, One,
+            Zero,
         },
         ArithmeticError,
     };
@@ -71,6 +73,8 @@ pub mod pallet {
 
     /// Asset Count Type
     pub(crate) type AssetCount = u32;
+
+    pub type BalanceOf<T> = <T as Config>::Balance;
 
     /// Pallet Configuration
     #[pallet::config]
@@ -338,6 +342,10 @@ pub mod pallet {
 
         /// Two asset that used for generate LP asset should exist
         AssetIdNotExist,
+
+        InvalidTokenName,
+        InvalidDecimals,
+        ContractError,
     }
 
     /// [`AssetId`](AssetConfig::AssetId) to [`MultiLocation`] Map
@@ -405,9 +413,19 @@ pub mod pallet {
 
     /// used by the chainbridge. access should be permissioned
     #[pallet::storage]
-    #[pallet::getter(fn get_asset_from_chainbridge)]
+    #[pallet::getter(fn get_token_from_chainbridge)]
     pub type AssetByContract<T: Config> =
         StorageMap<_, Blake2_128Concat, (ChainId, Vec<u8>), T::AssetId, OptionQuery>;
+
+    /// used by the octbridge. the chainid is omited. avoid to use the storage directly in case mess everything
+    #[pallet::storage]
+    #[pallet::getter(fn get_token_from_octopus)]
+    pub type TokenByName<T: Config> = StorageMap<_, Twox64Concat, Vec<u8>, T::AssetId, OptionQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn get_token_info)]
+    pub type Tokens<T: Config> =
+        StorageMap<_, Twox64Concat, T::AssetId, XToken<BalanceOf<T>>, OptionQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
@@ -840,7 +858,7 @@ pub mod pallet {
 
     use fuso_support::{
         chainbridge::{AssetIdResourceIdProvider, EthereumCompatibleAddress},
-        constants::STANDARD_DECIMALS,
+        constants::{MAX_DECIMALS, STANDARD_DECIMALS},
         external_chain::XToken,
         traits::{DecimalsTransformer, PriceOracle, Token},
         ChainId,
@@ -854,7 +872,7 @@ pub mod pallet {
             chain_id: ChainId,
             contract_id: impl AsRef<[u8]>,
         ) -> Result<T::AssetId, Self::Err> {
-            Self::get_asset_from_chainbridge((chain_id, contract_id.as_ref().to_vec())).ok_or(())
+            Self::get_token_from_chainbridge((chain_id, contract_id.as_ref().to_vec())).ok_or(())
         }
     }
 
@@ -864,83 +882,87 @@ pub mod pallet {
 
         #[transactional]
         fn create(mut token_info: XToken<T::Balance>) -> Result<Self::TokenId, DispatchError> {
-            // let id = Self::next_token_id();
-            // match token_info {
-            //     XToken::NEP141(
-            //         ref symbol,
-            //         ref contract,
-            //         ref mut total,
-            //         ref mut stable,
-            //         decimals,
-            //     ) => {
-            //         ensure!(decimals <= MAX_DECIMALS, Error::<T>::InvalidDecimals);
-            //         let name = AsciiStr::from_ascii(&symbol);
-            //         ensure!(name.is_ok(), Error::<T>::InvalidTokenName);
-            //         let name = name.unwrap();
-            //         ensure!(
-            //             name.len() >= 2 && name.len() <= 8,
-            //             Error::<T>::InvalidTokenName
-            //         );
-            //         ensure!(
-            //             contract.len() < 120 && contract.len() > 2,
-            //             Error::<T>::ContractError
-            //         );
-            //         ensure!(
-            //             !TokenByName::<T>::contains_key(&contract),
-            //             Error::<T>::ContractError
-            //         );
-            //         *total = Zero::zero();
-            //         *stable = false;
-            //         TokenByName::<T>::insert(contract.clone(), id);
-            //     }
-            //     XToken::ERC20(
-            //         ref symbol,
-            //         ref contract,
-            //         ref mut total,
-            //         ref mut stable,
-            //         decimals,
-            //     )
-            //     | XToken::POLYGON(
-            //         ref symbol,
-            //         ref contract,
-            //         ref mut total,
-            //         ref mut stable,
-            //         decimals,
-            //     )
-            //     | XToken::BEP20(
-            //         ref symbol,
-            //         ref contract,
-            //         ref mut total,
-            //         ref mut stable,
-            //         decimals,
-            //     ) => {
-            //         ensure!(decimals <= MAX_DECIMALS, Error::<T>::InvalidDecimals);
-            //         let name = AsciiStr::from_ascii(&symbol);
-            //         ensure!(name.is_ok(), Error::<T>::InvalidTokenName);
-            //         let name = name.unwrap();
-            //         ensure!(
-            //             name.len() >= 2 && name.len() <= 8,
-            //             Error::<T>::InvalidTokenName
-            //         );
-            //         ensure!(contract.len() == 20, Error::<T>::ContractError);
-            //         *total = Zero::zero();
-            //         *stable = false;
-            //     }
-            //     XToken::FND10(ref symbol, ref mut total) => {
-            //         let name = AsciiStr::from_ascii(&symbol);
-            //         ensure!(name.is_ok(), Error::<T>::InvalidTokenName);
-            //         let name = name.unwrap();
-            //         ensure!(
-            //             name.len() >= 2 && name.len() <= 8,
-            //             Error::<T>::InvalidTokenName
-            //         );
-            //         *total = Zero::zero();
-            //     }
-            // }
-            // NextTokenId::<T>::mutate(|id| *id += One::one());
-            // Tokens::<T>::insert(id, token_info);
-            // Ok(id)
-            Ok(<T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get())
+            let id = Self::next_asset_id_and_increment().unwrap();
+            match token_info {
+                XToken::NEP141(
+                    ref symbol,
+                    ref contract,
+                    ref mut total,
+                    ref mut stable,
+                    decimals,
+                ) => {
+                    ensure!(decimals <= MAX_DECIMALS, Error::<T>::InvalidDecimals);
+                    let name = AsciiStr::from_ascii(&symbol);
+                    ensure!(name.is_ok(), Error::<T>::InvalidTokenName);
+                    let name = name.unwrap();
+                    ensure!(
+                        name.len() >= 2 && name.len() <= 8,
+                        Error::<T>::InvalidTokenName
+                    );
+                    ensure!(
+                        contract.len() < 120 && contract.len() > 2,
+                        Error::<T>::ContractError
+                    );
+                    ensure!(
+                        !TokenByName::<T>::contains_key(&contract),
+                        Error::<T>::ContractError
+                    );
+                    *total = Zero::zero();
+                    *stable = false;
+                    TokenByName::<T>::insert(contract.clone(), id);
+                }
+                XToken::ERC20(
+                    ref symbol,
+                    ref contract,
+                    ref mut total,
+                    ref mut stable,
+                    decimals,
+                )
+                | XToken::POLYGON(
+                    ref symbol,
+                    ref contract,
+                    ref mut total,
+                    ref mut stable,
+                    decimals,
+                )
+                | XToken::BEP20(
+                    ref symbol,
+                    ref contract,
+                    ref mut total,
+                    ref mut stable,
+                    decimals,
+                ) => {
+                    ensure!(decimals <= MAX_DECIMALS, Error::<T>::InvalidDecimals);
+                    let name = AsciiStr::from_ascii(&symbol);
+                    ensure!(name.is_ok(), Error::<T>::InvalidTokenName);
+                    let name = name.unwrap();
+                    ensure!(
+                        name.len() >= 2 && name.len() <= 8,
+                        Error::<T>::InvalidTokenName
+                    );
+                    ensure!(contract.len() == 20, Error::<T>::ContractError);
+                    *total = Zero::zero();
+                    *stable = false;
+                }
+                XToken::FND10(ref symbol, ref mut total) => {
+                    let name = AsciiStr::from_ascii(&symbol);
+                    ensure!(name.is_ok(), Error::<T>::InvalidTokenName);
+                    let name = name.unwrap();
+                    ensure!(
+                        name.len() >= 2 && name.len() <= 8,
+                        Error::<T>::InvalidTokenName
+                    );
+                    *total = Zero::zero();
+                }
+            }
+
+            // TODO:
+            // update our current asset-id maps
+            // increment next-asset-id properly
+
+            Tokens::<T>::insert(id, token_info);
+
+            Ok(id)
         }
 
         #[transactional]
