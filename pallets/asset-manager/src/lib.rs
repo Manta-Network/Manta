@@ -403,10 +403,10 @@ pub mod pallet {
     pub(super) type LpToAssetIdPair<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AssetId, (T::AssetId, T::AssetId)>;
 
-    /// used by the chainbridge. avoid to use the storage directly in case mess everything
+    /// used by the chainbridge. access should be permissioned
     #[pallet::storage]
     #[pallet::getter(fn get_token_from_chainbridge)]
-    pub type TokenByContract<T: Config> =
+    pub type AssetByContract<T: Config> =
         StorageMap<_, Blake2_128Concat, (ChainId, Vec<u8>), T::AssetId, OptionQuery>;
 
     #[pallet::call]
@@ -691,6 +691,20 @@ pub mod pallet {
                 asset_id,
                 metadata,
             });
+            Ok(())
+        }
+
+        #[pallet::weight(0)]
+        #[pallet::call_index(8)]
+        #[transactional]
+        pub fn associate_asset(
+            origin: OriginFor<T>,
+            chain_id: ChainId,
+            contract_id: Vec<u8>,
+            asset_id: T::AssetId,
+        ) -> DispatchResult {
+            let _ = T::ModifierOrigin::ensure_origin(origin)?;
+            AssetByContract::<T>::insert((chain_id, contract_id), asset_id);
             Ok(())
         }
     }
