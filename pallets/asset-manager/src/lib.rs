@@ -403,6 +403,12 @@ pub mod pallet {
     pub(super) type LpToAssetIdPair<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AssetId, (T::AssetId, T::AssetId)>;
 
+    /// used by the chainbridge. avoid to use the storage directly in case mess everything
+    #[pallet::storage]
+    #[pallet::getter(fn get_token_from_chainbridge)]
+    pub type TokenByContract<T: Config> =
+        StorageMap<_, Blake2_128Concat, (ChainId, Vec<u8>), T::AssetId, OptionQuery>;
+
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Register a new asset in the asset manager.
@@ -834,8 +840,7 @@ pub mod pallet {
             chain_id: ChainId,
             contract_id: impl AsRef<[u8]>,
         ) -> Result<T::AssetId, Self::Err> {
-            //Self::get_token_from_chainbridge((chain_id, contract_id.as_ref().to_vec())).ok_or(())
-            Ok(T::AssetId::one())
+            Self::get_token_from_chainbridge((chain_id, contract_id.as_ref().to_vec())).ok_or(())
         }
     }
 
