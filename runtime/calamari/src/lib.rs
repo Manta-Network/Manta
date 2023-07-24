@@ -143,10 +143,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 4310,
+    spec_version: 4400,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 14,
+    transaction_version: 15,
     state_version: 0,
 };
 
@@ -248,8 +248,7 @@ impl Contains<RuntimeCall> for BaseFilter {
             // Everything except transfer() is filtered out until it is practically needed:
             | RuntimeCall::XTokens(
                                 orml_xtokens::Call::transfer_with_fee {..}
-                                | orml_xtokens::Call::transfer_multiasset {..}
-                                | orml_xtokens::Call::transfer_multiasset_with_fee {..})
+                                | orml_xtokens::Call::transfer_multiasset {..})
             // Filter callables from XCM pallets, we use XTokens exclusively
             | RuntimeCall::XcmpQueue(_) | RuntimeCall::DmpQueue(_) => false,
 
@@ -309,7 +308,8 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::NameService(_)
             | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..}
                 | orml_xtokens::Call::transfer_multicurrencies {..}
-                | orml_xtokens::Call::transfer_multiassets {..})
+                | orml_xtokens::Call::transfer_multiassets {..}
+                | orml_xtokens::Call::transfer_multiasset_with_fee {..})
             | RuntimeCall::TransactionPause(_)
             | RuntimeCall::ZenlinkProtocol(_)
             | RuntimeCall::Farming(_)
