@@ -153,12 +153,6 @@ jobs:
           path: tools
       - name: Compare the metadata
         run: |
-          cat ${{ github.workspace }}/stdout.log
-          cat ${{ github.workspace }}/stderr.log
-          ENDPOINT=wss://calamari.systems
-          if [[ "$CHAIN" == *"manta"* ]]; then
-            ENDPOINT=wss://ws.manta.systems
-          fi;
           echo $ENDPOINT
           cd ${{ github.workspace }}/tools
           yarn

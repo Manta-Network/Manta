@@ -111,7 +111,7 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')
     needs: [build-node-current, start-manta-integration-tester]
     runs-on: ${{ needs.start-manta-integration-tester.outputs.runner-label }}
-    timeout-minutes: 180
+    timeout-minutes: 240
     strategy:
       fail-fast: false
       matrix:

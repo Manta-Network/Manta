@@ -111,7 +111,7 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
     needs: [build-node-current, start-calamari-integration-tester]
     runs-on: ${{ needs.start-calamari-integration-tester.outputs.runner-label }}
-    timeout-minutes: 180
+    timeout-minutes: 240
     strategy:
       fail-fast: false
       matrix:
