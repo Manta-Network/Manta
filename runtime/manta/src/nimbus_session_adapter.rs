@@ -51,6 +51,7 @@ impl<T: Config> OneSessionHandler<T::AccountId> for AuthorInherentWithNoOpSessio
 
 /// This adapts VrfSessionKey to be compatible with pallet session
 /// making it suitable as a SessionKey entry
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct VrfWithNoOpSession(pub VrfSessionKey);
 
 impl BoundToRuntimeAppPublic for VrfWithNoOpSession {

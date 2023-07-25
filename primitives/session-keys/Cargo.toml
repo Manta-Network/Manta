@@ -12,6 +12,7 @@ manta-primitives = { path = "../manta", default-features = false }
 nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.8", default-features = false }
 parity-scale-codec = { version = "3.4.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+serde = { version = "1.0.140", features = ['derive'], optional = true }
 sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 sp-core = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
@@ -26,6 +27,7 @@ std = [
   "nimbus-primitives/std",
   "parity-scale-codec/std",
   "scale-info/std",
+  "serde",
   "sp-application-crypto/std",
   "sp-consensus-aura/std",
   "sp-core/std",

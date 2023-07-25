@@ -20,6 +20,7 @@ use sp_application_crypto::KeyTypeId;
 use sp_runtime::{BoundToRuntimeAppPublic, ConsensusEngineId};
 
 /// Implementation of [`BoundToRuntimeAppPublic`] with the public key set to [`VrfId`]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct VrfSessionKey;
 
