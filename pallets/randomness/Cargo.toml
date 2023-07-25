@@ -6,7 +6,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'pallet-randomness'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '4.3.1'
+version = '4.4.0'
 
 [dependencies]
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37", default-features = false, optional = true }

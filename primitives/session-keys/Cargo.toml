@@ -4,7 +4,7 @@ description = "Primitives for session keys"
 edition = "2021"
 license = "GPL-3.0"
 name = "session-key-primitives"
-version = '4.3.1'
+version = '4.4.0'
 
 [dependencies]
 async-trait = { version = "0.1", optional = true }
