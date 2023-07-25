@@ -570,7 +570,7 @@ pub mod pallet {
             let new_metadata = AssetStorageMetadata {
                 name: metadata.name,
                 symbol: metadata.symbol,
-                decimal: metadata.decimal,
+                decimals: metadata.decimals,
                 // is frozen flag doesn't do anything in metadata
                 is_frozen: registered_metadata.metadata.is_frozen,
             };
