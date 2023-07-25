@@ -548,7 +548,7 @@ pub mod pallet {
         pub fn update_asset_metadata(
             origin: OriginFor<T>,
             asset_id: T::AssetId,
-            metadata: AssetRegistryMetadata<Balance>,
+            metadata: AssetStorageMetadata,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
@@ -561,10 +561,18 @@ pub mod pallet {
             );
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::update_asset_metadata(
                 &asset_id,
-                metadata.clone().into(),
+                metadata.clone(),
             )?;
-            AssetIdMetadata::<T>::insert(asset_id, &metadata);
-            Self::deposit_event(Event::<T>::AssetMetadataUpdated { asset_id, metadata });
+
+            let mut registered_metadata =
+                AssetIdMetadata::<T>::get(asset_id).ok_or(Error::<T>::UpdateNonExistentAsset)?;
+            registered_metadata.metadata = metadata;
+
+            AssetIdMetadata::<T>::insert(asset_id, &registered_metadata);
+            Self::deposit_event(Event::<T>::AssetMetadataUpdated {
+                asset_id,
+                metadata: registered_metadata,
+            });
             Ok(())
         }
 
