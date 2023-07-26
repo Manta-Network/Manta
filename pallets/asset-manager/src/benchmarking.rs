@@ -96,7 +96,7 @@ benchmarks! {
         let metadata = AssetRegistryMetadata::<Balance>::testing_default();
         Pallet::<T>::register_asset(RawOrigin::Root.into(), location, metadata.clone())?;
         let some_valid_asset_id = <T as Config>::AssetId::from(assets_count);
-    }: _(RawOrigin::Root, some_valid_asset_id, metadata.clone())
+    }: _(RawOrigin::Root, some_valid_asset_id, metadata.metadata.clone())
     verify {
         assert_last_event::<T>(crate::Event::AssetMetadataUpdated { asset_id: some_valid_asset_id, metadata }.into());
     }
