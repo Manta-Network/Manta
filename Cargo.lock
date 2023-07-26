@@ -11663,6 +11663,7 @@ dependencies = [
  "nimbus-primitives",
  "parity-scale-codec",
  "scale-info",
+ "serde",
  "sp-application-crypto",
  "sp-consensus-aura",
  "sp-core",
