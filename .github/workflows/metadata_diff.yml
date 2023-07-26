@@ -2,12 +2,13 @@ name: Transaction Version Update Check
 on:
   workflow_dispatch:
     inputs:
-      reference_binary:
-        description: The link to the reference binary, which should be the previous release.
-        required: true
+      endpoint:
+        description: The endpoint to the calamari or manta mainnet.
+        default: wss://ws.manta.systems
+        required: false
       chain:
-        description: The name of the chain under test. Usually, you would pass a local chain
-        default: manta-local
+        description: The name of the chain under test. Usually, you would pass a dev chain
+        default: manta-dev
         required: true
 env:
   AWS_REGION: us-east-1
@@ -16,11 +17,14 @@ env:
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
   CHAIN: ${{github.event.inputs.chain}}
-  REF_BINARY: ${{github.event.inputs.reference_binary}}
+  ENDPOINT: ${{github.event.inputs.endpoint}}
 jobs:
   start-checks:
     timeout-minutes: 120
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        node-version: [16.x]
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
@@ -39,6 +43,7 @@ jobs:
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
       - uses: actions/checkout@v2
+      - uses: borales/actions-yarn@v3.0.0
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
@@ -75,6 +80,15 @@ jobs:
           sudo apt update
           sudo apt install -y pkg-config libssl-dev protobuf-compiler
           protoc --version
+          sudo apt remove -y '^dotnet-.*'
+          sudo apt remove -y '^mongodb-.*'
+          sudo apt remove -y '^mysql-.*'
+          sudo apt remove -y '^postgresql-*'
+          sudo apt remove -y google-cloud-sdk google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+          sudo apt autoremove -y
+          sudo apt clean
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/share/dotnet
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install nightly-2023-03-03
@@ -89,42 +103,66 @@ jobs:
         run: |
           source ${HOME}/.cargo/env
           RUSTC_BOOTSTRAP=1 cargo build --release
-          chmod +x target/release/manta
-      - name: stop sccache server
-        run: sccache --stop-server || true
+          cp target/release/manta $HOME/manta
+          chmod +x $HOME/manta
       - name: Fetch and chmod old release binary
         run: |
-          curl -L -o $HOME/manta-old $REF_BINARY
-          chmod +x $HOME/manta-old
+          curl -L -o $HOME/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.42/polkadot
+          chmod +x $HOME/polkadot
           ls -ahl $HOME/
-      - name: Start old node
+      - name: stop sccache server
+        run: sccache --stop-server || true
+      - name: Install pm2
+        run: npm install -g pm2
+      - uses: actions/checkout@v2
+        with:
+          repository: paritytech/polkadot-launch
+          path: polkadot-launch
+      - name: create launch config
         run: |
-          echo Running on $CHAIN
-          $HOME/manta-old --chain=$CHAIN --port 30444 --base-path ./temp1 --ws-port 9944 -- --chain kusama &
-      - name: Start new node
+          cd ${{ github.workspace }}/polkadot-launch
+          cat ${{ github.workspace }}/.github/resources/config-for-integration-test.json | \
+            jq \
+              --arg relaychain_bin $HOME/polkadot \
+              --arg parachains_bin $HOME/manta \
+              --arg parachains_spec $CHAIN \
+              '.relaychain.bin = $relaychain_bin
+              | .parachains[0].bin = $parachains_bin
+              | .parachains[].chain = $parachains_spec
+              ' > ${{ github.workspace }}/.github/resources/diff-metadata.json
+      - name: launch testnet
         run: |
-          echo Running on $CHAIN
-          target/release/manta --chain=$CHAIN --port 30555 --base-path ./temp2 --ws-port 9955 -- --chain kusama &
+          cd ${{ github.workspace }}/polkadot-launch
+          yarn install
+          yarn build
+          pm2 start dist/cli.js --name polkadot-launch \
+            --output ${{ github.workspace }}/stdout.log \
+            --error ${{ github.workspace }}/stderr.log \
+            -- ${{ github.workspace }}/.github/resources/diff-metadata.json
       - name: Prepare output
         run: |
-          VERSION=$(./target/release/manta --version)
+          VERSION=$($HOME/manta --version)
           echo "Metadata comparison:" >> output.txt
           echo "Date: $(date)" >> output.txt
           echo "Target version: $VERSION" >> output.txt
           echo "Chain: $CHAIN" >> output.txt
           echo "----------------------------------------------------------------------" >> output.txt
-      - name: Pull polkadot-js-tools image
-        run: docker pull wilwade/polkadot-js-tools
-
+      - uses: actions/checkout@v2
+        with:
+          repository: polkadot-js/tools
+          path: tools
       - name: Compare the metadata
         run: |
-          CMD="docker run --pull always --network host wilwade/polkadot-js-tools metadata ws://localhost:9944 ws://localhost:9955"
+          echo $ENDPOINT
+          cd ${{ github.workspace }}/tools
+          yarn
+          CMD="yarn run:metadata $ENDPOINT ws://127.0.0.1:9921"
           echo -e "Running:\n$CMD"
           $CMD >> output.txt
           sed -z -i 's/\n\n/\n/g' output.txt
           cat output.txt | egrep -n -i ''
-          chmod +x ./scripts/github/extrinsic-ordering-filter.sh
-          SUMMARY=$(./scripts/github/extrinsic-ordering-filter.sh output.txt)
+          chmod +x ${{ github.workspace }}/scripts/github/extrinsic-ordering-filter.sh
+          SUMMARY=$(${{ github.workspace }}/scripts/github/extrinsic-ordering-filter.sh output.txt)
           echo -e $SUMMARY
           echo -e $SUMMARY >> output.txt
       - name: Show result
