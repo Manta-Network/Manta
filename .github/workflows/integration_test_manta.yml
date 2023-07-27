@@ -420,7 +420,7 @@ jobs:
           cd ${{ github.workspace }}/Manta/tests
           yarn install
           yarn
-          yarn tests
+          MANTA_BINARY=$HOME/.local/bin/manta yarn tests
   docker-image-test:
     timeout-minutes: 120
     if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')
