@@ -18,7 +18,7 @@ export const DISPLAY_LOG = process.env.MANTA_LOG || false;
 export const MANTA_LOG = process.env.MANTA_LOG || "info";
 export const MANTA_BUILD = process.env.MANTA_BUILD || "release";
 
-export const BINARY_PATH = `../target/${MANTA_BUILD}/manta`;
+export const BINARY_PATH = process.env.MANTA_BINARY || `../target/${MANTA_BUILD}/manta`;
 export const SPAWNING_TIME = 120000;
 
 export async function startMantaNode(): Promise<{ binary: ChildProcess; } & TestContext> {
