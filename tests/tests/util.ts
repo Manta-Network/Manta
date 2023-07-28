@@ -9,7 +9,8 @@ import {cryptoWaitReady} from '@polkadot/util-crypto';
 
 export interface TestContext {
     api: ApiPromise;
-    alice: KeyringPair
+    alice: KeyringPair;
+    bob: KeyringPair;
 }
 
 chai.use(chaiAsPromised);
@@ -61,7 +62,7 @@ export async function startMantaNode(): Promise<{ binary: ChildProcess; } & Test
     });
 
     const binaryLogs = [] as any;
-    const { api, alice } = await new Promise<TestContext>((resolve, reject) => {
+    const { api, alice, bob } = await new Promise<TestContext>((resolve, reject) => {
         const timer = setTimeout(() => {
             console.error(`\x1b[31m Failed to start Acala Node.\x1b[0m`);
             console.error(`Command: ${cmd} ${args.join(" ")}`);
@@ -77,14 +78,14 @@ export async function startMantaNode(): Promise<{ binary: ChildProcess; } & Test
             binaryLogs.push(chunk);
             if (chunk.toString().match(/best: #0/)) {
                 try {
-                    const { api, alice } = await getTestUtils(`ws://127.0.0.1:${WS_PORT}`);
+                    const { api, alice, bob } = await getTestUtils(`ws://127.0.0.1:${WS_PORT}`);
 
                     clearTimeout(timer);
                     if (!DISPLAY_LOG) {
                         binary.stderr.off("data", onData);
                         binary.stdout.off("data", onData);
                     }
-                    resolve({ api, alice });
+                    resolve({ api, alice, bob });
                 } catch(e) {
                     binary.kill();
                     reject(e);
@@ -95,7 +96,7 @@ export async function startMantaNode(): Promise<{ binary: ChildProcess; } & Test
         binary.stdout.on("data", onData);
     });
 
-    return { api, alice, binary };
+    return { api, alice, bob, binary };
 }
 
 export function describeWithManta(title: string, cb: (context: TestContext) => void) {
@@ -111,6 +112,7 @@ export function describeWithManta(title: string, cb: (context: TestContext) => v
 
             context.api = init.api;
             context.alice = init.alice;
+            context.bob = init.bob;
             binary = init.binary;
 
             console.log('manta node started!')
@@ -130,7 +132,8 @@ export const getTestUtils = async (
     url = 'ws://localhost:9944',
 ): Promise<{
     api: ApiPromise;
-    alice: KeyringPair
+    alice: KeyringPair;
+    bob: KeyringPair;
 }> => {
     const provider = new WsProvider(url);
     const api = await ApiPromise.create({provider: provider});
@@ -138,10 +141,12 @@ export const getTestUtils = async (
     await api.isReady;
     
     const alice = new Keyring({type: 'sr25519'}).addFromUri("//Alice");
+    const bob = new Keyring({type: 'sr25519'}).addFromUri("//Bob");
 
     return {
         api,
-        alice
+        alice,
+        bob
     };
 };
 
@@ -160,20 +165,26 @@ export const remark = async(context: TestContext) => {
 export const executeTx = async(
     context: TestContext,
     tx: any,
-    sudo: boolean = false
+    sudo: boolean = false,
+    useAlice: boolean = true
 ) => {
-    const alice = context.alice;
+    let account;
+    if(useAlice) {
+        account = context.alice;
+    } else {
+        account = context.bob;
+    }
 
     if (sudo) {
         const rootCall = context.api.tx.sudo.sudo(tx);
-        await rootCall.signAndSend(alice, {nonce: -1}, async ({ events = [], status, txHash, dispatchError }) => {
+        await rootCall.signAndSend(context.alice, {nonce: -1}, async ({ events = [], status, txHash, dispatchError }) => {
             if (dispatchError) {
                 console.log(`root extrinsic has error: ${dispatchError.toString()}, hex:${tx.toHex()}`);
             }
         });
     } else {
         // @ts-ignore
-        await tx.signAndSend(alice, {nonce: -1}, async ({ events = [], status, txHash, dispatchError }) => {
+        await tx.signAndSend(account, {nonce: -1}, async ({ events = [], status, txHash, dispatchError }) => {
             if (dispatchError) {
                 console.log(`extrinsic has error: ${dispatchError.toString()}, hex:${tx.toHex()}`);
             }

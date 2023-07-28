@@ -5,87 +5,19 @@ import { farming_rpc_api, farming_types } from './types';
 import { expect } from 'chai';
 import minimist, { ParsedArgs } from 'minimist';
 import {execute_transaction, execute_via_governance,timer } from "./chain-util";
+import {
+    LP_USDT_USDC_METADATA,
+    MANDEX_METADATA,
+    USDC_LOCATION,
+    USDC_METADATA,
+    USDT_LOCATION,
+    USDT_METADATA
+} from "./constants";
 
 const test_config = {
     ws_address: "ws://127.0.0.1:9800",
     timeout: 2000000
 }
-const location = {
-    V1: {
-        parents: 1,
-        interior: {
-            X3: [
-                {
-                    Parachain: 1000
-                },
-                {
-                    PalletInstance: 50
-                },
-                {
-                    GeneralIndex: 1984
-                }
-            ]
-        }
-    }
-};
-const location2 = {
-    V1: {
-        parents: 1,
-        interior: {
-            X3: [
-                {
-                    Parachain: 1000
-                },
-                {
-                    PalletInstance: 50
-                },
-                {
-                    GeneralIndex: 1985
-                }
-            ]
-        }
-    }
-};
-const metadata = {
-    metadata: {
-        name: "Tether USD",
-        symbol: "USDT",
-        decimals: 6,
-        isFrozen: false
-    },
-    minBalance: 1,
-    isSufficient: true
-};
-const metadata2 = {
-    metadata: {
-        name: "USDC",
-        symbol: "USDC",
-        decimals: 10,
-        isFrozen: false
-    },
-    minBalance: 1,
-    isSufficient: true
-};
-const metadata3 = {
-    metadata: {
-        name: "MANDEX",
-        symbol: "MANDEX",
-        decimals: 18,
-        isFrozen: false
-    },
-    minBalance: 1,
-    isSufficient: true
-};
-const lp_metadata = {
-    metadata: {
-        name: "LP-USDC-USDT",
-        symbol: "LP",
-        decimals: 12,
-        isFrozen: false
-    },
-    minBalance: 1,
-    isSufficient: true
-};
 
 function local_asset(parachainId: number, generalKey: string) {
     let location = {
@@ -129,7 +61,7 @@ describe('Node RPC Test', () => {
         console.log(new Date() + " parachain:" + parachainId);
 
         // register asset 8(decimal:6)
-        let callData = api.tx.assetManager.registerAsset(location, metadata);
+        let callData = api.tx.assetManager.registerAsset(USDT_LOCATION, USDT_METADATA);
         await execute_via_governance(api, alice, callData);
 
         let state: any = await api.query.assetManager.assetIdMetadata(8);
@@ -140,7 +72,7 @@ describe('Node RPC Test', () => {
         console.log(new Date() + " Register Asset8:" + JSON.stringify(state));
 
         // 9(decimal:10)
-        callData = api.tx.assetManager.registerAsset(location2, metadata2);
+        callData = api.tx.assetManager.registerAsset(USDC_LOCATION, USDC_METADATA);
         await execute_via_governance(api, alice, callData);
         state = await api.query.assetManager.assetIdMetadata(9);
         while(state.isNone) {
@@ -150,7 +82,7 @@ describe('Node RPC Test', () => {
         console.log(new Date() + " Register Asset9:" + JSON.stringify(state));
 
         // 10(decimal:18)
-        callData = api.tx.assetManager.registerAsset(local_asset(parachainId, "MANDEX"), metadata3);
+        callData = api.tx.assetManager.registerAsset(local_asset(parachainId, "MANDEX"), MANDEX_METADATA);
         await execute_via_governance(api, alice, callData);
         let mandexId = 10;
         state = await api.query.assetManager.assetIdMetadata(mandexId);
@@ -161,7 +93,7 @@ describe('Node RPC Test', () => {
         console.log(new Date() + " Register Asset10:" + JSON.stringify(state));
 
         // register lp asset 11(decimal:12)
-        callData = api.tx.assetManager.registerLpAsset(8, 9, lp_metadata);
+        callData = api.tx.assetManager.registerLpAsset(8, 9, LP_USDT_USDC_METADATA);
         await execute_via_governance(api, alice, callData);
         let lpAssetId = 11;
         state = await api.query.assetManager.assetIdMetadata(lpAssetId);
