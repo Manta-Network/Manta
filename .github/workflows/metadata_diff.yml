@@ -63,7 +63,7 @@ jobs:
         shell: bash
         run: |
           apt update
-          apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential
+          apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang
           protoc --version
           apt remove -y '^dotnet-.*'
           apt remove -y '^mongodb-.*'
