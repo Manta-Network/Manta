@@ -7,6 +7,8 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
+env:
+  DEBIAN_FRONTEND: noninteractive
 jobs:
   start-checks:
     timeout-minutes: 120

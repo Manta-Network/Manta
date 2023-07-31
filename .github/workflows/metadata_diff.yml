@@ -13,6 +13,7 @@ on:
 env:
   CHAIN: ${{github.event.inputs.chain}}
   ENDPOINT: ${{github.event.inputs.endpoint}}
+  DEBIAN_FRONTEND: noninteractive
 jobs:
   start-checks:
     timeout-minutes: 120
