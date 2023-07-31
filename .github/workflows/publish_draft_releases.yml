@@ -246,7 +246,7 @@ jobs:
           asset_name: ${{ matrix.runtime.name }}-srtool-output-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
           asset_content_type: application/json
   publish-node:
-    runs-on: runtime'
+    runs-on: runtime
     shell: bash
     needs: [build-node-current, create-draft-release]
     outputs:
