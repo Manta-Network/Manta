@@ -55,7 +55,7 @@ jobs:
         # TODO: use nightly after https://github.com/clap-rs/clap/issues/4733 fixed.
         run: |
           apt update
-          apt install -y pkg-config libssl-dev protobuf-compiler
+          apt install -y pkg-config libssl-dev protobuf-compiler curl
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env

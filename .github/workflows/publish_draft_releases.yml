@@ -85,6 +85,8 @@ jobs:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
           SCCACHE_VERSION: v0.5.3
         run: |
+          apt update
+          apt install -y curl
           SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
           mkdir -p $HOME/.local/bin
           curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
@@ -113,8 +115,8 @@ jobs:
         run: sccache --start-server
       - name: init
         run: |
-          sudo apt update
-          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          apt update
+          apt install -y pkg-config libssl-dev protobuf-compiler curl
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
