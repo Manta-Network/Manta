@@ -18,6 +18,7 @@ jobs:
   start-checks:
     timeout-minutes: 120
     runs-on: runtime
+    shell: bash
     container:
       image: ubuntu:20.04
     strategy:
