@@ -29,6 +29,8 @@ jobs:
     runs-on: runtime
     env:
       CARGO_TERM_COLOR: always
+    container:
+      image: ubuntu:20.04
     strategy:
       matrix:
         runtime:
@@ -72,6 +74,8 @@ jobs:
     timeout-minutes: 180
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: runtime
+    container:
+      image: ubuntu:20.04
     env:
       CARGO_TERM_COLOR: always
     steps:

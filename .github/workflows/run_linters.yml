@@ -11,10 +11,8 @@ jobs:
   start-checks:
     timeout-minutes: 120
     runs-on: runtime
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    container:
+      image: ubuntu:20.04
     steps:
       - uses: actions/checkout@v2
       - name: Run yamllint

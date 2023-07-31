@@ -17,13 +17,11 @@ jobs:
   start-checks:
     timeout-minutes: 120
     runs-on: runtime
+    container:
+      image: ubuntu:20.04
     strategy:
       matrix:
         node-version: [16.x]
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
     steps:
       - uses: actions/checkout@v2
       - uses: borales/actions-yarn@v3.0.0
