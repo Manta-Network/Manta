@@ -58,7 +58,7 @@ jobs:
         shell: bash
         run: |
           apt update
-          apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang
+          apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang git
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
