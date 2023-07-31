@@ -13,7 +13,6 @@ jobs:
   get-rust-versions:
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: runtime
-    shell: bash
     container:
       image: paritytech/ci-linux:production
     outputs:
@@ -30,7 +29,6 @@ jobs:
     timeout-minutes: 180
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: runtime
-    shell: bash
     env:
       CARGO_TERM_COLOR: always
     container:
@@ -78,7 +76,6 @@ jobs:
     timeout-minutes: 180
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: runtime
-    shell: bash
     container:
       image: ubuntu:20.04
     env:
@@ -119,6 +116,7 @@ jobs:
       - name: start sccache server
         run: sccache --start-server
       - name: init
+        shell: bash
         run: |
           apt update
           apt install -y pkg-config libssl-dev protobuf-compiler curl
@@ -132,6 +130,7 @@ jobs:
           rustup install 1.69.0
           rustup target add wasm32-unknown-unknown --toolchain 1.69.0
       - name: build
+        shell: bash
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
@@ -163,7 +162,6 @@ jobs:
   # THE FOLLOWING HAPPENS ONLY WHEN TAGGED WITH A vX.Y.Z TAG
   create-draft-release:
     runs-on: runtime
-    shell: bash
     needs: [build-runtimes]
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
@@ -181,7 +179,6 @@ jobs:
           draft: true
   publish-runtimes:
     runs-on: runtime
-    shell: bash
     needs: create-draft-release
     strategy:
       matrix:
@@ -247,7 +244,6 @@ jobs:
           asset_content_type: application/json
   publish-node:
     runs-on: runtime
-    shell: bash
     needs: [build-node-current, create-draft-release]
     outputs:
       download_url: ${{ steps.upload-manta.outputs.browser_download_url }}
@@ -268,7 +264,6 @@ jobs:
           asset_content_type: application/octet-stream
   brag:
     runs-on: runtime
-    shell: bash
     needs: [publish-runtimes, publish-node]
     if: startsWith(github.ref, 'refs/tags')
     steps:
