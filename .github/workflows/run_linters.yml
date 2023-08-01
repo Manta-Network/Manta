@@ -42,15 +42,6 @@ jobs:
           key: cargo-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             cargo-registry-
-      - name: cache cargo build
-        uses: actions/cache@v2
-        with:
-          path: |
-            ./target
-          key: cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
-            cargo-build-
       - name: cache sccache
         uses: actions/cache@v2
         continue-on-error: false
