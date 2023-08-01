@@ -1170,7 +1170,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         // register_asset
         let call = crate::RuntimeCall::AssetManager(pallet_asset_manager::Call::register_asset {
             location: Default::default(),
-            metadata: AssetRegistryMetadata::testing_default().into(),
+            metadata: AssetRegistryMetadata::testing_default(),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
