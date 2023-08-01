@@ -46,18 +46,9 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: cargo-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            cargo-
-      - name: cache cargo registry
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-        key: cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          cargo-
+            cargo-registry-
       - name: cache sccache
         uses: actions/cache@v2
         continue-on-error: false
@@ -88,6 +79,15 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
+      - name: cache cargo build
+        uses: actions/cache@v2
+        with:
+          path: |
+            ./target
+          key: cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
+            cargo-build-
       - name: Build New Binary
         env:
           RUST_BACKTRACE: full
