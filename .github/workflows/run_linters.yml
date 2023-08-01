@@ -13,7 +13,6 @@ jobs:
   start-checks:
     timeout-minutes: 120
     runs-on: runtime
-    shell: bash
     container:
       image: ubuntu:20.04
     steps:
@@ -40,14 +39,14 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: cargo-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            cargo-
+            cargo-registry-
       - name: cache sccache
         uses: actions/cache@v2
         continue-on-error: false
         with:
-          path: /home/runner/.cache/sccache
+          path: ~/.cache/sccache
           key: sccache-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             sccache-
@@ -56,9 +55,10 @@ jobs:
       - name: init rust toolchain
         # NOTE: We use nightly Rust only to get nightly fmt & clippy
         # TODO: use nightly after https://github.com/clap-rs/clap/issues/4733 fixed.
+        shell: bash
         run: |
           apt update
-          apt install -y pkg-config libssl-dev protobuf-compiler curl
+          apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang git
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
@@ -70,18 +70,29 @@ jobs:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
           SCCACHE_CACHE_SIZE: 2G
-          SCCACHE_DIR: /home/runner/.cache/sccache
+          SCCACHE_DIR: ~/.cache/sccache
+        shell: bash
         run: |
           source ${HOME}/.cargo/env
           cargo fmt --all -- --check
           $HOME/.cargo/bin/taplo fmt --check
           $HOME/.cargo/bin/taplo lint
+      - name: cache cargo build
+        uses: actions/cache@v2
+        with:
+          path: |
+            ./target
+          key: cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
+            cargo-build-
       - name: Cargo Check & Clippy
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
           SCCACHE_CACHE_SIZE: 2G
-          SCCACHE_DIR: /home/runner/.cache/sccache
+          SCCACHE_DIR: ~/.cache/sccache
+        shell: bash
         run: |
           source ${HOME}/.cargo/env
           SKIP_WASM_BUILD=1 cargo check --no-default-features
