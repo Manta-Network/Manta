@@ -1,8 +1,6 @@
 name: publish calamari parachain container
 on:
-  release:
-    types:
-      - published
+  workflow_dispatch:
 jobs:
   docker-hub-deploy:
     timeout-minutes: 120
