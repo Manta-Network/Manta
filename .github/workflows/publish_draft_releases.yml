@@ -102,9 +102,9 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: cargo-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            cargo-
+            cargo-registry-
       - name: cache sccache
         uses: actions/cache@v2
         continue-on-error: false
@@ -129,6 +129,15 @@ jobs:
           rustup target add wasm32-unknown-unknown
           rustup install 1.69.0
           rustup target add wasm32-unknown-unknown --toolchain 1.69.0
+      - name: cache cargo build
+        uses: actions/cache@v2
+        with:
+          path: |
+            ./target
+          key: cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
+            cargo-build-
       - name: build
         shell: bash
         env:
