@@ -8,6 +8,10 @@ Before we can approve this PR for merge, please make sure that **all** the follo
 - [ ] Added **one or more** labels from the `A-` and `C-` groups to this PR
 - [ ] Explicitly labelled `A-calamari` and/or `A-manta` if your changes are meant for/impact either of these (CI depends on it)
 - [ ] Re-reviewed `Files changed` in the Github PR explorer.
+- [ ] Add `A-integration-checks` to run **start-integration-test-checks** (Optional)
+- [ ] Add `A-benchmark-checks` to run **start-integration-test-checks** (Optional)
+- [ ] Add `A-unit-test-checks` to run **start-integration-test-checks** (Optional)
+- [ ] Add `A-congestion-test-checks` to run **start-integration-test-checks** (Optional)
 
 
 Situational Notes:

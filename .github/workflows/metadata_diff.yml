@@ -10,6 +10,9 @@ on:
         description: The name of the chain under test. Usually, you would pass a dev chain
         default: manta-dev
         required: true
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 env:
   CHAIN: ${{github.event.inputs.chain}}
   ENDPOINT: ${{github.event.inputs.endpoint}}
@@ -40,15 +43,6 @@ jobs:
           chmod +x $HOME/.local/bin/sccache
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-registry-
       - name: cache sccache
         uses: actions/cache@v2
         continue-on-error: false
@@ -79,15 +73,8 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
-      - name: cache cargo build
-        uses: actions/cache@v2
-        with:
-          path: |
-            ./target
-          key: cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
-            cargo-build-
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: Build New Binary
         env:
           RUST_BACKTRACE: full
@@ -115,8 +102,8 @@ jobs:
           path: polkadot-launch
       - name: create launch config
         run: |
-          cd ${{ github.workspace }}/polkadot-launch
-          cat ${{ github.workspace }}/.github/resources/config-for-integration-test.json | \
+          cd $GITHUB_WORKSPACE/polkadot-launch
+          cat $GITHUB_WORKSPACE/.github/resources/config-for-integration-test.json | \
             jq \
               --arg relaychain_bin $HOME/polkadot \
               --arg parachains_bin $HOME/manta \
@@ -124,16 +111,16 @@ jobs:
               '.relaychain.bin = $relaychain_bin
               | .parachains[0].bin = $parachains_bin
               | .parachains[].chain = $parachains_spec
-              ' > ${{ github.workspace }}/.github/resources/diff-metadata.json
+              ' > $GITHUB_WORKSPACE/.github/resources/diff-metadata.json
       - name: launch testnet
         run: |
-          cd ${{ github.workspace }}/polkadot-launch
+          cd $GITHUB_WORKSPACE/polkadot-launch
           yarn install
           yarn build
           pm2 start dist/cli.js --name polkadot-launch \
-            --output ${{ github.workspace }}/stdout.log \
-            --error ${{ github.workspace }}/stderr.log \
-            -- ${{ github.workspace }}/.github/resources/diff-metadata.json
+            --output $GITHUB_WORKSPACE/stdout.log \
+            --error $GITHUB_WORKSPACE/stderr.log \
+            -- $GITHUB_WORKSPACE/.github/resources/diff-metadata.json
       - name: Prepare output
         run: |
           VERSION=$($HOME/manta --version)
@@ -149,15 +136,15 @@ jobs:
       - name: Compare the metadata
         run: |
           echo $ENDPOINT
-          cd ${{ github.workspace }}/tools
+          cd $GITHUB_WORKSPACE/tools
           yarn
           CMD="yarn run:metadata $ENDPOINT ws://127.0.0.1:9921"
           echo -e "Running:\n$CMD"
           $CMD >> output.txt
           sed -z -i 's/\n\n/\n/g' output.txt
           cat output.txt | egrep -n -i ''
-          chmod +x ${{ github.workspace }}/scripts/github/extrinsic-ordering-filter.sh
-          SUMMARY=$(${{ github.workspace }}/scripts/github/extrinsic-ordering-filter.sh output.txt)
+          chmod +x $GITHUB_WORKSPACE/scripts/github/extrinsic-ordering-filter.sh
+          SUMMARY=$($GITHUB_WORKSPACE/scripts/github/extrinsic-ordering-filter.sh output.txt)
           echo -e $SUMMARY
           echo -e $SUMMARY >> output.txt
       - name: Show result
