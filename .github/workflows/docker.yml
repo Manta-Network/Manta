@@ -1,6 +1,9 @@
 name: publish calamari parachain container
 on:
-  workflow_dispatch:
+  pull_request:
+    branches: [manta]
+  push:
+    branches: [manta]
 jobs:
   docker-hub-deploy:
     timeout-minutes: 120
