@@ -46,7 +46,6 @@ jobs:
           image_id=`cat docker_id.log`
           echo $image_id
           echo "Adjusting permissions so we can access docker logs..."
-          sudo chmod -R +x /var/lib/docker/
           sudo cat /var/lib/docker/containers/${image_id}/${image_id}-json.log
       - uses: actions/checkout@v2
         with:

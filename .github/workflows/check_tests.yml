@@ -2,17 +2,19 @@ name: Run Tests
 on:
   pull_request:
     branches: [manta]
+    types: [opened, reopened, synchronize, labeled]
   push:
     branches: [manta]
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 env:
   DEBIAN_FRONTEND: noninteractive
 jobs:
   start-integration-test-checks:
+    if: contains(github.event.pull_request.labels.*.name, 'A-integration-test-checks')
     timeout-minutes: 480
-    runs-on: runtime
+    runs-on: ubuntu-20.04
     container:
       image: ubuntu:20.04
     steps:
@@ -22,6 +24,8 @@ jobs:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
           SCCACHE_VERSION: v0.5.3
         run: |
+          apt update
+          apt install -y curl
           SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
           mkdir -p $HOME/.local/bin
           curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
@@ -29,26 +33,18 @@ jobs:
           chmod +x $HOME/.local/bin/sccache
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-
       - name: cache sccache
         uses: actions/cache@v2
         continue-on-error: false
         with:
-          path: /home/runner/.cache/sccache
+          path: ~/.cache/sccache
           key: sccache-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             sccache-
       - name: start sccache server
         run: sccache --start-server
       - name: init
+        shell: bash
         run: |
           apt update
           apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang git
@@ -59,39 +55,41 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
-      - name: cache cargo build
-        uses: actions/cache@v2
-        with:
-          path: |
-            ./target
-          key: cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
-            cargo-build-
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: Run Integration Tests
+        shell: bash
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 120G
-          SCCACHE_DIR: /home/runner/.cache/sccache
+          # SCCACHE_CACHE_SIZE: 120G
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: ~/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo test -p integration-tests --release --features=calamari --no-default-features
-          RUSTC_BOOTSTRAP=1 cargo test -p integration-tests --release --features=manta --no-default-features
+          RUSTC_BOOTSTRAP=1 cargo test -p integration-tests --release --features=calamari --no-default-features --timings
+          RUSTC_BOOTSTRAP=1 cargo test -p integration-tests --release --features=manta --no-default-features --timings
       - name: stop sccache server
         run: sccache --stop-server || true
   start-benchmark-checks:
     timeout-minutes: 180
     runs-on: runtime
+    if: contains(github.event.pull_request.labels.*.name, 'A-benchmark-checks')
     container:
       image: ubuntu:20.04
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
           SCCACHE_VERSION: v0.5.3
         run: |
+          apt update
+          apt install -y curl wget
+          npm install -g yarn && node --version && node --version && npm --version && yarn --version
           SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
           mkdir -p $HOME/.local/bin
           curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
@@ -99,31 +97,24 @@ jobs:
           chmod +x $HOME/.local/bin/sccache
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-
       - name: cache sccache
         uses: actions/cache@v2
         continue-on-error: false
         with:
-          path: /home/runner/.cache/sccache
+          path: ~/.cache/sccache
           key: sccache-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             sccache-
       - name: start sccache server
         run: sccache --start-server
-      - name: build benchmarking binary
+      - name: rust setup
+        shell: bash
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 120G
-          SCCACHE_DIR: /home/runner/.cache/sccache
+          # SCCACHE_CACHE_SIZE: 120G
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: ~/.cache/sccache
           CARGO_TERM_COLOR: always
         run: |
           apt update
@@ -134,36 +125,18 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
-          df -h
-          apt remove -y '^dotnet-.*'
-          apt remove -y '^mongodb-.*'
-          apt remove -y '^mysql-.*'
-          apt remove -y '^postgresql-*'
-          apt remove -y google-cloud-sdk google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
-          apt autoremove -y
-          apt clean
-          rm -rf /usr/local/lib/android
-          rm -rf /usr/share/dotnet
-          df -h
-      - name: cache cargo build
-        uses: actions/cache@v2
-        with:
-          path: |
-            ./target
-          key: cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
-            cargo-build-
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: build benchmarking binary
         run: |
-          RUSTC_BOOTSTRAP=1 cargo build --release --features runtime-benchmarks
+          RUSTC_BOOTSTRAP=1 cargo build --release --features runtime-benchmarks --timings
       - name: create-calamari-chainspec
         run: |
-          ${{ github.workspace }}/target/release/manta build-spec --chain calamari-dev --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
+          $GITHUB_WORKSPACE/target/release/manta build-spec --chain calamari-dev --disable-default-bootnode --raw > $GITHUB_WORKSPACE/tests/data/fork.json
       - name: append manta-pay storage for Calamari
         run: |
-          wget -P ${{ github.workspace }}/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
-          cd ${{ github.workspace }}/tests
+          wget -P $GITHUB_WORKSPACE/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
+          cd $GITHUB_WORKSPACE/tests
           yarn install
           yarn
           node append_storage.js
@@ -171,24 +144,25 @@ jobs:
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 120G
-          SCCACHE_DIR: /home/runner/.cache/sccache
+          # SCCACHE_CACHE_SIZE: 120G
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: ~/.cache/sccache
         run: |
-          ${{ github.workspace }}/target/release/manta \
+          $GITHUB_WORKSPACE/target/release/manta \
           benchmark \
             pallet \
-            --chain=${{ github.workspace }}/tests/data/fork.json \
+            --chain=$GITHUB_WORKSPACE/tests/data/fork.json \
             --pallet=* \
             --extrinsic=* \
             --repeat=1 \
             --steps=2
       - name: create-manta-dev-chainspec
         run: |
-          ${{ github.workspace }}/target/release/manta build-spec --chain manta-dev --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
+          $GITHUB_WORKSPACE/target/release/manta build-spec --chain manta-dev --disable-default-bootnode --raw > $GITHUB_WORKSPACE/tests/data/fork.json
       - name: append manta-pay storage for Manta
         run: |
-          wget -P ${{ github.workspace }}/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
-          cd ${{ github.workspace }}/tests
+          wget -P $GITHUB_WORKSPACE/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
+          cd $GITHUB_WORKSPACE/tests
           yarn install
           yarn
           node append_storage.js
@@ -196,13 +170,14 @@ jobs:
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 120G
-          SCCACHE_DIR: /home/runner/.cache/sccache
+          # SCCACHE_CACHE_SIZE: 120G
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: ~/.cache/sccache
         run: |
-          ${{ github.workspace }}/target/release/manta \
+          $GITHUB_WORKSPACE/target/release/manta \
           benchmark \
             pallet \
-            --chain=${{ github.workspace }}/tests/data/fork.json \
+            --chain=$GITHUB_WORKSPACE/tests/data/fork.json \
             --pallet=* \
             --extrinsic=* \
             --repeat=1 \
@@ -210,6 +185,7 @@ jobs:
       - name: stop sccache server
         run: sccache --stop-server || true
   start-unit-test-checks:
+    if: contains(github.event.pull_request.labels.*.name, 'A-unit-test-checks')
     timeout-minutes: 480
     runs-on: runtime
     container:
@@ -221,6 +197,8 @@ jobs:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
           SCCACHE_VERSION: v0.5.3
         run: |
+          apt update
+          apt install -y curl
           SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
           mkdir -p $HOME/.local/bin
           curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
@@ -228,26 +206,18 @@ jobs:
           chmod +x $HOME/.local/bin/sccache
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-
       - name: cache sccache
         uses: actions/cache@v2
         continue-on-error: false
         with:
-          path: /home/runner/.cache/sccache
+          path: ~/.cache/sccache
           key: sccache-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             sccache-
       - name: start sccache server
         run: sccache --start-server
       - name: init
+        shell: bash
         run: |
           apt update
           apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang git
@@ -258,50 +228,36 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
-          df -h
-          apt remove -y '^dotnet-.*'
-          apt remove -y '^mongodb-.*'
-          apt remove -y '^mysql-.*'
-          apt remove -y '^postgresql-*'
-          apt remove -y google-cloud-sdk google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
-          apt autoremove -y
-          apt clean
-          rm -rf /usr/local/lib/android
-          rm -rf /usr/share/dotnet
-          df -h
-      - name: cache cargo build
-        uses: actions/cache@v2
-        with:
-          path: |
-            ./target
-          key: cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
-            cargo-build-
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: Run Unit Tests
+        shell: bash
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 240
-          SCCACHE_DIR: /home/runner/.cache/sccache
+          # SCCACHE_CACHE_SIZE: 240
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: ~/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime --workspace --exclude integration-tests
+          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime --workspace --exclude integration-tests --timings
       - name: stop sccache server
         run: sccache --stop-server || true
   start-congestion-test-checks:
+    if: contains(github.event.pull_request.labels.*.name, 'A-congestion-test-checks')
     timeout-minutes: 480
     strategy:
       matrix:
         runtime:
           - name: manta-runtime
           - name: calamari-runtime
-    runs-on: runtime
+    runs-on: ubuntu-20.04
     container:
       image: ubuntu:20.04
     steps:
       - uses: actions/checkout@v2
       - name: init
+        shell: bash
         run: |
           apt update
           apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang git
@@ -312,20 +268,16 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
-      - name: cache cargo build
-        uses: actions/cache@v2
-        with:
-          path: |
-            ./target
-          key: cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
-            cargo-build-
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: Run congestion test (allowed to fail)
         id: congestion_test
+        shell: bash
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo test --package ${{ matrix.runtime.name }} --lib -- fee::multiplier_tests::multiplier_growth_simulator_and_congestion_budget_test --exact --nocapture --ignored
+          RUSTC_BOOTSTRAP=1 cargo test --package ${{ matrix.runtime.name }} --lib -- fee::multiplier_tests::multiplier_growth_simulator_and_congestion_budget_test --exact --nocapture --ignored --timings
         continue-on-error: true
       - name: Print res
         id: congestion_test_res
