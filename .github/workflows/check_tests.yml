@@ -8,32 +8,14 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 env:
-  AWS_REGION: us-east-1
-  AWS_INSTANCE_TYPE: c5.2xlarge
-  AWS_INSTANCE_ROOT_VOLUME_SIZE: 1024
-  AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
+  DEBIAN_FRONTEND: noninteractive
 jobs:
   start-integration-test-checks:
     timeout-minutes: 480
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    runs-on: runtime
+    container:
+      image: ubuntu:20.04
     steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
       - uses: actions/checkout@v2
       - name: install sccache
         env:
@@ -53,7 +35,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: cargo-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             cargo-
       - name: cache sccache
@@ -68,8 +50,8 @@ jobs:
         run: sccache --start-server
       - name: init
         run: |
-          sudo apt update
-          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          apt update
+          apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang git
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
@@ -77,6 +59,15 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
+      - name: cache cargo build
+        uses: actions/cache@v2
+        with:
+          path: |
+            ./target
+          key: cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
+            cargo-build-
       - name: Run Integration Tests
         env:
           RUST_BACKTRACE: full
@@ -89,44 +80,12 @@ jobs:
           RUSTC_BOOTSTRAP=1 cargo test -p integration-tests --release --features=manta --no-default-features
       - name: stop sccache server
         run: sccache --stop-server || true
-  stop-integration-test-checks:
-    timeout-minutes: 15
-    needs: start-integration-test-checks
-    runs-on: ubuntu-20.04
-    if: ${{ always() }}
-    steps:
-      - continue-on-error: true
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-integration-test-checks.outputs.aws-region }}
-          runner-label: ${{ needs.start-integration-test-checks.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-integration-test-checks.outputs.aws-instance-id }}
-      - name: discard stopper success/failure
-        run: true
   start-benchmark-checks:
     timeout-minutes: 180
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    runs-on: runtime
+    container:
+      image: ubuntu:20.04
     steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
       - uses: actions/checkout@v2
       - name: install sccache
         env:
@@ -146,7 +105,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: cargo-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             cargo-
       - name: cache sccache
@@ -167,8 +126,8 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
           CARGO_TERM_COLOR: always
         run: |
-          sudo apt update
-          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          apt update
+          apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang git
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
@@ -176,16 +135,25 @@ jobs:
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
           df -h
-          sudo apt remove -y '^dotnet-.*'
-          sudo apt remove -y '^mongodb-.*'
-          sudo apt remove -y '^mysql-.*'
-          sudo apt remove -y '^postgresql-*'
-          sudo apt remove -y google-cloud-sdk google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
-          sudo apt autoremove -y
-          sudo apt clean
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /usr/share/dotnet
+          apt remove -y '^dotnet-.*'
+          apt remove -y '^mongodb-.*'
+          apt remove -y '^mysql-.*'
+          apt remove -y '^postgresql-*'
+          apt remove -y google-cloud-sdk google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+          apt autoremove -y
+          apt clean
+          rm -rf /usr/local/lib/android
+          rm -rf /usr/share/dotnet
           df -h
+      - name: cache cargo build
+        uses: actions/cache@v2
+        with:
+          path: |
+            ./target
+          key: cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
+            cargo-build-
       - name: build benchmarking binary
         run: |
           RUSTC_BOOTSTRAP=1 cargo build --release --features runtime-benchmarks
@@ -241,43 +209,12 @@ jobs:
             --steps=2
       - name: stop sccache server
         run: sccache --stop-server || true
-  stop-benchmark-checks:
-    needs: start-benchmark-checks
-    runs-on: ubuntu-20.04
-    if: ${{ always() }}
-    steps:
-      - continue-on-error: true
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-benchmark-checks.outputs.aws-region }}
-          runner-label: ${{ needs.start-benchmark-checks.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-benchmark-checks.outputs.aws-instance-id }}
-      - name: discard stopper success/failure
-        run: true
   start-unit-test-checks:
     timeout-minutes: 480
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    runs-on: runtime
+    container:
+      image: ubuntu:20.04
     steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
       - uses: actions/checkout@v2
       - name: install sccache
         env:
@@ -297,7 +234,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: cargo-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             cargo-
       - name: cache sccache
@@ -312,8 +249,8 @@ jobs:
         run: sccache --start-server
       - name: init
         run: |
-          sudo apt update
-          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          apt update
+          apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang git
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
@@ -322,16 +259,25 @@ jobs:
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
           df -h
-          sudo apt remove -y '^dotnet-.*'
-          sudo apt remove -y '^mongodb-.*'
-          sudo apt remove -y '^mysql-.*'
-          sudo apt remove -y '^postgresql-*'
-          sudo apt remove -y google-cloud-sdk google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
-          sudo apt autoremove -y
-          sudo apt clean
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /usr/share/dotnet
+          apt remove -y '^dotnet-.*'
+          apt remove -y '^mongodb-.*'
+          apt remove -y '^mysql-.*'
+          apt remove -y '^postgresql-*'
+          apt remove -y google-cloud-sdk google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+          apt autoremove -y
+          apt clean
+          rm -rf /usr/local/lib/android
+          rm -rf /usr/share/dotnet
           df -h
+      - name: cache cargo build
+        uses: actions/cache@v2
+        with:
+          path: |
+            ./target
+          key: cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
+            cargo-build-
       - name: Run Unit Tests
         env:
           RUST_BACKTRACE: full
@@ -343,23 +289,6 @@ jobs:
           RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime --workspace --exclude integration-tests
       - name: stop sccache server
         run: sccache --stop-server || true
-  stop-unit-test-checks:
-    needs: start-unit-test-checks
-    runs-on: ubuntu-20.04
-    if: ${{ always() }}
-    steps:
-      - continue-on-error: true
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-unit-test-checks.outputs.aws-region }}
-          runner-label: ${{ needs.start-unit-test-checks.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-unit-test-checks.outputs.aws-instance-id }}
-      - name: discard stopper success/failure
-        run: true
   start-congestion-test-checks:
     timeout-minutes: 480
     strategy:
@@ -367,29 +296,15 @@ jobs:
         runtime:
           - name: manta-runtime
           - name: calamari-runtime
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    runs-on: runtime
+    container:
+      image: ubuntu:20.04
     steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
       - uses: actions/checkout@v2
       - name: init
         run: |
-          sudo apt update
-          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          apt update
+          apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang git
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
@@ -397,6 +312,15 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
+      - name: cache cargo build
+        uses: actions/cache@v2
+        with:
+          path: |
+            ./target
+          key: cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
+            cargo-build-
       - name: Run congestion test (allowed to fail)
         id: congestion_test
         run: |
@@ -434,21 +358,3 @@ jobs:
             const above = status === 'success' ? 'is above' : 'is NOT above';
             const updatedComment = `${statusIcon} ${comment_text} ${above} the target daily congestion cost`;
             await octokit.rest.issues.updateComment({ owner, repo, comment_id: existingComment.id, body: updatedComment });
-  stop-congestion-test-checks:
-    timeout-minutes: 15
-    needs: start-congestion-test-checks
-    runs-on: ubuntu-20.04
-    if: ${{ always() }}
-    steps:
-      - continue-on-error: true
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-congestion-test-checks.outputs.aws-region }}
-          runner-label: ${{ needs.start-congestion-test-checks.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-congestion-test-checks.outputs.aws-instance-id }}
-      - name: discard stopper success/failure
-        run: true
