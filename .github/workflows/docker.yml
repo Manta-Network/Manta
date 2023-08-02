@@ -1,4 +1,4 @@
-name: publish calamari parachain container
+name: publish manta and calamari parachain container
 on:
   release:
     types:
