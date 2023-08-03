@@ -414,6 +414,13 @@ jobs:
         with:
           name: ${{ matrix.chain-spec.id }}-alice-stress.log
           path: ${{ github.workspace }}/polkadot-launch/9921.log
+      - name: run tests
+        run: |
+          sleep 120
+          cd ${{ github.workspace }}/Manta/tests
+          yarn install
+          yarn
+          MANTA_BINARY=$HOME/.local/bin/manta yarn tests
   docker-image-test:
     timeout-minutes: 120
     if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')
