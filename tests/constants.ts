@@ -1,3 +1,13 @@
+import {BN} from "@polkadot/util";
+
+export const MANTA_1B = "1000000000000000000000000000";
+export const MANTA_1K = new BN("1000000000000000000000");
+export const LP_1K = "1000000000000000";
+export const LP_2K = "2000000000000000";
+export const USDT_10M = new BN("10000000000000");
+export const USDT_20M = new BN("20000000000000");
+export const USDC_10M = new BN("100000000000000000");
+export const USDC_20M = new BN("200000000000000000");
 
 export const USDT_LOCATION = {
     V1: {
