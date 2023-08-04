@@ -121,7 +121,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           repository: paritytech/zombienet
-          path: zombienet
+          path: zombienet-tool
       - name: create launch config
         run: |
           ls -ahl ${{ github.workspace }}/zombienet/tests
@@ -134,7 +134,7 @@ jobs:
             parachains[0].chain $CHAIN > ${{ github.workspace }}/zombienet/tests/diff-metadata.toml
       - name: launch testnet
         run: |
-          cd ${{ github.workspace }}/zombienet/javascript
+          cd ${{ github.workspace }}/zombienet-tool/javascript
           yarn
           npm run build
           pm2 start packages/cli/dist/cli.js --name zombienet \
