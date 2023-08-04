@@ -130,13 +130,13 @@ jobs:
             relaychain.default_command $HOME/polkadot > ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp1.toml
           toml set ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp1.toml \
             parachains[0].collators[0].command $HOME/manta > ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp2.toml
+          toml set ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp2.toml \
+            parachains[0].id 2104 > ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp3.toml
           if [[ "$CHAIN" == *"manta"* ]]; then
-            toml set ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp2.toml \
-              parachains[0].id 2104 > ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp3.toml
             toml set ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp3.toml \
               parachains[0].chain $CHAIN > ${{ github.workspace }}/zombienet/tests/diff-metadata.toml
           else
-            cp ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp2.toml ${{ github.workspace }}/zombienet/tests/diff-metadata.toml
+            cp ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp3.toml ${{ github.workspace }}/zombienet/tests/diff-metadata.toml
           fi;
       - name: launch testnet
         run: |
