@@ -124,6 +124,8 @@ jobs:
           path: zombienet
       - name: create launch config
         run: |
+          ls -ahl ${{ github.workspace }}/zombienet/tests
+          cd ${{ github.workspace }}
           toml set ${{ github.workspace }}/zombienet/tests/0003-metadata-diff.toml \
             relaychain.default_command $HOME/polkadot > ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp1.toml
           toml set ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp1.toml \
