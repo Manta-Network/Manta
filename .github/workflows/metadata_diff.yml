@@ -136,7 +136,7 @@ jobs:
             toml set ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp3.toml \
               parachains[0].chain $CHAIN > ${{ github.workspace }}/zombienet/tests/diff-metadata.toml
           else
-            cp ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp3.toml ${{ github.workspace }}/zombienet/tests/diff-metadata.toml
+            cp ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp2.toml ${{ github.workspace }}/zombienet/tests/diff-metadata.toml
           fi;
       - name: launch testnet
         run: |
