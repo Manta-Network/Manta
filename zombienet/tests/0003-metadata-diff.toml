@@ -17,11 +17,11 @@ chain = "rococo-local"
 
 [[parachains]]
 id = 2084
-chain = "calamari-local"
+chain = "calamari-dev"
 cumulus_based = true
 
     [[parachains.collators]]
     name = "Alice"
     command = "manta"
-    ws_port = 9800
+    ws_port = 9921
     rcp_port = 9967
