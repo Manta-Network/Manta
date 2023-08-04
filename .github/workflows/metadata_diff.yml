@@ -102,43 +102,43 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo build --release
-          cp target/release/manta $HOME/manta
+          curl -L -o $HOME/manta https://github.com/Manta-Network/Manta/releases/download/v4.4.0/manta
           chmod +x $HOME/manta
+          ls -ahl $HOME/
       - name: Fetch and chmod old release binary
         run: |
-          curl -L -o $HOME/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.42/polkadot
+          curl -L -o $HOME/polkadot https://github.com/paritytech/polkadot/releases/download/v1.0.0/polkadot
           chmod +x $HOME/polkadot
           ls -ahl $HOME/
       - name: stop sccache server
         run: sccache --stop-server || true
       - name: Install pm2
         run: npm install -g pm2
+      - name: Install toml cli
+        run: |
+          cargo install toml-cli
+          toml --version
       - uses: actions/checkout@v2
         with:
-          repository: paritytech/polkadot-launch
-          path: polkadot-launch
+          repository: paritytech/zombienet
+          path: zombienet
       - name: create launch config
         run: |
-          cd ${{ github.workspace }}/polkadot-launch
-          cat ${{ github.workspace }}/.github/resources/config-for-integration-test.json | \
-            jq \
-              --arg relaychain_bin $HOME/polkadot \
-              --arg parachains_bin $HOME/manta \
-              --arg parachains_spec $CHAIN \
-              '.relaychain.bin = $relaychain_bin
-              | .parachains[0].bin = $parachains_bin
-              | .parachains[].chain = $parachains_spec
-              ' > ${{ github.workspace }}/.github/resources/diff-metadata.json
+          toml set ${{ github.workspace }}/zombienet/tests/0003-metadata-diff.toml \
+            relaychain.default_command $HOME/polkadot > ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp1.toml
+          toml set ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp1.toml \
+            parachains[0].collators[0].command $HOME/manta > ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp2.toml
+          toml set ${{ github.workspace }}/zombienet/tests/metadata-diff-tmp2.toml \
+            parachains[0].chain $CHAIN > ${{ github.workspace }}/zombienet/tests/diff-metadata.toml
       - name: launch testnet
         run: |
-          cd ${{ github.workspace }}/polkadot-launch
-          yarn install
-          yarn build
-          pm2 start dist/cli.js --name polkadot-launch \
+          cd ${{ github.workspace }}/zombienet/javascript
+          yarn
+          npm run build
+          pm2 start packages/cli/dist/cli.js --name zombienet \
             --output ${{ github.workspace }}/stdout.log \
             --error ${{ github.workspace }}/stderr.log \
-            -- ${{ github.workspace }}/.github/resources/diff-metadata.json
+            -- spawn --provider native ${{ github.workspace }}/zombienet/tests/diff-metadata.toml
       - name: Prepare output
         run: |
           VERSION=$($HOME/manta --version)
