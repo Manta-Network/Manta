@@ -102,9 +102,9 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          curl -L -o $HOME/manta https://github.com/Manta-Network/Manta/releases/download/v4.4.0/manta
+          RUSTC_BOOTSTRAP=1 cargo build --release
+          cp target/release/manta $HOME/manta
           chmod +x $HOME/manta
-          ls -ahl $HOME/
       - name: Fetch and chmod old release binary
         run: |
           curl -L -o $HOME/polkadot https://github.com/paritytech/polkadot/releases/download/v1.0.0/polkadot
