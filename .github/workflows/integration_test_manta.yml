@@ -17,7 +17,7 @@ env:
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
-  POLKADOT_BINARY: https://github.com/paritytech/polkadot/releases/download/v0.9.42/polkadot
+  POLKADOT_BINARY: https://github.com/paritytech/polkadot/releases/download/v1.0.0/polkadot
 jobs:
   print-rust-versions:
     if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')
@@ -92,7 +92,9 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose
+          mkdir -p target/production
+          curl -L -o target/production/manta https://github.com/Manta-Network/Manta/releases/download/v4.4.0/manta
+          chmod +x target/production/manta
       - name: stop sccache server
         run: sccache --stop-server || true
       - if: always()
@@ -184,7 +186,7 @@ jobs:
       - name: create launch config
         run: |
           source ${HOME}/.cargo/env
-          ls -ahl ${{ github.workspace }}/zombienet/tests
+          ls -ahl ${{ github.workspace }}
           cd ${{ github.workspace }}
           dasel put -t string -v $HOME/.local/bin/polkadot -r toml \
             -f ${{ github.workspace }}/zombienet/tests/0001-block-production.toml \
