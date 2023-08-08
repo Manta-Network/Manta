@@ -160,6 +160,7 @@ jobs:
           ls -ahl $HOME/.local/share/calamari-pc/
           echo "::set-output name=short-sha::${GITHUB_SHA:0:7}"
           manta export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
+      - uses: borales/actions-yarn@v3.0.0
       - uses: actions/checkout@v2
         with:
           repository: Manta-Network/Manta
