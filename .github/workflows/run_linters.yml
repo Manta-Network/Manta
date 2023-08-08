@@ -43,8 +43,6 @@ jobs:
             sccache-
       - name: start sccache server
         run: sccache --start-server
-      - name: cache cargo
-        uses: Swatinem/rust-cache@v2
       - name: init rust toolchain
         # NOTE: We use nightly Rust only to get nightly fmt & clippy
         # TODO: use nightly after https://github.com/clap-rs/clap/issues/4733 fixed.
@@ -58,6 +56,8 @@ jobs:
           rustup toolchain install nightly-2023-03-13
           rustup default nightly-2023-03-13
           cargo install taplo-cli
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: Check Formatting
         env:
           RUST_BACKTRACE: full

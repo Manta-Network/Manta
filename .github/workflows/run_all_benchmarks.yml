@@ -36,15 +36,6 @@ jobs:
           chmod +x $HOME/.local/bin/sccache
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-
       - name: cache sccache
         uses: actions/cache@v2
         continue-on-error: false
@@ -55,8 +46,6 @@ jobs:
             sccache-
       - name: start sccache server
         run: sccache --start-server
-      - name: cache cargo
-        uses: Swatinem/rust-cache@v2
       - name: init
         run: |
           sudo apt update
@@ -67,6 +56,8 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: init nodejs && yarn
         run: |
           curl -s https://deb.nodesource.com/setup_16.x | sudo bash
