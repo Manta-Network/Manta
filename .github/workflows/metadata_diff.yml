@@ -73,7 +73,7 @@ jobs:
         shell: bash
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo build --release
+          RUSTC_BOOTSTRAP=1 cargo build --release --timings
           cp target/release/manta $HOME/manta
           chmod +x $HOME/manta
       - name: Fetch and chmod old release binary

@@ -78,7 +78,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose
+          RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose --timings
       - name: stop sccache server
         run: sccache --stop-server || true
       - if: always()

@@ -65,7 +65,7 @@ jobs:
         run: |
           source ${HOME}/.cargo/env
           RUSTC_BOOTSTRAP=1 cargo build --release --features=try-runtime
-          chmod a+x target/release/manta
+          chmod a+x target/release/manta --timings
       - name: move bin
         run: |
           mkdir -p $HOME/.local/bin
