@@ -13,7 +13,7 @@ jobs:
   start-integration-test-checks:
     if: contains(github.event.pull_request.labels.*.name, 'A-integration-checks')
     timeout-minutes: 480
-    runs-on: runtime
+    runs-on: ubuntu-20.04
     container:
       image: ubuntu:20.04
     steps:
