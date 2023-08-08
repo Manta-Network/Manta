@@ -24,6 +24,9 @@ jobs:
     runs-on: ubuntu-20.04
     container:
       image: paritytech/ci-linux:production
+    strategy:
+      matrix:
+        node-version: [18.x]
     outputs:
       rustc-stable: ${{ steps.get-rust-versions.outputs.stable }}
       rustc-nightly: ${{ steps.get-rust-versions.outputs.nightly }}
@@ -124,7 +127,6 @@ jobs:
       - run: |
           mkdir -p $HOME/.local/share/calamari-pc
           mkdir -p $HOME/.local/bin
-          echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
       - name: fetch manta
         uses: actions/download-artifact@v2
@@ -220,7 +222,7 @@ jobs:
           pm2 start packages/cli/dist/cli.js --name zombienet \
             --output ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log \
             --error ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log \
-            -- spawn --provider native ${{ github.workspace }}/zombienet/tests/0001-block-production.toml
+            -- spawn --provider native ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
       - name: init measure-block-time rococo
         run: |
           cd ${{ github.workspace }}/dev-tools-rococo/measure-block-time
@@ -312,7 +314,7 @@ jobs:
         name: test - calamari alice peered successfully
         run: |
           cd ${{ github.workspace }}/zombienet-tool/javascript
-          node packages/cli/dist/cli.js -f -p native test ${{ github.workspace }}/zombienet/tests/0001-block-production.zndsl
+          node packages/cli/dist/cli.js -f -p native test ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
       - name: append manta-pay storage
         run: |
           wget -P ${{ github.workspace }}/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
@@ -331,7 +333,7 @@ jobs:
           pm2 start packages/cli/dist/cli.js --name zombienet \
             --output ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log \
             --error ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log \
-            -- spawn --provider native ${{ github.workspace }}/zombienet/tests/0001-block-production.toml
+            -- spawn --provider native ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
       - name: run stress test
         run: |
           sleep 720
@@ -356,7 +358,7 @@ jobs:
           pm2 start packages/cli/dist/cli.js --name zombienet \
             --output ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log \
             --error ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log \
-            -- spawn --provider native ${{ github.workspace }}/zombienet/tests/0001-block-production.toml
+            -- spawn --provider native ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
       - name: run farming test
         run: |
           sleep 120
