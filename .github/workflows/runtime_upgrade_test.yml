@@ -16,14 +16,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 env:
-  AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
-  AWS_REGION: us-east-1
-  AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
-  AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
-  AWS_INSTANCE_TYPE: c5.2xlarge
-  AWS_INSTANCE_ROOT_VOLUME_SIZE: 128
-  AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
+  DEBIAN_FRONTEND: noninteractive
   RUNTIME: ${{github.event.inputs.runtime}}
   RUNTIME_SPEC: ${{github.event.inputs.runtime}}-local
   POLKADOT_BINARY: ${{github.event.inputs.polkadot_url}}
@@ -39,7 +32,7 @@ jobs:
       - name: cache target dir
         uses: actions/cache@v2
         with:
-          path: "${{ github.workspace }}/runtime/${{ env.RUNTIME }}/target"
+          path: "$GITHUB_WORKSPACE/runtime/${{ env.RUNTIME }}/target"
           key: srtool-target-${{ env.RUNTIME }}-${{ github.sha }}
           restore-keys: |
             srtool-target-${{ env.RUNTIME }}
@@ -75,12 +68,12 @@ jobs:
           name: config-for-runtime-upgrade-test
           path: .github/resources/config-for-runtime-upgrade-test.json
   runtime-upgrade-test:
-    needs: [build-runtimes, start-runtime-upgrade-tester]
-    runs-on: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
+    needs: [build-runtimes]
+    runs-on: ubuntu-20.04
     timeout-minutes: 90
     steps:
       - run: |
-          ls -ahl ${{ github.workspace }}/
+          ls -ahl $GITHUB_WORKSPACE/
           mkdir -p $HOME/.local/share/${{ env.RUNTIME }}-pc
           mkdir -p $HOME/.local/bin
           echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
@@ -88,10 +81,10 @@ jobs:
       - name: fetch, mv and chmod manta-base
         run: |
           wget ${{ env.MANTA_BINARY }}
-          ls -ahl ${{ github.workspace }}/
-          mv ${{ github.workspace }}/manta $HOME/.local/bin/manta-base
+          ls -ahl $GITHUB_WORKSPACE/
+          mv $GITHUB_WORKSPACE/manta $HOME/.local/bin/manta-base
           chmod +x $HOME/.local/bin/manta-base
-          ls -ahl ${{ github.workspace }}/
+          ls -ahl $GITHUB_WORKSPACE/
           ls -ahl $HOME/.local/bin/
       - name: fetch and chmod polkadot
         run: |
@@ -147,13 +140,13 @@ jobs:
           path: dev-tools
       - name: launch testnet
         run: |
-          cd ${{ github.workspace }}/polkadot-launch
+          cd $GITHUB_WORKSPACE/polkadot-launch
           yarn install
           yarn build
           pm2 start dist/cli.js \
             --name polkadot-launch \
-            --output ${{ github.workspace }}/polkadot-launch-for-${{ env.RUNTIME_SPEC }}-stdout.log \
-            --error ${{ github.workspace }}/polkadot-launch-for-${{ env.RUNTIME_SPEC }}-stderr.log \
+            --output $GITHUB_WORKSPACE/polkadot-launch-for-${{ env.RUNTIME_SPEC }}-stdout.log \
+            --error $GITHUB_WORKSPACE/polkadot-launch-for-${{ env.RUNTIME_SPEC }}-stderr.log \
             --no-autorestart \
             -- $HOME/.local/share/${{ env.RUNTIME }}-pc/${{ env.RUNTIME_SPEC }}-base-launch-config.json
       - name: fetch new ${{ env.RUNTIME }}_runtime.compact.compressed.wasm
@@ -167,8 +160,8 @@ jobs:
       - name: run test suites
         run: |
           sleep 120
-          cp ${{ github.workspace }}/${{ env.RUNTIME }}_runtime.compact.compressed.wasm ${{ github.workspace }}/Manta/tests/calamari.wasm
-          cd ${{ github.workspace }}/Manta/tests
+          cp $GITHUB_WORKSPACE/${{ env.RUNTIME }}_runtime.compact.compressed.wasm $GITHUB_WORKSPACE/Manta/tests/calamari.wasm
+          cd $GITHUB_WORKSPACE/Manta/tests
           yarn install
           yarn
           yarn runtime_upgrade_test --address=ws://127.0.0.1:9921 --exit
@@ -176,42 +169,4 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ env.RUNTIME_SPEC }}-alice.log
-          path: ${{ github.workspace }}/polkadot-launch/9921.log
-  # HELPER JOBS BELOW
-  start-runtime-upgrade-tester:
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
-  stop-runtime-upgrade-tester:
-    if: ${{ always() }}
-    needs: [runtime-upgrade-test, start-runtime-upgrade-tester]
-    runs-on: ubuntu-20.04
-    steps:
-      - continue-on-error: true
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-runtime-upgrade-tester.outputs.aws-region }}
-          runner-label: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-runtime-upgrade-tester.outputs.aws-instance-id }}
-      - name: discard stopper success/failure
-        run: true
+          path: $GITHUB_WORKSPACE/polkadot-launch/9921.log

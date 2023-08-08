@@ -11,11 +11,7 @@ on:
         default: ""
         required: false
 env:
-  AWS_REGION: us-east-1
-  AWS_INSTANCE_TYPE: c6i.4xlarge
-  AWS_INSTANCE_ROOT_VOLUME_SIZE: 128
-  AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
+  DEBIAN_FRONTEND: noninteractive
   CHAIN_SPEC: ${{github.event.inputs.chain_spec}}
   SNAPSHOT_URL: ${{github.event.inputs.snapshot_url}}
   FULL_DB_FOLDER: full-db
@@ -23,7 +19,7 @@ jobs:
   run-benchmarks:
     timeout-minutes: 720
     needs: start-node-builder-current
-    runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - name: install sccache
@@ -57,6 +53,8 @@ jobs:
             sccache-
       - name: start sccache server
         run: sccache --start-server
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: init
         run: |
           sudo apt update
@@ -145,40 +143,3 @@ jobs:
         with:
           name: rocksdb-weights
           path: ./scripts/benchmarking/rocksdb_weights.rs
-  start-node-builder-current:
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
-  stop-node-builder-current:
-    needs: [run-benchmarks, start-node-builder-current]
-    runs-on: ubuntu-20.04
-    if: ${{ always() }}
-    steps:
-      - continue-on-error: true
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
-          runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
-      - name: discard stopper success/failure
-        run: true

@@ -42,6 +42,8 @@ jobs:
             sccache-
       - name: start sccache server
         run: sccache --start-server
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: init
         shell: bash
         run: |
@@ -54,8 +56,6 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
-      - name: cache cargo
-        uses: Swatinem/rust-cache@v2
       - name: Run Integration Tests
         shell: bash
         env:
@@ -106,6 +106,8 @@ jobs:
             sccache-
       - name: start sccache server
         run: sccache --start-server
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: rust setup
         shell: bash
         env:
@@ -124,8 +126,6 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
-      - name: cache cargo
-        uses: Swatinem/rust-cache@v2
       - name: build benchmarking binary
         run: |
           RUSTC_BOOTSTRAP=1 cargo build --release --features runtime-benchmarks
@@ -215,6 +215,8 @@ jobs:
             sccache-
       - name: start sccache server
         run: sccache --start-server
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: init
         shell: bash
         run: |
@@ -227,8 +229,6 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
-      - name: cache cargo
-        uses: Swatinem/rust-cache@v2
       - name: Run Unit Tests
         shell: bash
         env:
@@ -255,6 +255,8 @@ jobs:
       image: ubuntu:20.04
     steps:
       - uses: actions/checkout@v2
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: init
         shell: bash
         run: |
@@ -269,8 +271,6 @@ jobs:
           rustup target add wasm32-unknown-unknown
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: cache cargo
-        uses: Swatinem/rust-cache@v2
       - name: Run congestion test (allowed to fail)
         id: congestion_test
         shell: bash

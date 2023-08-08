@@ -9,14 +9,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 env:
-  AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
-  AWS_REGION: us-east-1
-  AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
-  AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
-  AWS_INSTANCE_TYPE: c5.2xlarge
-  AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
-  AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
+  DEBIAN_FRONTEND: noninteractive
   POLKADOT_BINARY: https://github.com/paritytech/polkadot/releases/download/v0.9.42/polkadot
 jobs:
   print-rust-versions:
@@ -37,12 +30,12 @@ jobs:
   build-node-current:
     timeout-minutes: 120
     if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')
-    needs: start-node-builder-current
-    runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
+    runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
@@ -55,15 +48,6 @@ jobs:
           chmod +x $HOME/.local/bin/sccache
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-
       - name: cache sccache
         uses: actions/cache@v2
         continue-on-error: false
@@ -74,10 +58,12 @@ jobs:
             sccache-
       - name: start sccache server
         run: sccache --start-server
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: init
         run: |
           sudo apt update
-          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler curl clang git
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
@@ -109,8 +95,8 @@ jobs:
           path: .github/resources/config-for-integration-test.json
   manta-integration-test:
     if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')
-    needs: [build-node-current, start-manta-integration-tester]
-    runs-on: ${{ needs.start-manta-integration-tester.outputs.runner-label }}
+    needs: [build-node-current]
+    runs-on: ubuntu-20.04
     timeout-minutes: 240
     strategy:
       fail-fast: false
@@ -424,7 +410,7 @@ jobs:
   docker-image-test:
     timeout-minutes: 120
     if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')
-    needs: [build-node-current, start-docker-image-tester]
+    needs: [build-node-current]
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -458,7 +444,6 @@ jobs:
           image_id=`cat docker_id.log`
           echo $image_id
           echo "Adjusting permissions so we can access docker logs..."
-          sudo chmod -R +x /var/lib/docker/
           sudo cat /var/lib/docker/containers/${image_id}/${image_id}-json.log
       - uses: actions/checkout@v2
         with:
@@ -471,124 +456,3 @@ jobs:
           yarn
           node index.js --para_address=ws://127.0.0.1:9944 --relay_address=ws://127.0.0.1:9945 --target_block=6
           if [ $? == 1 ]; then echo "Failed to finalize the target block - 6"; exit 1; fi
-  # HELPER JOBS BELOW
-  start-node-builder-current:
-    if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
-          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-size: 32
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
-  stop-node-builder-current:
-    if: ${{ always() }}
-    needs: [start-node-builder-current, build-node-current]
-    runs-on: ubuntu-20.04
-    steps:
-      - continue-on-error: true
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
-          runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
-      - name: discard stopper success/failure
-        run: true
-  start-manta-integration-tester:
-    if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
-          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-size: 64
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
-  stop-manta-integration-tester:
-    if: ${{ always() }}
-    needs: [start-manta-integration-tester, manta-integration-test]
-    runs-on: ubuntu-20.04
-    steps:
-      - continue-on-error: true
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-manta-integration-tester.outputs.aws-region }}
-          runner-label: ${{ needs.start-manta-integration-tester.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-manta-integration-tester.outputs.aws-instance-id }}
-      - name: discard stopper success/failure
-        run: true
-  start-docker-image-tester:
-    if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
-          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-size: 64
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
-  stop-docker-image-tester:
-    if: ${{ always() }}
-    needs: [start-docker-image-tester, docker-image-test]
-    runs-on: ubuntu-20.04
-    steps:
-      - continue-on-error: true
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-docker-image-tester.outputs.aws-region }}
-          runner-label: ${{ needs.start-docker-image-tester.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-docker-image-tester.outputs.aws-instance-id }}
-      - name: discard stopper success/failure
-        run: true
