@@ -88,10 +88,7 @@ jobs:
         run: |
           apt update
           apt install -y curl wget
-          npm install -g yarn
-          node --version
-          npm --version
-          yarn --version
+          npm install -g yarn && node --version && node --version && npm --version && yarn --version
           SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
           mkdir -p $HOME/.local/bin
           curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
