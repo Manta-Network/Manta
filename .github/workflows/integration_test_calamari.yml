@@ -186,15 +186,15 @@ jobs:
       - name: create launch config
         run: |
           source ${HOME}/.cargo/env
-          ls -ahl ${{ github.workspace }}
+          ls -ahl ${{ github.workspace }}/Manta
           cd ${{ github.workspace }}
           dasel put -t string -v $HOME/.local/bin/polkadot -r toml \
-            -f ${{ github.workspace }}/zombienet/tests/0001-block-production.toml \
+            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
             '.relaychain.default_command'
           dasel put -t string -v $HOME/.local/bin/manta -r toml \
-            -f ${{ github.workspace }}/zombienet/tests/0001-block-production.toml \
+            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].collators.[0].command'
-          cat ${{ github.workspace }}/zombienet/tests/0001-block-production.toml
+          cat ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
       - if: always()
         uses: actions/upload-artifact@v2
         with:
