@@ -72,7 +72,7 @@ jobs:
         run: sccache --stop-server || true
   start-benchmark-checks:
     timeout-minutes: 180
-    runs-on: ubuntu-20.04
+    runs-on: runtime
     if: contains(github.event.pull_request.labels.*.name, 'A-benchmark-checks')
     container:
       image: ubuntu:20.04
