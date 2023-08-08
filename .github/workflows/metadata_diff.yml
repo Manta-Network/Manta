@@ -20,7 +20,7 @@ env:
 jobs:
   start-checks:
     timeout-minutes: 120
-    runs-on: runtime
+    runs-on: ubuntu-20.04
     container:
       image: ubuntu:20.04
     strategy:

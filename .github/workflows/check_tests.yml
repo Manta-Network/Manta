@@ -250,7 +250,7 @@ jobs:
         runtime:
           - name: manta-runtime
           - name: calamari-runtime
-    runs-on: runtime
+    runs-on: ubuntu-20.04
     container:
       image: ubuntu:20.04
     steps:
