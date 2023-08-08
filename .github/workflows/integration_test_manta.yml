@@ -215,6 +215,8 @@ jobs:
         with:
           repository: Manta-Network/Dev-Tools
           path: dev-tools-manta
+      - name: Setup yarn
+        run: npm install -g yarn
       - name: launch testnet
         run: |
           cd ${{ github.workspace }}/zombienet-tool/javascript
