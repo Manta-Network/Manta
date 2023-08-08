@@ -11,7 +11,7 @@ env:
   DEBIAN_FRONTEND: noninteractive
 jobs:
   start-integration-test-checks:
-    if: contains(github.event.pull_request.labels.*.name, 'A-integration-checks')
+    if: contains(github.event.pull_request.labels.*.name, 'A-integration-test-checks')
     timeout-minutes: 480
     runs-on: ubuntu-20.04
     container:
