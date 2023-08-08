@@ -2,42 +2,42 @@
 timeout = 300
 
 [relaychain]
-default_command = "polkadot"
 chain = "rococo-local"
+default_command = "polkadot"
 
-    [[relaychain.nodes]]
-    name = "alice"
-    ws_port = 9944
-    validator = true
+[[relaychain.nodes]]
+name = "alice"
+validator = true
+ws_port = 9944
 
-    [[relaychain.nodes]]
-    name = "bob"
-    ws_port = 9945
-    validator = true
+[[relaychain.nodes]]
+name = "bob"
+validator = true
+ws_port = 9945
 
 [[parachains]]
-id = 2084
 chain = "calamari-local"
 cumulus_based = true
+id = 2084
 
-    [[parachains.collators]]
-    name = "Alice"
-    command = "manta"
-    ws_port = 9800
-    rcp_port = 9967
+[[parachains.collators]]
+command = "manta"
+name = "Alice"
+rcp_port = 9967
+ws_port = 9800
 
-    [[parachains.collators]]
-    name = "Bob"
-    command = "manta"
+[[parachains.collators]]
+command = "manta"
+name = "Bob"
 
-    [[parachains.collators]]
-    name = "Charlie"
-    command = "manta"
+[[parachains.collators]]
+command = "manta"
+name = "Charlie"
 
-    [[parachains.collators]]
-    name = "Dave"
-    command = "manta"
+[[parachains.collators]]
+command = "manta"
+name = "Dave"
 
-    [[parachains.collators]]
-    name = "Eve"
-    command = "manta"
+[[parachains.collators]]
+command = "manta"
+name = "Eve"
