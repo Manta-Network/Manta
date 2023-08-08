@@ -42,6 +42,9 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
     needs: start-node-builder-current
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
+    strategy:
+      matrix:
+        node-version: [18.x]
     env:
       CARGO_TERM_COLOR: always
     steps:
@@ -114,6 +117,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        node-version: [18.x]
         chain-spec:
           - id: calamari-local
             expected:

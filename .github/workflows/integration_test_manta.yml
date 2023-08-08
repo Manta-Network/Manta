@@ -114,6 +114,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        node-version: [18.x]
         chain-spec:
           - id: manta-local
             expected:
