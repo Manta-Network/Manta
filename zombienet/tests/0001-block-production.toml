@@ -13,7 +13,7 @@ ws_port = 9944
 [[relaychain.nodes]]
 name = "bob"
 validator = true
-ws_port = 9945
+ws_port = 9911
 
 [[parachains]]
 chain = "calamari-local"

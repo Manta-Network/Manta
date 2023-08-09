@@ -310,7 +310,7 @@ jobs:
         name: test - manta alice peered successfully
         run: |
           cd ${{ github.workspace }}/zombienet-tool/javascript
-          sed -i 's/2084/2104/g' ${{ github.workspace }}/zombienet/tests/0001-block-production.zndsl
+          sed -i 's/2084/2104/g' ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
           node packages/cli/dist/cli.js -f -p native test ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
       - name: append manta-pay storage
         run: |
