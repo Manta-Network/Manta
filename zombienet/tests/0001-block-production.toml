@@ -24,7 +24,7 @@ id = 2084
 command = "manta"
 name = "Alice"
 rcp_port = 9967
-ws_port = 9800
+ws_port = 9921
 
 [[parachains.collators]]
 command = "manta"

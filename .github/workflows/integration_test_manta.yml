@@ -24,9 +24,6 @@ jobs:
     runs-on: ubuntu-20.04
     container:
       image: paritytech/ci-linux:production
-    strategy:
-      matrix:
-        node-version: [18.x]
     outputs:
       rustc-stable: ${{ steps.get-rust-versions.outputs.stable }}
       rustc-nightly: ${{ steps.get-rust-versions.outputs.nightly }}
@@ -114,7 +111,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18.x]
         chain-spec:
           - id: manta-local
             expected:
@@ -125,6 +121,10 @@ jobs:
                 relay: 7
                 para: 4
     steps:
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
       - run: |
           mkdir -p $HOME/.local/share/calamari-pc
           mkdir -p $HOME/.local/bin
@@ -218,6 +218,8 @@ jobs:
           path: dev-tools-manta
       - name: Setup yarn
         run: npm install -g yarn
+      - name: Install pm2
+        run: npm install -g pm2
       - name: launch testnet
         run: |
           cd ${{ github.workspace }}/zombienet-tool/javascript
