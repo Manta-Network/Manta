@@ -218,6 +218,8 @@ jobs:
           path: dev-tools-calamari
       - name: Setup yarn
         run: npm install -g yarn
+      - name: Install pm2
+        run: npm install -g pm2
       - name: launch testnet
         run: |
           cd ${{ github.workspace }}/zombienet-tool/javascript
