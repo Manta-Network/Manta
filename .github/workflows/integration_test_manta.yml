@@ -198,6 +198,18 @@ jobs:
           dasel put -t string -v $HOME/.local/bin/manta -r toml \
             -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].collators.[0].command'
+          dasel put -t string -v $HOME/.local/bin/manta -r toml \
+            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            '.parachains.[0].collators.[1].command'
+          dasel put -t string -v $HOME/.local/bin/manta -r toml \
+            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            '.parachains.[0].collators.[2].command'
+          dasel put -t string -v $HOME/.local/bin/manta -r toml \
+            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            '.parachains.[0].collators.[3].command'
+          dasel put -t string -v $HOME/.local/bin/manta -r toml \
+            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            '.parachains.[0].collators.[4].command'
           dasel put -t string -v "manta-local" -r toml \
             -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].chain'
@@ -325,6 +337,12 @@ jobs:
           node append_storage.js
           cd ../../
           mv ${{ github.workspace }}/Manta/tests/data/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
+          dasel put -t string -v $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json -r toml \
+            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            '.parachains.[0].chain_spec_path'
+          dasel delete -r toml \
+            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            '.parachains.[0].chain'
       - name: launch testnet
         run: |
           cd ${{ github.workspace }}/zombienet-tool/javascript
