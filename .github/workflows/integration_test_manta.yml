@@ -198,6 +198,9 @@ jobs:
           dasel put -t string -v $HOME/.local/bin/manta -r toml \
             -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].collators.[0].command'
+          dasel put -t string -v "manta-local" -r toml \
+            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            '.parachains.[0].chain'
           cat ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
       - if: always()
         uses: actions/upload-artifact@v2
