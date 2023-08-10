@@ -408,7 +408,7 @@ jobs:
           pm2 start packages/cli/dist/cli.js --name zombienet \
             --output ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log \
             --error ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log \
-            -- spawn --provider native ${{ github.workspace }}/zombienet/tests/0001-block-production.toml
+            -- spawn --provider native ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
       - name: run farming test
         run: |
           sleep 720
