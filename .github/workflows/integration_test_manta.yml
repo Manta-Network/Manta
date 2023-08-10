@@ -347,6 +347,8 @@ jobs:
           dasel delete -r toml \
             -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].chain'
+          cat ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
+          head -20 $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
       - name: launch testnet
         run: |
           cd ${{ github.workspace }}/zombienet-tool/javascript
