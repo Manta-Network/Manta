@@ -288,7 +288,6 @@ jobs:
           yarn
           node index.js --para_address=ws://127.0.0.1:9921 --relay_address=ws://127.0.0.1:9911 --target_block=${{ matrix.chain-spec.expected.block-count.para }}
           if [ $? == 1 ]; then echo "Failed to finalize the target block - ${{ matrix.chain-spec.expected.block-count.para }}"; exit 1; fi
-          - if: always()
       - name: test - manta alice peered successfully
         run: |
           cat ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
