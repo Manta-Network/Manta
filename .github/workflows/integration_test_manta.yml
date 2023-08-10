@@ -288,6 +288,14 @@ jobs:
           yarn
           node index.js --para_address=ws://127.0.0.1:9921 --relay_address=ws://127.0.0.1:9911 --target_block=${{ matrix.chain-spec.expected.block-count.para }}
           if [ $? == 1 ]; then echo "Failed to finalize the target block - ${{ matrix.chain-spec.expected.block-count.para }}"; exit 1; fi
+          - if: always()
+      - name: test - manta alice peered successfully
+        run: |
+          cat ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
+          cat ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
+          cd ${{ github.workspace }}/zombienet-tool/javascript
+          sed -i 's/2084/2104/g' ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
+          node packages/cli/dist/cli.js -f -p native test ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
       - name: stop testnet
         run: |
           cd ${{ github.workspace }}/zombienet-tool
@@ -324,12 +332,6 @@ jobs:
         with:
           name: measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
           path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
-      - if: always()
-        name: test - manta alice peered successfully
-        run: |
-          cd ${{ github.workspace }}/zombienet-tool/javascript
-          sed -i 's/2084/2104/g' ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
-          node packages/cli/dist/cli.js -f -p native test ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
       - name: append manta-pay storage
         run: |
           source ${HOME}/.cargo/env
