@@ -290,10 +290,34 @@ jobs:
           if [ $? == 1 ]; then echo "Failed to finalize the target block - ${{ matrix.chain-spec.expected.block-count.para }}"; exit 1; fi
       - name: test - manta alice peered successfully
         run: |
-          cat ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
-          cat ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
           cd ${{ github.workspace }}/zombienet-tool/javascript
           sed -i 's/2084/2104/g' ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
+          dasel put -t string -v $HOME/.local/bin/polkadot -r toml \
+            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            '.relaychain.default_command'
+          dasel put -t string -v $HOME/.local/bin/manta -r toml \
+            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            '.parachains.[0].collators.[0].command'
+          dasel put -t string -v $HOME/.local/bin/manta -r toml \
+            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            '.parachains.[0].collators.[1].command'
+          dasel put -t string -v $HOME/.local/bin/manta -r toml \
+            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            '.parachains.[0].collators.[2].command'
+          dasel put -t string -v $HOME/.local/bin/manta -r toml \
+            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            '.parachains.[0].collators.[3].command'
+          dasel put -t string -v $HOME/.local/bin/manta -r toml \
+            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            '.parachains.[0].collators.[4].command'
+          dasel put -t string -v "manta-local" -r toml \
+            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            '.parachains.[0].chain'
+          dasel put -t int -v 2104 -r toml \
+            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            '.parachains.[0].id'
+          cat ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
+          cat ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
           node packages/cli/dist/cli.js -f -p native test ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
       - name: stop testnet
         run: |
