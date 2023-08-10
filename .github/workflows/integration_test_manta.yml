@@ -290,6 +290,7 @@ jobs:
           if [ $? == 1 ]; then echo "Failed to finalize the target block - ${{ matrix.chain-spec.expected.block-count.para }}"; exit 1; fi
       - name: test - manta alice peered successfully
         run: |
+          source ${HOME}/.cargo/env
           cd ${{ github.workspace }}/zombienet-tool/javascript
           sed -i 's/2084/2104/g' ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
           dasel put -t string -v $HOME/.local/bin/polkadot -r toml \
