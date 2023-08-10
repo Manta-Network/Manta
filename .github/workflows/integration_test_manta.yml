@@ -288,6 +288,12 @@ jobs:
           yarn
           node index.js --para_address=ws://127.0.0.1:9921 --relay_address=ws://127.0.0.1:9911 --target_block=${{ matrix.chain-spec.expected.block-count.para }}
           if [ $? == 1 ]; then echo "Failed to finalize the target block - ${{ matrix.chain-spec.expected.block-count.para }}"; exit 1; fi
+      - name: stop testnet
+        run: |
+          cd ${{ github.workspace }}/zombienet-tool
+          pm2 stop measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}
+          pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
+          pm2 stop zombienet
       - name: test - manta alice peered successfully
         run: |
           source ${HOME}/.cargo/env
@@ -320,12 +326,6 @@ jobs:
           cat ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
           cat ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
           node packages/cli/dist/cli.js -f -p native test ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
-      - name: stop testnet
-        run: |
-          cd ${{ github.workspace }}/zombienet-tool
-          pm2 stop measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}
-          pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
-          pm2 stop zombienet
       - if: always()
         uses: actions/upload-artifact@v2
         with:
