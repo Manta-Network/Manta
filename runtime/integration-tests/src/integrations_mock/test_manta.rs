@@ -108,6 +108,20 @@ fn verify_pallet_prefixes() {
         vec![
             StorageInfo {
                 pallet_name: b"Balances".to_vec(),
+                storage_name: b"XcmNativeTransfers".to_vec(),
+                prefix: prefix(b"Balances", b"XcmNativeTransfers"),
+                max_values: None,
+                max_size: Some(72),
+            },
+            StorageInfo {
+                pallet_name: b"Balances".to_vec(),
+                storage_name: b"DailyXcmLimit".to_vec(),
+                prefix: prefix(b"Balances", b"DailyXcmLimit"),
+                max_values: Some(1),
+                max_size: Some(16),
+            },
+            StorageInfo {
+                pallet_name: b"Balances".to_vec(),
                 storage_name: b"TotalIssuance".to_vec(),
                 prefix: prefix(b"Balances", b"TotalIssuance"),
                 max_values: Some(1),

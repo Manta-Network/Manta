@@ -447,6 +447,7 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = NativeTokenExistentialDeposit;
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
+    type UnixTime = Timestamp;
 }
 
 parameter_types! {
@@ -1005,7 +1006,7 @@ extern crate frame_benchmarking;
 mod benches {
     frame_benchmarking::define_benchmarks!(
         // Substrate pallets
-        [pallet_balances, Balances]
+        // [pallet_balances, Balances]
         [pallet_democracy, Democracy]
         [pallet_collective, Council]
         [pallet_membership, CouncilMembership]

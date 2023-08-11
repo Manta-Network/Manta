@@ -90,6 +90,7 @@ impl pallet_balances::Config for Test {
     type MaxLocks = ();
     type MaxReserves = ConstU32<50>;
     type ReserveIdentifier = [u8; 8];
+    type UnixTime = Timestamp;
 }
 
 pub struct Author4;

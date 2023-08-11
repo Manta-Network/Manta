@@ -87,6 +87,12 @@ impl frame_system::Config for Test {
     type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
+pub struct MockUnixTime;
+impl frame_support::traits::UnixTime for MockUnixTime {
+    fn now() -> core::time::Duration {
+        core::time::Duration::default()
+    }
+}
 parameter_types! {
     pub const ExistentialDeposit: u128 = 1;
 }
@@ -100,6 +106,7 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    type UnixTime = MockUnixTime;
 }
 impl block_author::Config for Test {}
 parameter_types! {

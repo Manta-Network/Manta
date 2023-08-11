@@ -115,6 +115,13 @@ parameter_types! {
     pub const MaxReserves: u32 = 50;
 }
 
+pub struct MockUnixTime;
+impl frame_support::traits::UnixTime for MockUnixTime {
+    fn now() -> core::time::Duration {
+        core::time::Duration::default()
+    }
+}
+
 impl pallet_balances::Config for Runtime {
     type MaxLocks = MaxLocks;
     type Balance = Balance;
@@ -125,6 +132,7 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
+    type UnixTime = MockUnixTime;
 }
 
 pub struct MantaAssetRegistry;

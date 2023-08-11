@@ -107,6 +107,13 @@ impl frame_system::Config for Runtime {
     type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
+pub struct MockUnixTime;
+impl frame_support::traits::UnixTime for MockUnixTime {
+    fn now() -> core::time::Duration {
+        core::time::Duration::default()
+    }
+}
+
 parameter_types! {
     pub const ExistentialDeposit: Balance = 1;
 }
@@ -120,6 +127,7 @@ impl pallet_balances::Config for Runtime {
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
     type WeightInfo = ();
+    type UnixTime = MockUnixTime;
 }
 
 parameter_types! {
