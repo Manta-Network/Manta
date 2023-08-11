@@ -30,7 +30,7 @@ scale-info = { version = "2.1.2", features = ["derive"] }
 # Substrate dependencies
 frame-system = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
 pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
-pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
+pallet-balances = { path = "../../pallets/balances" }
 pallet-utility = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
 sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
 sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }

@@ -33,7 +33,7 @@ sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features
 [dev-dependencies]
 manta-primitives = { path = "../../primitives/manta" }
 pallet-aura = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
-pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
+pallet-balances = { path = "../balances" }
 pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
 sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
 sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }

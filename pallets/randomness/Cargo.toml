@@ -27,7 +27,7 @@ sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkad
 
 [dev-dependencies]
 derive_more = "0.99"
-pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", features = ["std"] }
+pallet-balances = { path = "../balances", features = ["std"]}
 
 [features]
 default = ["std"]
