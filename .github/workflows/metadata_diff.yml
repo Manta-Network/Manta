@@ -102,38 +102,50 @@ jobs:
           chmod +x $HOME/manta
       - name: Fetch and chmod old release binary
         run: |
-          curl -L -o $HOME/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.42/polkadot
+          curl -L -o $HOME/polkadot https://github.com/paritytech/polkadot/releases/download/v1.0.0/polkadot
           chmod +x $HOME/polkadot
           ls -ahl $HOME/
       - name: stop sccache server
         run: sccache --stop-server || true
       - name: Install pm2
         run: npm install -g pm2
+      - name: Install dasel cli
+        run: |
+          curl -sSLf "$(curl -sSLf https://api.github.com/repos/tomwright/dasel/releases/latest | grep browser_download_url | grep linux_amd64 | grep -v .gz | cut -d\" -f 4)" -L -o dasel && chmod +x dasel
+          mv ./dasel $HOME/.cargo/bin/dasel
+          dasel --version
       - uses: actions/checkout@v2
         with:
-          repository: paritytech/polkadot-launch
-          path: polkadot-launch
+          repository: paritytech/zombienet
+          path: zombienet-tool
       - name: create launch config
         run: |
-          cd ${{ github.workspace }}/polkadot-launch
-          cat ${{ github.workspace }}/.github/resources/config-for-integration-test.json | \
-            jq \
-              --arg relaychain_bin $HOME/polkadot \
-              --arg parachains_bin $HOME/manta \
-              --arg parachains_spec $CHAIN \
-              '.relaychain.bin = $relaychain_bin
-              | .parachains[0].bin = $parachains_bin
-              | .parachains[].chain = $parachains_spec
-              ' > ${{ github.workspace }}/.github/resources/diff-metadata.json
+          ls -ahl ${{ github.workspace }}/zombienet/tests
+          cd ${{ github.workspace }}
+          dasel put -t string -v $HOME/polkadot -r toml \
+            -f ${{ github.workspace }}/zombienet/tests/0003-metadata-diff.toml \
+            '.relaychain.default_command'
+          dasel put -t string -v $HOME/manta -r toml \
+            -f ${{ github.workspace }}/zombienet/tests/0003-metadata-diff.toml \
+            '.parachains.[0].collators.[0].command'
+          if [[ "$CHAIN" == *"manta"* ]]; then
+            dasel put -t int -v 2104 -r toml \
+              -f ${{ github.workspace }}/zombienet/tests/0003-metadata-diff.toml \
+              '.parachains.[0].id'
+            dasel put -t string -v $CHAIN -r toml \
+              -f ${{ github.workspace }}/zombienet/tests/0003-metadata-diff.toml \
+              '.parachains.[0].chain'
+          fi;
+          cat ${{ github.workspace }}/zombienet/tests/0003-metadata-diff.toml
       - name: launch testnet
         run: |
-          cd ${{ github.workspace }}/polkadot-launch
-          yarn install
-          yarn build
-          pm2 start dist/cli.js --name polkadot-launch \
+          cd ${{ github.workspace }}/zombienet-tool/javascript
+          yarn
+          npm run build
+          pm2 start packages/cli/dist/cli.js --name zombienet \
             --output ${{ github.workspace }}/stdout.log \
             --error ${{ github.workspace }}/stderr.log \
-            -- ${{ github.workspace }}/.github/resources/diff-metadata.json
+            -- spawn --provider native ${{ github.workspace }}/zombienet/tests/0003-metadata-diff.toml
       - name: Prepare output
         run: |
           VERSION=$($HOME/manta --version)
