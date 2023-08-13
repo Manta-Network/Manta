@@ -3605,3 +3605,50 @@ fn send_disabled_asset_should_fail() {
         ),)
     });
 }
+
+#[test]
+fn transfer_reserve_asset_instruction_from_parachains_is_blocked() {
+    MockNet::reset();
+
+    ParaA::execute_with(|| {
+        let dummy_asset = MultiAsset {
+            id: Concrete(MultiLocation {
+                parents: 1,
+                interior: X1(Parachain(PARA_B_ID)),
+            }),
+            fun: Fungible(1000000000),
+        };
+        let dummy_assets = MultiAssets::from(vec![dummy_asset.clone()]);
+        // Send withdraw and deposit
+        assert_ok!(ParachainPalletXcm::send_xcm(
+            Here,
+            (Parent, Parachain(PARA_B_ID)),
+            Xcm(vec![
+                WithdrawAsset(dummy_assets),
+                BuyExecution {
+                    fees: dummy_asset.clone(),
+                    weight_limit: Unlimited,
+                },
+                TransferReserveAsset {
+                    assets: dummy_asset.into(),
+                    dest: Here.into(),
+                    xcm: Xcm(vec![]),
+                }
+            ]),
+        ));
+    });
+
+    ParaB::execute_with(|| {
+        use parachain::{RuntimeEvent, System};
+
+        // AllowTopLevelPaidExecutionFrom<Everything> should fail because TransferReserverAsset instruction is not allowed
+        assert!(System::events().iter().any(|r| matches!(
+            r.event,
+            RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail {
+                message_hash: _,
+                error: XcmError::Barrier,
+                weight: _
+            })
+        )));
+    });
+}

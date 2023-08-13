@@ -24,7 +24,7 @@ use frame_support::{
     assert_ok, construct_runtime, match_types,
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU32, Contains, Currency, Everything, Nothing},
+    traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, Everything, Nothing},
     weights::Weight,
     PalletId,
 };
@@ -45,8 +45,9 @@ use manta_primitives::{
     constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL, WEIGHT_PER_SECOND},
     types::{BlockNumber, CalamariAssetId, Header},
     xcm::{
-        AllowTopLevelPaidExecutionDescendOriginFirst, FirstAssetTrader, IsNativeConcrete,
-        MultiAssetAdapter, MultiNativeAsset,
+        AccountIdToMultiLocation, AllowTopLevelPaidExecutionDescendOriginFirst,
+        AllowTopLevelPaidExecutionFrom, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,
+        MultiNativeAsset, XcmFeesToAccount,
     },
 };
 use pallet_xcm::XcmPassthrough;
@@ -57,11 +58,10 @@ use polkadot_parachain::primitives::{
 use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, VersionedXcm};
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    EnsureXcmOrigin, FixedRateOfFungible, LocationInverter, ParentIsPreset,
-    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SignedToAccountId32, SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit,
-    WeightInfoBounds,
+    AllowUnpaidExecutionFrom, ConvertedConcreteAssetId, EnsureXcmOrigin, FixedRateOfFungible,
+    LocationInverter, ParentIsPreset, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeRevenue,
+    TakeWeightCredit, WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
@@ -288,7 +288,7 @@ impl TakeRevenue for XcmNativeFeeToTreasury {
 }
 
 /// Xcm fee of non native token
-pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
+pub type CalamariXcmFeesToAccount = XcmFeesToAccount<
     AccountId,
     Assets,
     ConvertedConcreteAssetId<
@@ -321,7 +321,7 @@ impl Config for XcmExecutorConfig {
     // i.e. units_per_second in `AssetManager`
     type Trader = (
         FixedRateOfFungible<ParaTokenPerSecond, XcmNativeFeeToTreasury>,
-        FirstAssetTrader<AssetManager, XcmFeesToAccount>,
+        FirstAssetTrader<AssetManager, CalamariXcmFeesToAccount>,
     );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
@@ -621,10 +621,8 @@ impl BalanceType for ParachainAssetConfig {
 impl AssetConfig<Runtime> for ParachainAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type NativeAssetId = NativeAssetId;
-    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
-    type StorageMetadata = AssetStorageMetadata;
     type AssetRegistry = CalamariAssetRegistry;
     type FungibleLedger = NativeAndNonNative<Runtime, ParachainAssetConfig, Balances, Assets>;
 }
@@ -632,13 +630,16 @@ impl AssetConfig<Runtime> for ParachainAssetConfig {
 impl pallet_asset_manager::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = CalamariAssetId;
-    type Balance = Balance;
     type Location = AssetLocation;
     type AssetConfig = ParachainAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId>;
     type SuspenderOrigin = EnsureRoot<AccountId>;
     type PalletId = AssetManagerPalletId;
     type WeightInfo = ();
+    type PermissionlessStartId = ConstU128<1_000_000_000>;
+    type TokenNameMaxLen = ConstU32<100>;
+    type TokenSymbolMaxLen = ConstU32<100>;
+    type PermissionlessAssetRegistryCost = ConstU128<1000>;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
@@ -687,7 +688,7 @@ impl orml_xtokens::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type CurrencyId = CurrencyId;
-    type AccountIdToMultiLocation = manta_primitives::xcm::AccountIdToMultiLocation;
+    type AccountIdToMultiLocation = AccountIdToMultiLocation;
     type CurrencyIdConvert = CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetManager>>;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type SelfLocation = SelfReserve;

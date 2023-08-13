@@ -1,0 +1,31 @@
+[settings]
+timeout = 300
+
+[relaychain]
+chain = "rococo-local"
+default_command = "polkadot"
+
+[[relaychain.nodes]]
+name = "alice"
+validator = true
+ws_port = 9944
+
+[[relaychain.nodes]]
+name = "bob"
+validator = true
+ws_port = 9911
+
+[[parachains]]
+chain = "calamari-dev"
+cumulus_based = true
+id = 2084
+
+[[parachains.collators]]
+command = "manta"
+name = "Alice"
+rcp_port = 9967
+ws_port = 9921
+
+[[parachains.collators]]
+command = "manta"
+name = "Bob"

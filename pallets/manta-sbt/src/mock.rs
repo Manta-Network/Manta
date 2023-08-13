@@ -267,24 +267,25 @@ impl BalanceType for MantaAssetConfig {
 }
 impl AssetConfig<Test> for MantaAssetConfig {
     type NativeAssetId = NativeAssetId;
-    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
     type AssetRegistry = MantaAssetRegistry;
-    type StorageMetadata = AssetStorageMetadata;
     type FungibleLedger = NativeAndNonNative<Test, MantaAssetConfig, Balances, Assets>;
 }
 
 impl pallet_asset_manager::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = StandardAssetId;
-    type Balance = Balance;
     type Location = AssetLocation;
     type AssetConfig = MantaAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId32>;
     type SuspenderOrigin = EnsureRoot<AccountId32>;
     type PalletId = AssetManagerPalletId;
+    type PermissionlessStartId = ConstU128<100>;
+    type TokenNameMaxLen = ConstU32<100>;
+    type TokenSymbolMaxLen = ConstU32<100>;
+    type PermissionlessAssetRegistryCost = ConstU128<1000>;
     type WeightInfo = ();
 }
 
