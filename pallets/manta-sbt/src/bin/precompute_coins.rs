@@ -35,9 +35,9 @@ use std::{
     fs::{self, File, OpenOptions},
     io::Write,
     path::PathBuf,
+    sync::Arc,
     thread,
 };
-use std::sync::Arc;
 /// UTXO Accumulator for Building Circuits
 type UtxoAccumulator =
     TreeArrayMerkleForest<MerkleTreeConfiguration, Full<MerkleTreeConfiguration>, 256>;
@@ -105,7 +105,6 @@ fn main() -> Result<()> {
     let (proving_context, _, parameters, utxo_accumulator_model) =
         load_parameters(directory.path()).expect("Unable to load parameters.");
 
-    
     let step = 20;
     let mut threads = vec![];
     for i in 0..4 {
@@ -128,12 +127,15 @@ fn main() -> Result<()> {
                     &mut *Arc::make_mut(&mut utxo_accumulator),
                     asset_id,
                     1,
-                    &mut *Arc::make_mut(&mut r)
+                    &mut *Arc::make_mut(&mut r),
                 );
                 mints.push(to_private.clone());
                 println!("to_private size: {:?}", to_private.encode().len());
             }
-            let path = format!("/home/jamie/my-repo/Manta/pallets/manta-sbt/precomputed_mints-{}-to_{}", start, end);
+            let path = format!(
+                "/home/jamie/my-repo/Manta/pallets/manta-sbt/precomputed_mints-{}-to_{}",
+                start, end
+            );
             let mut file = File::create(path).unwrap();
             file.write_all(&<[TransferPost]>::encode(&mints)).unwrap();
         });

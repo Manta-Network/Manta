@@ -15,8 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    benchmark::precomputed_coins::TO_PRIVATE, AccountId, Box, Call, Config, EvmAddress, Pallet,
-    Pallet as MantaSBTPallet, TransferPost,
+    AccountId, Box, Call, Config, EvmAddress, Pallet, Pallet as MantaSBTPallet, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, vec, whitelisted_caller};
 use frame_support::traits::{Currency, Get};
@@ -28,10 +27,12 @@ use sp_io::hashing::keccak_256;
 const MINTS_OFFSET: usize = 4;
 const MINT_SIZE: usize = 553;
 
-mod precomputed_coins;
-
 fn alice() -> libsecp256k1::SecretKey {
     libsecp256k1::SecretKey::parse(&keccak_256(b"Alice")).unwrap()
+}
+
+fn read_mint_coins() -> &'static [u8; 22120004] {
+    core::include_bytes!("../../../../tests/data/mantaSbt_mints")
 }
 
 benchmarks! {
@@ -41,7 +42,11 @@ benchmarks! {
         let factor = 1_000u32;
         <T as crate::Config>::Currency::make_free_balance_be(&caller, T::ReservePrice::get() * factor.into());
         Pallet::<T>::reserve_sbt(RawOrigin::Signed(caller.clone()).into(), None)?;
-        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
+
+        let mint_coins = read_mint_coins();
+        let mints_start = MINTS_OFFSET;
+        let to_private_coin = &mint_coins[mints_start..mints_start + MINT_SIZE];
+        let mint_post = TransferPost::decode(&mut &*to_private_coin).unwrap();
         MantaSBTPallet::<T>::new_mint_info(
             RawOrigin::Root.into(),
             0_u32.into(),
@@ -142,7 +147,10 @@ benchmarks! {
             bab_id,
             bab_alice,
         )?;
-        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
+        let mint_coins = read_mint_coins();
+        let mints_start = MINTS_OFFSET;
+        let to_private_coin = &mint_coins[mints_start..mints_start + MINT_SIZE];
+        let mint_post = TransferPost::decode(&mut &*to_private_coin).unwrap();
 
         let signature = MantaSBTPallet::<T>::eth_sign(&alice(), &mint_post.proof, 0);
     }: mint_sbt_eth(
@@ -197,7 +205,7 @@ benchmarks! {
 
     force_to_private {
         let caller: T::AccountId = whitelisted_caller();
-        let mint_coins = core::include_bytes!("../../../../tests/data/mantaSbt_mints");
+        let mint_coins = read_mint_coins();
         let mints_start = MINTS_OFFSET;
         let to_private_coin = &mint_coins[mints_start..mints_start + MINT_SIZE];
         MantaSBTPallet::<T>::change_force_account(
@@ -221,7 +229,11 @@ benchmarks! {
             Some(caller.clone())
         )?;
         MantaSBTPallet::<T>::set_next_sbt_id(RawOrigin::Root.into(), Some(100))?;
-        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
+
+        let mint_coins = read_mint_coins();
+        let mints_start = MINTS_OFFSET;
+        let to_private_coin = &mint_coins[mints_start..mints_start + MINT_SIZE];
+        let mint_post = TransferPost::decode(&mut &*to_private_coin).unwrap();
     }: force_mint_sbt_eth(
         RawOrigin::Signed(caller.clone()),
         Box::new(mint_post),
