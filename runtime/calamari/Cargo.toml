@@ -105,6 +105,7 @@ pallet-randomness = { path = '../../pallets/randomness', default-features = fals
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
+pallet-native-barrier = { path = '../../pallets/native-barrier', default-features = false }
 
 # Third party (vendored) dependencies
 orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.37" }
@@ -288,6 +289,7 @@ std = [
   'xcm/std',
   'xcm-builder/std',
   'xcm-executor/std',
+  'pallet-native-barrier/std',
   'polkadot-primitives/std',
   'manta-collator-selection/std',
   'calamari-vesting/std',

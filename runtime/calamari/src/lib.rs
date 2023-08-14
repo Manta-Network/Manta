@@ -459,6 +459,14 @@ impl pallet_balances::Config for Runtime {
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
     type UnixTime = Timestamp;
+    type NativeBarrierType = NativeBarrier;
+}
+
+impl pallet_native_barrier::Config for Runtime {
+    type Balance = Balance;
+    type RuntimeEvent = RuntimeEvent;
+    type UnixTime = Timestamp;
+    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -968,6 +976,7 @@ construct_runtime!(
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
         XTokens: orml_xtokens::{Pallet, Call, Event<T>, Storage} = 34,
+        NativeBarrier: pallet_native_barrier::{Pallet, Call, Event<T>, Storage} = 35,
 
         // Handy utilities.
         Utility: pallet_utility::{Pallet, Call, Event} = 40,

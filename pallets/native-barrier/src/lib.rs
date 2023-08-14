@@ -180,7 +180,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
 
     #[pallet::config]
-    pub trait Config<I: 'static = ()>: frame_system::Config {
+    pub trait Config: frame_system::Config {
         /// The balance of an account.
         type Balance: Parameter
             + Member
@@ -195,8 +195,7 @@ pub mod pallet {
             + FixedPointOperand;
 
         /// The overarching event type.
-        type RuntimeEvent: From<Event<Self, I>>
-            + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -212,10 +211,10 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::storage_version(STORAGE_VERSION)]
-    pub struct Pallet<T, I = ()>(PhantomData<(T, I)>);
+    pub struct Pallet<T>(PhantomData<(T)>);
 
     #[pallet::call]
-    impl<T: Config<I>, I: 'static> Pallet<T, I> {
+    impl<T: Config> Pallet<T> {
         /// Transfer the entire transferable balance from the caller account.
         ///
         /// NOTE: This function only attempts to transfer _transferable_ balances. This means that
@@ -241,20 +240,20 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
             // todo: check if account exists ?
-            <XcmBarrierList<T, I>>::insert(account, ());
+            <XcmBarrierList<T>>::insert(account, ());
             Ok(())
         }
     }
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
-    pub enum Event<T: Config<I>, I: 'static = ()> {
+    pub enum Event<T: Config> {
         /// An account was created with some free balance.
         Endowed,
     }
 
     #[pallet::error]
-    pub enum Error<T, I = ()> {
+    pub enum Error<T> {
         ///
         XcmTransfersLimitExceeded,
         ///
@@ -262,25 +261,31 @@ pub mod pallet {
     }
     /// Stores amount of native asset XCM transfers and timestamp of last transfer
     #[pallet::storage]
-    pub type XcmNativeTransfers<T: Config<I>, I: 'static = ()> =
+    pub type XcmNativeTransfers<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, (T::Balance, u64), OptionQuery>;
 
     /// Stores limit value
     #[pallet::storage]
-    pub type DailyXcmLimit<T: Config<I>, I: 'static = ()> =
-        StorageValue<_, T::Balance, OptionQuery>;
+    pub type DailyXcmLimit<T: Config> = StorageValue<_, T::Balance, OptionQuery>;
 
     #[pallet::storage]
-    pub type XcmBarrierList<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Identity, T::AccountId, (), OptionQuery>;
+    pub type XcmBarrierList<T: Config> = StorageMap<_, Identity, T::AccountId, (), OptionQuery>;
+
+    #[pallet::storage]
+    pub type RemainingXcmLimit<T: Config> =
+        StorageMap<_, Identity, T::AccountId, T::Balance, OptionQuery>;
+
+    /// Stores limit value
+    #[pallet::storage]
+    pub type LastDayProcessed<T: Config> = StorageValue<_, u64, OptionQuery>;
 
     #[pallet::genesis_config]
-    pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
+    pub struct GenesisConfig<T: Config> {
         pub balances: Vec<(T::AccountId, T::Balance)>,
     }
 
     #[cfg(feature = "std")]
-    impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
+    impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
                 balances: Default::default(),
@@ -289,25 +294,45 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
+    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {}
+    }
+
+    pub const STARTING_UNIX_TIME: u64 = 0;
+    #[pallet::hooks]
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+        fn on_initialize(_n: T::BlockNumber) -> Weight {
+            let now = T::UnixTime::now().as_secs();
+            let days_since_start = (now - STARTING_UNIX_TIME) / (24 * 60 * 60);
+
+            // You might store the last day processed in storage to avoid re-processing the same day.
+            let last_day_processed = <LastDayProcessed<T>>::get().unwrap_or(0);
+
+            if days_since_start > last_day_processed {
+                Self::reset_remaining_xcm_limit();
+                <LastDayProcessed<T>>::put(days_since_start);
+            }
+
+            //T::WeightInfo::on_initialize()
+            Weight::from_ref_time(0)
+        }
     }
 }
 
 #[cfg(feature = "std")]
-impl<T: Config<I>, I: 'static> GenesisConfig<T, I> {
+impl<T: Config> GenesisConfig<T> {
     /// Direct implementation of `GenesisBuild::build_storage`.
     ///
     /// Kept in order not to break dependency.
     pub fn build_storage(&self) -> Result<sp_runtime::Storage, String> {
-        <Self as GenesisBuild<T, I>>::build_storage(self)
+        <Self as GenesisBuild<T>>::build_storage(self)
     }
 
     /// Direct implementation of `GenesisBuild::assimilate_storage`.
     ///
     /// Kept in order not to break dependency.
     pub fn assimilate_storage(&self, storage: &mut sp_runtime::Storage) -> Result<(), String> {
-        <Self as GenesisBuild<T, I>>::assimilate_storage(self, storage)
+        <Self as GenesisBuild<T>>::assimilate_storage(self, storage)
     }
 }
 
@@ -321,30 +346,30 @@ pub trait NativeBarrier<AccountId, Balance> {
     ) -> DispatchResult;
 }
 
-impl<T: Config<I>, I: 'static> NativeBarrier<T::AccountId, T::Balance> for Pallet<T, I> {
+impl<T: Config> NativeBarrier<T::AccountId, T::Balance> for Pallet<T> {
     fn ensure_xcm_transfer_limit_not_exceeded(
         account_id: &T::AccountId,
         amount: T::Balance,
     ) -> DispatchResult {
         // The address is not in the barrier list so we don't care about it
-        if <XcmBarrierList<T, I>>::get(account_id) == None {
+        if <XcmBarrierList<T>>::get(account_id) == None {
             return Ok(());
         }
 
-        if let Some(transfer_limit) = <DailyXcmLimit<T, I>>::get() {
+        if let Some(transfer_limit) = <DailyXcmLimit<T>>::get() {
             let now = T::UnixTime::now().as_secs();
             let current_period = (now / XCM_LIMIT_PERIOD_IN_SEC) * XCM_LIMIT_PERIOD_IN_SEC;
-            let (mut transferred, last_transfer) = <XcmNativeTransfers<T, I>>::get(account_id)
-                .ok_or(Error::<T, I>::XcmTransfersNotAllowedForAccount)?;
+            let (mut transferred, last_transfer) = <XcmNativeTransfers<T>>::get(account_id)
+                .ok_or(Error::<T>::XcmTransfersNotAllowedForAccount)?;
 
             if last_transfer < current_period {
                 transferred = Default::default();
-                <XcmNativeTransfers<T, I>>::insert(account_id, (transferred, now));
+                <XcmNativeTransfers<T>>::insert(account_id, (transferred, now));
             };
 
             ensure!(
                 transferred + amount <= transfer_limit,
-                Error::<T, I>::XcmTransfersLimitExceeded
+                Error::<T>::XcmTransfersLimitExceeded
             );
 
             Self::update_xcm_native_transfers(account_id, amount)
@@ -354,63 +379,30 @@ impl<T: Config<I>, I: 'static> NativeBarrier<T::AccountId, T::Balance> for Palle
     }
 
     fn update_xcm_native_transfers(account_id: &T::AccountId, amount: T::Balance) {
-        if <DailyXcmLimit<T, I>>::get().is_some() {
-            <XcmNativeTransfers<T, I>>::mutate_exists(account_id, |maybe_transfer| {
-                match maybe_transfer {
+        if <DailyXcmLimit<T>>::get().is_some() {
+            <XcmNativeTransfers<T>>::mutate_exists(
+                account_id,
+                |maybe_transfer| match maybe_transfer {
                     Some((current_amount, last_transfer)) => {
                         *current_amount = *current_amount + amount;
                         *last_transfer = T::UnixTime::now().as_secs();
                     }
                     None => {}
-                }
-            });
+                },
+            );
         }
     }
 }
 
-// impl<T: Config<I>, I: 'static> Pallet<T, I> {
-//     // fn ensure_xcm_transfer_limit_not_exceeded(
-//     //     account_id: &T::AccountId,
-//     //     amount: T::Balance,
-//     // ) -> DispatchResult {
-//     //     // The address is not in the barrier list so we don't care about it
-//     //     if <XcmBarrierList<T, I>>::get(account_id) == None {
-//     //         return Ok(());
-//     //     }
-
-//     //     if let Some(transfer_limit) = <DailyXcmLimit<T, I>>::get() {
-//     //         let now = T::UnixTime::now().as_secs();
-//     //         let current_period = (now / XCM_LIMIT_PERIOD_IN_SEC) * XCM_LIMIT_PERIOD_IN_SEC;
-//     //         let (mut transferred, last_transfer) = <XcmNativeTransfers<T, I>>::get(account_id)
-//     //             .ok_or(Error::<T, I>::XcmTransfersNotAllowedForAccount)?;
-
-//     //         if last_transfer < current_period {
-//     //             transferred = Default::default();
-//     //             <XcmNativeTransfers<T, I>>::insert(account_id, (transferred, now));
-//     //         };
-
-//     //         ensure!(
-//     //             transferred + amount <= transfer_limit,
-//     //             Error::<T, I>::XcmTransfersLimitExceeded
-//     //         );
-
-//     //         Self::update_xcm_native_transfers(account_id, amount)
-//     //     }
-
-//     //     Ok(())
-//     // }
-
-//     // fn update_xcm_native_transfers(account_id: &T::AccountId, amount: T::Balance) {
-//     //     if <DailyXcmLimit<T, I>>::get().is_some() {
-//     //         <XcmNativeTransfers<T, I>>::mutate_exists(account_id, |maybe_transfer| {
-//     //             match maybe_transfer {
-//     //                 Some((current_amount, last_transfer)) => {
-//     //                     *current_amount = *current_amount + amount;
-//     //                     *last_transfer = T::UnixTime::now().as_secs();
-//     //                 }
-//     //                 None => {}
-//     //             }
-//     //         });
-//     //     }
-//     // }
-// }
+impl<T: Config> Pallet<T> {
+    fn reset_remaining_xcm_limit() {
+        if let Some(daily_limit) = <DailyXcmLimit<T>>::get() {
+            for (account_id, _) in XcmBarrierList::<T>::iter() {
+                let mut remaining_limit =
+                    <RemainingXcmLimit<T>>::get(&account_id).unwrap_or(daily_limit);
+                remaining_limit += daily_limit;
+                <RemainingXcmLimit<T>>::insert(&account_id, remaining_limit);
+            }
+        }
+    }
+}
