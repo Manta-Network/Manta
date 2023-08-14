@@ -25,6 +25,9 @@ use scale_codec::Decode;
 use sp_core::H160;
 use sp_io::hashing::keccak_256;
 
+const MINTS_OFFSET: usize = 4;
+const MINT_SIZE: usize = 553;
+
 mod precomputed_coins;
 
 fn alice() -> libsecp256k1::SecretKey {
@@ -194,12 +197,15 @@ benchmarks! {
 
     force_to_private {
         let caller: T::AccountId = whitelisted_caller();
+        let mint_coins = core::include_bytes!("../../../../tests/data/mantaSbt_mints");
+        let mints_start = MINTS_OFFSET;
+        let to_private_coin = &mint_coins[mints_start..mints_start + MINT_SIZE];
         MantaSBTPallet::<T>::change_force_account(
             RawOrigin::Root.into(),
             Some(caller.clone())
         )?;
-        MantaSBTPallet::<T>::set_next_sbt_id(RawOrigin::Root.into(), Some(100))?;
-        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
+        MantaSBTPallet::<T>::set_next_sbt_id(RawOrigin::Root.into(), Some(2_000_0000))?;
+        let mint_post = TransferPost::decode(&mut &*to_private_coin).unwrap();
     }: force_to_private(
         RawOrigin::Signed(caller.clone()),
         Box::new(mint_post),
