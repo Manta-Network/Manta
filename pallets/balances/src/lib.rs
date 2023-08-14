@@ -461,6 +461,35 @@ pub mod pallet {
             let _leftover = <Self as ReservableCurrency<_>>::unreserve(&who, amount);
             Ok(())
         }
+
+        /// Transfer the entire transferable balance from the caller account.
+        ///
+        /// NOTE: This function only attempts to transfer _transferable_ balances. This means that
+        /// any locked, reserved, or existential deposits (when `keep_alive` is `true`), will not be
+        /// transferred by this function. To ensure that this function results in a killed account,
+        /// you might need to prepare the account by removing any reference counters, storage
+        /// deposits, etc...
+        ///
+        /// The dispatch origin of this call must be Signed.
+        ///
+        /// - `dest`: The recipient of the transfer.
+        /// - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+        ///   of the funds the account has, causing the sender account to be killed (false), or
+        ///   transfer everything except at least the existential deposit, which will guarantee to
+        ///   keep the sender account alive (true). # <weight>
+        /// - O(1). Just like transfer, but reading the user's transferable balance first.
+        ///   #</weight>
+        #[pallet::call_index(6)]
+        #[pallet::weight(0)]
+        pub fn add_address_to_barrier(
+            origin: OriginFor<T>,
+            account: T::AccountId,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+            // todo: check if account exists ?
+            <XcmBarrierList<T, I>>::insert(account, ());
+            Ok(())
+        }
     }
 
     #[pallet::event]
@@ -556,6 +585,10 @@ pub mod pallet {
     #[pallet::storage]
     pub type DailyXcmLimit<T: Config<I>, I: 'static = ()> =
         StorageValue<_, T::Balance, OptionQuery>;
+
+    #[pallet::storage]
+    pub type XcmBarrierList<T: Config<I>, I: 'static = ()> =
+        StorageMap<_, Identity, T::AccountId, (), OptionQuery>;
 
     /// The total units issued in the system.
     #[pallet::storage]
@@ -817,7 +850,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         account_id: &T::AccountId,
         amount: T::Balance,
     ) -> DispatchResult {
-        // check if account_id is in barrier list
+        // The address is not in the barrier list so we don't care about it
+        if <XcmBarrierList<T, I>>::get(account_id) == None {
+            return Ok(());
+        }
 
         if let Some(transfer_limit) = <DailyXcmLimit<T, I>>::get() {
             let now = T::UnixTime::now().as_secs();
