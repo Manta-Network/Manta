@@ -7074,6 +7074,7 @@ dependencies = [
  "pallet-assets",
  "pallet-balances 4.0.0-dev",
  "pallet-manta-support",
+ "pallet-native-barrier",
  "pallet-tx-pause",
  "parity-scale-codec",
  "rand_chacha 0.3.1",

@@ -301,7 +301,6 @@ pub mod pallet {
             let transactor = ensure_signed(origin)?;
             let dest = T::Lookup::lookup(dest)?;
             <T::NativeBarrierType>::ensure_xcm_transfer_limit_not_exceeded(&transactor, value)?;
-            // Self::ensure_xcm_transfer_limit_not_exceeded(&transactor, value)?;
             <Self as Currency<_>>::transfer(
                 &transactor,
                 &dest,
@@ -412,7 +411,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let transactor = ensure_signed(origin)?;
             let dest = T::Lookup::lookup(dest)?;
-            //Self::ensure_xcm_transfer_limit_not_exceeded(&transactor, value)?;
+            <T::NativeBarrierType>::ensure_xcm_transfer_limit_not_exceeded(&transactor, value)?;
             <Self as Currency<_>>::transfer(&transactor, &dest, value, KeepAlive)?;
             Ok(().into())
         }
@@ -446,7 +445,10 @@ pub mod pallet {
             let reducible_balance = Self::reducible_balance(&transactor, keep_alive);
             let dest = T::Lookup::lookup(dest)?;
             let keep_alive = if keep_alive { KeepAlive } else { AllowDeath };
-            //Self::ensure_xcm_transfer_limit_not_exceeded(&transactor, reducible_balance)?;
+            <T::NativeBarrierType>::ensure_xcm_transfer_limit_not_exceeded(
+                &transactor,
+                reducible_balance,
+            )?;
             <Self as Currency<_>>::transfer(&transactor, &dest, reducible_balance, keep_alive)?;
             Ok(())
         }
@@ -848,54 +850,7 @@ impl<T: Config<I>, I: 'static> Drop for DustCleaner<T, I> {
     }
 }
 
-const XCM_LIMIT_PERIOD_IN_SEC: u64 = 86400; // 1 day
-
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
-    // fn ensure_xcm_transfer_limit_not_exceeded(
-    //     account_id: &T::AccountId,
-    //     amount: T::Balance,
-    // ) -> DispatchResult {
-    //     // The address is not in the barrier list so we don't care about it
-    //     if <XcmBarrierList<T, I>>::get(account_id) == None {
-    //         return Ok(());
-    //     }
-
-    //     if let Some(transfer_limit) = <DailyXcmLimit<T, I>>::get() {
-    //         let now = T::UnixTime::now().as_secs();
-    //         let current_period = (now / XCM_LIMIT_PERIOD_IN_SEC) * XCM_LIMIT_PERIOD_IN_SEC;
-    //         let (mut transferred, last_transfer) = <XcmNativeTransfers<T, I>>::get(account_id)
-    //             .ok_or(Error::<T, I>::XcmTransfersNotAllowedForAccount)?;
-
-    //         if last_transfer < current_period {
-    //             transferred = Default::default();
-    //             <XcmNativeTransfers<T, I>>::insert(account_id, (transferred, now));
-    //         };
-
-    //         ensure!(
-    //             transferred + amount <= transfer_limit,
-    //             Error::<T, I>::XcmTransfersLimitExceeded
-    //         );
-
-    //         Self::update_xcm_native_transfers(account_id, amount)
-    //     }
-
-    //     Ok(())
-    // }
-
-    // fn update_xcm_native_transfers(account_id: &T::AccountId, amount: T::Balance) {
-    //     if <DailyXcmLimit<T, I>>::get().is_some() {
-    //         <XcmNativeTransfers<T, I>>::mutate_exists(account_id, |maybe_transfer| {
-    //             match maybe_transfer {
-    //                 Some((current_amount, last_transfer)) => {
-    //                     *current_amount = *current_amount + amount;
-    //                     *last_transfer = T::UnixTime::now().as_secs();
-    //                 }
-    //                 None => {}
-    //             }
-    //         });
-    //     }
-    // }
-
     /// Get the free balance of an account.
     pub fn free_balance(who: impl sp_std::borrow::Borrow<T::AccountId>) -> T::Balance {
         Self::account(who.borrow()).free
