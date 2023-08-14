@@ -118,7 +118,7 @@ pub type FungibleLedgerError = assets::FungibleLedgerError<StandardAssetId, Asse
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use pallet_native_barrier::NativeBarrier;
+    use orml_traits::xcm_transfer::NativeBarrier;
     use sp_runtime::traits::{AccountIdConversion, Zero};
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);

@@ -202,7 +202,7 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use pallet_native_barrier::NativeBarrier;
+    use orml_traits::xcm_transfer::NativeBarrier;
 
     #[pallet::config]
     pub trait Config<I: 'static = ()>: frame_system::Config {

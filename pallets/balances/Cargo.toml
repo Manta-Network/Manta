@@ -23,6 +23,7 @@ sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-feat
 sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 
 pallet-native-barrier = { path = '../native-barrier', default-features = false }
+orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "ghzlatarev/polkadot-v0.9.37" }
 
 [dev-dependencies]
 pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
@@ -40,7 +41,8 @@ std = [
 	"scale-info/std",
 	"sp-runtime/std",
 	"sp-std/std",
-	"pallet-native-barrier/std"
+	"pallet-native-barrier/std",
+	"orml-traits/std"
 ]
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 try-runtime = ["frame-support/try-runtime"]
