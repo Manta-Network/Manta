@@ -296,6 +296,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let transactor = ensure_signed(origin)?;
             let dest = T::Lookup::lookup(dest)?;
+            //<Self as pallet_native_barrier::NativeBarrier<T::AccountId, T::Balance>>::ensure_xcm_transfer_limit_not_exceeded(&transactor, value)?;
             Self::ensure_xcm_transfer_limit_not_exceeded(&transactor, value)?;
             <Self as Currency<_>>::transfer(
                 &transactor,
