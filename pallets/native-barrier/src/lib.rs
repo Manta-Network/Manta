@@ -163,15 +163,14 @@ use codec::{Codec, MaxEncodedLen};
 use frame_support::traits::GenesisBuild;
 use frame_support::{ensure, pallet_prelude::DispatchResult, traits::UnixTime};
 use frame_system as system;
+pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
     traits::{AtLeast32BitUnsigned, MaybeSerializeDeserialize},
-    FixedPointOperand,
+    FixedPointOperand, Saturating,
 };
 use sp_std::{fmt::Debug, prelude::*};
 pub use weights::WeightInfo;
-
-pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -351,46 +350,53 @@ impl<T: Config> NativeBarrier<T::AccountId, T::Balance> for Pallet<T> {
         account_id: &T::AccountId,
         amount: T::Balance,
     ) -> DispatchResult {
-        // The address is not in the barrier list so we don't care about it
-        if <XcmBarrierList<T>>::get(account_id) == None {
-            return Ok(());
-        }
+        if let Some(transfer_limit) = DailyXcmLimit::<T>::get() {
+            // The address is not in the barrier list, so we don't care about it
+            if <XcmBarrierList<T>>::get(account_id).is_none() {
+                return Ok(());
+            }
 
-        if let Some(transfer_limit) = <DailyXcmLimit<T>>::get() {
             let now = T::UnixTime::now().as_secs();
             let current_period = (now / XCM_LIMIT_PERIOD_IN_SEC) * XCM_LIMIT_PERIOD_IN_SEC;
-            let (mut transferred, last_transfer) = <XcmNativeTransfers<T>>::get(account_id)
+            let (mut transferred, last_transfer) = XcmNativeTransfers::<T>::get(account_id)
                 .ok_or(Error::<T>::XcmTransfersNotAllowedForAccount)?;
+            let remaining_limit = RemainingXcmLimit::<T>::get(account_id).unwrap_or(transfer_limit);
 
             if last_transfer < current_period {
                 transferred = Default::default();
-                <XcmNativeTransfers<T>>::insert(account_id, (transferred, now));
+                XcmNativeTransfers::<T>::insert(account_id, (transferred, now));
             };
 
             ensure!(
-                transferred + amount <= transfer_limit,
+                transferred + amount <= remaining_limit,
                 Error::<T>::XcmTransfersLimitExceeded
             );
 
-            Self::update_xcm_native_transfers(account_id, amount)
+            // If the ensure didn't return an error, update the native transfers
+            Self::update_xcm_native_transfers(account_id, amount);
         }
 
         Ok(())
     }
 
     fn update_xcm_native_transfers(account_id: &T::AccountId, amount: T::Balance) {
-        if <DailyXcmLimit<T>>::get().is_some() {
-            <XcmNativeTransfers<T>>::mutate_exists(
-                account_id,
-                |maybe_transfer| match maybe_transfer {
-                    Some((current_amount, last_transfer)) => {
-                        *current_amount = *current_amount + amount;
-                        *last_transfer = T::UnixTime::now().as_secs();
-                    }
-                    None => {}
-                },
-            );
-        }
+        <XcmNativeTransfers<T>>::mutate_exists(account_id, |maybe_transfer| match maybe_transfer {
+            Some((current_amount, last_transfer)) => {
+                *current_amount = *current_amount + amount;
+                *last_transfer = T::UnixTime::now().as_secs();
+            }
+            None => {}
+        });
+
+        <RemainingXcmLimit<T>>::mutate_exists(
+            account_id,
+            |maybe_remainder| match maybe_remainder {
+                Some(remainder) => {
+                    *remainder = remainder.saturating_sub(amount);
+                }
+                None => {}
+            },
+        );
     }
 }
 
