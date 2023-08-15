@@ -166,7 +166,7 @@ use frame_system as system;
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
-    traits::{AtLeast32BitUnsigned, MaybeSerializeDeserialize},
+    traits::{AtLeast32BitUnsigned, MaybeSerializeDeserialize, Zero},
     FixedPointOperand, Saturating,
 };
 use sp_std::{fmt::Debug, prelude::*};
@@ -214,37 +214,8 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Transfer the entire transferable balance from the caller account.
-        ///
-        /// NOTE: This function only attempts to transfer _transferable_ balances. This means that
-        /// any locked, reserved, or existential deposits (when `keep_alive` is `true`), will not be
-        /// transferred by this function. To ensure that this function results in a killed account,
-        /// you might need to prepare the account by removing any reference counters, storage
-        /// deposits, etc...
-        ///
-        /// The dispatch origin of this call must be Signed.
-        ///
-        /// - `dest`: The recipient of the transfer.
-        /// - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
-        ///   of the funds the account has, causing the sender account to be killed (false), or
-        ///   transfer everything except at least the existential deposit, which will guarantee to
-        ///   keep the sender account alive (true). # <weight>
-        /// - O(1). Just like transfer, but reading the user's transferable balance first.
         ///   #</weight>
         #[pallet::call_index(0)]
-        #[pallet::weight(0)]
-        pub fn add_address_to_barrier(
-            origin: OriginFor<T>,
-            account: T::AccountId,
-        ) -> DispatchResult {
-            ensure_root(origin)?;
-            // todo: check if account exists ?
-            <XcmBarrierList<T>>::insert(account, ());
-            Ok(())
-        }
-
-        ///   #</weight>
-        #[pallet::call_index(1)]
         #[pallet::weight(0)]
         pub fn set_start_unix_time(
             origin: OriginFor<T>,
@@ -253,6 +224,58 @@ pub mod pallet {
             ensure_root(origin)?;
             <StartUnixTime<T>>::set(start_unix_time);
             Ok(())
+        }
+
+        ///   #</weight>
+        #[pallet::call_index(1)]
+        #[pallet::weight(0)]
+        pub fn set_daily_xcm_limit(
+            origin: OriginFor<T>,
+            daily_xcm_limit: T::Balance,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+            <DailyXcmLimit<T>>::set(Some(daily_xcm_limit));
+            Ok(())
+        }
+
+        /// Add `accounts` to barrier to make them have limited xcm native transfers
+        #[pallet::call_index(2)]
+        #[pallet::weight(0)]
+        pub fn add_accounts_to_native_barrier(
+            origin: OriginFor<T>,
+            accounts: Vec<T::AccountId>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            // TODO: unwrap()
+            let start_time = <StartUnixTime<T>>::get().unwrap().as_secs();
+            for account_id in accounts {
+                if !XcmNativeTransfers::<T>::contains_key(&account_id) {
+                    XcmNativeTransfers::<T>::insert(&account_id, (T::Balance::zero(), start_time));
+                }
+
+                if !RemainingXcmLimit::<T>::contains_key(&account_id) {
+                    RemainingXcmLimit::<T>::insert(account_id, T::Balance::zero());
+                }
+            }
+
+            Ok(().into())
+        }
+
+        /// Remove `accounts` from barrier
+        #[pallet::call_index(3)]
+        #[pallet::weight(0)]
+        pub fn remove_accounts_to_native_barrier(
+            origin: OriginFor<T>,
+            accounts: Vec<T::AccountId>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            for account_id in accounts {
+                XcmNativeTransfers::<T>::remove(account_id);
+            }
+
+            Ok(().into())
         }
     }
 
@@ -278,9 +301,6 @@ pub mod pallet {
     /// Stores limit value
     #[pallet::storage]
     pub type DailyXcmLimit<T: Config> = StorageValue<_, T::Balance, OptionQuery>;
-
-    #[pallet::storage]
-    pub type XcmBarrierList<T: Config> = StorageMap<_, Identity, T::AccountId, (), OptionQuery>;
 
     #[pallet::storage]
     pub type RemainingXcmLimit<T: Config> =
@@ -317,13 +337,13 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_n: T::BlockNumber) -> Weight {
-            let now = T::UnixTime::now();
             if let Some(start_unix_time) = StartUnixTime::<T>::get() {
+                let now = T::UnixTime::now();
                 if start_unix_time <= now {
                     let days_since_start =
                         (now.as_secs() - start_unix_time.as_secs()) / (24 * 60 * 60);
 
-                    // TODO: is this default ok ?
+                    // Default is ok, it would only be used the first time
                     let last_day_processed = <LastDayProcessed<T>>::get().unwrap_or(0);
 
                     if days_since_start > last_day_processed {
@@ -365,7 +385,7 @@ impl<T: Config> orml_traits::xcm_transfer::NativeBarrier<T::AccountId, T::Balanc
     ) -> DispatchResult {
         if let Some(transfer_limit) = DailyXcmLimit::<T>::get() {
             // The address is not in the barrier list, so we don't care about it
-            if <XcmBarrierList<T>>::get(account_id).is_none() {
+            if <XcmNativeTransfers<T>>::get(account_id).is_none() {
                 return Ok(());
             }
 
@@ -376,7 +396,7 @@ impl<T: Config> orml_traits::xcm_transfer::NativeBarrier<T::AccountId, T::Balanc
             let remaining_limit = RemainingXcmLimit::<T>::get(account_id).unwrap_or(transfer_limit);
 
             if last_transfer < current_period {
-                transferred = Default::default();
+                transferred = T::Balance::zero();
                 XcmNativeTransfers::<T>::insert(account_id, (transferred, now));
             };
 
@@ -416,7 +436,7 @@ impl<T: Config> orml_traits::xcm_transfer::NativeBarrier<T::AccountId, T::Balanc
 impl<T: Config> Pallet<T> {
     fn reset_remaining_xcm_limit() {
         if let Some(daily_limit) = <DailyXcmLimit<T>>::get() {
-            for (account_id, _) in XcmBarrierList::<T>::iter() {
+            for (account_id, _) in XcmNativeTransfers::<T>::iter() {
                 let mut remaining_limit =
                     <RemainingXcmLimit<T>>::get(&account_id).unwrap_or(daily_limit);
                 remaining_limit += daily_limit;
