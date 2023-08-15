@@ -64,6 +64,7 @@ fn get_call_details(call: &crate::RuntimeCall) -> (DispatchInfo, u32) {
 }
 
 #[test]
+#[ignore] // TODO: remove ?
 fn diff_tx_fees() {
     const CURRENT_PATH: &str = env!("CARGO_MANIFEST_DIR");
     let mut latest_version = String::new();

@@ -458,7 +458,6 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = NativeTokenExistentialDeposit;
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
-    type UnixTime = Timestamp;
     type NativeBarrierType = NativeBarrier;
 }
 

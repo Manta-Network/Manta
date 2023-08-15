@@ -98,6 +98,7 @@ impl Config for Test {
     type MaxReserves = ConstU32<2>;
     type ReserveIdentifier = [u8; 8];
     type WeightInfo = ();
+    type NativeBarrierType = crate::tests_local::MockNativeBarrier;
 }
 
 pub struct ExtBuilder {

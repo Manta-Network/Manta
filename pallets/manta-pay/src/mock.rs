@@ -92,13 +92,6 @@ impl frame_system::Config for Test {
     type MaxConsumers = ConstU32<16>;
 }
 
-pub struct MockUnixTime;
-impl frame_support::traits::UnixTime for MockUnixTime {
-    fn now() -> core::time::Duration {
-        core::time::Duration::default()
-    }
-}
-
 parameter_types! {
     pub ExistentialDeposit: Balance = 1;
     pub const MaxLocks: u32 = 50;
@@ -115,7 +108,7 @@ impl pallet_balances::Config for Test {
     type WeightInfo = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
-    type UnixTime = MockUnixTime;
+    type NativeBarrierType = MockNativeBarrier;
 }
 
 parameter_types! {
@@ -268,6 +261,23 @@ impl pallet_asset_manager::Config for Test {
     type PermissionlessAssetRegistryCost = ConstU128<1000>;
 }
 
+pub struct MockNativeBarrier;
+impl orml_traits::xcm_transfer::NativeBarrier<AccountId32, Balance> for MockNativeBarrier {
+    fn update_xcm_native_transfers(_account_id: &AccountId32, _amount: Balance) {}
+    fn ensure_xcm_transfer_limit_not_exceeded(
+        _account_id: &AccountId32,
+        _amount: Balance,
+    ) -> frame_support::dispatch::DispatchResult {
+        Ok(())
+    }
+}
+
+impl orml_traits::xcm_transfer::NativeChecker<u64> for MockNativeBarrier {
+    fn is_native(_currency_id: &u64) -> bool {
+        true
+    }
+}
+
 parameter_types! {
     pub const MantaPayPalletId: PalletId = MANTA_PAY_PALLET_ID;
 }
@@ -277,6 +287,7 @@ impl crate::Config for Test {
     type WeightInfo = crate::weights::SubstrateWeight<Self>;
     type PalletId = MantaPayPalletId;
     type AssetConfig = MantaAssetConfig;
+    type NativeBarrierType = MockNativeBarrier;
 }
 
 parameter_types! {

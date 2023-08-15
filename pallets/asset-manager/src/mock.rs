@@ -109,17 +109,27 @@ impl pallet_assets::Config for Runtime {
     type BenchmarkHelper = ();
 }
 
+pub struct MockNativeBarrier;
+impl orml_traits::xcm_transfer::NativeBarrier<AccountId, Balance> for MockNativeBarrier {
+    fn update_xcm_native_transfers(_account_id: &AccountId, _amount: Balance) {}
+    fn ensure_xcm_transfer_limit_not_exceeded(
+        _account_id: &AccountId,
+        _amount: Balance,
+    ) -> frame_support::dispatch::DispatchResult {
+        Ok(())
+    }
+}
+
+impl orml_traits::xcm_transfer::NativeChecker<u64> for MockNativeBarrier {
+    fn is_native(_currency_id: &u64) -> bool {
+        true
+    }
+}
+
 parameter_types! {
     pub ExistentialDeposit: Balance = 1;
     pub const MaxLocks: u32 = 50;
     pub const MaxReserves: u32 = 50;
-}
-
-pub struct MockUnixTime;
-impl frame_support::traits::UnixTime for MockUnixTime {
-    fn now() -> core::time::Duration {
-        core::time::Duration::default()
-    }
 }
 
 impl pallet_balances::Config for Runtime {
@@ -132,7 +142,7 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
-    type UnixTime = MockUnixTime;
+    type NativeBarrierType = MockNativeBarrier;
 }
 
 pub struct MantaAssetRegistry;

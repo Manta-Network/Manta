@@ -227,6 +227,7 @@ try-runtime = [
   'pallet-randomness/try-runtime',
   'pallet-lottery/try-runtime',
   "pallet-farming/try-runtime",
+  "pallet-native-barrier/try-runtime",
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []

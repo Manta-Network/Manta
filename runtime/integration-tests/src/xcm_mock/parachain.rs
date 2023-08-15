@@ -108,10 +108,20 @@ impl frame_system::Config for Runtime {
     type MaxConsumers = ConstU32<16>;
 }
 
-pub struct MockUnixTime;
-impl frame_support::traits::UnixTime for MockUnixTime {
-    fn now() -> core::time::Duration {
-        core::time::Duration::default()
+pub struct MockNativeBarrier;
+impl orml_traits::xcm_transfer::NativeBarrier<AccountId, Balance> for MockNativeBarrier {
+    fn update_xcm_native_transfers(_account_id: &AccountId, _amount: Balance) {}
+    fn ensure_xcm_transfer_limit_not_exceeded(
+        _account_id: &AccountId,
+        _amount: Balance,
+    ) -> frame_support::dispatch::DispatchResult {
+        Ok(())
+    }
+}
+
+impl orml_traits::xcm_transfer::NativeChecker<CurrencyId> for MockNativeBarrier {
+    fn is_native(_currency_id: &CurrencyId) -> bool {
+        true
     }
 }
 
@@ -131,7 +141,7 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
-    type UnixTime = MockUnixTime;
+    type NativeBarrierType = MockNativeBarrier;
 }
 
 parameter_types! {
@@ -691,6 +701,7 @@ impl Contains<CurrencyId> for AssetManager {
     }
 }
 
+
 // The XCM message wrapper wrapper
 impl orml_xtokens::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
@@ -708,6 +719,7 @@ impl orml_xtokens::Config for Runtime {
     type MultiLocationsFilter = AssetManager;
     type OutgoingAssetsFilter = AssetManager;
     type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
+    type NativeBarrierType = MockNativeBarrier;
 }
 
 impl parachain_info::Config for Runtime {}

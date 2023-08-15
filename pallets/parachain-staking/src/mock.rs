@@ -87,12 +87,24 @@ impl frame_system::Config for Test {
     type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
-pub struct MockUnixTime;
-impl frame_support::traits::UnixTime for MockUnixTime {
-    fn now() -> core::time::Duration {
-        core::time::Duration::default()
+
+pub struct MockNativeBarrier;
+impl orml_traits::xcm_transfer::NativeBarrier<AccountId, Balance> for MockNativeBarrier {
+    fn update_xcm_native_transfers(_account_id: &AccountId, _amount: Balance) {}
+    fn ensure_xcm_transfer_limit_not_exceeded(
+        _account_id: &AccountId,
+        _amount: Balance,
+    ) -> frame_support::dispatch::DispatchResult {
+        Ok(())
     }
 }
+
+impl orml_traits::xcm_transfer::NativeChecker<u64> for MockNativeBarrier {
+    fn is_native(_currency_id: &u64) -> bool {
+        true
+    }
+}
+
 parameter_types! {
     pub const ExistentialDeposit: u128 = 1;
 }
@@ -106,7 +118,7 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
-    type UnixTime = MockUnixTime;
+    type NativeBarrierType = MockNativeBarrier;
 }
 impl block_author::Config for Test {}
 parameter_types! {

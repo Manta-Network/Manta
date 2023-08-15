@@ -72,11 +72,20 @@ impl frame_system::Config for Runtime {
     type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
+pub struct MockNativeBarrier;
+impl orml_traits::xcm_transfer::NativeBarrier<AccountId, Balance> for MockNativeBarrier {
+    fn update_xcm_native_transfers(_account_id: &AccountId, _amount: Balance) {}
+    fn ensure_xcm_transfer_limit_not_exceeded(
+        _account_id: &AccountId,
+        _amount: Balance,
+    ) -> frame_support::dispatch::DispatchResult {
+        Ok(())
+    }
+}
 
-pub struct MockUnixTime;
-impl frame_support::traits::UnixTime for MockUnixTime {
-    fn now() -> core::time::Duration {
-        core::time::Duration::default()
+impl orml_traits::xcm_transfer::NativeChecker<u64> for MockNativeBarrier {
+    fn is_native(_currency_id: &u64) -> bool {
+        true
     }
 }
 
@@ -94,7 +103,7 @@ impl pallet_balances::Config for Runtime {
     type MaxReserves = ConstU32<50>;
     type ReserveIdentifier = ();
     type WeightInfo = ();
-    type UnixTime = MockUnixTime;
+    type NativeBarrierType = MockNativeBarrier;
 }
 
 ord_parameter_types! {

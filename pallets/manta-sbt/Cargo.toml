@@ -135,3 +135,4 @@ pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", branch
 pallet-tx-pause = { path = "../tx-pause" }
 tempfile = "3.3.0"
 xcm = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.37" }
+orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "ghzlatarev/polkadot-v0.9.37" }

@@ -80,6 +80,23 @@ impl frame_system::Config for Test {
     type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
+pub struct MockNativeBarrier;
+impl orml_traits::xcm_transfer::NativeBarrier<u64, u64> for MockNativeBarrier {
+    fn update_xcm_native_transfers(_account_id: &u64, _amount: u64) {}
+    fn ensure_xcm_transfer_limit_not_exceeded(
+        _account_id: &u64,
+        _amount: u64,
+    ) -> frame_support::dispatch::DispatchResult {
+        Ok(())
+    }
+}
+
+impl orml_traits::xcm_transfer::NativeChecker<u64> for MockNativeBarrier {
+    fn is_native(_currency_id: &u64) -> bool {
+        true
+    }
+}
+
 impl pallet_balances::Config for Test {
     type Balance = u64;
     type RuntimeEvent = RuntimeEvent;
@@ -90,7 +107,7 @@ impl pallet_balances::Config for Test {
     type MaxLocks = ();
     type MaxReserves = ConstU32<50>;
     type ReserveIdentifier = [u8; 8];
-    type UnixTime = Timestamp;
+    type NativeBarrierType = MockNativeBarrier;
 }
 
 pub struct Author4;

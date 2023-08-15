@@ -280,6 +280,7 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
+        // TODO: real genesis
         pub balances: Vec<(T::AccountId, T::Balance)>,
     }
 
@@ -313,7 +314,7 @@ pub mod pallet {
             }
 
             //T::WeightInfo::on_initialize()
-            Weight::from_ref_time(0)
+            Weight::from_ref_time(0) // TODO: use the commented out line
         }
     }
 }
