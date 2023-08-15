@@ -337,14 +337,6 @@ impl<T: Config> GenesisConfig<T> {
 
 const XCM_LIMIT_PERIOD_IN_SEC: u64 = 86400; // 1 day
 
-// pub trait NativeBarrier<AccountId, Balance> {
-//     fn update_xcm_native_transfers(account_id: &AccountId, amount: Balance);
-//     fn ensure_xcm_transfer_limit_not_exceeded(
-//         account_id: &AccountId,
-//         amount: Balance,
-//     ) -> DispatchResult;
-// }
-
 impl<T: Config> orml_traits::xcm_transfer::NativeBarrier<T::AccountId, T::Balance> for Pallet<T> {
     fn ensure_xcm_transfer_limit_not_exceeded(
         account_id: &T::AccountId,
