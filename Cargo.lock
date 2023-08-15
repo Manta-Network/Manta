@@ -7263,18 +7263,13 @@ dependencies = [
 
 [[package]]
 name = "pallet-native-barrier"
-version = "4.0.0-dev"
+version = "4.4.0"
 dependencies = [
- "frame-benchmarking",
  "frame-support",
  "frame-system",
- "log",
  "orml-traits 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?branch=ghzlatarev/polkadot-v0.9.37)",
- "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",
- "sp-core",
- "sp-io",
  "sp-runtime",
  "sp-std",
 ]

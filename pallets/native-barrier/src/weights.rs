@@ -47,118 +47,79 @@ use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_balances.
 pub trait WeightInfo {
-	fn transfer() -> Weight;
-	fn transfer_keep_alive() -> Weight;
-	fn set_balance_creating() -> Weight;
-	fn set_balance_killing() -> Weight;
-	fn force_transfer() -> Weight;
-	fn transfer_all() -> Weight;
-	fn force_unreserve() -> Weight;
+	
+	fn set_start_unix_time() -> Weight;
+
+	fn set_daily_xcm_limit() -> Weight;
+
+	fn add_accounts_to_native_barrier() -> Weight;
+
+	fn remove_accounts_to_native_barrier() -> Weight;
 }
 
 /// Weights for pallet_balances using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: System Account (r:1 w:1)
-	fn transfer() -> Weight {
+	fn set_start_unix_time() -> Weight {
 		// Minimum execution time: 48_134 nanoseconds.
 		Weight::from_ref_time(48_811_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: System Account (r:1 w:1)
-	fn transfer_keep_alive() -> Weight {
+	fn set_daily_xcm_limit() -> Weight {
 		// Minimum execution time: 36_586 nanoseconds.
 		Weight::from_ref_time(36_966_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: System Account (r:1 w:1)
-	fn set_balance_creating() -> Weight {
+	fn add_accounts_to_native_barrier() -> Weight {
 		// Minimum execution time: 28_486 nanoseconds.
 		Weight::from_ref_time(28_940_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: System Account (r:1 w:1)
-	fn set_balance_killing() -> Weight {
+	fn remove_accounts_to_native_barrier() -> Weight {
 		// Minimum execution time: 31_225 nanoseconds.
 		Weight::from_ref_time(31_946_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
-	// Storage: System Account (r:2 w:2)
-	fn force_transfer() -> Weight {
-		// Minimum execution time: 47_347 nanoseconds.
-		Weight::from_ref_time(48_005_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(2 as u64))
-			.saturating_add(T::DbWeight::get().writes(2 as u64))
-	}
-	// Storage: System Account (r:1 w:1)
-	fn transfer_all() -> Weight {
-		// Minimum execution time: 41_668 nanoseconds.
-		Weight::from_ref_time(42_232_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
-	}
-	// Storage: System Account (r:1 w:1)
-	fn force_unreserve() -> Weight {
-		// Minimum execution time: 23_741 nanoseconds.
-		Weight::from_ref_time(24_073_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
-	}
+	
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
 	// Storage: System Account (r:1 w:1)
-	fn transfer() -> Weight {
+	fn set_start_unix_time() -> Weight {
 		// Minimum execution time: 48_134 nanoseconds.
 		Weight::from_ref_time(48_811_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(1 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: System Account (r:1 w:1)
-	fn transfer_keep_alive() -> Weight {
+	fn set_daily_xcm_limit() -> Weight {
 		// Minimum execution time: 36_586 nanoseconds.
 		Weight::from_ref_time(36_966_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(1 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: System Account (r:1 w:1)
-	fn set_balance_creating() -> Weight {
+	fn add_accounts_to_native_barrier() -> Weight {
 		// Minimum execution time: 28_486 nanoseconds.
 		Weight::from_ref_time(28_940_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(1 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: System Account (r:1 w:1)
-	fn set_balance_killing() -> Weight {
+	fn remove_accounts_to_native_barrier() -> Weight {
 		// Minimum execution time: 31_225 nanoseconds.
 		Weight::from_ref_time(31_946_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(1 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
-	// Storage: System Account (r:2 w:2)
-	fn force_transfer() -> Weight {
-		// Minimum execution time: 47_347 nanoseconds.
-		Weight::from_ref_time(48_005_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(2 as u64))
-			.saturating_add(RocksDbWeight::get().writes(2 as u64))
-	}
-	// Storage: System Account (r:1 w:1)
-	fn transfer_all() -> Weight {
-		// Minimum execution time: 41_668 nanoseconds.
-		Weight::from_ref_time(42_232_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(1 as u64))
-			.saturating_add(RocksDbWeight::get().writes(1 as u64))
-	}
-	// Storage: System Account (r:1 w:1)
-	fn force_unreserve() -> Weight {
-		// Minimum execution time: 23_741 nanoseconds.
-		Weight::from_ref_time(24_073_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(1 as u64))
-			.saturating_add(RocksDbWeight::get().writes(1 as u64))
-	}
+	
 }
