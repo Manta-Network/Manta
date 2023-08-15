@@ -242,13 +242,25 @@ pub mod pallet {
             <XcmBarrierList<T>>::insert(account, ());
             Ok(())
         }
+
+        ///   #</weight>
+        #[pallet::call_index(1)]
+        #[pallet::weight(0)]
+        pub fn set_start_unix_time(
+            origin: OriginFor<T>,
+            start_unix_time: Option<core::time::Duration>,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+            <StartUnixTime<T>>::set(start_unix_time);
+            Ok(())
+        }
     }
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// An account was created with some free balance.
-        Endowed,
+        Endowed, // TODO: actual event
     }
 
     #[pallet::error]
@@ -278,6 +290,10 @@ pub mod pallet {
     #[pallet::storage]
     pub type LastDayProcessed<T: Config> = StorageValue<_, u64, OptionQuery>;
 
+    /// Stores limit value
+    #[pallet::storage]
+    pub type StartUnixTime<T: Config> = StorageValue<_, core::time::Duration, OptionQuery>;
+
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
         // TODO: real genesis
@@ -298,19 +314,23 @@ pub mod pallet {
         fn build(&self) {}
     }
 
-    pub const STARTING_UNIX_TIME: u64 = 0;
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_n: T::BlockNumber) -> Weight {
-            let now = T::UnixTime::now().as_secs();
-            let days_since_start = (now - STARTING_UNIX_TIME) / (24 * 60 * 60);
+            let now = T::UnixTime::now();
+            if let Some(start_unix_time) = StartUnixTime::<T>::get() {
+                if start_unix_time <= now {
+                    let days_since_start =
+                        (now.as_secs() - start_unix_time.as_secs()) / (24 * 60 * 60);
 
-            // You might store the last day processed in storage to avoid re-processing the same day.
-            let last_day_processed = <LastDayProcessed<T>>::get().unwrap_or(0);
+                    // TODO: is this default ok ?
+                    let last_day_processed = <LastDayProcessed<T>>::get().unwrap_or(0);
 
-            if days_since_start > last_day_processed {
-                Self::reset_remaining_xcm_limit();
-                <LastDayProcessed<T>>::put(days_since_start);
+                    if days_since_start > last_day_processed {
+                        Self::reset_remaining_xcm_limit();
+                        <LastDayProcessed<T>>::put(days_since_start);
+                    }
+                }
             }
 
             //T::WeightInfo::on_initialize()
