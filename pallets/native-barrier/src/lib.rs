@@ -80,10 +80,11 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::set_start_unix_time())]
         pub fn set_start_unix_time(
             origin: OriginFor<T>,
-            start_unix_time: Option<core::time::Duration>,
+            start_unix_time: core::time::Duration,
         ) -> DispatchResult {
             ensure_root(origin)?;
-            <StartUnixTime<T>>::set(start_unix_time);
+            <StartUnixTime<T>>::set(Some(start_unix_time));
+            Self::deposit_event(Event::StartUnixTime { start_unix_time });
             Ok(())
         }
 
@@ -96,6 +97,9 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
             <DailyXcmLimit<T>>::set(Some(daily_xcm_limit));
+            Self::deposit_event(Event::DailyLimitSet {
+                daily_limit: daily_xcm_limit,
+            });
             Ok(())
         }
 
@@ -120,6 +124,8 @@ pub mod pallet {
                 }
             }
 
+            Self::deposit_event(Event::BarrierListUpdated);
+
             Ok(().into())
         }
 
@@ -136,6 +142,8 @@ pub mod pallet {
                 XcmNativeTransfers::<T>::remove(account_id);
             }
 
+            Self::deposit_event(Event::BarrierListUpdated);
+
             Ok(().into())
         }
     }
@@ -143,8 +151,14 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// An account was created with some free balance.
-        Endowed, // TODO: actual event
+        /// TODO: docs
+        StartUnixTime {
+            start_unix_time: core::time::Duration,
+        },
+        /// TODO: docs
+        DailyLimitSet { daily_limit: T::Balance },
+        /// TODO: docs
+        BarrierListUpdated,
     }
 
     #[pallet::error]
@@ -268,6 +282,8 @@ impl<T: Config> orml_traits::xcm_transfer::NativeBarrier<T::AccountId, T::Balanc
 
             // If the ensure didn't return an error, update the native transfers
             Self::update_xcm_native_transfers(account_id, amount);
+
+            // TODO: maybe add event here that the transfers were updated
         }
 
         Ok(())
