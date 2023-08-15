@@ -21,6 +21,7 @@
 pub mod weights;
 
 use codec::{Codec, MaxEncodedLen};
+use core::time::Duration;
 #[cfg(feature = "std")]
 use frame_support::traits::GenesisBuild;
 use frame_support::{ensure, pallet_prelude::DispatchResult, traits::UnixTime};
@@ -71,16 +72,16 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::storage_version(STORAGE_VERSION)]
-    pub struct Pallet<T>(PhantomData<(T)>);
+    pub struct Pallet<T>(PhantomData<T>);
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        ///   #</weight>
+        /// TODO: docs
         #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::set_start_unix_time())]
         pub fn set_start_unix_time(
             origin: OriginFor<T>,
-            start_unix_time: core::time::Duration,
+            start_unix_time: Duration,
         ) -> DispatchResult {
             ensure_root(origin)?;
             <StartUnixTime<T>>::set(Some(start_unix_time));
@@ -88,7 +89,7 @@ pub mod pallet {
             Ok(())
         }
 
-        ///   #</weight>
+        /// TODO: docs
         #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::set_daily_xcm_limit())]
         pub fn set_daily_xcm_limit(
@@ -139,7 +140,8 @@ pub mod pallet {
             ensure_root(origin)?;
 
             for account_id in accounts {
-                XcmNativeTransfers::<T>::remove(account_id);
+                XcmNativeTransfers::<T>::remove(account_id.clone());
+                RemainingXcmLimit::<T>::remove(account_id);
             }
 
             Self::deposit_event(Event::BarrierListUpdated);
@@ -152,9 +154,7 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// TODO: docs
-        StartUnixTime {
-            start_unix_time: core::time::Duration,
-        },
+        StartUnixTime { start_unix_time: Duration },
         /// TODO: docs
         DailyLimitSet { daily_limit: T::Balance },
         /// TODO: docs
@@ -163,9 +163,9 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        ///
+        /// TODO: docs
         XcmTransfersLimitExceeded,
-        ///
+        /// TODO: docs
         XcmTransfersNotAllowedForAccount,
     }
     /// Stores amount of native asset XCM transfers and timestamp of last transfer
@@ -187,26 +187,39 @@ pub mod pallet {
 
     /// Stores limit value
     #[pallet::storage]
-    pub type StartUnixTime<T: Config> = StorageValue<_, core::time::Duration, OptionQuery>;
+    pub type StartUnixTime<T: Config> = StorageValue<_, Duration, OptionQuery>;
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        // TODO: real genesis
-        pub balances: Vec<(T::AccountId, T::Balance)>,
+        pub barrier_accounts: Vec<T::AccountId>,
+        pub daily_limit: T::Balance,
     }
 
     #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
-                balances: Default::default(),
+                barrier_accounts: Default::default(),
+                daily_limit: Default::default(),
             }
         }
     }
 
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-        fn build(&self) {}
+        fn build(&self) {
+            let now = T::UnixTime::now();
+            <StartUnixTime<T>>::set(Some(now));
+            <DailyXcmLimit<T>>::set(Some(self.daily_limit));
+            for account_id in self.barrier_accounts.iter() {
+                <XcmNativeTransfers<T>>::set(
+                    account_id.clone(),
+                    Some((T::Balance::zero(), now.as_secs())),
+                );
+
+                <RemainingXcmLimit<T>>::set(account_id, Some(T::Balance::zero()));
+            }
+        }
     }
 
     #[pallet::hooks]
