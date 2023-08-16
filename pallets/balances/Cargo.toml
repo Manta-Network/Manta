@@ -1,29 +1,28 @@
 [package]
-name = "pallet-balances"
-version = "4.0.0-dev"
-authors = ["Parity Technologies <admin@parity.io>"]
+authors = ['Manta Network']
 edition = "2021"
-license = "Apache-2.0"
-homepage = "https://substrate.io"
-repository = "https://github.com/paritytech/substrate/"
-description = "FRAME pallet to manage balances"
+homepage = 'https://manta.network'
+license = 'GPL-3.0'
+name = "pallet-balances"
 readme = "README.md"
+repository = 'https://github.com/Manta-Network/Manta/'
+version = '4.4.0'
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
-log = { version = "0.4.17", default-features = false }
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false, optional = true }
 frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
+log = { version = "0.4.17", default-features = false }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 
-pallet-native-barrier = { path = '../native-barrier', default-features = false }
 orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "ghzlatarev/polkadot-v0.9.37" }
+pallet-native-barrier = { path = '../native-barrier', default-features = false }
 
 [dev-dependencies]
 pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
@@ -32,17 +31,17 @@ sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = "polkado
 
 [features]
 default = ["std"]
-std = [
-	"codec/std",
-	"frame-benchmarking?/std",
-	"frame-support/std",
-	"frame-system/std",
-	"log/std",
-	"scale-info/std",
-	"sp-runtime/std",
-	"sp-std/std",
-	"pallet-native-barrier/std",
-    "orml-traits/std"
-]
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
+std = [
+  "codec/std",
+  "frame-benchmarking?/std",
+  "frame-support/std",
+  "frame-system/std",
+  "log/std",
+  "scale-info/std",
+  "sp-runtime/std",
+  "sp-std/std",
+  "pallet-native-barrier/std",
+  "orml-traits/std",
+]
 try-runtime = ["frame-support/try-runtime", "pallet-native-barrier/try-runtime"]

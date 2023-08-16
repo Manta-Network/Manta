@@ -40,6 +40,7 @@ rand = { version = "0.8.5", default-features = false, optional = true }
 calamari-runtime = { path = "../../runtime/calamari", default-features = false }
 lazy_static = "1.4.0"
 manta-collator-selection = { path = "../collator-selection", default-features = false }
+orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "ghzlatarev/polkadot-v0.9.37" }
 pallet-balances = { path = "../balances" }
 pallet-preimage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-randomness = { path = '../randomness', default-features = false }
@@ -48,7 +49,6 @@ pallet-transaction-payment = { git = "https://github.com/paritytech/substrate.gi
 rand = "0.8"
 similar-asserts = "1.1.0"
 sp-staking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
-orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "ghzlatarev/polkadot-v0.9.37" }
 
 [features]
 default = ["std"]

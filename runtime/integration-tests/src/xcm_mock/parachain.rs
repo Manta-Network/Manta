@@ -701,7 +701,6 @@ impl Contains<CurrencyId> for AssetManager {
     }
 }
 
-
 // The XCM message wrapper wrapper
 impl orml_xtokens::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;

@@ -27,8 +27,8 @@ sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkad
 
 [dev-dependencies]
 derive_more = "0.99"
-pallet-balances = { path = "../balances", features = ["std"]}
 orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "ghzlatarev/polkadot-v0.9.37" }
+pallet-balances = { path = "../balances", features = ["std"] }
 
 [features]
 default = ["std"]

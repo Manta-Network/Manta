@@ -102,12 +102,12 @@ pallet-lottery = { path = '../../pallets/pallet-lottery', default-features = fal
 pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
 pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
 pallet-name-service = { path = '../../pallets/name-service', default-features = false }
+pallet-native-barrier = { path = '../../pallets/native-barrier', default-features = false }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
 pallet-randomness = { path = '../../pallets/randomness', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
-pallet-native-barrier = { path = '../../pallets/native-barrier', default-features = false }
 
 [dev-dependencies]
 csv = "1.2.1"
@@ -287,7 +287,7 @@ std = [
   "zenlink-protocol-runtime-api/std",
   "pallet-farming/std",
   "pallet-farming-rpc-runtime-api/std",
-  "pallet-native-barrier/std"
+  "pallet-native-barrier/std",
 ]
 # A feature that should be enabled when the runtime should be build for on-chain
 # deployment. This will disable stuff that shouldn't be part of the on-chain wasm
