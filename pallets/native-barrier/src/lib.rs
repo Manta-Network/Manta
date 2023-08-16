@@ -174,19 +174,20 @@ pub mod pallet {
         XcmDailyLimitNotSet,
     }
 
-    /// Stores limit value
+    /// Stores daily limit value
     #[pallet::storage]
     pub type DailyXcmLimit<T: Config> = StorageValue<_, T::Balance, OptionQuery>;
 
+    /// Stores remaining limit for each account. Skipped days are accumulated.
     #[pallet::storage]
     pub type RemainingXcmLimit<T: Config> =
         StorageMap<_, Identity, T::AccountId, T::Balance, OptionQuery>;
 
-    /// Stores limit value
+    /// Caches the last processed day, used to check for start of new days
     #[pallet::storage]
     pub type LastDayProcessed<T: Config> = StorageValue<_, u64, OptionQuery>;
 
-    /// Stores limit value
+    /// Stores starting unix time for the native barrier logic
     #[pallet::storage]
     pub type StartUnixTime<T: Config> = StorageValue<_, Duration, OptionQuery>;
 
