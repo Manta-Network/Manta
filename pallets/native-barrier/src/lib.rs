@@ -219,7 +219,6 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_n: T::BlockNumber) -> Weight {
-            // TODO: should i just make the start_unix_time and daily_limit 1 struct
             if let Some(start_unix_time) = StartUnixTime::<T>::get() {
                 if let Some(_) = DailyXcmLimit::<T>::get() {
                     let now = T::UnixTime::now();
@@ -238,8 +237,7 @@ pub mod pallet {
                 }
             }
 
-            //T::WeightInfo::on_initialize()
-            Weight::from_ref_time(0) // TODO: use the commented out line
+            T::WeightInfo::on_initialize()
         }
     }
 }

@@ -49,6 +49,8 @@ use sp_std::marker::PhantomData;
 /// Weight functions needed for pallet_balances.
 pub trait WeightInfo {
 	
+	fn on_initialize() -> Weight;
+
 	fn set_start_unix_time() -> Weight;
 
 	fn set_daily_xcm_limit() -> Weight;
@@ -61,6 +63,15 @@ pub trait WeightInfo {
 /// Weights for pallet_balances using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
+
+	// Storage: Farming PoolInfos (r:1 w:0)
+	// Storage: Farming GaugePoolInfos (r:1 w:0)
+	fn on_initialize() -> Weight {
+		// Minimum execution time: 5_170 nanoseconds.
+		Weight::from_ref_time(5_433_000)
+			.saturating_add(T::DbWeight::get().reads(2))
+	}
+
 	// Storage: System Account (r:1 w:1)
 	fn set_start_unix_time() -> Weight {
 		// Minimum execution time: 48_134 nanoseconds.
@@ -94,6 +105,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
+	fn on_initialize() -> Weight {
+		Weight::from_ref_time(5_433_000)
+			.saturating_add(RocksDbWeight::get().reads(2))
+	}
+
 	// Storage: System Account (r:1 w:1)
 	fn set_start_unix_time() -> Weight {
 		// Minimum execution time: 48_134 nanoseconds.
