@@ -333,7 +333,6 @@ impl orml_traits::xcm_transfer::NativeChecker<CurrencyId> for NativeBarrier {
             CurrencyIdtoMultiLocation::<AssetIdLocationConvert<AssetManager>>::convert(
                 currency_id.clone(),
             );
-        //asset_location == MultiLocation::from(NativeAssetLocation::get())
         asset_location == NativeAssetLocation::get().into() || asset_location == Some(Here.into())
     }
 }
