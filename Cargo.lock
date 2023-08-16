@@ -7265,6 +7265,7 @@ dependencies = [
 name = "pallet-native-barrier"
 version = "4.4.0"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "orml-traits 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?branch=ghzlatarev/polkadot-v0.9.37)",

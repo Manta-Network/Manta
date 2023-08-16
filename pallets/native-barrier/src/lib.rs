@@ -28,7 +28,7 @@ use frame_support::{ensure, pallet_prelude::DispatchResult, traits::UnixTime};
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
-    traits::{AtLeast32BitUnsigned, MaybeSerializeDeserialize, Zero},
+    traits::{AtLeast32BitUnsigned, MaybeSerializeDeserialize},
     FixedPointOperand, Saturating,
 };
 use sp_std::{fmt::Debug, prelude::*};
@@ -114,7 +114,7 @@ pub mod pallet {
             ensure_root(origin)?;
 
             if let Some(daily_xcm_limit) = DailyXcmLimit::<T>::get() {
-                if let Some(start_time) = StartUnixTime::<T>::get() {
+                if let Some(_) = StartUnixTime::<T>::get() {
                     for account_id in accounts {
                         if !RemainingXcmLimit::<T>::contains_key(&account_id) {
                             RemainingXcmLimit::<T>::insert(account_id, daily_xcm_limit);

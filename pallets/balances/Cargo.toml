@@ -42,7 +42,7 @@ std = [
 	"sp-runtime/std",
 	"sp-std/std",
 	"pallet-native-barrier/std",
-	"orml-traits/std"
+    "orml-traits/std"
 ]
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 try-runtime = ["frame-support/try-runtime", "pallet-native-barrier/try-runtime"]
