@@ -166,7 +166,6 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// TODO: docs
         XcmTransfersLimitExceeded,
         StartUnixTimeNotSet,
         XcmDailyLimitNotSet,
