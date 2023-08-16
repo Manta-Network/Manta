@@ -168,8 +168,6 @@ pub mod pallet {
     pub enum Error<T> {
         /// TODO: docs
         XcmTransfersLimitExceeded,
-        /// TODO: docs
-        XcmTransfersNotAllowedForAccount,
         StartUnixTimeNotSet,
         XcmDailyLimitNotSet,
     }
