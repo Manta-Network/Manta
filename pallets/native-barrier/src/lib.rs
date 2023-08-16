@@ -119,13 +119,13 @@ pub mod pallet {
 
             if let Some(daily_xcm_limit) = DailyXcmLimit::<T>::get() {
                 if let Some(_) = StartUnixTime::<T>::get() {
-                    for account_id in accounts {
+                    for account_id in accounts.iter() {
                         if !RemainingXcmLimit::<T>::contains_key(&account_id) {
                             RemainingXcmLimit::<T>::insert(account_id, daily_xcm_limit);
                         }
                     }
 
-                    Self::deposit_event(Event::BarrierListUpdated);
+                    Self::deposit_event(Event::AccountsAddedToBarrier { accounts });
                 } else {
                     return Err(Error::<T>::StartUnixTimeNotSet.into());
                 }
@@ -145,11 +145,11 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            for account_id in accounts {
+            for account_id in accounts.iter() {
                 RemainingXcmLimit::<T>::remove(account_id);
             }
 
-            Self::deposit_event(Event::BarrierListUpdated);
+            Self::deposit_event(Event::AccountsRemovedFromBarrier { accounts });
 
             Ok(().into())
         }
@@ -158,14 +158,10 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        StartUnixTimeSet {
-            start_unix_time: Option<Duration>,
-        },
-        DailyXcmLimitSet {
-            daily_limit: Option<T::Balance>,
-        },
-        /// TODO: docs
-        BarrierListUpdated,
+        StartUnixTimeSet { start_unix_time: Option<Duration> },
+        DailyXcmLimitSet { daily_limit: Option<T::Balance> },
+        AccountsAddedToBarrier { accounts: Vec<T::AccountId> },
+        AccountsRemovedFromBarrier { accounts: Vec<T::AccountId> },
     }
 
     #[pallet::error]
