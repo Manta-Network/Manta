@@ -281,8 +281,6 @@ impl<T: Config> orml_traits::xcm_transfer::NativeBarrier<T::AccountId, T::Balanc
                     }
                 }
             }
-
-            // TODO: maybe add event here that the transfers were updated
         }
 
         Ok(())
