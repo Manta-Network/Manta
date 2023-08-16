@@ -116,13 +116,6 @@ pub mod pallet {
             if let Some(daily_xcm_limit) = DailyXcmLimit::<T>::get() {
                 if let Some(start_time) = StartUnixTime::<T>::get() {
                     for account_id in accounts {
-                        if !XcmNativeTransfers::<T>::contains_key(&account_id) {
-                            XcmNativeTransfers::<T>::insert(
-                                &account_id,
-                                (T::Balance::zero(), start_time.as_secs()),
-                            );
-                        }
-
                         if !RemainingXcmLimit::<T>::contains_key(&account_id) {
                             RemainingXcmLimit::<T>::insert(account_id, daily_xcm_limit);
                         }
@@ -149,7 +142,6 @@ pub mod pallet {
             ensure_root(origin)?;
 
             for account_id in accounts {
-                XcmNativeTransfers::<T>::remove(account_id.clone());
                 RemainingXcmLimit::<T>::remove(account_id);
             }
 
@@ -181,10 +173,6 @@ pub mod pallet {
         StartUnixTimeNotSet,
         XcmDailyLimitNotSet,
     }
-    /// Stores amount of native asset XCM transfers and timestamp of last transfer
-    #[pallet::storage]
-    pub type XcmNativeTransfers<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AccountId, (T::Balance, u64), OptionQuery>;
 
     /// Stores limit value
     #[pallet::storage]
@@ -225,11 +213,6 @@ pub mod pallet {
             <StartUnixTime<T>>::set(Some(now));
             <DailyXcmLimit<T>>::set(Some(self.daily_limit));
             for account_id in self.barrier_accounts.iter() {
-                <XcmNativeTransfers<T>>::set(
-                    account_id.clone(),
-                    Some((T::Balance::zero(), now.as_secs())),
-                );
-
                 <RemainingXcmLimit<T>>::set(account_id, Some(self.daily_limit));
             }
         }
@@ -238,7 +221,7 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_n: T::BlockNumber) -> Weight {
-            // TOD: should i just make the start_unix_time and daily_limit 1 struct
+            // TODO: should i just make the start_unix_time and daily_limit 1 struct
             if let Some(start_unix_time) = StartUnixTime::<T>::get() {
                 if let Some(_) = DailyXcmLimit::<T>::get() {
                     let now = T::UnixTime::now();
@@ -246,10 +229,10 @@ pub mod pallet {
                         let days_since_start =
                             (now.as_secs() - start_unix_time.as_secs()) / (24 * 60 * 60);
 
-                        // Default is ok, it would only be used the first time
+                        // Default 0 is ok, it would only be used the first time
                         let last_day_processed = <LastDayProcessed<T>>::get().unwrap_or(0);
 
-                        if days_since_start > last_day_processed {
+                        if days_since_start > last_day_processed || days_since_start == 0 {
                             Self::reset_remaining_xcm_limit(days_since_start - last_day_processed);
                             <LastDayProcessed<T>>::put(days_since_start);
                         }
@@ -280,38 +263,26 @@ impl<T: Config> GenesisConfig<T> {
     }
 }
 
-const XCM_LIMIT_PERIOD_IN_SEC: u64 = 86400; // 1 day
-
 impl<T: Config> orml_traits::xcm_transfer::NativeBarrier<T::AccountId, T::Balance> for Pallet<T> {
     fn ensure_xcm_transfer_limit_not_exceeded(
         account_id: &T::AccountId,
         amount: T::Balance,
     ) -> DispatchResult {
-        if let Some(transfer_limit) = DailyXcmLimit::<T>::get() {
-            // The address is not in the barrier list, so we don't care about it
-            if <XcmNativeTransfers<T>>::get(account_id).is_none() {
-                return Ok(());
+        if let Some(_) = DailyXcmLimit::<T>::get() {
+            if let Some(start_unix_time) = <StartUnixTime<T>>::get() {
+                let now = T::UnixTime::now();
+                if start_unix_time <= now {
+                    if let Some(remaining_limit) = RemainingXcmLimit::<T>::get(account_id) {
+                        ensure!(
+                            amount <= remaining_limit,
+                            Error::<T>::XcmTransfersLimitExceeded
+                        );
+
+                        // If the ensure didn't return an error, update the native transfers
+                        Self::update_xcm_native_transfers(account_id, amount);
+                    }
+                }
             }
-
-            let now = T::UnixTime::now().as_secs();
-            let current_period = (now / XCM_LIMIT_PERIOD_IN_SEC) * XCM_LIMIT_PERIOD_IN_SEC;
-            // TODO: this unwrap i s already checked at the start of the function
-            let (mut transferred, last_transfer) =
-                XcmNativeTransfers::<T>::get(account_id).unwrap();
-            let remaining_limit = RemainingXcmLimit::<T>::get(account_id).unwrap_or(transfer_limit);
-
-            ensure!(
-                amount <= remaining_limit,
-                Error::<T>::XcmTransfersLimitExceeded
-            );
-
-            if last_transfer < current_period {
-                transferred = T::Balance::zero();
-                XcmNativeTransfers::<T>::insert(account_id, (transferred, now));
-            };
-
-            // If the ensure didn't return an error, update the native transfers
-            Self::update_xcm_native_transfers(account_id, amount);
 
             // TODO: maybe add event here that the transfers were updated
         }
@@ -320,14 +291,6 @@ impl<T: Config> orml_traits::xcm_transfer::NativeBarrier<T::AccountId, T::Balanc
     }
 
     fn update_xcm_native_transfers(account_id: &T::AccountId, amount: T::Balance) {
-        <XcmNativeTransfers<T>>::mutate_exists(account_id, |maybe_transfer| match maybe_transfer {
-            Some((current_amount, last_transfer)) => {
-                *current_amount = *current_amount + amount;
-                *last_transfer = T::UnixTime::now().as_secs();
-            }
-            None => {}
-        });
-
         <RemainingXcmLimit<T>>::mutate_exists(
             account_id,
             |maybe_remainder| match maybe_remainder {
@@ -343,7 +306,7 @@ impl<T: Config> orml_traits::xcm_transfer::NativeBarrier<T::AccountId, T::Balanc
 impl<T: Config> Pallet<T> {
     fn reset_remaining_xcm_limit(unprocessed_days: u64) {
         if let Some(daily_limit) = <DailyXcmLimit<T>>::get() {
-            for (account_id, _) in XcmNativeTransfers::<T>::iter() {
+            for (account_id, _) in RemainingXcmLimit::<T>::iter() {
                 let mut remaining_limit =
                     <RemainingXcmLimit<T>>::get(&account_id).unwrap_or(daily_limit);
                 for _ in 0..unprocessed_days {
