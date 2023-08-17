@@ -1014,7 +1014,7 @@ extern crate frame_benchmarking;
 mod benches {
     frame_benchmarking::define_benchmarks!(
         // Substrate pallets
-        // [pallet_balances, Balances]
+        [pallet_balances, Balances]
         [pallet_democracy, Democracy]
         [pallet_collective, Council]
         [pallet_membership, CouncilMembership]
@@ -1043,6 +1043,7 @@ mod benches {
         [pallet_name_service, NameService]
         [zenlink_protocol, ZenlinkProtocol]
         [pallet_farming, Farming]
+        [pallet_native_barrier, NativeBarrier]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
     );

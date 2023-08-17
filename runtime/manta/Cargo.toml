@@ -164,6 +164,7 @@ runtime-benchmarks = [
   'pallet-name-service/runtime-benchmarks',
   "zenlink-protocol/runtime-benchmarks",
   'pallet-farming/runtime-benchmarks',
+  'pallet-native-barrier/runtime-benchmarks',
 ]
 try-runtime = [
   'frame-try-runtime',

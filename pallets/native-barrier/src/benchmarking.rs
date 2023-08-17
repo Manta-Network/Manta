@@ -55,6 +55,8 @@ benchmarks! {
         let caller: T::AccountId = whitelisted_caller();
         let daily_limit = T::Balance::zero();
         NativeBarrier::<T>::set_daily_xcm_limit(RawOrigin::Root.into(), Some(daily_limit));
+        let start_unix_time = Duration::default();
+        NativeBarrier::<T>::set_start_unix_time(RawOrigin::Root.into(), Some(start_unix_time));
         let barrier_addresses: Vec<T::AccountId> = vec![
             account("address_0", 0, SEED),
             account("address_1", 0, SEED),
@@ -75,6 +77,8 @@ benchmarks! {
         let caller: T::AccountId = whitelisted_caller();
         let daily_limit = T::Balance::zero();
         NativeBarrier::<T>::set_daily_xcm_limit(RawOrigin::Root.into(), Some(daily_limit));
+        let start_unix_time = Duration::default();
+        NativeBarrier::<T>::set_start_unix_time(RawOrigin::Root.into(), Some(start_unix_time));
         let barrier_addresses: Vec<T::AccountId> = vec![
             account("address_0", 0, SEED),
             account("address_1", 0, SEED),
@@ -87,7 +91,7 @@ benchmarks! {
             barrier_addresses[2].clone(),
             barrier_addresses[4].clone()
         ];
-        NativeBarrier::<T>::add_accounts_to_native_barrier(RawOrigin::Root.into(), barrier_addresses);
+        let _ = NativeBarrier::<T>::add_accounts_to_native_barrier(RawOrigin::Root.into(), barrier_addresses)?;
     }: remove_accounts_from_native_barrier(RawOrigin::Root, remove_addresses)
     verify {
         assert_eq!(None, RemainingXcmLimit::<T>::get(account::<T::AccountId>("address_0", 0, SEED)));
@@ -95,9 +99,9 @@ benchmarks! {
         assert_eq!(None, RemainingXcmLimit::<T>::get(account::<T::AccountId>("address_4", 0, SEED)));
     }
 
-    // impl_benchmark_test_suite!(
-    //     NativeBarrier,
-    //     crate::tests_composite::ExtBuilder::default().build(),
-    //     crate::tests_composite::Test,
-    // )
+    impl_benchmark_test_suite!(
+        NativeBarrier,
+        crate::mock::ExtBuilder::default().build(),
+        crate::mock::Runtime,
+    );
 }

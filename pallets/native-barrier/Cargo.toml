@@ -21,6 +21,13 @@ sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features
 
 orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "ghzlatarev/polkadot-v0.9.37" }
 
+[dev-dependencies]
+pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+pallet-balances = { path = "../balances" }
+manta-primitives = { path = "../../primitives/manta" }
+
 [features]
 default = ["std"]
 runtime-benchmarks = [

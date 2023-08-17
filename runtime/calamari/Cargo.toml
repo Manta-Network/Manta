@@ -183,6 +183,8 @@ runtime-benchmarks = [
   "pallet-conviction-voting/runtime-benchmarks",
   "pallet-referenda/runtime-benchmarks",
   "pallet-ranked-collective/runtime-benchmarks",
+  'pallet-native-barrier/runtime-benchmarks',
+
 ]
 try-runtime = [
   'frame-try-runtime',

@@ -1047,7 +1047,7 @@ extern crate frame_benchmarking;
 mod benches {
     frame_benchmarking::define_benchmarks!(
         // Substrate pallets
-        // [pallet_balances, Balances]
+        [pallet_balances, Balances]
         [pallet_multisig, Multisig]
         [frame_system, SystemBench::<Runtime>]
         [pallet_timestamp, Timestamp]
@@ -1071,6 +1071,7 @@ mod benches {
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
         [pallet_name_service, NameService]
+        [pallet_native_barrier, NativeBarrier]
         // Dex
         [zenlink_protocol, ZenlinkProtocol]
         [pallet_farming, Farming]
