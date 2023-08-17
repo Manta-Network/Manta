@@ -18,6 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+mod benchmarking;
 pub mod weights;
 
 use codec::{Codec, MaxEncodedLen};
@@ -138,8 +139,8 @@ pub mod pallet {
 
         /// Remove `accounts` from the barrier's RemainingXcmLimit storage
         #[pallet::call_index(3)]
-        #[pallet::weight(T::WeightInfo::remove_accounts_to_native_barrier())]
-        pub fn remove_accounts_to_native_barrier(
+        #[pallet::weight(T::WeightInfo::remove_accounts_from_native_barrier())]
+        pub fn remove_accounts_from_native_barrier(
             origin: OriginFor<T>,
             accounts: Vec<T::AccountId>,
         ) -> DispatchResultWithPostInfo {
@@ -173,6 +174,7 @@ pub mod pallet {
 
     /// Stores daily limit value
     #[pallet::storage]
+    #[pallet::getter(fn get_daily_xcm_limit)]
     pub type DailyXcmLimit<T: Config> = StorageValue<_, T::Balance, OptionQuery>;
 
     /// Stores remaining limit for each account. Skipped days are accumulated.
@@ -186,6 +188,7 @@ pub mod pallet {
 
     /// Stores starting unix time for the native barrier logic
     #[pallet::storage]
+    #[pallet::getter(fn get_start_unix_time)]
     pub type StartUnixTime<T: Config> = StorageValue<_, Duration, OptionQuery>;
 
     #[pallet::genesis_config]

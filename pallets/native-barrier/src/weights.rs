@@ -57,7 +57,7 @@ pub trait WeightInfo {
 
 	fn add_accounts_to_native_barrier() -> Weight;
 
-	fn remove_accounts_to_native_barrier() -> Weight;
+	fn remove_accounts_from_native_barrier() -> Weight;
 }
 
 /// Weights for pallet_balances using the Substrate node and recommended hardware.
@@ -94,7 +94,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: System Account (r:1 w:1)
-	fn remove_accounts_to_native_barrier() -> Weight {
+	fn remove_accounts_from_native_barrier() -> Weight {
 		// Minimum execution time: 31_225 nanoseconds.
 		Weight::from_ref_time(31_946_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
@@ -132,7 +132,7 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: System Account (r:1 w:1)
-	fn remove_accounts_to_native_barrier() -> Weight {
+	fn remove_accounts_from_native_barrier() -> Weight {
 		// Minimum execution time: 31_225 nanoseconds.
 		Weight::from_ref_time(31_946_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(1 as u64))
