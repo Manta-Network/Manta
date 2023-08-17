@@ -465,7 +465,7 @@ impl pallet_native_barrier::Config for Runtime {
     type Balance = Balance;
     type RuntimeEvent = RuntimeEvent;
     type UnixTime = Timestamp;
-    type WeightInfo = ();
+    type WeightInfo = weights::pallet_native_barrier::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
