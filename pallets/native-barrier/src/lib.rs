@@ -20,6 +20,8 @@
 
 mod benchmarking;
 mod mock;
+#[cfg(test)]
+mod tests;
 pub mod weights;
 
 use codec::{Codec, MaxEncodedLen};
@@ -180,6 +182,7 @@ pub mod pallet {
 
     /// Stores remaining limit for each account. Skipped days are accumulated.
     #[pallet::storage]
+    #[pallet::getter(fn get_remaining_xcm_limit)]
     pub type RemainingXcmLimit<T: Config> =
         StorageMap<_, Identity, T::AccountId, T::Balance, OptionQuery>;
 
