@@ -23,15 +23,29 @@ use super::*;
 use crate::Pallet as NativeBarrier;
 use core::time::Duration;
 use frame_benchmarking::{account, benchmarks, whitelisted_caller};
-use frame_support::traits::UnixTime;
+use frame_support::traits::Hooks;
 use frame_system::RawOrigin;
-use sp_runtime::traits::{Bounded, Zero};
+use sp_runtime::traits::Zero;
 
 const SEED: u32 = 0;
-// existential deposit multiplier
-const ED_MULTIPLIER: u32 = 10;
 
 benchmarks! {
+    //TODO: docs
+    on_initialize {
+        let daily_limit = T::Balance::zero();
+        let _ = NativeBarrier::<T>::set_daily_xcm_limit(RawOrigin::Root.into(), Some(daily_limit))?;
+        let start_unix_time = Duration::default();
+        let _ = NativeBarrier::<T>::set_start_unix_time(RawOrigin::Root.into(), Some(start_unix_time))?;
+        let barrier_addresses: Vec<T::AccountId> = vec![
+            account("address_0", 0, SEED),
+            account("address_1", 0, SEED),
+            account("address_2", 0, SEED),
+            account("address_3", 0, SEED),
+            account("address_4", 0, SEED)
+        ];
+        let _ = NativeBarrier::<T>::add_accounts_to_native_barrier(RawOrigin::Root.into(), barrier_addresses)?;
+    }:{NativeBarrier::<T>::on_initialize(T::BlockNumber::from(1_000_000u32));}
+
     //
     set_start_unix_time {
         let caller: T::AccountId = whitelisted_caller();
@@ -54,9 +68,9 @@ benchmarks! {
     add_accounts_to_native_barrier {
         let caller: T::AccountId = whitelisted_caller();
         let daily_limit = T::Balance::zero();
-        NativeBarrier::<T>::set_daily_xcm_limit(RawOrigin::Root.into(), Some(daily_limit));
+        let _ = NativeBarrier::<T>::set_daily_xcm_limit(RawOrigin::Root.into(), Some(daily_limit))?;
         let start_unix_time = Duration::default();
-        NativeBarrier::<T>::set_start_unix_time(RawOrigin::Root.into(), Some(start_unix_time));
+        let _ = NativeBarrier::<T>::set_start_unix_time(RawOrigin::Root.into(), Some(start_unix_time));
         let barrier_addresses: Vec<T::AccountId> = vec![
             account("address_0", 0, SEED),
             account("address_1", 0, SEED),
@@ -76,9 +90,9 @@ benchmarks! {
     remove_accounts_from_native_barrier {
         let caller: T::AccountId = whitelisted_caller();
         let daily_limit = T::Balance::zero();
-        NativeBarrier::<T>::set_daily_xcm_limit(RawOrigin::Root.into(), Some(daily_limit));
+        let _ = NativeBarrier::<T>::set_daily_xcm_limit(RawOrigin::Root.into(), Some(daily_limit))?;
         let start_unix_time = Duration::default();
-        NativeBarrier::<T>::set_start_unix_time(RawOrigin::Root.into(), Some(start_unix_time));
+        let _ = NativeBarrier::<T>::set_start_unix_time(RawOrigin::Root.into(), Some(start_unix_time))?;
         let barrier_addresses: Vec<T::AccountId> = vec![
             account("address_0", 0, SEED),
             account("address_1", 0, SEED),
@@ -86,12 +100,12 @@ benchmarks! {
             account("address_3", 0, SEED),
             account("address_4", 0, SEED)
         ];
+        let _ = NativeBarrier::<T>::add_accounts_to_native_barrier(RawOrigin::Root.into(), barrier_addresses.clone())?;
         let remove_addresses = vec![
             barrier_addresses[0].clone(),
             barrier_addresses[2].clone(),
             barrier_addresses[4].clone()
         ];
-        let _ = NativeBarrier::<T>::add_accounts_to_native_barrier(RawOrigin::Root.into(), barrier_addresses)?;
     }: remove_accounts_from_native_barrier(RawOrigin::Root, remove_addresses)
     verify {
         assert_eq!(None, RemainingXcmLimit::<T>::get(account::<T::AccountId>("address_0", 0, SEED)));

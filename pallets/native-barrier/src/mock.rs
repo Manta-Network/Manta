@@ -24,10 +24,12 @@
 use super::*;
 use frame_support::{
     construct_runtime, ord_parameter_types, parameter_types,
-    traits::{ConstU32, ConstU64, Contains, IsInVec},
+    traits::{ConstU32, Contains},
 };
-use frame_system::EnsureRoot;
-use manta_primitives::types::{Balance, BlockNumber, Header};
+use manta_primitives::{
+    constants::time::SLOT_DURATION,
+    types::{Balance, BlockNumber, Header},
+};
 
 use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
@@ -40,7 +42,7 @@ mod pallet_native_barrier {
 
 pub struct BaseFilter;
 impl Contains<RuntimeCall> for BaseFilter {
-    fn contains(call: &RuntimeCall) -> bool {
+    fn contains(_call: &RuntimeCall) -> bool {
         true
     }
 }
@@ -104,10 +106,14 @@ impl Config for Runtime {
     type WeightInfo = ();
 }
 
+parameter_types! {
+    pub const MinimumPeriod: u64 =  SLOT_DURATION / 2;
+}
+
 impl pallet_timestamp::Config for Runtime {
     type Moment = u64;
     type OnTimestampSet = ();
-    type MinimumPeriod = ConstU64<5>;
+    type MinimumPeriod = MinimumPeriod;
     type WeightInfo = ();
 }
 
