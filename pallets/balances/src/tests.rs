@@ -17,6 +17,7 @@
 //! Macro for creating the tests for the module.
 
 #![cfg(test)]
+#![allow(clippy::all)]
 
 #[macro_export]
 macro_rules! decl_tests {

@@ -17,6 +17,7 @@
 //! Test utilities
 
 #![cfg(test)]
+#![allow(clippy::all)]
 
 use crate::{self as pallet_balances, decl_tests, Config, Pallet};
 use frame_support::{

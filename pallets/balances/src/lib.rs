@@ -151,6 +151,7 @@
 //! * Total issued balanced of all accounts should be less than `Config::Balance::max_value()`.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::all)]
 
 #[macro_use]
 mod tests;

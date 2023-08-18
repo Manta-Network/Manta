@@ -122,9 +122,9 @@ pub mod pallet {
             ensure_root(origin)?;
 
             if let Some(daily_xcm_limit) = DailyXcmLimit::<T>::get() {
-                if let Some(_) = StartUnixTime::<T>::get() {
+                if StartUnixTime::<T>::get().is_some() {
                     for account_id in accounts.iter() {
-                        if !RemainingXcmLimit::<T>::contains_key(&account_id) {
+                        if !RemainingXcmLimit::<T>::contains_key(account_id) {
                             RemainingXcmLimit::<T>::insert(account_id, daily_xcm_limit);
                         }
                     }
@@ -227,7 +227,7 @@ pub mod pallet {
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_n: T::BlockNumber) -> Weight {
             if let Some(start_unix_time) = StartUnixTime::<T>::get() {
-                if let Some(_) = DailyXcmLimit::<T>::get() {
+                if DailyXcmLimit::<T>::get().is_some() {
                     let now = T::UnixTime::now();
                     if start_unix_time <= now {
                         let days_since_start =
@@ -271,7 +271,7 @@ impl<T: Config> orml_traits::xcm_transfer::NativeBarrier<T::AccountId, T::Balanc
         account_id: &T::AccountId,
         amount: T::Balance,
     ) -> DispatchResult {
-        if let Some(_) = DailyXcmLimit::<T>::get() {
+        if DailyXcmLimit::<T>::get().is_some() {
             if let Some(start_unix_time) = <StartUnixTime<T>>::get() {
                 let now = T::UnixTime::now();
                 if start_unix_time <= now {

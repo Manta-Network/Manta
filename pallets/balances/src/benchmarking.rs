@@ -17,6 +17,7 @@
 //! # Native Barrier Pallet benchmarking.
 
 #![cfg(feature = "runtime-benchmarks")]
+#![allow(clippy::all)]
 
 use super::*;
 

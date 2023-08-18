@@ -17,6 +17,7 @@
 //! Test setup for potential reentracy and lost updates of nested mutations.
 
 #![cfg(test)]
+#![allow(clippy::all)]
 
 use crate::{self as pallet_balances, Config};
 use frame_support::{
