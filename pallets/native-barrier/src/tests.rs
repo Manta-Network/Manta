@@ -102,9 +102,11 @@ fn start_in_the_past_should_work() {
         assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 2, 1000, 0));
         assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 3, 1000, 0));
 
+        let daily_limit = 10u128;
+        let day_in_secs = 86400;
         assert_ok!(NativeBarrier::set_daily_xcm_limit(
             RawOrigin::Root.into(),
-            Some(10u128)
+            Some(daily_limit)
         ));
         assert_ok!(NativeBarrier::set_start_unix_time(
             RawOrigin::Root.into(),
@@ -112,7 +114,11 @@ fn start_in_the_past_should_work() {
         ));
 
         // transfer more than limit should work
-        assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 2, 20));
+        assert_ok!(Balances::transfer(
+            RuntimeOrigin::signed(1),
+            2,
+            daily_limit * 2
+        ));
 
         assert_ok!(NativeBarrier::add_accounts_to_native_barrier(
             RawOrigin::Root.into(),
@@ -120,26 +126,38 @@ fn start_in_the_past_should_work() {
         ));
 
         // transfer under limit should work
-        assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 2, 5));
+        assert_ok!(Balances::transfer(
+            RuntimeOrigin::signed(1),
+            2,
+            daily_limit / 2
+        ));
         // transfer more than limit should not work
         assert_err!(
-            Balances::transfer(RuntimeOrigin::signed(1), 2, 7),
+            Balances::transfer(RuntimeOrigin::signed(1), 2, daily_limit / 2 + 1),
             Error::<Runtime>::XcmTransfersLimitExceeded
         );
 
         // limit should be multiple of daily limit (now - epoch_start)
         // roll one day
-        advance_mock_time(Duration::from_secs(86400));
+        advance_mock_time(Duration::from_secs(day_in_secs));
         NativeBarrier::on_initialize(1);
 
         // check that limit has been updated
         // transfer more than limit should not work
         assert_err!(
-            Balances::transfer(RuntimeOrigin::signed(1), 2, 16),
+            Balances::transfer(
+                RuntimeOrigin::signed(1),
+                2,
+                daily_limit + daily_limit / 2 + 1
+            ),
             Error::<Runtime>::XcmTransfersLimitExceeded
         );
         // transfer under limit should work
-        assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 2, 15));
+        assert_ok!(Balances::transfer(
+            RuntimeOrigin::signed(1),
+            2,
+            daily_limit + daily_limit / 2
+        ));
 
         assert_ok!(NativeBarrier::remove_accounts_from_native_barrier(
             RawOrigin::Root.into(),
@@ -147,9 +165,13 @@ fn start_in_the_past_should_work() {
         ));
 
         // transfer more than limit should work for 1
-        assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 3, 15));
+        assert_ok!(Balances::transfer(
+            RuntimeOrigin::signed(1),
+            3,
+            daily_limit * 5
+        ));
         assert_err!(
-            Balances::transfer(RuntimeOrigin::signed(2), 2, 21),
+            Balances::transfer(RuntimeOrigin::signed(2), 2, daily_limit * 2 + 1),
             Error::<Runtime>::XcmTransfersLimitExceeded
         );
 
@@ -159,9 +181,21 @@ fn start_in_the_past_should_work() {
         ));
 
         // transfer more than limit should work for all
-        assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 3, 50));
-        assert_ok!(Balances::transfer(RuntimeOrigin::signed(2), 3, 50));
-        assert_ok!(Balances::transfer(RuntimeOrigin::signed(3), 3, 50));
+        assert_ok!(Balances::transfer(
+            RuntimeOrigin::signed(1),
+            3,
+            daily_limit * 5
+        ));
+        assert_ok!(Balances::transfer(
+            RuntimeOrigin::signed(2),
+            3,
+            daily_limit * 5
+        ));
+        assert_ok!(Balances::transfer(
+            RuntimeOrigin::signed(3),
+            3,
+            daily_limit * 5
+        ));
     });
 }
 
@@ -178,14 +212,16 @@ fn start_in_the_future_should_work() {
         assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 2, 20));
 
         let daily_limit = 10u128;
-        let day_in_secs = 86400;
+        let future_start = 10 * 86400;
+        let advance_to = 20 * 86400;
+        let future_days = 10;
         assert_ok!(NativeBarrier::set_daily_xcm_limit(
             RawOrigin::Root.into(),
             Some(daily_limit)
         ));
         assert_ok!(NativeBarrier::set_start_unix_time(
             RawOrigin::Root.into(),
-            Some(Duration::from_secs(day_in_secs))
+            Some(Duration::from_secs(future_start))
         ));
 
         assert_ok!(NativeBarrier::add_accounts_to_native_barrier(
@@ -202,17 +238,25 @@ fn start_in_the_future_should_work() {
 
         // limit should be multiple of daily limit (now - epoch_start)
         // roll one day
-        advance_mock_time(Duration::from_secs(day_in_secs));
+        advance_mock_time(Duration::from_secs(advance_to));
         NativeBarrier::on_initialize(1);
 
         // check that limit has been updated
         // transfer more than limit should not work
         assert_err!(
-            Balances::transfer(RuntimeOrigin::signed(1), 2, daily_limit + 1),
+            Balances::transfer(
+                RuntimeOrigin::signed(1),
+                2,
+                (future_days as u128 + 1) * daily_limit + 1
+            ),
             Error::<Runtime>::XcmTransfersLimitExceeded
         );
         // transfer under limit should work
-        assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 2, daily_limit));
+        assert_ok!(Balances::transfer(
+            RuntimeOrigin::signed(1),
+            2,
+            (future_days as u128 + 1) * daily_limit
+        ));
 
         assert_ok!(NativeBarrier::remove_accounts_from_native_barrier(
             RawOrigin::Root.into(),
@@ -223,10 +267,14 @@ fn start_in_the_future_should_work() {
         assert_ok!(Balances::transfer(
             RuntimeOrigin::signed(1),
             3,
-            daily_limit + 5
+            (future_days as u128 + 1) * daily_limit + 5
         ));
         assert_err!(
-            Balances::transfer(RuntimeOrigin::signed(2), 2, daily_limit + 1),
+            Balances::transfer(
+                RuntimeOrigin::signed(2),
+                2,
+                (future_days as u128 + 1) * daily_limit + 1
+            ),
             Error::<Runtime>::XcmTransfersLimitExceeded
         );
 
@@ -239,17 +287,19 @@ fn start_in_the_future_should_work() {
         assert_ok!(Balances::transfer(
             RuntimeOrigin::signed(1),
             3,
-            daily_limit * 10
+            (future_days as u128 + 1) * daily_limit * 2
         ));
         assert_ok!(Balances::transfer(
             RuntimeOrigin::signed(2),
             3,
-            daily_limit * 10
+            (future_days as u128 + 1) * daily_limit * 2
         ));
         assert_ok!(Balances::transfer(
             RuntimeOrigin::signed(3),
             3,
-            daily_limit * 10
+            (future_days as u128 + 1) * daily_limit * 2
         ));
     });
 }
+
+// todo: test that on_inits which don't roll a day will not increase limits.
