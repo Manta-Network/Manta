@@ -23,8 +23,10 @@
 
 use super::*;
 use frame_support::{
-    construct_runtime, ord_parameter_types, parameter_types,
-    traits::{ConstU32, Contains},
+    construct_runtime, ensure, ord_parameter_types,
+    pallet_prelude::DispatchResult,
+    parameter_types,
+    traits::{ConstU32, Contains, UnixTime},
 };
 use manta_primitives::{
     constants::time::SLOT_DURATION,
@@ -95,6 +97,20 @@ ord_parameter_types! {
     pub const One: AccountId = 1;
 }
 
+use std::cell::RefCell;
+
+// This will be our mutable mock time.
+thread_local! {
+    pub static MOCK_TIME: RefCell<Duration> = RefCell::new(Duration::default());
+}
+pub struct TestTimeSource;
+
+impl UnixTime for TestTimeSource {
+    fn now() -> Duration {
+        MOCK_TIME.with(|time| *time.borrow())
+    }
+}
+
 parameter_types! {
     pub NonPausablePallets: Vec<Vec<u8>> = vec![b"Democracy".to_vec(), b"Balances".to_vec(), b"Council".to_vec(), b"CouncilCollective".to_vec(), b"TechnicalCommittee".to_vec(), b"TechnicalCollective".to_vec()];
 }
@@ -102,7 +118,7 @@ parameter_types! {
 impl Config for Runtime {
     type Balance = Balance;
     type RuntimeEvent = RuntimeEvent;
-    type UnixTime = Timestamp;
+    type UnixTime = TestTimeSource;
     type WeightInfo = ();
 }
 

@@ -15,13 +15,16 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    mock::{AccountId, ExtBuilder, NativeBarrier, Runtime, RuntimeOrigin},
+    mock::{AccountId, Balances, ExtBuilder, NativeBarrier, Runtime, RuntimeOrigin, MOCK_TIME},
     Config, Error,
 };
 use manta_primitives::types::Balance;
 
 use core::time::Duration;
-use frame_support::{assert_err, assert_noop, assert_ok, traits::Currency};
+use frame_support::{
+    assert_err, assert_noop, assert_ok,
+    traits::{Currency, GenesisBuild, OnInitialize, ReservableCurrency},
+};
 use frame_system::RawOrigin;
 
 #[test]
@@ -78,7 +81,175 @@ fn extrinsics_as_root_should_work() {
     });
 }
 
-// TODO:
-// set start in the past and checks
-// set start in the future and checks
-// checks should be for balances, xtokens and mantapay
+fn set_mock_time(new_time: Duration) {
+    MOCK_TIME.with(|time| {
+        *time.borrow_mut() = new_time;
+    });
+}
+
+fn advance_mock_time(delta: Duration) {
+    MOCK_TIME.with(|time| {
+        *time.borrow_mut() += delta;
+    });
+}
+
+#[test]
+fn start_in_the_past_should_work() {
+    ExtBuilder::default().build().execute_with(|| {
+        set_mock_time(Duration::default());
+        // add balances to 1,2,3
+        assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 1, 1000, 0));
+        assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 2, 1000, 0));
+        assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 3, 1000, 0));
+
+        assert_ok!(NativeBarrier::set_daily_xcm_limit(
+            RawOrigin::Root.into(),
+            Some(10u128)
+        ));
+        assert_ok!(NativeBarrier::set_start_unix_time(
+            RawOrigin::Root.into(),
+            Some(Duration::default())
+        ));
+
+        // transfer more than limit should work
+        assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 2, 20));
+
+        assert_ok!(NativeBarrier::add_accounts_to_native_barrier(
+            RawOrigin::Root.into(),
+            vec![1, 2, 3]
+        ));
+
+        // transfer under limit should work
+        assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 2, 5));
+        // transfer more than limit should not work
+        assert_err!(
+            Balances::transfer(RuntimeOrigin::signed(1), 2, 7),
+            Error::<Runtime>::XcmTransfersLimitExceeded
+        );
+
+        // limit should be multiple of daily limit (now - epoch_start)
+        // roll one day
+        advance_mock_time(Duration::from_secs(86400));
+        NativeBarrier::on_initialize(1);
+
+        // check that limit has been updated
+        // transfer more than limit should not work
+        assert_err!(
+            Balances::transfer(RuntimeOrigin::signed(1), 2, 16),
+            Error::<Runtime>::XcmTransfersLimitExceeded
+        );
+        // transfer under limit should work
+        assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 2, 15));
+
+        assert_ok!(NativeBarrier::remove_accounts_from_native_barrier(
+            RawOrigin::Root.into(),
+            vec![1]
+        ));
+
+        // transfer more than limit should work for 1
+        assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 3, 15));
+        assert_err!(
+            Balances::transfer(RuntimeOrigin::signed(2), 2, 21),
+            Error::<Runtime>::XcmTransfersLimitExceeded
+        );
+
+        assert_ok!(NativeBarrier::set_daily_xcm_limit(
+            RawOrigin::Root.into(),
+            None
+        ));
+
+        // transfer more than limit should work for all
+        assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 3, 50));
+        assert_ok!(Balances::transfer(RuntimeOrigin::signed(2), 3, 50));
+        assert_ok!(Balances::transfer(RuntimeOrigin::signed(3), 3, 50));
+    });
+}
+
+#[test]
+fn start_in_the_future_should_work() {
+    ExtBuilder::default().build().execute_with(|| {
+        set_mock_time(Duration::default());
+        // add balances to 1,2,3
+        assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 1, 1000, 0));
+        assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 2, 1000, 0));
+        assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 3, 1000, 0));
+
+        // transfer more than limit should work
+        assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 2, 20));
+
+        let daily_limit = 10u128;
+        let day_in_secs = 86400;
+        assert_ok!(NativeBarrier::set_daily_xcm_limit(
+            RawOrigin::Root.into(),
+            Some(daily_limit)
+        ));
+        assert_ok!(NativeBarrier::set_start_unix_time(
+            RawOrigin::Root.into(),
+            Some(Duration::from_secs(day_in_secs))
+        ));
+
+        assert_ok!(NativeBarrier::add_accounts_to_native_barrier(
+            RawOrigin::Root.into(),
+            vec![1, 2, 3]
+        ));
+
+        // transfer more than limit should work
+        assert_ok!(Balances::transfer(
+            RuntimeOrigin::signed(1),
+            2,
+            daily_limit + 5
+        ));
+
+        // limit should be multiple of daily limit (now - epoch_start)
+        // roll one day
+        advance_mock_time(Duration::from_secs(day_in_secs));
+        NativeBarrier::on_initialize(1);
+
+        // check that limit has been updated
+        // transfer more than limit should not work
+        assert_err!(
+            Balances::transfer(RuntimeOrigin::signed(1), 2, daily_limit + 1),
+            Error::<Runtime>::XcmTransfersLimitExceeded
+        );
+        // transfer under limit should work
+        assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 2, daily_limit));
+
+        assert_ok!(NativeBarrier::remove_accounts_from_native_barrier(
+            RawOrigin::Root.into(),
+            vec![1]
+        ));
+
+        // transfer more than limit should work for 1
+        assert_ok!(Balances::transfer(
+            RuntimeOrigin::signed(1),
+            3,
+            daily_limit + 5
+        ));
+        assert_err!(
+            Balances::transfer(RuntimeOrigin::signed(2), 2, daily_limit + 1),
+            Error::<Runtime>::XcmTransfersLimitExceeded
+        );
+
+        assert_ok!(NativeBarrier::set_daily_xcm_limit(
+            RawOrigin::Root.into(),
+            None
+        ));
+
+        // transfer more than limit should work for all
+        assert_ok!(Balances::transfer(
+            RuntimeOrigin::signed(1),
+            3,
+            daily_limit * 10
+        ));
+        assert_ok!(Balances::transfer(
+            RuntimeOrigin::signed(2),
+            3,
+            daily_limit * 10
+        ));
+        assert_ok!(Balances::transfer(
+            RuntimeOrigin::signed(3),
+            3,
+            daily_limit * 10
+        ));
+    });
+}
