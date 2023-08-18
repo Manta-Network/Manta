@@ -15,16 +15,12 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    mock::{AccountId, Balances, ExtBuilder, NativeBarrier, Runtime, RuntimeOrigin, MOCK_TIME},
-    Config, Error,
+    mock::{Balances, ExtBuilder, NativeBarrier, Runtime, RuntimeOrigin, MOCK_TIME},
+    Error,
 };
-use manta_primitives::types::Balance;
 
 use core::time::Duration;
-use frame_support::{
-    assert_err, assert_noop, assert_ok,
-    traits::{Currency, GenesisBuild, OnInitialize, ReservableCurrency},
-};
+use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize};
 use frame_system::RawOrigin;
 
 #[test]
