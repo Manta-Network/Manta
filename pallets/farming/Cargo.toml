@@ -24,7 +24,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkad
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 
 manta-primitives = { path = '../../primitives/manta', default-features = false }
-orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "ghzlatarev/polkadot-v0.9.37", default-features = false }
+orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.37", default-features = false }
 pallet-asset-manager = { path = "../asset-manager", default-features = false, optional = true }
 pallet-assets = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false, optional = true }
 xcm = { git = "https://github.com/paritytech/polkadot.git", branch = "release-v0.9.37", default-features = false, optional = true }

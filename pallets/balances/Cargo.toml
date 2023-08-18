@@ -21,7 +21,7 @@ scale-info = { version = "2.1.1", default-features = false, features = ["derive"
 sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 
-orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "ghzlatarev/polkadot-v0.9.37" }
+orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.37" }
 pallet-native-barrier = { path = '../native-barrier', default-features = false }
 
 [dev-dependencies]
