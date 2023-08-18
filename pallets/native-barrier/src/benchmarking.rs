@@ -30,7 +30,10 @@ use sp_runtime::traits::Zero;
 const SEED: u32 = 0;
 
 benchmarks! {
-    //TODO: docs
+
+    // Worst case scenario is once per day when the RemainingXcmLimit is updated
+    // we set the start time as the beginning of the epoch so the on-initialize will
+    // add ((now - epoch_start) * daily_limit) + daily_amount for each account
     on_initialize {
         let daily_limit = T::Balance::zero();
         let _ = NativeBarrier::<T>::set_daily_xcm_limit(RawOrigin::Root.into(), Some(daily_limit))?;
@@ -45,17 +48,26 @@ benchmarks! {
         ];
         let _ = NativeBarrier::<T>::add_accounts_to_native_barrier(RawOrigin::Root.into(), barrier_addresses)?;
     }:{NativeBarrier::<T>::on_initialize(T::BlockNumber::from(1_000_000u32));}
+    verify {
+        let now = <T::UnixTime>::now().as_secs();
+        let expected_days = now / (24 * 60 * 60);
+        let mut total_limit = daily_limit;
+        for _ in 0..expected_days {
+            total_limit += daily_limit;
+        }
+        for (account_id, balance) in RemainingXcmLimit::<T>::iter() {
+            assert_eq!(balance, total_limit);
+        }
+    }
 
-    //
+    // Worst case scenario would be actually overwriting this simple storage item
     set_start_unix_time {
         let caller: T::AccountId = whitelisted_caller();
         let start_unix_time = Duration::default();
     }: set_start_unix_time(RawOrigin::Root, Some(start_unix_time))
-    verify {
-        assert_eq!(NativeBarrier::<T>::get_start_unix_time().unwrap(), start_unix_time);
-    }
 
-    //
+
+    // Worst case scenario would be actually overwriting this simple storage item
     set_daily_xcm_limit {
         let caller: T::AccountId = whitelisted_caller();
         let daily_limit = T::Balance::zero();
@@ -64,7 +76,8 @@ benchmarks! {
         assert_eq!(NativeBarrier::<T>::get_daily_xcm_limit().unwrap(), daily_limit);
     }
 
-    //
+    // Worst case scenario would be actually writing the accounts into the barrier storage item
+    // Make sure the accounts have at least one daily limit once they are added
     add_accounts_to_native_barrier {
         let caller: T::AccountId = whitelisted_caller();
         let daily_limit = T::Balance::zero();
@@ -81,12 +94,12 @@ benchmarks! {
         let daily_limit = T::Balance::zero();
     }: add_accounts_to_native_barrier(RawOrigin::Root, barrier_addresses)
     verify {
-        for (account_id, _) in RemainingXcmLimit::<T>::iter() {
-            assert_eq!(RemainingXcmLimit::<T>::get(account_id).unwrap(), daily_limit);
+        for (account_id, balance) in RemainingXcmLimit::<T>::iter() {
+            assert_eq!(balance, daily_limit);
         }
     }
 
-    //
+    // worst case scenario is to remove all the account from the barrier
     remove_accounts_from_native_barrier {
         let caller: T::AccountId = whitelisted_caller();
         let daily_limit = T::Balance::zero();
@@ -103,13 +116,17 @@ benchmarks! {
         let _ = NativeBarrier::<T>::add_accounts_to_native_barrier(RawOrigin::Root.into(), barrier_addresses.clone())?;
         let remove_addresses = vec![
             barrier_addresses[0].clone(),
+            barrier_addresses[1].clone(),
             barrier_addresses[2].clone(),
+            barrier_addresses[3].clone(),
             barrier_addresses[4].clone()
         ];
     }: remove_accounts_from_native_barrier(RawOrigin::Root, remove_addresses)
     verify {
         assert_eq!(None, RemainingXcmLimit::<T>::get(account::<T::AccountId>("address_0", 0, SEED)));
+        assert_eq!(None, RemainingXcmLimit::<T>::get(account::<T::AccountId>("address_1", 0, SEED)));
         assert_eq!(None, RemainingXcmLimit::<T>::get(account::<T::AccountId>("address_2", 0, SEED)));
+        assert_eq!(None, RemainingXcmLimit::<T>::get(account::<T::AccountId>("address_3", 0, SEED)));
         assert_eq!(None, RemainingXcmLimit::<T>::get(account::<T::AccountId>("address_4", 0, SEED)));
     }
 
