@@ -307,9 +307,7 @@ impl<T: Config> orml_traits::xcm_transfer::NativeBarrier<T::AccountId, T::Balanc
 impl<T: Config> Pallet<T> {
     fn reset_remaining_xcm_limit(unprocessed_days: u64) {
         if let Some(daily_limit) = <DailyXcmLimit<T>>::get() {
-            for (account_id, _) in RemainingXcmLimit::<T>::iter() {
-                let mut remaining_limit =
-                    <RemainingXcmLimit<T>>::get(&account_id).unwrap_or(daily_limit);
+            for (account_id, mut remaining_limit) in RemainingXcmLimit::<T>::iter() {
                 for _ in 0..unprocessed_days {
                     remaining_limit += daily_limit;
                 }
