@@ -26,10 +26,7 @@ use frame_support::{
     construct_runtime, ord_parameter_types, parameter_types,
     traits::{ConstU32, Contains, UnixTime},
 };
-use manta_primitives::{
-    constants::time::SLOT_DURATION,
-    types::{Balance, BlockNumber, Header},
-};
+use manta_primitives::types::{Balance, BlockNumber, Header};
 
 use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
@@ -120,17 +117,6 @@ impl Config for Runtime {
     type WeightInfo = ();
 }
 
-parameter_types! {
-    pub const MinimumPeriod: u64 =  SLOT_DURATION / 2;
-}
-
-impl pallet_timestamp::Config for Runtime {
-    type Moment = u64;
-    type OnTimestampSet = ();
-    type MinimumPeriod = MinimumPeriod;
-    type WeightInfo = ();
-}
-
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
@@ -142,7 +128,6 @@ construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         NativeBarrier: pallet_native_barrier::{Pallet, Storage, Call, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Balances: pallet_balances::{Pallet, Storage, Call, Event<T>},
     }
 );

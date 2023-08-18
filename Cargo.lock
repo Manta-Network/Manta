@@ -7271,7 +7271,6 @@ dependencies = [
  "manta-primitives",
  "orml-traits 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?branch=ghzlatarev/polkadot-v0.9.37)",
  "pallet-balances 4.4.0",
- "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
  "sp-core",

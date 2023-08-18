@@ -23,7 +23,6 @@ orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-libr
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 
 [dev-dependencies]
-pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 pallet-balances = { path = "../balances" }
