@@ -71,7 +71,7 @@ pub mod pallet {
 
     /// The current storage version.
     const STORAGE_VERSION: frame_support::traits::StorageVersion =
-        frame_support::traits::StorageVersion::new(1);
+        frame_support::traits::StorageVersion::new(0);
 
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
