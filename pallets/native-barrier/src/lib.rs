@@ -188,6 +188,7 @@ pub mod pallet {
 
     /// Caches the last processed day, used to check for start of new days
     #[pallet::storage]
+    #[pallet::getter(fn get_last_day_processed)]
     pub type LastDayProcessed<T: Config> = StorageValue<_, u64, OptionQuery>;
 
     /// Stores starting unix time for the native barrier logic

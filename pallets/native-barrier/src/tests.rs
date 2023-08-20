@@ -89,37 +89,46 @@ fn advance_mock_time(delta: Duration) {
     });
 }
 
+fn initialize_test_environment() -> () {
+    // add balances to 1,2,3
+    assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 1, 1000, 0));
+    assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 2, 1000, 0));
+    assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 3, 1000, 0));
+
+    // transfer more than limit should work
+    assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 2, 20));
+}
+
+fn initialize_native_barrier(daily_limit: u128, start_unix_time: Duration) -> () {
+    set_mock_time(Duration::default());
+
+    // add balances to 1,2,3
+    assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 1, 1000, 0));
+    assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 2, 1000, 0));
+    assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 3, 1000, 0));
+
+    assert_ok!(NativeBarrier::set_daily_xcm_limit(
+        RawOrigin::Root.into(),
+        Some(daily_limit)
+    ));
+    assert_ok!(NativeBarrier::set_start_unix_time(
+        RawOrigin::Root.into(),
+        Some(start_unix_time)
+    ));
+    assert_ok!(NativeBarrier::add_accounts_to_native_barrier(
+        RawOrigin::Root.into(),
+        vec![1, 2, 3]
+    ));
+}
+
 #[test]
 fn start_in_the_past_should_work() {
     ExtBuilder::default().build().execute_with(|| {
-        set_mock_time(Duration::default());
-        // add balances to 1,2,3
-        assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 1, 1000, 0));
-        assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 2, 1000, 0));
-        assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 3, 1000, 0));
+        initialize_test_environment();
 
         let daily_limit = 10u128;
         let day_in_secs = 86400;
-        assert_ok!(NativeBarrier::set_daily_xcm_limit(
-            RawOrigin::Root.into(),
-            Some(daily_limit)
-        ));
-        assert_ok!(NativeBarrier::set_start_unix_time(
-            RawOrigin::Root.into(),
-            Some(Duration::default())
-        ));
-
-        // transfer more than limit should work
-        assert_ok!(Balances::transfer(
-            RuntimeOrigin::signed(1),
-            2,
-            daily_limit * 2
-        ));
-
-        assert_ok!(NativeBarrier::add_accounts_to_native_barrier(
-            RawOrigin::Root.into(),
-            vec![1, 2, 3]
-        ));
+        initialize_native_barrier(daily_limit, Duration::default());
 
         // transfer under limit should work
         assert_ok!(Balances::transfer(
@@ -198,32 +207,11 @@ fn start_in_the_past_should_work() {
 #[test]
 fn start_in_the_future_should_work() {
     ExtBuilder::default().build().execute_with(|| {
-        set_mock_time(Duration::default());
-        // add balances to 1,2,3
-        assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 1, 1000, 0));
-        assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 2, 1000, 0));
-        assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 3, 1000, 0));
-
-        // transfer more than limit should work
-        assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 2, 20));
+        initialize_test_environment();
 
         let daily_limit = 10u128;
-        let future_start = 10 * 86400;
-        let advance_to = 20 * 86400;
+        let advance_10 = 10 * 86400;
         let future_days = 10;
-        assert_ok!(NativeBarrier::set_daily_xcm_limit(
-            RawOrigin::Root.into(),
-            Some(daily_limit)
-        ));
-        assert_ok!(NativeBarrier::set_start_unix_time(
-            RawOrigin::Root.into(),
-            Some(Duration::from_secs(future_start))
-        ));
-
-        assert_ok!(NativeBarrier::add_accounts_to_native_barrier(
-            RawOrigin::Root.into(),
-            vec![1, 2, 3]
-        ));
 
         // transfer more than limit should work
         assert_ok!(Balances::transfer(
@@ -232,9 +220,11 @@ fn start_in_the_future_should_work() {
             daily_limit + 5
         ));
 
+        initialize_native_barrier(daily_limit, Duration::from_secs(advance_10));
+
         // limit should be multiple of daily limit (now - epoch_start)
         // roll one day
-        advance_mock_time(Duration::from_secs(advance_to));
+        advance_mock_time(Duration::from_secs(advance_10 * 2));
         NativeBarrier::on_initialize(1);
 
         // check that limit has been updated
@@ -298,85 +288,40 @@ fn start_in_the_future_should_work() {
     });
 }
 
+fn loop_on_init_and_assert_accounts(should_be: Option<u128>) {
+    for _ in 0..1000 {
+        NativeBarrier::on_initialize(1);
+    }
+
+    // check that limit has not changed
+    for k in 1..4 {
+        let limit = NativeBarrier::get_remaining_xcm_limit(k);
+        assert_eq!(limit, should_be);
+    }
+}
+
 #[test]
 fn limits_should_grow_appropriately() {
     ExtBuilder::default().build().execute_with(|| {
-
-        set_mock_time(Duration::default());
-        // add balances to 1,2,3
-        assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 1, 1000, 0));
-        assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 2, 1000, 0));
-        assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 3, 1000, 0));
-
-        // transfer more than limit should work
-        assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 2, 20));
-
-        for _ in 0..1000 {
-            NativeBarrier::on_initialize(1);
-        }
-
-        // check that limit has not changed
-        for k in 1 .. 4 {
-            let limit = NativeBarrier::get_remaining_xcm_limit(k);
-            assert_eq!(limit, None);
-        }
+        initialize_test_environment();
+        loop_on_init_and_assert_accounts(None);
+        assert_eq!(NativeBarrier::get_last_day_processed(), None);
 
         let daily_limit = 10u128;
         let advance_10 = 10 * 86400;
-        assert_ok!(NativeBarrier::set_daily_xcm_limit(
-            RawOrigin::Root.into(),
-            Some(daily_limit)
-        ));
-        assert_ok!(NativeBarrier::set_start_unix_time(
-            RawOrigin::Root.into(),
-            Some(Duration::from_secs(advance_10))
-        ));
 
-        assert_ok!(NativeBarrier::add_accounts_to_native_barrier(
-            RawOrigin::Root.into(),
-            vec![1, 2, 3]
-        ));
-
-
-        for _ in 0..1000 {
-            NativeBarrier::on_initialize(1);
-        }
-
+        initialize_native_barrier(daily_limit, Duration::from_secs(advance_10));
+        loop_on_init_and_assert_accounts(Some(daily_limit));
         assert_eq!(NativeBarrier::get_last_day_processed(), None);
 
-        // check that limit has not changed
-        for k in 1 .. 4 {
-            let limit = NativeBarrier::get_remaining_xcm_limit(k);
-            assert_eq!(limit, Some(daily_limit));
-        }
-
-        // roll 10 days
+        // roll 20 days (10 days after start)
         advance_mock_time(Duration::from_secs(advance_10 * 2));
-
-        for _ in 0..1000 {
-            NativeBarrier::on_initialize(1);
-        }
-
+        loop_on_init_and_assert_accounts(Some(daily_limit * 10 + daily_limit));
         assert_eq!(NativeBarrier::get_last_day_processed(), Some(10));
-
-        for k in 1 .. 4 {
-            let limit = NativeBarrier::get_remaining_xcm_limit(k);
-            assert_eq!(limit, Some(daily_limit * 10 + daily_limit));
-        }
 
         // roll another 10 days
         advance_mock_time(Duration::from_secs(advance_10));
-
-        for _ in 0..1000 {
-            NativeBarrier::on_initialize(1);
-        }
-
+        loop_on_init_and_assert_accounts(Some(daily_limit * 20 + daily_limit));
         assert_eq!(NativeBarrier::get_last_day_processed(), Some(20));
-
-        for k in 1 .. 4 {
-            let limit = NativeBarrier::get_remaining_xcm_limit(k);
-            assert_eq!(limit, Some(daily_limit * 20 + daily_limit));
-        }
-
     });
 }
