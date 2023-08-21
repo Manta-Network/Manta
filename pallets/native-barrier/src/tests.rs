@@ -141,6 +141,14 @@ fn start_in_the_past_should_work() {
             Balances::transfer(RuntimeOrigin::signed(1), 2, daily_limit / 2 + 1),
             Error::<Runtime>::XcmTransfersLimitExceeded
         );
+        assert_err!(
+            Balances::transfer_keep_alive(RuntimeOrigin::signed(1), 2, daily_limit / 2 + 1),
+            Error::<Runtime>::XcmTransfersLimitExceeded
+        );
+        assert_err!(
+            Balances::transfer_all(RuntimeOrigin::signed(1), 2, false),
+            Error::<Runtime>::XcmTransfersLimitExceeded
+        );
 
         // limit should be multiple of daily limit (now - epoch_start)
         // roll one day
@@ -155,6 +163,18 @@ fn start_in_the_past_should_work() {
                 2,
                 daily_limit + daily_limit / 2 + 1
             ),
+            Error::<Runtime>::XcmTransfersLimitExceeded
+        );
+        assert_err!(
+            Balances::transfer_keep_alive(
+                RuntimeOrigin::signed(1),
+                2,
+                daily_limit + daily_limit / 2 + 1
+            ),
+            Error::<Runtime>::XcmTransfersLimitExceeded
+        );
+        assert_err!(
+            Balances::transfer_all(RuntimeOrigin::signed(1), 2, false),
             Error::<Runtime>::XcmTransfersLimitExceeded
         );
         // transfer under limit should work
@@ -238,10 +258,6 @@ fn start_in_the_future_should_work() {
             Error::<Runtime>::XcmTransfersLimitExceeded
         );
         assert_err!(
-            Balances::transfer_all(RuntimeOrigin::signed(1), 2, false),
-            Error::<Runtime>::XcmTransfersLimitExceeded
-        );
-        assert_err!(
             Balances::transfer_keep_alive(
                 RuntimeOrigin::signed(1),
                 2,
@@ -249,6 +265,11 @@ fn start_in_the_future_should_work() {
             ),
             Error::<Runtime>::XcmTransfersLimitExceeded
         );
+        assert_err!(
+            Balances::transfer_all(RuntimeOrigin::signed(1), 2, false),
+            Error::<Runtime>::XcmTransfersLimitExceeded
+        );
+
         // transfer under limit should work
         assert_ok!(Balances::transfer(
             RuntimeOrigin::signed(1),
