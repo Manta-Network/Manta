@@ -95,6 +95,8 @@ jobs:
     needs: [build-node-current]
     runs-on: runtime-integration-test
     timeout-minutes: 240
+    container:
+      image: ubuntu:20.04
     strategy:
       fail-fast: false
       matrix:
@@ -122,13 +124,13 @@ jobs:
           name: manta
       - name: mv and chmod manta
         run: |
-          mv ${{ github.workspace }}/manta $HOME/.local/bin/
+          mv $GITHUB_WORKSPACE/manta $HOME/.local/bin/
           chmod +x $HOME/.local/bin/manta
-          ls -ahl ${{ github.workspace }}/
+          ls -ahl $GITHUB_WORKSPACE/
           ls -ahl $HOME/.local/bin/
       - name: fetch and chmod polkadot
         run: |
-          sudo apt update && sudo apt install -y curl
+          apt update && apt install -y curl
           if [[ ! -f "$HOME/.local/bin/polkadot" ]]; then
             curl -L -o $HOME/.local/bin/polkadot ${{ env.POLKADOT_BINARY }}
             chmod +x $HOME/.local/bin/polkadot
@@ -181,33 +183,33 @@ jobs:
       - name: create launch config
         run: |
           source ${HOME}/.cargo/env
-          ls -ahl ${{ github.workspace }}
-          cd ${{ github.workspace }}
+          ls -ahl $GITHUB_WORKSPACE
+          cd $GITHUB_WORKSPACE
           dasel put -t string -v $HOME/.local/bin/polkadot -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.relaychain.default_command'
           dasel put -t string -v $HOME/.local/bin/manta -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].collators.[0].command'
           dasel put -t string -v $HOME/.local/bin/manta -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].collators.[1].command'
           dasel put -t string -v $HOME/.local/bin/manta -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].collators.[2].command'
           dasel put -t string -v $HOME/.local/bin/manta -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].collators.[3].command'
           dasel put -t string -v $HOME/.local/bin/manta -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].collators.[4].command'
           dasel put -t string -v "manta-dev" -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].chain'
           dasel put -t int -v 2104 -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].id'
-          cat ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
+          cat $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml
       - if: always()
         uses: actions/upload-artifact@v2
         with:
@@ -232,32 +234,32 @@ jobs:
       - name: launch testnet
         shell: bash
         run: |
-          cd ${{ github.workspace }}/zombienet-tool/javascript
+          cd $GITHUB_WORKSPACE/zombienet-tool/javascript
           yarn
           npm run build
           pm2 start packages/cli/dist/cli.js --name zombienet \
-            --output ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log \
-            -- spawn --provider native ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
+            --output $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log \
+            -- spawn --provider native $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml
       - name: init measure-block-time rococo
         run: |
-          cd ${{ github.workspace }}/dev-tools-rococo/measure-block-time
+          cd $GITHUB_WORKSPACE/dev-tools-rococo/measure-block-time
           yarn install
           pm2 start index.js \
             --name measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }} \
-            --output ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log \
+            --output $GITHUB_WORKSPACE/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error $GITHUB_WORKSPACE/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart \
             -- \
             --address=ws://127.0.0.1:9911
       - name: init measure-block-time manta
         run: |
-          cd ${{ github.workspace }}/dev-tools-manta/measure-block-time
+          cd $GITHUB_WORKSPACE/dev-tools-manta/measure-block-time
           yarn install
           pm2 start index.js \
             --name measure-block-time-${{ matrix.chain-spec.id }} \
-            --output ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
+            --output $GITHUB_WORKSPACE/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log \
+            --error $GITHUB_WORKSPACE/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart \
             -- \
             --address=ws://127.0.0.1:9921
@@ -268,159 +270,159 @@ jobs:
       - name: run test suites
         run: |
           sleep 120
-          cd ${{ github.workspace }}/Manta/tests
+          cd $GITHUB_WORKSPACE/Manta/tests
           yarn install
           yarn
           yarn correctness_test --address=ws://127.0.0.1:9921 --exit
           yarn performance_test --address=ws://127.0.0.1:9921 --exit
       - name: check if target block is finalized
         run: |
-          cd ${{ github.workspace }}/dev-tools-manta/check-finalized-block
+          cd $GITHUB_WORKSPACE/dev-tools-manta/check-finalized-block
           yarn install
           yarn
           node index.js --para_address=ws://127.0.0.1:9921 --relay_address=ws://127.0.0.1:9911 --target_block=${{ matrix.chain-spec.expected.block-count.para }}
           if [ $? == 1 ]; then echo "Failed to finalize the target block - ${{ matrix.chain-spec.expected.block-count.para }}"; exit 1; fi
       - name: stop testnet
         run: |
-          cd ${{ github.workspace }}/zombienet-tool
+          cd $GITHUB_WORKSPACE/zombienet-tool
           pm2 stop measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}
           pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
           pm2 stop zombienet
       - name: test - manta alice peered successfully
         run: |
           source ${HOME}/.cargo/env
-          cd ${{ github.workspace }}/zombienet-tool/javascript
-          sed -i 's/2084/2104/g' ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
+          cd $GITHUB_WORKSPACE/zombienet-tool/javascript
+          sed -i 's/2084/2104/g' $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.zndsl
           dasel put -t string -v $HOME/.local/bin/polkadot -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.relaychain.default_command'
           dasel put -t string -v $HOME/.local/bin/manta -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].collators.[0].command'
           dasel put -t string -v $HOME/.local/bin/manta -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].collators.[1].command'
           dasel put -t string -v $HOME/.local/bin/manta -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].collators.[2].command'
           dasel put -t string -v $HOME/.local/bin/manta -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].collators.[3].command'
           dasel put -t string -v $HOME/.local/bin/manta -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].collators.[4].command'
           dasel put -t string -v "manta-dev" -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].chain'
           dasel put -t int -v 2104 -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].id'
-          cat ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
-          cat ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
-          node packages/cli/dist/cli.js -f -p native test ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
+          cat $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml
+          cat $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.zndsl
+          node packages/cli/dist/cli.js -f -p native test $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.zndsl
       - if: always()
         uses: actions/upload-artifact@v2
         with:
           name: zombienet-for-${{ matrix.chain-spec.id }}-stdout.log
-          path: ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log
+          path: $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log
       - if: always()
         uses: actions/upload-artifact@v2
         with:
           name: zombienet-for-${{ matrix.chain-spec.id }}-stderr.log
-          path: ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log
+          path: $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log
       - if: always()
         uses: actions/upload-artifact@v2
         with:
           name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
-          path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
+          path: $GITHUB_WORKSPACE/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
       - if: always()
         uses: actions/upload-artifact@v2
         with:
           name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
-          path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
+          path: $GITHUB_WORKSPACE/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
       - if: always()
         uses: actions/upload-artifact@v2
         with:
           name: measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
-          path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
+          path: $GITHUB_WORKSPACE/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
       - if: always()
         uses: actions/upload-artifact@v2
         with:
           name: measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
-          path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
+          path: $GITHUB_WORKSPACE/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
       - name: append manta-pay storage
         run: |
           source ${HOME}/.cargo/env
-          wget -P ${{ github.workspace }}/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
-          mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json ${{ github.workspace }}/Manta/tests/data/fork.json
-          cd ${{ github.workspace }}/Manta/tests
+          wget -P $GITHUB_WORKSPACE/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
+          mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json $GITHUB_WORKSPACE/Manta/tests/data/fork.json
+          cd $GITHUB_WORKSPACE/Manta/tests
           yarn install
           yarn
           node append_storage.js
           cd ../../
-          mv ${{ github.workspace }}/Manta/tests/data/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
+          mv $GITHUB_WORKSPACE/Manta/tests/data/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
           dasel put -t string -v $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].chain_spec_path'
           dasel delete -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].chain'
-          cat ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
+          cat $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml
           head -20 $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
       - name: launch testnet
         run: |
-          cd ${{ github.workspace }}/zombienet-tool/javascript
+          cd $GITHUB_WORKSPACE/zombienet-tool/javascript
           yarn
           npm run build
           pm2 start packages/cli/dist/cli.js --name zombienet \
-            --output ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log \
-            -- spawn --provider native ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
+            --output $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log \
+            -- spawn --provider native $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml
       - name: run stress test
         run: |
           sleep 720
-          cd ${{ github.workspace }}/Manta/tests
+          cd $GITHUB_WORKSPACE/Manta/tests
           yarn install
           yarn
           yarn stress_benchmark_test --address=ws://127.0.0.1:9921 --exit
       - name: stop testnet
         run: |
-          cd ${{ github.workspace }}/zombienet-tool
+          cd $GITHUB_WORKSPACE/zombienet-tool
           pm2 stop zombienet
       - if: always()
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-alice-stress.log
-          path: ${{ github.workspace }}/zombienet/9921.log
+          path: $GITHUB_WORKSPACE/zombienet/9921.log
       - name: launch testnet
         run: |
-          cd ${{ github.workspace }}/zombienet-tool/javascript
+          cd $GITHUB_WORKSPACE/zombienet-tool/javascript
           yarn
           npm run build
           pm2 start packages/cli/dist/cli.js --name zombienet \
-            --output ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log \
-            -- spawn --provider native ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
+            --output $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log \
+            -- spawn --provider native $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml
       - name: run farming test
         run: |
           sleep 720
-          cd ${{ github.workspace }}/Manta/tests
+          cd $GITHUB_WORKSPACE/Manta/tests
           yarn install
           yarn
           yarn test_farming --address=ws://127.0.0.1:9921 --exit
       - name: stop testnet
         run: |
-          cd ${{ github.workspace }}/zombienet-tool
+          cd $GITHUB_WORKSPACE/zombienet-tool
           pm2 stop zombienet
       - if: always()
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-alice-stress.log
-          path: ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log
+          path: $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log
       - name: run tests
         run: |
           sleep 120
-          cd ${{ github.workspace }}/Manta/tests
+          cd $GITHUB_WORKSPACE/Manta/tests
           yarn install
           yarn
           MANTA_BINARY=$HOME/.local/bin/manta yarn tests
