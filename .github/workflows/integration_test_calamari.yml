@@ -132,8 +132,10 @@ jobs:
       - name: fetch and chmod polkadot
         run: |
           sudo apt update && sudo apt install -y curl
-          curl -L -o $HOME/.local/bin/polkadot ${{ env.POLKADOT_BINARY }}
-          chmod +x $HOME/.local/bin/polkadot
+          if [[ ! -f "$HOME/.local/bin/polkadot" ]]; then
+            curl -L -o $HOME/.local/bin/polkadot ${{ env.POLKADOT_BINARY }}
+            chmod +x $HOME/.local/bin/polkadot
+          fi
           ls -ahl $HOME/.local/bin/
       - name: Install dasel cli
         run: |
