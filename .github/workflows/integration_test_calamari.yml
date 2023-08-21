@@ -336,6 +336,7 @@ jobs:
             -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].chain'
       - name: launch testnet
+        shell: bash
         run: |
           cd $GITHUB_WORKSPACE/zombienet-tool/javascript
           yarn
@@ -361,6 +362,7 @@ jobs:
           name: ${{ matrix.chain-spec.id }}-alice-stress.log
           path: $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log
       - name: launch testnet
+        shell: bash
         run: |
           cd $GITHUB_WORKSPACE/zombienet-tool/javascript
           yarn

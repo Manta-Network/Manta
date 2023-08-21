@@ -370,6 +370,7 @@ jobs:
           cat $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml
           head -20 $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
       - name: launch testnet
+        shell: bash
         run: |
           cd $GITHUB_WORKSPACE/zombienet-tool/javascript
           yarn
@@ -395,6 +396,7 @@ jobs:
           name: ${{ matrix.chain-spec.id }}-alice-stress.log
           path: $GITHUB_WORKSPACE/zombienet/9921.log
       - name: launch testnet
+        shell: bash
         run: |
           cd $GITHUB_WORKSPACE/zombienet-tool/javascript
           yarn
