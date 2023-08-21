@@ -237,6 +237,18 @@ fn start_in_the_future_should_work() {
             ),
             Error::<Runtime>::XcmTransfersLimitExceeded
         );
+        assert_err!(
+            Balances::transfer_all(RuntimeOrigin::signed(1), 2, false),
+            Error::<Runtime>::XcmTransfersLimitExceeded
+        );
+        assert_err!(
+            Balances::transfer_keep_alive(
+                RuntimeOrigin::signed(1),
+                2,
+                (future_days as u128 + 1) * daily_limit + 1
+            ),
+            Error::<Runtime>::XcmTransfersLimitExceeded
+        );
         // transfer under limit should work
         assert_ok!(Balances::transfer(
             RuntimeOrigin::signed(1),

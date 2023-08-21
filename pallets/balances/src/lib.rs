@@ -248,7 +248,7 @@ pub mod pallet {
         /// The id type for named reserves.
         type ReserveIdentifier: Parameter + Member + MaxEncodedLen + Ord + Copy;
 
-        /// TODO: comment
+        /// Barrier for native transfers of select accounts
         type NativeBarrierType: NativeBarrier<Self::AccountId, Self::Balance>;
     }
 
