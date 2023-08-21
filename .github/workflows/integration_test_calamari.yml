@@ -98,6 +98,8 @@ jobs:
     needs: [build-node-current]
     runs-on: runtime-integration-test
     timeout-minutes: 240
+    container:
+      image: ubuntu:20.04
     strategy:
       fail-fast: false
       matrix:
