@@ -230,6 +230,7 @@ jobs:
       - name: Install pm2
         run: npm install -g pm2
       - name: launch testnet
+        shell: bash
         run: |
           cd ${{ github.workspace }}/zombienet-tool/javascript
           yarn
