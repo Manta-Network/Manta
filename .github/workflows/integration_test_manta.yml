@@ -137,6 +137,7 @@ jobs:
           fi
           ls -ahl $HOME/.local/bin/
       - name: Install dasel cli
+        shell: bash
         run: |
           source ${HOME}/.cargo/env
           curl -sSLf "$(curl -sSLf https://api.github.com/repos/tomwright/dasel/releases/latest | grep browser_download_url | grep linux_amd64 | grep -v .gz | cut -d\" -f 4)" -L -o dasel && chmod +x dasel
@@ -181,6 +182,7 @@ jobs:
           name: ${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
           path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
       - name: create launch config
+        shell: bash
         run: |
           source ${HOME}/.cargo/env
           ls -ahl $GITHUB_WORKSPACE
@@ -289,6 +291,7 @@ jobs:
           pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
           pm2 stop zombienet
       - name: test - manta alice peered successfully
+        shell: bash
         run: |
           source ${HOME}/.cargo/env
           cd $GITHUB_WORKSPACE/zombienet-tool/javascript
@@ -351,6 +354,7 @@ jobs:
           name: measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
           path: $GITHUB_WORKSPACE/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
       - name: append manta-pay storage
+        shell: bash
         run: |
           source ${HOME}/.cargo/env
           wget -P $GITHUB_WORKSPACE/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
