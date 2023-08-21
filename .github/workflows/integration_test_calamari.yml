@@ -185,7 +185,6 @@ jobs:
           path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
       - name: create launch config
         run: |
-          source ${HOME}/.cargo/env
           ls -ahl $GITHUB_WORKSPACE/Manta
           cd $GITHUB_WORKSPACE
           $HOME/dasel put -t string -v $HOME/.local/bin/polkadot -r toml \
