@@ -41,6 +41,9 @@ benchmarks! {
         let caller: T::AccountId = whitelisted_caller();
         let factor = 1_000u32;
         <T as crate::Config>::Currency::make_free_balance_be(&caller, T::ReservePrice::get() * factor.into());
+        // 0..360000 asset ids have been inserted into mantasbt.
+        // so next sbt id should be 360000, or related private txs won't get passed.
+        crate::NextSbtId::<T>::put(&360_000);
         Pallet::<T>::reserve_sbt(RawOrigin::Signed(caller.clone()).into(), None)?;
 
         let mint_coins = read_mint_coins();
@@ -129,6 +132,7 @@ benchmarks! {
     mint_sbt_eth {
         let bab_id = 1;
         let caller: T::AccountId = whitelisted_caller();
+        crate::NextSbtId::<T>::put(&360_000);
         MantaSBTPallet::<T>::change_allowlist_account(
             RawOrigin::Root.into(),
             Some(caller.clone())
@@ -213,6 +217,7 @@ benchmarks! {
             Some(caller.clone())
         )?;
         MantaSBTPallet::<T>::set_next_sbt_id(RawOrigin::Root.into(), Some(2_000_0000))?;
+        crate::NextSbtId::<T>::put(&2_000_0000);
         let mint_post = TransferPost::decode(&mut &*to_private_coin).unwrap();
     }: force_to_private(
         RawOrigin::Signed(caller.clone()),
@@ -229,6 +234,7 @@ benchmarks! {
             Some(caller.clone())
         )?;
         MantaSBTPallet::<T>::set_next_sbt_id(RawOrigin::Root.into(), Some(100))?;
+        crate::NextSbtId::<T>::put(&2_000_0000);
 
         let mint_coins = read_mint_coins();
         let mints_start = MINTS_OFFSET;
@@ -252,5 +258,3 @@ benchmarks! {
         Some(caller)
     )
 }
-
-impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
