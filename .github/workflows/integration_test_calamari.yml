@@ -132,8 +132,9 @@ jobs:
           ls -ahl $GITHUB_WORKSPACE/
           ls -ahl $HOME/.local/bin/
       - name: fetch and chmod polkadot
+        shell: bash
         run: |
-          sudo apt update && sudo apt install -y curl jq
+          apt update && apt install -y curl jq
           if [[ ! -f "$HOME/.local/bin/polkadot" ]]; then
             curl -L -o $HOME/.local/bin/polkadot ${{ env.POLKADOT_BINARY }}
             chmod +x $HOME/.local/bin/polkadot
