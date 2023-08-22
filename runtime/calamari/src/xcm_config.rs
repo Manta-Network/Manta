@@ -348,7 +348,7 @@ impl Contains<CurrencyId> for AssetManager {
     }
 }
 
-impl orml_traits::xcm_transfer::NativeChecker<CurrencyId> for NativeBarrier {
+impl orml_traits::native_barrier::NativeChecker<CurrencyId> for NativeBarrier {
     fn is_native(currency_id: &CurrencyId) -> bool {
         let asset_location =
             CurrencyIdtoMultiLocation::<AssetIdLocationConvert<AssetManager>>::convert(

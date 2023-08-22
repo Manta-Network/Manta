@@ -202,7 +202,7 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-    use orml_traits::xcm_transfer::NativeBarrier;
+    use orml_traits::native_barrier::NativeBarrier;
 
     #[pallet::config]
     pub trait Config<I: 'static = ()>: frame_system::Config {
@@ -297,7 +297,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let transactor = ensure_signed(origin)?;
             let dest = T::Lookup::lookup(dest)?;
-            <T::NativeBarrierType>::ensure_xcm_transfer_limit_not_exceeded(&transactor, value)?;
+            <T::NativeBarrierType>::ensure_limit_not_exceeded(&transactor, value)?;
             <Self as Currency<_>>::transfer(
                 &transactor,
                 &dest,
@@ -408,7 +408,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let transactor = ensure_signed(origin)?;
             let dest = T::Lookup::lookup(dest)?;
-            <T::NativeBarrierType>::ensure_xcm_transfer_limit_not_exceeded(&transactor, value)?;
+            <T::NativeBarrierType>::ensure_limit_not_exceeded(&transactor, value)?;
             <Self as Currency<_>>::transfer(&transactor, &dest, value, KeepAlive)?;
             Ok(().into())
         }
@@ -442,10 +442,7 @@ pub mod pallet {
             let reducible_balance = Self::reducible_balance(&transactor, keep_alive);
             let dest = T::Lookup::lookup(dest)?;
             let keep_alive = if keep_alive { KeepAlive } else { AllowDeath };
-            <T::NativeBarrierType>::ensure_xcm_transfer_limit_not_exceeded(
-                &transactor,
-                reducible_balance,
-            )?;
+            <T::NativeBarrierType>::ensure_limit_not_exceeded(&transactor, reducible_balance)?;
             <Self as Currency<_>>::transfer(&transactor, &dest, reducible_balance, keep_alive)?;
             Ok(())
         }

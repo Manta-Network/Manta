@@ -6400,7 +6400,7 @@ dependencies = [
 [[package]]
 name = "orml-traits"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed7fd79b2368eb0154b5522db304c77ef9c8d57d"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#4ff694c4b1e3c4a187410dddf948d86624601a24"
 dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
@@ -6418,7 +6418,7 @@ dependencies = [
 [[package]]
 name = "orml-utilities"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed7fd79b2368eb0154b5522db304c77ef9c8d57d"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#4ff694c4b1e3c4a187410dddf948d86624601a24"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -6432,7 +6432,7 @@ dependencies = [
 [[package]]
 name = "orml-xcm-support"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed7fd79b2368eb0154b5522db304c77ef9c8d57d"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#4ff694c4b1e3c4a187410dddf948d86624601a24"
 dependencies = [
  "frame-support",
  "orml-traits",
@@ -6446,7 +6446,7 @@ dependencies = [
 [[package]]
 name = "orml-xtokens"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed7fd79b2368eb0154b5522db304c77ef9c8d57d"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#4ff694c4b1e3c4a187410dddf948d86624601a24"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",

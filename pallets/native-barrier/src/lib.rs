@@ -155,7 +155,7 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        TransfersLimitExceeded,
+        NativeBarrierLimitExceeded,
         NativeBarrierNotInitialized,
     }
 
@@ -199,22 +199,19 @@ pub mod pallet {
     }
 }
 
-impl<T: Config> orml_traits::xcm_transfer::NativeBarrier<T::AccountId, T::Balance> for Pallet<T> {
-    fn ensure_xcm_transfer_limit_not_exceeded(
-        account_id: &T::AccountId,
-        amount: T::Balance,
-    ) -> DispatchResult {
+impl<T: Config> orml_traits::native_barrier::NativeBarrier<T::AccountId, T::Balance> for Pallet<T> {
+    fn ensure_limit_not_exceeded(account_id: &T::AccountId, amount: T::Balance) -> DispatchResult {
         if let Some((_, start_unix_time)) = <Configurations<T>>::get() {
             let now = T::UnixTime::now();
             if start_unix_time <= now {
                 if let Some(remaining_limit) = RemainingLimit::<T>::get(account_id) {
                     ensure!(
                         amount <= remaining_limit,
-                        Error::<T>::TransfersLimitExceeded
+                        Error::<T>::NativeBarrierLimitExceeded
                     );
 
                     // If the ensure didn't return an error, update the native transfers
-                    Self::update_xcm_native_transfers(account_id, amount);
+                    Self::update_native_barrier(account_id, amount);
                 }
             }
         }
@@ -222,7 +219,7 @@ impl<T: Config> orml_traits::xcm_transfer::NativeBarrier<T::AccountId, T::Balanc
         Ok(())
     }
 
-    fn update_xcm_native_transfers(account_id: &T::AccountId, amount: T::Balance) {
+    fn update_native_barrier(account_id: &T::AccountId, amount: T::Balance) {
         <RemainingLimit<T>>::mutate_exists(account_id, |maybe_remainder| match maybe_remainder {
             Some(remainder) => {
                 *remainder = remainder.saturating_sub(amount);
