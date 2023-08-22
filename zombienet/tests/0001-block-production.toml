@@ -29,15 +29,19 @@ ws_port = 9921
 [[parachains.collators]]
 command = "manta"
 name = "Bob"
+validator = true
 
 [[parachains.collators]]
 command = "manta"
 name = "Charlie"
+validator = true
 
 [[parachains.collators]]
 command = "manta"
 name = "Dave"
+validator = true
 
 [[parachains.collators]]
 command = "manta"
 name = "Eve"
+validator = true
