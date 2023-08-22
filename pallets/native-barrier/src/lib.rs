@@ -78,6 +78,110 @@ pub mod pallet {
     #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(PhantomData<T>);
 
+    #[pallet::event]
+    #[pallet::generate_deposit(pub(super) fn deposit_event)]
+    pub enum Event<T: Config> {
+        NativeBarrierInitialized {
+            init: Option<(T::Balance, Duration)>,
+        },
+        AccountsAddedToBarrier {
+            accounts: Vec<T::AccountId>,
+        },
+        AccountsRemovedFromBarrier {
+            accounts: Vec<T::AccountId>,
+        },
+    }
+
+    #[pallet::error]
+    pub enum Error<T> {
+        NativeBarrierLimitExceeded,
+        NativeBarrierNotInitialized,
+    }
+
+    /// Stores daily limit value
+    #[pallet::storage]
+    #[pallet::getter(fn get_configurations)]
+    pub type Configurations<T: Config> = StorageValue<_, (T::Balance, Duration), OptionQuery>;
+
+    /// Stores remaining limit for each account. Skipped days are accumulated.
+    #[pallet::storage]
+    #[pallet::getter(fn get_remaining_limit)]
+    pub type RemainingLimit<T: Config> =
+        StorageMap<_, Identity, T::AccountId, T::Balance, OptionQuery>;
+
+    /// Caches the last processed day, used to check for start of new days
+    #[pallet::storage]
+    #[pallet::getter(fn get_last_day_processed)]
+    pub type LastDayProcessed<T: Config> = StorageValue<_, u64, OptionQuery>;
+
+    #[pallet::genesis_config]
+    pub struct GenesisConfig<T: Config> {
+        pub barrier_accounts: Vec<T::AccountId>,
+        pub daily_limit: T::Balance,
+        pub start_unix_time: Duration,
+    }
+
+    #[cfg(feature = "std")]
+    impl<T: Config> Default for GenesisConfig<T> {
+        fn default() -> Self {
+            Self {
+                barrier_accounts: vec![],
+                daily_limit: T::Balance::zero(),
+                start_unix_time: Duration::default(),
+            }
+        }
+    }
+
+    #[pallet::genesis_build]
+    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+        fn build(&self) {
+            Configurations::<T>::set(Some((self.daily_limit, self.start_unix_time)));
+            for account_id in self.barrier_accounts.iter() {
+                RemainingLimit::<T>::insert(account_id, T::Balance::zero());
+            }
+        }
+    }
+
+    #[cfg(feature = "std")]
+    impl<T: Config> GenesisConfig<T> {
+        /// Direct implementation of `GenesisBuild::build_storage`.
+        ///
+        /// Kept in order not to break dependency.
+        pub fn build_storage(&self) -> Result<sp_runtime::Storage, String> {
+            <Self as GenesisBuild<T>>::build_storage(self)
+        }
+
+        /// Direct implementation of `GenesisBuild::assimilate_storage`.
+        ///
+        /// Kept in order not to break dependency.
+        pub fn assimilate_storage(&self, storage: &mut sp_runtime::Storage) -> Result<(), String> {
+            <Self as GenesisBuild<T>>::assimilate_storage(self, storage)
+        }
+    }
+
+    #[pallet::hooks]
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+        fn on_initialize(_n: T::BlockNumber) -> Weight {
+            if let Some((_, start_unix_time)) = Configurations::<T>::get() {
+                let now = T::UnixTime::now();
+                if start_unix_time <= now {
+                    let days_since_start =
+                        (now.as_secs() - start_unix_time.as_secs()) / (24 * 60 * 60);
+
+                    // Default 0 is ok, it would only be used the first time
+                    let last_day_processed = <LastDayProcessed<T>>::get().unwrap_or(0);
+
+                    if days_since_start > last_day_processed || days_since_start == 0 {
+                        Self::reset_remaining_limit(days_since_start - last_day_processed);
+                        <LastDayProcessed<T>>::put(days_since_start);
+                    }
+                }
+            }
+
+            T::WeightInfo::on_initialize()
+        }
+    }
+
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Sets the start unix time and daily limit for the barrier logic.
@@ -136,65 +240,6 @@ pub mod pallet {
             Self::deposit_event(Event::AccountsRemovedFromBarrier { accounts });
 
             Ok(().into())
-        }
-    }
-
-    #[pallet::event]
-    #[pallet::generate_deposit(pub(super) fn deposit_event)]
-    pub enum Event<T: Config> {
-        NativeBarrierInitialized {
-            init: Option<(T::Balance, Duration)>,
-        },
-        AccountsAddedToBarrier {
-            accounts: Vec<T::AccountId>,
-        },
-        AccountsRemovedFromBarrier {
-            accounts: Vec<T::AccountId>,
-        },
-    }
-
-    #[pallet::error]
-    pub enum Error<T> {
-        NativeBarrierLimitExceeded,
-        NativeBarrierNotInitialized,
-    }
-
-    /// Stores daily limit value
-    #[pallet::storage]
-    #[pallet::getter(fn get_configurations)]
-    pub type Configurations<T: Config> = StorageValue<_, (T::Balance, Duration), OptionQuery>;
-
-    /// Stores remaining limit for each account. Skipped days are accumulated.
-    #[pallet::storage]
-    #[pallet::getter(fn get_remaining_limit)]
-    pub type RemainingLimit<T: Config> =
-        StorageMap<_, Identity, T::AccountId, T::Balance, OptionQuery>;
-
-    /// Caches the last processed day, used to check for start of new days
-    #[pallet::storage]
-    #[pallet::getter(fn get_last_day_processed)]
-    pub type LastDayProcessed<T: Config> = StorageValue<_, u64, OptionQuery>;
-
-    #[pallet::hooks]
-    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(_n: T::BlockNumber) -> Weight {
-            if let Some((_, start_unix_time)) = Configurations::<T>::get() {
-                let now = T::UnixTime::now();
-                if start_unix_time <= now {
-                    let days_since_start =
-                        (now.as_secs() - start_unix_time.as_secs()) / (24 * 60 * 60);
-
-                    // Default 0 is ok, it would only be used the first time
-                    let last_day_processed = <LastDayProcessed<T>>::get().unwrap_or(0);
-
-                    if days_since_start > last_day_processed || days_since_start == 0 {
-                        Self::reset_remaining_limit(days_since_start - last_day_processed);
-                        <LastDayProcessed<T>>::put(days_since_start);
-                    }
-                }
-            }
-
-            T::WeightInfo::on_initialize()
         }
     }
 }
