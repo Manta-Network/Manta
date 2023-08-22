@@ -12,3 +12,11 @@ jobs:
         with:
           one_of: L-added,L-changed,L-fixed,L-deprecated,L-removed,L-skip
           repo_token: ${{ secrets.GITHUB_TOKEN }}
+  check_a_labels:
+    name: A- Labels Check
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: docker://agilepathway/pull-request-label-checker:latest
+        with:
+          all_of: A-unit-test-checks,A-integration-test-checks,A-benchmark-checks
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
