@@ -9,23 +9,23 @@ on:
       snapshot_url:
         description: The chain snapshot to use for storage benchmarks. Leaving it blank will skip the storage benchmark.
         default: ""
-        required: false
+concurrency:
+  group: ${{ github.workflow }}-manta
 env:
-  AWS_REGION: us-east-1
-  AWS_INSTANCE_TYPE: c6i.4xlarge
-  AWS_INSTANCE_ROOT_VOLUME_SIZE: 128
-  AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
+  DEBIAN_FRONTEND: noninteractive
   CHAIN_SPEC: ${{github.event.inputs.chain_spec}}
   SNAPSHOT_URL: ${{github.event.inputs.snapshot_url}}
   FULL_DB_FOLDER: full-db
 jobs:
   run-benchmarks:
     timeout-minutes: 720
-    needs: start-node-builder-current
-    runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
+    runs-on: runtime-integration-test
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
@@ -38,15 +38,6 @@ jobs:
           chmod +x $HOME/.local/bin/sccache
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-
       - name: cache sccache
         uses: actions/cache@v2
         continue-on-error: false
@@ -67,6 +58,8 @@ jobs:
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: init nodejs && yarn
         run: |
           curl -s https://deb.nodesource.com/setup_16.x | sudo bash
@@ -83,7 +76,7 @@ jobs:
           CARGO_TERM_COLOR: always
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo build --profile production --features runtime-benchmarks --verbose
+          RUSTC_BOOTSTRAP=1 cargo build --profile production --features runtime-benchmarks --verbose --timings
       - name: create-chainspec
         run: |
           ${{ github.workspace }}/target/production/manta build-spec --chain $CHAIN_SPEC --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
@@ -145,40 +138,3 @@ jobs:
         with:
           name: rocksdb-weights
           path: ./scripts/benchmarking/rocksdb_weights.rs
-  start-node-builder-current:
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
-  stop-node-builder-current:
-    needs: [run-benchmarks, start-node-builder-current]
-    runs-on: ubuntu-20.04
-    if: ${{ always() }}
-    steps:
-      - continue-on-error: true
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
-          runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
-      - name: discard stopper success/failure
-        run: true
