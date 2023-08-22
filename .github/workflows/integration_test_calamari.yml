@@ -313,6 +313,7 @@ jobs:
           cd $GITHUB_WORKSPACE/zombienet-tool/javascript
           node packages/cli/dist/cli.js -f -p native test $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.zndsl
       - name: append manta-pay storage
+        shell: bash
         run: |
           source ${HOME}/.cargo/env
           wget -P $GITHUB_WORKSPACE/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
