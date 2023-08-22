@@ -78,9 +78,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          mkdir -p target/production
-          curl -L -o target/production/manta https://github.com/Manta-Network/Manta/releases/download/v4.4.0/manta
-          chmod +x target/production/manta
+          RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose
       - name: stop sccache server
         run: sccache --stop-server || true
       - if: always()
