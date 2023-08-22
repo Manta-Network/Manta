@@ -111,8 +111,8 @@ pub mod pallet {
         }
 
         /// Add `accounts` to barrier to make them have limited native transfers
-        /// Sets the <accounts< in the RemainingXcmLimits storage item,
-        /// and sets their limit to the amount of one daily limit.
+        /// Sets the <accounts> in the RemainingXcmLimits storage item,
+        /// and sets their limit to the amount of one daily limit. Can be used multiple times.
         #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::add_accounts_to_native_barrier())]
         pub fn add_accounts_to_native_barrier(
@@ -191,34 +191,6 @@ pub mod pallet {
     #[pallet::getter(fn get_start_unix_time)]
     pub type StartUnixTime<T: Config> = StorageValue<_, Duration, OptionQuery>;
 
-    #[pallet::genesis_config]
-    pub struct GenesisConfig<T: Config> {
-        pub barrier_accounts: Vec<T::AccountId>,
-        pub daily_limit: T::Balance,
-    }
-
-    #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
-        fn default() -> Self {
-            Self {
-                barrier_accounts: Default::default(),
-                daily_limit: Default::default(),
-            }
-        }
-    }
-
-    #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-        fn build(&self) {
-            let now = T::UnixTime::now();
-            <StartUnixTime<T>>::set(Some(now));
-            <DailyXcmLimit<T>>::set(Some(self.daily_limit));
-            for account_id in self.barrier_accounts.iter() {
-                <RemainingXcmLimit<T>>::set(account_id, Some(self.daily_limit));
-            }
-        }
-    }
-
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_n: T::BlockNumber) -> Weight {
@@ -242,23 +214,6 @@ pub mod pallet {
 
             T::WeightInfo::on_initialize()
         }
-    }
-}
-
-#[cfg(feature = "std")]
-impl<T: Config> GenesisConfig<T> {
-    /// Direct implementation of `GenesisBuild::build_storage`.
-    ///
-    /// Kept in order not to break dependency.
-    pub fn build_storage(&self) -> Result<sp_runtime::Storage, String> {
-        <Self as GenesisBuild<T>>::build_storage(self)
-    }
-
-    /// Direct implementation of `GenesisBuild::assimilate_storage`.
-    ///
-    /// Kept in order not to break dependency.
-    pub fn assimilate_storage(&self, storage: &mut sp_runtime::Storage) -> Result<(), String> {
-        <Self as GenesisBuild<T>>::assimilate_storage(self, storage)
     }
 }
 
