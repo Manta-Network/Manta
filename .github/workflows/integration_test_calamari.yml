@@ -315,7 +315,6 @@ jobs:
       - name: append manta-pay storage
         shell: bash
         run: |
-          source ${HOME}/.cargo/env
           wget -P $GITHUB_WORKSPACE/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
           mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json $GITHUB_WORKSPACE/Manta/tests/data/fork.json
           cd $GITHUB_WORKSPACE/Manta/tests
