@@ -26,7 +26,9 @@ const test_config = {
 };
 
 describe("Node RPC Test", () => {
-  it("Check RPC result", async () => {
+  let api: ApiPromise;
+
+  before(async function () {
     let nodeAddress = "";
     const args: ParsedArgs = minimist(process.argv.slice(2));
     if (args["address"] == null) {
@@ -37,11 +39,14 @@ describe("Node RPC Test", () => {
     console.log("using address %s", nodeAddress);
 
     const wsProvider = new WsProvider(nodeAddress);
-    const api = await ApiPromise.create({
+    api = await ApiPromise.create({
       provider: wsProvider,
       types: manta_pay_types,
       rpc: rpc_api,
     });
+});
+
+  it("Check RPC result", async () => {
     const keyring = new Keyring({ type: "sr25519" });
     const sender = keyring.addFromMnemonic(test_config.mnemonic);
 
@@ -78,6 +83,8 @@ describe("Node RPC Test", () => {
       i < test_config.start_iteration + test_config.tests_iterations;
       ++i
     ) {
+      const nonce = await api.rpc.system.accountNextIndex(sender.address);
+
       await api.tx.mantaPay
         .toPrivate(
           mintsBuffer.subarray(
@@ -85,7 +92,7 @@ describe("Node RPC Test", () => {
             test_config.mint_size * (i + 1)
           )
         )
-        .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
+        .signAndSend(sender, { nonce: nonce }, ({ events = [], status }) => {
           if (status.isInBlock) {
             console.log("Included at block hash", status.asInBlock.toHex());
             console.log("Events:");
@@ -95,6 +102,16 @@ describe("Node RPC Test", () => {
               if ("mantaPay.ToPrivate" == event) {
                 allSuccesses++;
               }
+            });
+            events
+              // find/filter for failed events
+              .filter(({ event }) =>
+                api.events.system.ExtrinsicFailed.is(event)
+              )
+              .forEach(({ event: { data: [error, info] } }) => {
+                if (error) {
+                  console.log(error.toString());
+                }
             });
           }
         });
@@ -108,7 +125,7 @@ describe("Node RPC Test", () => {
             transfersStart + test_config.mint_size
           )
         )
-        .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
+        .signAndSend(sender, { nonce: nonce.addn(1) }, ({ events = [], status }) => {
           if (status.isInBlock) {
             console.log("Included at block hash", status.asInBlock.toHex());
             console.log("Events:");
@@ -119,6 +136,16 @@ describe("Node RPC Test", () => {
                 allSuccesses++;
               }
             });
+            events
+              // find/filter for failed events
+              .filter(({ event }) =>
+                api.events.system.ExtrinsicFailed.is(event)
+              )
+              .forEach(({ event: { data: [error, info] } }) => {
+                if (error) {
+                  console.log(error.toString());
+                }
+            });
           }
         });
       await api.tx.mantaPay
@@ -128,7 +155,7 @@ describe("Node RPC Test", () => {
             transfersStart + 2 * test_config.mint_size
           )
         )
-        .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
+        .signAndSend(sender, { nonce: nonce.addn(2) }, ({ events = [], status }) => {
           if (status.isInBlock) {
             console.log("Included at block hash", status.asInBlock.toHex());
             console.log("Events:");
@@ -138,6 +165,16 @@ describe("Node RPC Test", () => {
               if ("mantaPay.ToPrivate" == event) {
                 allSuccesses++;
               }
+            });
+            events
+              // find/filter for failed events
+              .filter(({ event }) =>
+                api.events.system.ExtrinsicFailed.is(event)
+              )
+              .forEach(({ event: { data: [error, info] } }) => {
+                if (error) {
+                  console.log(error.toString());
+                }
             });
           }
         });
@@ -150,7 +187,7 @@ describe("Node RPC Test", () => {
               test_config.transfer_size
           )
         )
-        .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
+        .signAndSend(sender, { nonce: nonce.addn(3) }, ({ events = [], status }) => {
           if (status.isInBlock) {
             console.log("Included at block hash", status.asInBlock.toHex());
             console.log("Events:");
@@ -160,6 +197,16 @@ describe("Node RPC Test", () => {
               if ("mantaPay.PrivateTransfer" == event) {
                 allSuccesses++;
               }
+            });
+            events
+              // find/filter for failed events
+              .filter(({ event }) =>
+                api.events.system.ExtrinsicFailed.is(event)
+              )
+              .forEach(({ event: { data: [error, info] } }) => {
+                if (error) {
+                  console.log(error.toString());
+                }
             });
           }
         });
@@ -172,7 +219,7 @@ describe("Node RPC Test", () => {
             reclaimsStart + test_config.mint_size
           )
         )
-        .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
+        .signAndSend(sender, { nonce: nonce.addn(4) }, ({ events = [], status }) => {
           if (status.isInBlock) {
             console.log("Included at block hash", status.asInBlock.toHex());
             console.log("Events:");
@@ -183,6 +230,16 @@ describe("Node RPC Test", () => {
                 allSuccesses++;
               }
             });
+            events
+              // find/filter for failed events
+              .filter(({ event }) =>
+                api.events.system.ExtrinsicFailed.is(event)
+              )
+              .forEach(({ event: { data: [error, info] } }) => {
+                if (error) {
+                  console.log(error.toString());
+                }
+            });
           }
         });
       await api.tx.mantaPay
@@ -192,7 +249,7 @@ describe("Node RPC Test", () => {
             reclaimsStart + 2 * test_config.mint_size
           )
         )
-        .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
+        .signAndSend(sender, { nonce: nonce.addn(5) }, ({ events = [], status }) => {
           if (status.isInBlock) {
             console.log("Included at block hash", status.asInBlock.toHex());
             console.log("Events:");
@@ -202,6 +259,16 @@ describe("Node RPC Test", () => {
               if ("mantaPay.ToPrivate" == event) {
                 allSuccesses++;
               }
+            });
+            events
+              // find/filter for failed events
+              .filter(({ event }) =>
+                api.events.system.ExtrinsicFailed.is(event)
+              )
+              .forEach(({ event: { data: [error, info] } }) => {
+                if (error) {
+                  console.log(error.toString());
+                }
             });
           }
         });
@@ -215,7 +282,7 @@ describe("Node RPC Test", () => {
                 test_config.reclaim_size
             )
           )
-          .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
+          .signAndSend(sender, { nonce: nonce.addn(6) }, ({ events = [], status }) => {
             if (status.isInBlock) {
               console.log("Included at block hash", status.asInBlock.toHex());
               console.log("Events:");
@@ -226,6 +293,16 @@ describe("Node RPC Test", () => {
                   allSuccesses++;
                 }
               });
+              events
+              // find/filter for failed events
+              .filter(({ event }) =>
+                api.events.system.ExtrinsicFailed.is(event)
+              )
+              .forEach(({ event: { data: [error, info] } }) => {
+                if (error) {
+                  console.log(error.toString());
+                }
+            });
             } else if (status.isFinalized) {
               lastFinalized = true;
               let endTime = performance.now();
@@ -244,7 +321,7 @@ describe("Node RPC Test", () => {
                 test_config.reclaim_size
             )
           )
-          .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
+          .signAndSend(sender, { nonce: nonce.addn(6) }, ({ events = [], status }) => {
             if (status.isInBlock) {
               console.log("Included at block hash", status.asInBlock.toHex());
               console.log("Events:");
@@ -255,6 +332,16 @@ describe("Node RPC Test", () => {
                   allSuccesses++;
                 }
               });
+              events
+              // find/filter for failed events
+              .filter(({ event }) =>
+                api.events.system.ExtrinsicFailed.is(event)
+              )
+              .forEach(({ event: { data: [error, info] } }) => {
+                if (error) {
+                  console.log(error.toString());
+                }
+            });
             }
           });
       }
@@ -263,6 +350,8 @@ describe("Node RPC Test", () => {
       txsCount += 7;
       console.log("\n Transactions sent: ", txsCount);
     }
+    const lastHeader = await api.rpc.chain.getHeader();
+    lastBlock = lastHeader.number.toNumber();
 
     // wait all txs finalized
     for (let i = 0; i < test_config.max_wait_time_sec; i++) {
@@ -272,8 +361,6 @@ describe("Node RPC Test", () => {
         console.log("Tps is: ", tps);
         assert(tps >= test_config.expected_tps);
         
-        const lastHeader = await api.rpc.chain.getHeader();
-        lastBlock = lastHeader.number.toNumber();
         const averageBlockTime = totalTime / (lastBlock - firstBlock);
         console.log("Total time: ", totalTime);
         console.log("Number of blocks: ", (lastBlock - firstBlock));
@@ -291,6 +378,9 @@ describe("Node RPC Test", () => {
       assert(false);
     }
 
-    api.disconnect();
   }).timeout(test_config.timeout);
+
+  after(async function () {
+    await api.disconnect()
+    })
 });

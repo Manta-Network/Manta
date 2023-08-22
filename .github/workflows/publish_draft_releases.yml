@@ -5,14 +5,14 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 env:
   DEBIAN_FRONTEND: noninteractive
 jobs:
   get-rust-versions:
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
-    runs-on: runtime
+    runs-on: ubuntu-20.04
     container:
       image: paritytech/ci-linux:production
     outputs:
@@ -28,11 +28,9 @@ jobs:
   build-runtimes:
     timeout-minutes: 180
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
-    runs-on: runtime
+    runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always
-    container:
-      image: ubuntu:20.04
     strategy:
       matrix:
         runtime:
@@ -43,7 +41,7 @@ jobs:
       - name: cache target dir
         uses: actions/cache@v2
         with:
-          path: "${{ github.workspace }}/runtime/${{ matrix.runtime.name }}/target"
+          path: "$GITHUB_WORKSPACE/runtime/${{ matrix.runtime.name }}/target"
           key: srtool-target-${{ matrix.runtime.name }}-${{ github.sha }}
           restore-keys: |
             srtool-target-${{ matrix.runtime.name }}
@@ -75,9 +73,7 @@ jobs:
   build-node-current:
     timeout-minutes: 180
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
-    runs-on: runtime
-    container:
-      image: ubuntu:20.04
+    runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always
     steps:
@@ -87,8 +83,8 @@ jobs:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
           SCCACHE_VERSION: v0.5.3
         run: |
-          apt update
-          apt install -y curl
+          sudo apt update
+          sudo apt install -y curl
           SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
           mkdir -p $HOME/.local/bin
           curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
@@ -96,15 +92,6 @@ jobs:
           chmod +x $HOME/.local/bin/sccache
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-
       - name: cache sccache
         uses: actions/cache@v2
         continue-on-error: false
@@ -118,8 +105,8 @@ jobs:
       - name: init
         shell: bash
         run: |
-          apt update
-          apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang git
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang git
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
@@ -129,6 +116,8 @@ jobs:
           rustup target add wasm32-unknown-unknown
           rustup install 1.69.0
           rustup target add wasm32-unknown-unknown --toolchain 1.69.0
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: build
         shell: bash
         env:
@@ -161,7 +150,7 @@ jobs:
           path: .github/resources/config-for-runtime-upgrade-test.json
   # THE FOLLOWING HAPPENS ONLY WHEN TAGGED WITH A vX.Y.Z TAG
   create-draft-release:
-    runs-on: runtime
+    runs-on: ubuntu-20.04
     needs: [build-runtimes]
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
@@ -178,7 +167,7 @@ jobs:
           release_name: ${{ github.ref }}
           draft: true
   publish-runtimes:
-    runs-on: runtime
+    runs-on: ubuntu-20.04
     needs: create-draft-release
     strategy:
       matrix:
@@ -243,7 +232,7 @@ jobs:
           asset_name: ${{ matrix.runtime.name }}-srtool-output-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
           asset_content_type: application/json
   publish-node:
-    runs-on: runtime
+    runs-on: ubuntu-20.04
     needs: [build-node-current, create-draft-release]
     outputs:
       download_url: ${{ steps.upload-manta.outputs.browser_download_url }}
@@ -263,7 +252,7 @@ jobs:
           asset_name: manta
           asset_content_type: application/octet-stream
   brag:
-    runs-on: runtime
+    runs-on: ubuntu-20.04
     needs: [publish-runtimes, publish-node]
     if: startsWith(github.ref, 'refs/tags')
     steps:

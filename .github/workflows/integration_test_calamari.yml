@@ -6,21 +6,14 @@ on:
     branches: [manta]
     types: [opened, reopened, synchronize, labeled]
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 env:
-  AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
-  AWS_REGION: us-east-1
-  AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
-  AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
-  AWS_INSTANCE_TYPE: c5.2xlarge
-  AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
-  AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
+  DEBIAN_FRONTEND: noninteractive
   POLKADOT_BINARY: https://github.com/paritytech/polkadot/releases/download/v1.0.0/polkadot
 jobs:
   print-rust-versions:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
+    if: contains(github.event.pull_request.labels.*.name, 'A-calamari')
     runs-on: ubuntu-20.04
     container:
       image: paritytech/ci-linux:production
@@ -36,18 +29,21 @@ jobs:
           echo "::set-output name=nightly::$(rustc +nightly --version)"
   build-node-current:
     timeout-minutes: 120
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
-    needs: start-node-builder-current
-    runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
+    if: contains(github.event.pull_request.labels.*.name, 'A-calamari')
+    runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
           SCCACHE_VERSION: v0.5.3
         run: |
+          sudo apt update && sudo apt install -y curl
           SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
           mkdir -p $HOME/.local/bin
           curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
@@ -55,15 +51,6 @@ jobs:
           chmod +x $HOME/.local/bin/sccache
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-
       - name: cache sccache
         uses: actions/cache@v2
         continue-on-error: false
@@ -75,15 +62,18 @@ jobs:
       - name: start sccache server
         run: sccache --start-server
       - name: init
+        shell: bash
         run: |
           sudo apt update
-          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler git clang curl
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: build
         env:
           RUST_BACKTRACE: full
@@ -92,9 +82,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          mkdir -p target/production
-          curl -L -o target/production/manta https://github.com/Manta-Network/Manta/releases/download/v4.4.0/manta
-          chmod +x target/production/manta
+          RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose
       - name: stop sccache server
         run: sccache --stop-server || true
       - if: always()
@@ -105,14 +93,16 @@ jobs:
           path: target/production/manta
   calamari-integration-test:
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
-    needs: [build-node-current, start-calamari-integration-tester]
-    runs-on: ${{ needs.start-calamari-integration-tester.outputs.runner-label }}
+    needs: [build-node-current]
+    runs-on: runtime-integration-test
     timeout-minutes: 240
+    container:
+      image: ubuntu:20.04
     strategy:
       fail-fast: false
       matrix:
         chain-spec:
-          - id: calamari-local
+          - id: calamari-dev
             expected:
               block-count:
                 relay: 25
@@ -135,17 +125,27 @@ jobs:
           name: manta
       - name: mv and chmod manta
         run: |
-          mv ${{ github.workspace }}/manta $HOME/.local/bin/
+          mv $GITHUB_WORKSPACE/manta $HOME/.local/bin/
           chmod +x $HOME/.local/bin/manta
-          ls -ahl ${{ github.workspace }}/
+          ls -ahl $GITHUB_WORKSPACE/
           ls -ahl $HOME/.local/bin/
       - name: fetch and chmod polkadot
+        shell: bash
         run: |
-          curl -L -o $HOME/.local/bin/polkadot ${{ env.POLKADOT_BINARY }}
-          chmod +x $HOME/.local/bin/polkadot
+          apt update && apt install -y curl jq wget
+          if [[ ! -f "$HOME/.local/bin/polkadot" ]]; then
+            curl -L -o $HOME/.local/bin/polkadot ${{ env.POLKADOT_BINARY }}
+            chmod +x $HOME/.local/bin/polkadot
+          fi
           ls -ahl $HOME/.local/bin/
-      - id: create-chainspec
+      - name: Install dasel cli
         run: |
+          curl -sSLf "$(curl -sSLf https://api.github.com/repos/tomwright/dasel/releases/latest | grep browser_download_url | grep linux_amd64 | grep -v .gz | cut -d\" -f 4)" -L -o $HOME/dasel && chmod +x $HOME/dasel
+          $HOME/dasel --version
+      - id: create-chainspec
+        shell: bash
+        run: |
+          jq --version
           manta build-spec --chain ${{ matrix.chain-spec.id }} --disable-default-bootnode --raw > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
           jq \
             --sort-keys \
@@ -181,24 +181,17 @@ jobs:
         with:
           name: ${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
           path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
-      - name: Install dasel cli
-        run: |
-          source ${HOME}/.cargo/env
-          curl -sSLf "$(curl -sSLf https://api.github.com/repos/tomwright/dasel/releases/latest | grep browser_download_url | grep linux_amd64 | grep -v .gz | cut -d\" -f 4)" -L -o dasel && chmod +x dasel
-          mv ./dasel $HOME/.cargo/bin/dasel
-          dasel --version
       - name: create launch config
         run: |
-          source ${HOME}/.cargo/env
-          ls -ahl ${{ github.workspace }}/Manta
-          cd ${{ github.workspace }}
-          dasel put -t string -v $HOME/.local/bin/polkadot -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+          ls -ahl $GITHUB_WORKSPACE/Manta
+          cd $GITHUB_WORKSPACE
+          $HOME/dasel put -t string -v $HOME/.local/bin/polkadot -r toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.relaychain.default_command'
-          dasel put -t string -v $HOME/.local/bin/manta -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+          $HOME/dasel put -t string -v $HOME/.local/bin/manta -r toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].collators.[0].command'
-          cat ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
+          cat $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml
       - if: always()
         uses: actions/upload-artifact@v2
         with:
@@ -221,33 +214,34 @@ jobs:
       - name: Install pm2
         run: npm install -g pm2
       - name: launch testnet
+        shell: bash
         run: |
-          cd ${{ github.workspace }}/zombienet-tool/javascript
+          cd $GITHUB_WORKSPACE/zombienet-tool/javascript
           yarn
           npm run build
           pm2 start packages/cli/dist/cli.js --name zombienet \
-            --output ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log \
-            -- spawn --provider native ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
+            --output $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log \
+            -- spawn --provider native $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml
       - name: init measure-block-time rococo
         run: |
-          cd ${{ github.workspace }}/dev-tools-rococo/measure-block-time
+          cd $GITHUB_WORKSPACE/dev-tools-rococo/measure-block-time
           yarn install
           pm2 start index.js \
             --name measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }} \
-            --output ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log \
+            --output $GITHUB_WORKSPACE/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error $GITHUB_WORKSPACE/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart \
             -- \
             --address=ws://127.0.0.1:9911
       - name: init measure-block-time calamari
         run: |
-          cd ${{ github.workspace }}/dev-tools-calamari/measure-block-time
+          cd $GITHUB_WORKSPACE/dev-tools-calamari/measure-block-time
           yarn install
           pm2 start index.js \
             --name measure-block-time-${{ matrix.chain-spec.id }} \
-            --output ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
+            --output $GITHUB_WORKSPACE/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log \
+            --error $GITHUB_WORKSPACE/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart \
             -- \
             --address=ws://127.0.0.1:9921
@@ -258,21 +252,21 @@ jobs:
       - name: run test suites
         run: |
           sleep 120
-          cd ${{ github.workspace }}/Manta/tests
+          cd $GITHUB_WORKSPACE/Manta/tests
           yarn install
           yarn
           yarn correctness_test --address=ws://127.0.0.1:9921 --exit
           yarn performance_test --address=ws://127.0.0.1:9921 --exit
       - name: check if target block is finalized
         run: |
-          cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
+          cd $GITHUB_WORKSPACE/dev-tools-calamari/check-finalized-block
           yarn install
           yarn
           node index.js --para_address=ws://127.0.0.1:9921 --relay_address=ws://127.0.0.1:9911 --target_block=${{ matrix.chain-spec.expected.block-count.para }}
           if [ $? == 1 ]; then echo "Failed to finalize the target block - ${{ matrix.chain-spec.expected.block-count.para }}"; exit 1; fi
       - name: stop testnet
         run: |
-          cd ${{ github.workspace }}/zombienet-tool
+          cd $GITHUB_WORKSPACE/zombienet-tool
           pm2 stop measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}
           pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
           pm2 stop zombienet
@@ -280,118 +274,115 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: zombienet-for-${{ matrix.chain-spec.id }}-stdout.log
-          path: ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log
+          path: $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log
       - if: always()
         uses: actions/upload-artifact@v2
         with:
           name: zombienet-for-${{ matrix.chain-spec.id }}-stderr.log
-          path: ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log
+          path: $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log
       - if: always()
         uses: actions/upload-artifact@v2
         with:
           name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
-          path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
+          path: $GITHUB_WORKSPACE/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
       - if: always()
         uses: actions/upload-artifact@v2
         with:
           name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
-          path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
+          path: $GITHUB_WORKSPACE/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
       - if: always()
         uses: actions/upload-artifact@v2
         with:
           name: measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
-          path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
+          path: $GITHUB_WORKSPACE/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
       - if: always()
         uses: actions/upload-artifact@v2
         with:
           name: measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
-          path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
-      - name: parse rococo block times
-        run: |
-          grep '#.*' ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-rococo.csv; done
-          if [ ! -f ${{ github.workspace }}/block-time-rococo.csv ]; then echo "block times not detected"; exit 1; fi
-          jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-rococo.csv > ${{ github.workspace }}/block-time-rococo.json
+          path: $GITHUB_WORKSPACE/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
       - if: always()
         uses: actions/upload-artifact@v2
         with:
           name: block-time-rococo-relay-for-${{ matrix.chain-spec.id }}.json
-          path: ${{ github.workspace }}/block-time-rococo.json
+          path: $GITHUB_WORKSPACE/block-time-rococo.json
       - if: always()
         name: test - calamari alice peered successfully
         run: |
-          cd ${{ github.workspace }}/zombienet-tool/javascript
-          node packages/cli/dist/cli.js -f -p native test ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.zndsl
+          cd $GITHUB_WORKSPACE/zombienet-tool/javascript
+          node packages/cli/dist/cli.js -f -p native test $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.zndsl
       - name: append manta-pay storage
+        shell: bash
         run: |
-          source ${HOME}/.cargo/env
-          wget -P ${{ github.workspace }}/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
-          mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json ${{ github.workspace }}/Manta/tests/data/fork.json
-          cd ${{ github.workspace }}/Manta/tests
+          wget -P $GITHUB_WORKSPACE/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
+          mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json $GITHUB_WORKSPACE/Manta/tests/data/fork.json
+          cd $GITHUB_WORKSPACE/Manta/tests
           yarn install
           yarn
           node append_storage.js
           cd ../../
-          mv ${{ github.workspace }}/Manta/tests/data/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
-          dasel put -t string -v $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+          mv $GITHUB_WORKSPACE/Manta/tests/data/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
+          $HOME/dasel put -t string -v $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json -r toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].chain_spec_path'
-          dasel delete -r toml \
-            -f ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml \
+          $HOME/dasel delete -r toml \
+            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
             '.parachains.[0].chain'
       - name: launch testnet
+        shell: bash
         run: |
-          cd ${{ github.workspace }}/zombienet-tool/javascript
+          cd $GITHUB_WORKSPACE/zombienet-tool/javascript
           yarn
           npm run build
           pm2 start packages/cli/dist/cli.js --name zombienet \
-            --output ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log \
-            -- spawn --provider native ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
+            --output $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log \
+            -- spawn --provider native $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml
       - name: run stress test
         run: |
           sleep 720
-          cd ${{ github.workspace }}/Manta/tests
+          cd $GITHUB_WORKSPACE/Manta/tests
           yarn install
           yarn
           yarn stress_benchmark_test --address=ws://127.0.0.1:9921 --exit
       - name: stop testnet
         run: |
-          cd ${{ github.workspace }}/zombienet-tool
+          cd $GITHUB_WORKSPACE/zombienet-tool
           pm2 stop zombienet
       - if: always()
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-alice-stress.log
-          path: ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log
+          path: $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log
       - name: launch testnet
+        shell: bash
         run: |
-          cd ${{ github.workspace }}/zombienet-tool/javascript
+          cd $GITHUB_WORKSPACE/zombienet-tool/javascript
           yarn
           npm run build
           pm2 start packages/cli/dist/cli.js --name zombienet \
-            --output ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log \
-            -- spawn --provider native ${{ github.workspace }}/Manta/zombienet/tests/0001-block-production.toml
+            --output $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log \
+            -- spawn --provider native $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml
       - name: run farming test
         run: |
           sleep 120
-          cd ${{ github.workspace }}/Manta/tests
+          cd $GITHUB_WORKSPACE/Manta/tests
           yarn install
           yarn
           yarn test_farming --address=ws://127.0.0.1:9921 --exit
       - name: stop testnet
         run: |
-          cd ${{ github.workspace }}/zombienet-tool
+          cd $GITHUB_WORKSPACE/zombienet-tool
           pm2 stop zombienet
       - if: always()
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-alice-stress.log
-          path: ${{ github.workspace }}/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log
+          path: $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log
   docker-image-test:
     timeout-minutes: 120
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
-    needs: [build-node-current, start-docker-image-tester]
+    needs: [build-node-current]
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -399,6 +390,7 @@ jobs:
           - name: calamari
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
       - name: fetch manta
         uses: actions/download-artifact@v2
         with:
@@ -425,7 +417,6 @@ jobs:
           image_id=`cat docker_id.log`
           echo $image_id
           echo "Adjusting permissions so we can access docker logs..."
-          sudo chmod -R +x /var/lib/docker/
           sudo cat /var/lib/docker/containers/${image_id}/${image_id}-json.log
       - uses: actions/checkout@v2
         with:
@@ -434,128 +425,8 @@ jobs:
       - name: check if target block is finalized
         run: |
           cd dev-tools/check-finalized-block
+          npm install -g yarn
           yarn install
           yarn
           node index.js --para_address=ws://127.0.0.1:9944 --relay_address=ws://127.0.0.1:9945 --target_block=6
           if [ $? == 1 ]; then echo "Failed to finalize the target block - 6"; exit 1; fi
-  # HELPER JOBS BELOW
-  start-node-builder-current:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
-          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-size: 32
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
-  stop-node-builder-current:
-    if: ${{ always() }}
-    needs: [start-node-builder-current, build-node-current]
-    runs-on: ubuntu-20.04
-    steps:
-      - continue-on-error: true
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
-          runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
-      - name: discard stopper success/failure
-        run: true
-  start-calamari-integration-tester:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
-          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-size: 64
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
-  stop-calamari-integration-tester:
-    if: ${{ always() }}
-    needs: [start-calamari-integration-tester, calamari-integration-test]
-    runs-on: ubuntu-20.04
-    steps:
-      - continue-on-error: true
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-calamari-integration-tester.outputs.aws-region }}
-          runner-label: ${{ needs.start-calamari-integration-tester.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-calamari-integration-tester.outputs.aws-instance-id }}
-      - name: discard stopper success/failure
-        run: true
-  start-docker-image-tester:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
-          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-size: 64
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
-  stop-docker-image-tester:
-    if: ${{ always() }}
-    needs: [start-docker-image-tester, docker-image-test]
-    runs-on: ubuntu-20.04
-    steps:
-      - continue-on-error: true
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-docker-image-tester.outputs.aws-region }}
-          runner-label: ${{ needs.start-docker-image-tester.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-docker-image-tester.outputs.aws-instance-id }}
-      - name: discard stopper success/failure
-        run: true
