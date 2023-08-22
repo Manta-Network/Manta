@@ -32,7 +32,7 @@ use frame_support::{ensure, pallet_prelude::DispatchResult, traits::UnixTime};
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
-    traits::{AtLeast32BitUnsigned, MaybeSerializeDeserialize},
+    traits::{AtLeast32BitUnsigned, MaybeSerializeDeserialize, Zero},
     FixedPointOperand, Saturating,
 };
 use sp_std::{fmt::Debug, prelude::*};
@@ -121,20 +121,16 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            if let Some(daily_xcm_limit) = DailyXcmLimit::<T>::get() {
-                if StartUnixTime::<T>::get().is_some() {
-                    for account_id in accounts.iter() {
-                        if !RemainingXcmLimit::<T>::contains_key(account_id) {
-                            RemainingXcmLimit::<T>::insert(account_id, daily_xcm_limit);
-                        }
+            if StartUnixTime::<T>::get().is_some() && DailyXcmLimit::<T>::get().is_some() {
+                for account_id in accounts.iter() {
+                    if !RemainingXcmLimit::<T>::contains_key(account_id) {
+                        RemainingXcmLimit::<T>::insert(account_id, T::Balance::zero());
                     }
-
-                    Self::deposit_event(Event::AccountsAddedToBarrier { accounts });
-                } else {
-                    return Err(Error::<T>::StartUnixTimeNotSet.into());
                 }
+
+                Self::deposit_event(Event::AccountsAddedToBarrier { accounts });
             } else {
-                return Err(Error::<T>::XcmDailyLimitNotSet.into());
+                return Err(Error::<T>::NativeBarrierNotInitialized.into());
             }
 
             Ok(().into())
@@ -171,8 +167,7 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         XcmTransfersLimitExceeded,
-        StartUnixTimeNotSet,
-        XcmDailyLimitNotSet,
+        NativeBarrierNotInitialized,
     }
 
     /// Stores daily limit value
