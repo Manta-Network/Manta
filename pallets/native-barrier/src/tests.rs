@@ -27,11 +27,10 @@ use frame_system::RawOrigin;
 fn extrinsics_as_normal_user_should_not_work() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
-            NativeBarrier::set_daily_xcm_limit(RuntimeOrigin::signed(1), Some(10u128)),
-            sp_runtime::DispatchError::BadOrigin
-        );
-        assert_noop!(
-            NativeBarrier::set_start_unix_time(RuntimeOrigin::signed(1), Some(Duration::default())),
+            NativeBarrier::initialize_native_barrier(
+                RuntimeOrigin::signed(1),
+                Some((10u128, Default::default()))
+            ),
             sp_runtime::DispatchError::BadOrigin
         );
         assert_noop!(
@@ -52,17 +51,13 @@ fn extrinsics_as_root_should_work() {
             NativeBarrier::add_accounts_to_native_barrier(RawOrigin::Root.into(), vec![]),
             Error::<Runtime>::NativeBarrierNotInitialized
         );
-        assert_ok!(NativeBarrier::set_daily_xcm_limit(
-            RawOrigin::Root.into(),
-            Some(10u128)
-        ));
         assert_err!(
             NativeBarrier::add_accounts_to_native_barrier(RawOrigin::Root.into(), vec![]),
             Error::<Runtime>::NativeBarrierNotInitialized
         );
-        assert_ok!(NativeBarrier::set_start_unix_time(
+        assert_ok!(NativeBarrier::initialize_native_barrier(
             RawOrigin::Root.into(),
-            Some(Duration::default())
+            Some((10, Duration::default()))
         ));
         assert_ok!(NativeBarrier::add_accounts_to_native_barrier(
             RawOrigin::Root.into(),
@@ -107,13 +102,9 @@ fn initialize_native_barrier(daily_limit: u128, start_unix_time: Duration) -> ()
     assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 2, 1000, 0));
     assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 3, 1000, 0));
 
-    assert_ok!(NativeBarrier::set_daily_xcm_limit(
+    assert_ok!(NativeBarrier::initialize_native_barrier(
         RawOrigin::Root.into(),
-        Some(daily_limit)
-    ));
-    assert_ok!(NativeBarrier::set_start_unix_time(
-        RawOrigin::Root.into(),
-        Some(start_unix_time)
+        Some((daily_limit, start_unix_time))
     ));
     assert_ok!(NativeBarrier::add_accounts_to_native_barrier(
         RawOrigin::Root.into(),
@@ -211,7 +202,7 @@ fn start_in_the_past_should_work() {
             Error::<Runtime>::XcmTransfersLimitExceeded
         );
 
-        assert_ok!(NativeBarrier::set_daily_xcm_limit(
+        assert_ok!(NativeBarrier::initialize_native_barrier(
             RawOrigin::Root.into(),
             None
         ));
@@ -308,7 +299,7 @@ fn start_in_the_future_should_work() {
             Error::<Runtime>::XcmTransfersLimitExceeded
         );
 
-        assert_ok!(NativeBarrier::set_daily_xcm_limit(
+        assert_ok!(NativeBarrier::initialize_native_barrier(
             RawOrigin::Root.into(),
             None
         ));
