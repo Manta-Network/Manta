@@ -80,10 +80,10 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Sets the start unix time for the barrier logic.
-        /// Can be in the past or the future.        
+        /// Sets the start unix time and daily limit for the barrier logic.
+        /// Can be in the past or the future. Can be disabled by setting to None.      
         #[pallet::call_index(0)]
-        #[pallet::weight(T::WeightInfo::set_start_unix_time())]
+        #[pallet::weight(T::WeightInfo::initialize_native_barrier())]
         pub fn initialize_native_barrier(
             origin: OriginFor<T>,
             init: Option<(T::Balance, Duration)>,
@@ -97,7 +97,7 @@ pub mod pallet {
         /// Add `accounts` to barrier to make them have limited native transfers
         /// Sets the <accounts> in the RemainingXcmLimits storage item,
         /// and sets their limit to the amount of one daily limit. Can be used multiple times.
-        #[pallet::call_index(2)]
+        #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::add_accounts_to_native_barrier())]
         pub fn add_accounts_to_native_barrier(
             origin: OriginFor<T>,
@@ -121,7 +121,7 @@ pub mod pallet {
         }
 
         /// Remove `accounts` from the barrier's RemainingXcmLimit storage
-        #[pallet::call_index(3)]
+        #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::remove_accounts_from_native_barrier())]
         pub fn remove_accounts_from_native_barrier(
             origin: OriginFor<T>,
