@@ -95,7 +95,7 @@ pub mod pallet {
         }
 
         /// Add `accounts` to barrier to make them have limited native transfers
-        /// Sets the <accounts> in the RemainingXcmLimits storage item,
+        /// Sets the <accounts> in the RemainingLimits storage item,
         /// and sets their limit to the amount of one daily limit. Can be used multiple times.
         #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::add_accounts_to_native_barrier())]
@@ -107,8 +107,8 @@ pub mod pallet {
 
             if Configurations::<T>::get().is_some() {
                 for account_id in accounts.iter() {
-                    if !RemainingXcmLimit::<T>::contains_key(account_id) {
-                        RemainingXcmLimit::<T>::insert(account_id, T::Balance::zero());
+                    if !RemainingLimit::<T>::contains_key(account_id) {
+                        RemainingLimit::<T>::insert(account_id, T::Balance::zero());
                     }
                 }
 
@@ -120,7 +120,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Remove `accounts` from the barrier's RemainingXcmLimit storage
+        /// Remove `accounts` from the barrier's RemainingLimit storage
         #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::remove_accounts_from_native_barrier())]
         pub fn remove_accounts_from_native_barrier(
@@ -130,7 +130,7 @@ pub mod pallet {
             ensure_root(origin)?;
 
             for account_id in accounts.iter() {
-                RemainingXcmLimit::<T>::remove(account_id);
+                RemainingLimit::<T>::remove(account_id);
             }
 
             Self::deposit_event(Event::AccountsRemovedFromBarrier { accounts });
@@ -155,7 +155,7 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        XcmTransfersLimitExceeded,
+        TransfersLimitExceeded,
         NativeBarrierNotInitialized,
     }
 
@@ -166,8 +166,8 @@ pub mod pallet {
 
     /// Stores remaining limit for each account. Skipped days are accumulated.
     #[pallet::storage]
-    #[pallet::getter(fn get_remaining_xcm_limit)]
-    pub type RemainingXcmLimit<T: Config> =
+    #[pallet::getter(fn get_remaining_limit)]
+    pub type RemainingLimit<T: Config> =
         StorageMap<_, Identity, T::AccountId, T::Balance, OptionQuery>;
 
     /// Caches the last processed day, used to check for start of new days
@@ -188,7 +188,7 @@ pub mod pallet {
                     let last_day_processed = <LastDayProcessed<T>>::get().unwrap_or(0);
 
                     if days_since_start > last_day_processed || days_since_start == 0 {
-                        Self::reset_remaining_xcm_limit(days_since_start - last_day_processed);
+                        Self::reset_remaining_limit(days_since_start - last_day_processed);
                         <LastDayProcessed<T>>::put(days_since_start);
                     }
                 }
@@ -207,10 +207,10 @@ impl<T: Config> orml_traits::xcm_transfer::NativeBarrier<T::AccountId, T::Balanc
         if let Some((_, start_unix_time)) = <Configurations<T>>::get() {
             let now = T::UnixTime::now();
             if start_unix_time <= now {
-                if let Some(remaining_limit) = RemainingXcmLimit::<T>::get(account_id) {
+                if let Some(remaining_limit) = RemainingLimit::<T>::get(account_id) {
                     ensure!(
                         amount <= remaining_limit,
-                        Error::<T>::XcmTransfersLimitExceeded
+                        Error::<T>::TransfersLimitExceeded
                     );
 
                     // If the ensure didn't return an error, update the native transfers
@@ -223,26 +223,23 @@ impl<T: Config> orml_traits::xcm_transfer::NativeBarrier<T::AccountId, T::Balanc
     }
 
     fn update_xcm_native_transfers(account_id: &T::AccountId, amount: T::Balance) {
-        <RemainingXcmLimit<T>>::mutate_exists(
-            account_id,
-            |maybe_remainder| match maybe_remainder {
-                Some(remainder) => {
-                    *remainder = remainder.saturating_sub(amount);
-                }
-                None => {}
-            },
-        );
+        <RemainingLimit<T>>::mutate_exists(account_id, |maybe_remainder| match maybe_remainder {
+            Some(remainder) => {
+                *remainder = remainder.saturating_sub(amount);
+            }
+            None => {}
+        });
     }
 }
 
 impl<T: Config> Pallet<T> {
-    fn reset_remaining_xcm_limit(unprocessed_days: u64) {
+    fn reset_remaining_limit(unprocessed_days: u64) {
         if let Some((daily_limit, _)) = <Configurations<T>>::get() {
-            for (account_id, mut remaining_limit) in RemainingXcmLimit::<T>::iter() {
+            for (account_id, mut remaining_limit) in RemainingLimit::<T>::iter() {
                 for _ in 0..unprocessed_days {
                     remaining_limit += daily_limit;
                 }
-                <RemainingXcmLimit<T>>::insert(&account_id, remaining_limit);
+                <RemainingLimit<T>>::insert(&account_id, remaining_limit);
             }
         }
     }

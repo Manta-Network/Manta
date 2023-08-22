@@ -54,7 +54,7 @@ pub trait WeightInfo {
 
 /// Weights for pallet_native_barrier using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> pallet_native_barrier::WeightInfo for SubstrateWeight<T> {
+impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: NativeBarrier Configurations (r:1 w:0)
 	// Storage: Timestamp Now (r:1 w:0)
 	// Storage: NativeBarrier LastDayProcessed (r:1 w:1)

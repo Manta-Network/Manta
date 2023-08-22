@@ -31,7 +31,7 @@ const SEED: u32 = 0;
 
 benchmarks! {
 
-    // Worst case scenario is once per day when the RemainingXcmLimit is updated
+    // Worst case scenario is once per day when the RemainingLimit is updated
     // we set the start time as the beginning of the epoch so the on-initialize will
     // add ((now - epoch_start) * daily_limit) + daily_amount for each account
     on_initialize {
@@ -54,7 +54,7 @@ benchmarks! {
         for _ in 0..expected_days {
             total_limit += daily_limit;
         }
-        for (account_id, balance) in RemainingXcmLimit::<T>::iter() {
+        for (account_id, balance) in RemainingLimit::<T>::iter() {
             assert_eq!(balance, total_limit);
         }
     }
@@ -86,7 +86,7 @@ benchmarks! {
         let daily_limit = T::Balance::zero();
     }: add_accounts_to_native_barrier(RawOrigin::Root, barrier_addresses)
     verify {
-        for (account_id, balance) in RemainingXcmLimit::<T>::iter() {
+        for (account_id, balance) in RemainingLimit::<T>::iter() {
             assert_eq!(balance, daily_limit);
         }
     }
@@ -113,11 +113,11 @@ benchmarks! {
         ];
     }: remove_accounts_from_native_barrier(RawOrigin::Root, remove_addresses)
     verify {
-        assert_eq!(None, RemainingXcmLimit::<T>::get(account::<T::AccountId>("address_0", 0, SEED)));
-        assert_eq!(None, RemainingXcmLimit::<T>::get(account::<T::AccountId>("address_1", 0, SEED)));
-        assert_eq!(None, RemainingXcmLimit::<T>::get(account::<T::AccountId>("address_2", 0, SEED)));
-        assert_eq!(None, RemainingXcmLimit::<T>::get(account::<T::AccountId>("address_3", 0, SEED)));
-        assert_eq!(None, RemainingXcmLimit::<T>::get(account::<T::AccountId>("address_4", 0, SEED)));
+        assert_eq!(None, RemainingLimit::<T>::get(account::<T::AccountId>("address_0", 0, SEED)));
+        assert_eq!(None, RemainingLimit::<T>::get(account::<T::AccountId>("address_1", 0, SEED)));
+        assert_eq!(None, RemainingLimit::<T>::get(account::<T::AccountId>("address_2", 0, SEED)));
+        assert_eq!(None, RemainingLimit::<T>::get(account::<T::AccountId>("address_3", 0, SEED)));
+        assert_eq!(None, RemainingLimit::<T>::get(account::<T::AccountId>("address_4", 0, SEED)));
     }
 
     impl_benchmark_test_suite!(
