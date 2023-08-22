@@ -84,7 +84,7 @@ fn advance_mock_time(delta: Duration) {
     });
 }
 
-fn initialize_test_environment() -> () {
+fn initialize_test_environment() {
     // add balances to 1,2,3
     assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 1, 1000, 0));
     assert_ok!(Balances::set_balance(RawOrigin::Root.into(), 2, 1000, 0));
@@ -94,7 +94,7 @@ fn initialize_test_environment() -> () {
     assert_ok!(Balances::transfer(RuntimeOrigin::signed(1), 2, 20));
 }
 
-fn initialize_native_barrier(daily_limit: u128, start_unix_time: Duration) -> () {
+fn initialize_native_barrier(daily_limit: u128, start_unix_time: Duration) {
     set_mock_time(Duration::default());
 
     // add balances to 1,2,3

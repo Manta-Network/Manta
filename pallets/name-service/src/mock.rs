@@ -66,9 +66,9 @@ impl frame_system::Config for Runtime {
     type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 pub struct MockNativeBarrier;
-impl orml_traits::xcm_transfer::NativeBarrier<AccountId32, Balance> for MockNativeBarrier {
-    fn update_xcm_native_transfers(_account_id: &AccountId32, _amount: Balance) {}
-    fn ensure_xcm_transfer_limit_not_exceeded(
+impl orml_traits::native_barrier::NativeBarrier<AccountId32, Balance> for MockNativeBarrier {
+    fn update_native_barrier(_account_id: &AccountId32, _amount: Balance) {}
+    fn ensure_limit_not_exceeded(
         _account_id: &AccountId32,
         _amount: Balance,
     ) -> frame_support::dispatch::DispatchResult {
@@ -76,7 +76,7 @@ impl orml_traits::xcm_transfer::NativeBarrier<AccountId32, Balance> for MockNati
     }
 }
 
-impl orml_traits::xcm_transfer::NativeChecker<u64> for MockNativeBarrier {
+impl orml_traits::native_barrier::NativeChecker<u64> for MockNativeBarrier {
     fn is_native(_currency_id: &u64) -> bool {
         true
     }

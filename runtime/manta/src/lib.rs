@@ -1320,11 +1320,11 @@ impl_runtime_apis! {
 
     impl pallet_farming_rpc_runtime_api::FarmingRuntimeApi<Block, AccountId, MantaAssetId, PoolId> for Runtime {
         fn get_farming_rewards(who: AccountId, pid: PoolId) -> Vec<(MantaAssetId, Balance)> {
-            Farming::get_farming_rewards(&who, pid).unwrap_or(Vec::new())
+            Farming::get_farming_rewards(&who, pid).unwrap_or_default()
         }
 
         fn get_gauge_rewards(who: AccountId, pid: PoolId) -> Vec<(MantaAssetId, Balance)> {
-            Farming::get_gauge_rewards(&who, pid).unwrap_or(Vec::new())
+            Farming::get_gauge_rewards(&who, pid).unwrap_or_default()
         }
     }
 
