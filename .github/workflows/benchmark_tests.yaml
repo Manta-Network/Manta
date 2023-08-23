@@ -14,7 +14,7 @@ jobs:
   start-benchmark-checks:
     timeout-minutes: 180
     runs-on: runtime
-    if: github.event.label.name == 'A-benchmark-checks'
+    if: contains(github.event.pull_request.labels.*.name, 'A-benchmark-checks')
     container:
       image: ubuntu:20.04
     steps:

@@ -12,7 +12,7 @@ env:
   DEBIAN_FRONTEND: noninteractive
 jobs:
   start-unit-test-checks:
-    if: github.event.label.name == 'A-unit-test-checks'
+    if: contains(github.event.pull_request.labels.*.name, 'A-unit-test-checks')
     timeout-minutes: 480
     runs-on: runtime
     container:
