@@ -72,7 +72,7 @@ jobs:
       - name: stop sccache server
         run: sccache --stop-server || true
   start-benchmark-checks:
-    timeout-minutes: 180
+    timeout-minutes: 360
     runs-on: runtime
     if: contains(github.event.pull_request.labels.*.name, 'A-benchmark-checks')
     container:
