@@ -105,7 +105,7 @@ fn diff_tx_fees() {
             frame_support::metadata::RuntimeMetadata::V14(metadata) => metadata.pallets,
             _ => unreachable!(),
         };
-        assert_eq!(pallets.len(), 39);
+        assert_eq!(pallets.len(), 40);
     });
 
     let fee_multipliers = fee_multipliers();
@@ -3164,6 +3164,48 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         calamari_runtime_calls.push((
             "zenlink_protocol",
             "bootstrap_withdraw_reward",
+            dispatch_info,
+            call_len,
+        ));
+    }
+
+    // pallet_native_barrier
+    {
+        assert_eq!(
+            crate::RuntimeCall::get_call_names("NativeBarrier").len(),
+            3,
+            "Please update new extrinsic here."
+        );
+
+        let call = crate::RuntimeCall::NativeBarrier(
+            pallet_native_barrier::Call::initialize_native_barrier { init: None },
+        );
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_native_barrier",
+            "initialize_native_barrier",
+            dispatch_info,
+            call_len,
+        ));
+
+        let call = crate::RuntimeCall::NativeBarrier(
+            pallet_native_barrier::Call::add_accounts_to_native_barrier { accounts: vec![] },
+        );
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_native_barrier",
+            "add_accounts_to_native_barrier",
+            dispatch_info,
+            call_len,
+        ));
+
+        let call = crate::RuntimeCall::NativeBarrier(
+            pallet_native_barrier::Call::remove_accounts_from_native_barrier { accounts: vec![] },
+        );
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_native_barrier",
+            "remove_accounts_from_native_barrier",
             dispatch_info,
             call_len,
         ));
