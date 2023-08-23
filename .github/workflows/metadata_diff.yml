@@ -10,16 +10,17 @@ on:
         description: The name of the chain under test. Usually, you would pass a dev chain
         default: manta-dev
         required: true
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 env:
   CHAIN: ${{github.event.inputs.chain}}
   ENDPOINT: ${{github.event.inputs.endpoint}}
   DEBIAN_FRONTEND: noninteractive
 jobs:
-  start-checks:
+  update-checks:
     timeout-minutes: 120
-    runs-on: runtime
-    container:
-      image: ubuntu:20.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         node-version: [16.x]
@@ -31,8 +32,8 @@ jobs:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
           SCCACHE_VERSION: v0.5.3
         run: |
-          apt update
-          apt install -y curl
+          sudo apt update
+          sudo apt install -y curl
           SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
           mkdir -p $HOME/.local/bin
           curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
@@ -40,15 +41,6 @@ jobs:
           chmod +x $HOME/.local/bin/sccache
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-registry-
       - name: cache sccache
         uses: actions/cache@v2
         continue-on-error: false
@@ -62,32 +54,16 @@ jobs:
       - name: init
         shell: bash
         run: |
-          apt update
-          apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang git
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang git
           protoc --version
-          apt remove -y '^dotnet-.*'
-          apt remove -y '^mongodb-.*'
-          apt remove -y '^mysql-.*'
-          apt remove -y '^postgresql-*'
-          apt remove -y google-cloud-sdk google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
-          apt autoremove -y
-          apt clean
-          rm -rf /usr/local/lib/android
-          rm -rf /usr/share/dotnet
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install nightly-2023-03-03
           rustup default nightly-2023-03-03
           rustup target add wasm32-unknown-unknown
-      - name: cache cargo build
-        uses: actions/cache@v2
-        with:
-          path: |
-            ./target
-          key: cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-build-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('**/Cargo.lock') }}
-            cargo-build-
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: Build New Binary
         env:
           RUST_BACKTRACE: full
@@ -97,7 +73,7 @@ jobs:
         shell: bash
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo build --release
+          RUSTC_BOOTSTRAP=1 cargo build --release --timings
           cp target/release/manta $HOME/manta
           chmod +x $HOME/manta
       - name: Fetch and chmod old release binary
@@ -120,32 +96,32 @@ jobs:
           path: zombienet-tool
       - name: create launch config
         run: |
-          ls -ahl ${{ github.workspace }}/zombienet/tests
-          cd ${{ github.workspace }}
+          ls -ahl $GITHUB_WORKSPACE/zombienet/tests
+          cd $GITHUB_WORKSPACE
           dasel put -t string -v $HOME/polkadot -r toml \
-            -f ${{ github.workspace }}/zombienet/tests/0003-metadata-diff.toml \
+            -f $GITHUB_WORKSPACE/zombienet/tests/0003-metadata-diff.toml \
             '.relaychain.default_command'
           dasel put -t string -v $HOME/manta -r toml \
-            -f ${{ github.workspace }}/zombienet/tests/0003-metadata-diff.toml \
+            -f $GITHUB_WORKSPACE/zombienet/tests/0003-metadata-diff.toml \
             '.parachains.[0].collators.[0].command'
           if [[ "$CHAIN" == *"manta"* ]]; then
             dasel put -t int -v 2104 -r toml \
-              -f ${{ github.workspace }}/zombienet/tests/0003-metadata-diff.toml \
+              -f $GITHUB_WORKSPACE/zombienet/tests/0003-metadata-diff.toml \
               '.parachains.[0].id'
             dasel put -t string -v $CHAIN -r toml \
-              -f ${{ github.workspace }}/zombienet/tests/0003-metadata-diff.toml \
+              -f $GITHUB_WORKSPACE/zombienet/tests/0003-metadata-diff.toml \
               '.parachains.[0].chain'
           fi;
-          cat ${{ github.workspace }}/zombienet/tests/0003-metadata-diff.toml
+          cat $GITHUB_WORKSPACE/zombienet/tests/0003-metadata-diff.toml
       - name: launch testnet
         run: |
-          cd ${{ github.workspace }}/zombienet-tool/javascript
+          cd $GITHUB_WORKSPACE/zombienet-tool/javascript
           yarn
           npm run build
           pm2 start packages/cli/dist/cli.js --name zombienet \
-            --output ${{ github.workspace }}/stdout.log \
-            --error ${{ github.workspace }}/stderr.log \
-            -- spawn --provider native ${{ github.workspace }}/zombienet/tests/0003-metadata-diff.toml
+            --output $GITHUB_WORKSPACE/stdout.log \
+            --error $GITHUB_WORKSPACE/stderr.log \
+            -- spawn --provider native $GITHUB_WORKSPACE/zombienet/tests/0003-metadata-diff.toml
       - name: Prepare output
         run: |
           VERSION=$($HOME/manta --version)
@@ -161,15 +137,15 @@ jobs:
       - name: Compare the metadata
         run: |
           echo $ENDPOINT
-          cd ${{ github.workspace }}/tools
+          cd $GITHUB_WORKSPACE/tools
           yarn
           CMD="yarn run:metadata $ENDPOINT ws://127.0.0.1:9921"
           echo -e "Running:\n$CMD"
           $CMD >> output.txt
           sed -z -i 's/\n\n/\n/g' output.txt
           cat output.txt | egrep -n -i ''
-          chmod +x ${{ github.workspace }}/scripts/github/extrinsic-ordering-filter.sh
-          SUMMARY=$(${{ github.workspace }}/scripts/github/extrinsic-ordering-filter.sh output.txt)
+          chmod +x $GITHUB_WORKSPACE/scripts/github/extrinsic-ordering-filter.sh
+          SUMMARY=$($GITHUB_WORKSPACE/scripts/github/extrinsic-ordering-filter.sh output.txt)
           echo -e $SUMMARY
           echo -e $SUMMARY >> output.txt
       - name: Show result
