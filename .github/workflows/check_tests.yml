@@ -12,7 +12,7 @@ env:
   DEBIAN_FRONTEND: noninteractive
 jobs:
   start-integration-test-checks:
-    if: contains(github.event.pull_request.labels.*.name, 'A-integration-test-checks')
+    if: github.event.label.name == 'A-integration-test-checks'
     timeout-minutes: 480
     runs-on: ubuntu-20.04
     container:
@@ -72,9 +72,9 @@ jobs:
       - name: stop sccache server
         run: sccache --stop-server || true
   start-benchmark-checks:
-    timeout-minutes: 360
+    timeout-minutes: 180
     runs-on: runtime
-    if: contains(github.event.pull_request.labels.*.name, 'A-benchmark-checks')
+    if: github.event.label.name == 'A-benchmark-checks'
     container:
       image: ubuntu:20.04
     steps:
@@ -185,7 +185,7 @@ jobs:
       - name: stop sccache server
         run: sccache --stop-server || true
   start-unit-test-checks:
-    if: contains(github.event.pull_request.labels.*.name, 'A-unit-test-checks')
+    if: github.event.label.name == 'A-unit-test-checks'
     timeout-minutes: 480
     runs-on: runtime
     container:
@@ -244,7 +244,7 @@ jobs:
       - name: stop sccache server
         run: sccache --stop-server || true
   start-congestion-test-checks:
-    if: contains(github.event.pull_request.labels.*.name, 'A-congestion-test-checks')
+    if: github.event.label.name == 'A-congestion-test-checks'
     timeout-minutes: 480
     strategy:
       matrix:
