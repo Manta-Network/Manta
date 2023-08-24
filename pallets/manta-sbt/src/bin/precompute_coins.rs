@@ -188,7 +188,7 @@ fn generate_coins_by_multithreading() -> Result<()> {
         let thread_join_handle = thread::spawn(move || {
             let mut mints = Vec::new();
             for i in start..end {
-                let asset_id = (0 + (i % 3)).into();
+                let asset_id = (i % 3).into();
                 println!("Iteration count: {:?}", i);
 
                 let to_private = to_private_example(
