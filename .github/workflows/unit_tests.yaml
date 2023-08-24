@@ -1,0 +1,72 @@
+name: Run Unit Tests
+on:
+  pull_request:
+    branches: [manta]
+    types: [opened, reopened, synchronize, labeled]
+  push:
+    branches: [manta]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+env:
+  DEBIAN_FRONTEND: noninteractive
+jobs:
+  start-unit-test-checks:
+    if: contains(github.event.pull_request.labels.*.name, 'A-unit-test-checks')
+    timeout-minutes: 480
+    runs-on: runtime
+    container:
+      image: ubuntu:20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: install sccache
+        env:
+          SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
+          SCCACHE_VERSION: v0.5.3
+        run: |
+          apt update
+          apt install -y curl
+          SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
+          mkdir -p $HOME/.local/bin
+          curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
+          mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
+          chmod +x $HOME/.local/bin/sccache
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: cache sccache
+        uses: actions/cache@v2
+        continue-on-error: false
+        with:
+          path: ~/.cache/sccache
+          key: sccache-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            sccache-
+      - name: start sccache server
+        run: sccache --start-server
+      - name: init
+        shell: bash
+        run: |
+          apt update
+          apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang git
+          protoc --version
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup update
+          rustup toolchain install nightly-2023-03-03
+          rustup default nightly-2023-03-03
+          rustup target add wasm32-unknown-unknown
+      - name: cache cargo
+        uses: Swatinem/rust-cache@v2
+      - name: Run Unit Tests
+        shell: bash
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          # SCCACHE_CACHE_SIZE: 240
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: ~/.cache/sccache
+        run: |
+          source ${HOME}/.cargo/env
+          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime --workspace --exclude integration-tests --timings
+      - name: stop sccache server
+        run: sccache --stop-server || true

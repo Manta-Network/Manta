@@ -13,7 +13,7 @@ env:
   POLKADOT_BINARY: https://github.com/paritytech/polkadot/releases/download/v1.0.0/polkadot
 jobs:
   print-rust-versions:
-    if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')
+    if: contains(github.event.pull_request.labels.*.name, 'A-manta')
     runs-on: ubuntu-20.04
     container:
       image: paritytech/ci-linux:production
@@ -29,7 +29,7 @@ jobs:
           echo "::set-output name=nightly::$(rustc +nightly --version)"
   build-node-current:
     timeout-minutes: 120
-    if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')
+    if: contains(github.event.pull_request.labels.*.name, 'A-manta')
     runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always
@@ -88,7 +88,7 @@ jobs:
           name: manta
           path: target/production/manta
   manta-integration-test:
-    if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')
+    if: contains(github.event.pull_request.labels.*.name, 'A-manta')
     needs: [build-node-current]
     runs-on: runtime-integration-test
     timeout-minutes: 240
@@ -427,7 +427,7 @@ jobs:
           MANTA_BINARY=$HOME/.local/bin/manta yarn tests
   docker-image-test:
     timeout-minutes: 120
-    if: contains(github.event.pull_request.labels.*.name, 'A-manta' || github.ref == 'refs/heads/manta')
+    if: contains(github.event.pull_request.labels.*.name, 'A-manta')
     needs: [build-node-current]
     runs-on: ubuntu-20.04
     strategy:
