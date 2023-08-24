@@ -20,11 +20,11 @@ async function main() {
     const api = await createPromiseApi(nodeAddress);
     const sender = keyring.addFromMnemonic("bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice");
 
-    const mints_file = '/home/jamie/my-repo/Manta/pallets/manta-sbt/precomputed_mints-0-to_20';
+    const mints_file = './data/mantaSbt_mints';
 
     const mints_buffer = await fs.readFile(mints_file);
 
-    const mints_offset = 1;
+    const mints_offset = 4;
     const total_iterations = 20;
     const mint_size = 553;
 

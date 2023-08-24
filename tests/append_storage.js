@@ -17,18 +17,20 @@ async function main() {
   let forkPath = './data/fork.json';
 
   let storage = JSON.parse(fs.readFileSync(storagePath, 'utf8'));
-  let mantaSbtStorage = JSON.parse(fs.readFileSync(mantaSbtStoragePath, 'utf8'));
   let forkedSpec = JSON.parse(fs.readFileSync(forkPath, 'utf8'));
-
+  
   // Grab the items to be moved, then iterate through and insert into storage
   storage
   .filter((i) => prefixes.some((prefix) => i[0].startsWith(prefix)))
   .forEach(([key, value]) => (forkedSpec.genesis.raw.top[key] = value));
-
+  
   // insert mantasbt's storages into chain spec
-  mantaSbtStorage
-  .filter((i) => mantaSbtPrefix.some((prefix) => i[0].startsWith(prefix)))
-  .forEach(([key, value]) => (forkedSpec.genesis.raw.top[key] = value));
+  if (fs.existsSync(mantaSbtStoragePath)) {
+    let mantaSbtStorage = JSON.parse(fs.readFileSync(mantaSbtStoragePath, 'utf8'));
+    mantaSbtStorage
+    .filter((i) => mantaSbtPrefix.some((prefix) => i[0].startsWith(prefix)))
+    .forEach(([key, value]) => (forkedSpec.genesis.raw.top[key] = value));
+  }
 
   await new Promise((resolve, reject) => {
     bigJson.createStringifyStream({ body: forkedSpec })
