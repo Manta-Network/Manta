@@ -20,7 +20,6 @@ jobs:
   run-benchmarks:
     timeout-minutes: 720
     runs-on: runtime-integration-test
-    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v3
