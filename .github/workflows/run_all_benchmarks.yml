@@ -79,9 +79,10 @@ jobs:
       - name: create-chainspec
         run: |
           ${{ github.workspace }}/target/production/manta build-spec --chain $CHAIN_SPEC --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
-      - name: append manta-pay storage
+      - name: append manta-pay and manta-sbt storage
         run: |
           wget -P ${{ github.workspace }}/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
+          wget -P ${{ github.workspace }}/tests/data https://mantasbt-storage.s3.amazonaws.com/mantaSbtStorage.json
           cd ${{ github.workspace }}/tests
           yarn install
           yarn
