@@ -16,7 +16,7 @@
 
 use super::{
     weights, xcm_config::SelfReserve, AssetManager, Assets, Balances,
-    EnsureRootOrThreeFourthsCouncil, NativeBarrier, NativeTokenExistentialDeposit, Runtime,
+    EnsureRootOrThreeFourthsCouncil, NativeBarrierPallet, NativeTokenExistentialDeposit, Runtime,
     RuntimeEvent, RuntimeOrigin, TechnicalCollective, Timestamp, KMA,
 };
 
@@ -195,7 +195,7 @@ impl pallet_manta_pay::Config for Runtime {
     type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
     type AssetConfig = CalamariAssetConfig;
     type PalletId = MantaPayPalletId;
-    type NativeBarrierType = NativeBarrier;
+    type NativeBarrierType = NativeBarrierPallet;
 }
 
 parameter_types! {

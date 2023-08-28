@@ -25,6 +25,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use manta_collator_selection::IdentityCollator;
+use orml_traits::xcm_transfer::NativeBarrier;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -365,7 +366,6 @@ impl pallet_timestamp::Config for Runtime {
 
 /// Only callable after `set_validation_data` is called which forms this proof the same way
 fn relay_chain_state_proof() -> cumulus_pallet_parachain_system::RelayChainStateProof {
-    use sp_core::Get;
     let relay_storage_root = ParachainSystem::validation_data()
         .expect("set in `set_validation_data`")
         .relay_parent_storage_root;
@@ -458,7 +458,7 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = NativeTokenExistentialDeposit;
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
-    type NativeBarrierType = NativeBarrier;
+    type NativeBarrierType = NativeBarrierPallet;
 }
 
 impl pallet_native_barrier::Config for Runtime {
@@ -923,6 +923,137 @@ impl pallet_name_service::Config for Runtime {
     type WeightInfo = weights::pallet_name_service::SubstrateWeight<Runtime>;
 }
 
+use sp_runtime::traits::SignedExtension;
+use codec::{Decode, Encode, MaxEncodedLen};
+use scale_info::TypeInfo;
+use sp_arithmetic::FixedPointOperand;
+use frame_support::dispatch::PostDispatchInfo;
+use frame_support::dispatch::DispatchInfo;
+use frame_support::dispatch::Dispatchable;
+use sp_runtime::traits::SignedExtensionMetadata;
+use sp_runtime::transaction_validity::TransactionValidityError;
+use sp_runtime::DispatchResult;
+use sp_runtime::traits::PostDispatchInfoOf;
+use sp_runtime::traits::DispatchInfoOf;
+use orml_traits::xcm_transfer::NativeChecker;
+use sp_core::Get;
+use manta_support::manta_pay::asset_value_decode;
+use manta_support::manta_pay::id_from_field;
+use assets_config::NativeAssetId;
+use sp_runtime::transaction_validity::ValidTransaction;
+use crate::assets_config::NativeAssetLocation;
+use crate::xcm_config::CurrencyIdtoMultiLocation;
+use manta_primitives::assets::AssetIdLocationConvert;
+use sp_runtime::traits::Convert;
+#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+pub struct NativeBarrier2<T>(sp_std::marker::PhantomData<T>);
+impl<T: frame_system::Config + core::marker::Sync + core::marker::Send + scale_info::TypeInfo> SignedExtension for NativeBarrier2<T> 
+where
+    T::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+    // BalanceOf<T>: Send + Sync + FixedPointOperand,
+{
+    const IDENTIFIER: &'static str = "NativeBarrier2";
+    // type AccountId = T::AccountId;
+	// type Call = T:;RuntimeCall;
+	type AccountId = AccountId;
+	type Call = RuntimeCall;
+	type AdditionalSigned = ();
+	type Pre = (
+		// // tip
+		// BalanceOf<T>,
+		// // who paid the fee - this is an option to allow for a Default impl.
+		// Self::AccountId,
+		// // imbalance resulting from withdrawing the fee
+		// <<T as Config>::OnChargeTransaction as OnChargeTransaction<T>>::LiquidityInfo,
+	);
+
+    /// Construct any additional data that should be in the signed payload of the transaction. Can
+	/// also perform any pre-signature-verification checks and return an error if needed.
+	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
+		Ok(())
+    }
+
+	/// Validate a signed transaction for the transaction queue.
+	///
+	/// This function can be called frequently by the transaction queue,
+	/// to obtain transaction validity against current state.
+	/// It should perform all checks that determine a valid transaction,
+	/// that can pay for its execution and quickly eliminate ones
+	/// that are stale or incorrect.
+	///
+	/// Make sure to perform the same checks in `pre_dispatch` function.
+	fn validate(
+		&self,
+		_who: &Self::AccountId,
+		_call: &Self::Call,
+		_info: &DispatchInfoOf<Self::Call>,
+		_len: usize,
+	) -> TransactionValidity {
+        // if Balances, XTokens, MantaPay
+        // if transfer (origin and amount)
+        // then NativeBarrier::ensure_xcm_transfer_limit_not_exceeded(origin, amount);
+
+        match _call {
+            RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive { dest, value}) => {
+                let _ = NativeBarrierPallet::ensure_xcm_transfer_limit_not_exceeded(_who, *value);
+            },
+            | RuntimeCall::XTokens(orml_xtokens::Call::transfer {
+                currency_id,
+                amount,
+                dest,
+                dest_weight_limit,
+            }) => {
+                let asset_location =
+                CurrencyIdtoMultiLocation::<AssetIdLocationConvert<AssetManager>>::convert(
+                    currency_id.clone(),
+                );
+                if asset_location == NativeAssetLocation::get().into() || asset_location == Some(Here.into()) {
+                    let _ = NativeBarrierPallet::ensure_xcm_transfer_limit_not_exceeded(_who, *amount);
+                }
+            },
+            | RuntimeCall::MantaPay(pallet_manta_pay::Call::to_private { post }) => {
+                if let Some(asset_id) = id_from_field(post.receiver_posts[0].utxo.public_asset.id){
+                    if asset_id == NativeAssetId::get() {
+                       let _ = NativeBarrierPallet::ensure_xcm_transfer_limit_not_exceeded(
+                            _who,
+                            asset_value_decode(post.sources[0]),
+                        );
+                    }
+                }
+            },
+            | _ => {}
+        }
+
+		Ok(ValidTransaction {
+			..Default::default()
+		})
+	}
+
+	/// Do any pre-flight stuff for a signed transaction.
+	///
+	/// Make sure to perform the same checks as in [`Self::validate`].
+	fn pre_dispatch(
+		self,
+		who: &Self::AccountId,
+		call: &Self::Call,
+		info: &DispatchInfoOf<Self::Call>,
+		len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
+		Ok(())
+    }
+}
+impl<T: frame_system::Config> sp_std::fmt::Debug for NativeBarrier2<T> {
+	#[cfg(feature = "std")]
+	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		write!(f, "NativeBarrier2<{:?}>", self.0)
+	}
+	#[cfg(not(feature = "std"))]
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
+}
+
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -975,7 +1106,7 @@ construct_runtime!(
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
         XTokens: orml_xtokens::{Pallet, Call, Event<T>, Storage} = 34,
-        NativeBarrier: pallet_native_barrier::{Pallet, Call, Event<T>, Storage} = 35,
+        NativeBarrierPallet: pallet_native_barrier::{Pallet, Call, Event<T>, Storage} = 35,
 
         // Handy utilities.
         Utility: pallet_utility::{Pallet, Call, Event} = 40,
@@ -1019,7 +1150,9 @@ pub type SignedExtra = (
     frame_system::CheckNonce<Runtime>,
     frame_system::CheckWeight<Runtime>,
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+    NativeBarrier2<Runtime>
 );
+
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
     generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
@@ -1071,7 +1204,7 @@ mod benches {
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
         [pallet_name_service, NameService]
-        [pallet_native_barrier, NativeBarrier]
+        [pallet_native_barrier, NativeBarrierPallet]
         // Dex
         [zenlink_protocol, ZenlinkProtocol]
         [pallet_farming, Farming]

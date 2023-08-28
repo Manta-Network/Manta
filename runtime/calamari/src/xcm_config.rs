@@ -16,7 +16,7 @@
 
 use super::{
     assets_config::{CalamariAssetConfig, NativeAssetLocation},
-    AssetManager, Assets, Balances, DmpQueue, EnsureRootOrMoreThanHalfCouncil, NativeBarrier,
+    AssetManager, Assets, Balances, DmpQueue, EnsureRootOrMoreThanHalfCouncil, NativeBarrierPallet,
     ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
     Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
@@ -348,7 +348,7 @@ impl Contains<CurrencyId> for AssetManager {
     }
 }
 
-impl orml_traits::native_barrier::NativeChecker<CurrencyId> for NativeBarrier {
+impl orml_traits::xcm_transfer::NativeChecker<CurrencyId> for NativeBarrierPallet {
     fn is_native(currency_id: &CurrencyId) -> bool {
         let asset_location =
             CurrencyIdtoMultiLocation::<AssetIdLocationConvert<AssetManager>>::convert(
@@ -386,6 +386,6 @@ impl orml_xtokens::Config for Runtime {
     type MinXcmFee = AssetManager;
     type MultiLocationsFilter = AssetManager;
     type OutgoingAssetsFilter = AssetManager;
-    type NativeBarrierType = NativeBarrier;
+    type NativeBarrierType = NativeBarrierPallet;
     type ReserveProvider = AbsoluteReserveProvider;
 }
