@@ -85,11 +85,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// The range of component `y` is `[0, 63]`.
 	fn deposit(x: u32, y: u32, ) -> Weight {
 		// Minimum execution time: 183_213 nanoseconds.
-		Weight::from_ref_time(191_155_541)
+		Weight::from_parts(191_155_541, 0)
 			// Standard Error: 525
-			.saturating_add(Weight::from_ref_time(158_552).saturating_mul(x.into()))
+			.saturating_add(Weight::from_parts(158_552, 0).saturating_mul(x.into()))
 			// Standard Error: 8_276
-			.saturating_add(Weight::from_ref_time(295_360).saturating_mul(y.into()))
+			.saturating_add(Weight::from_parts(295_360, 0).saturating_mul(y.into()))
 			.saturating_add(T::DbWeight::get().reads(25))
 			.saturating_add(T::DbWeight::get().writes(13))
 	}
@@ -113,11 +113,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// The range of component `y` is `[0, 63]`.
 	fn request_withdraw(x: u32, y: u32, ) -> Weight {
 		// Minimum execution time: 110_186 nanoseconds.
-		Weight::from_ref_time(114_775_116)
+		Weight::from_parts(114_775_116, 0)
 			// Standard Error: 1_466
-			.saturating_add(Weight::from_ref_time(106_892).saturating_mul(x.into()))
+			.saturating_add(Weight::from_parts(106_892, 0).saturating_mul(x.into()))
 			// Standard Error: 23_106
-			.saturating_add(Weight::from_ref_time(106_427).saturating_mul(y.into()))
+			.saturating_add(Weight::from_parts(106_427, 0).saturating_mul(y.into()))
 			.saturating_add(T::DbWeight::get().reads(16))
 			.saturating_add(T::DbWeight::get().writes(9))
 	}
@@ -128,9 +128,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// The range of component `y` is `[0, 63]`.
 	fn claim_my_winnings(y: u32, ) -> Weight {
 		// Minimum execution time: 47_723 nanoseconds.
-		Weight::from_ref_time(50_397_562)
+		Weight::from_parts(50_397_562, 0)
 			// Standard Error: 1_406
-			.saturating_add(Weight::from_ref_time(151_698).saturating_mul(y.into()))
+			.saturating_add(Weight::from_parts(151_698, 0).saturating_mul(y.into()))
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(4))
 	}
@@ -142,7 +142,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Scheduler Agenda (r:1 w:1)
 	fn start_lottery() -> Weight {
 		// Minimum execution time: 40_198 nanoseconds.
-		Weight::from_ref_time(43_685_000)
+		Weight::from_parts(43_685_000, 0)
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -150,7 +150,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Scheduler Agenda (r:1 w:1)
 	fn stop_lottery() -> Weight {
 		// Minimum execution time: 28_772 nanoseconds.
-		Weight::from_ref_time(29_405_000)
+		Weight::from_parts(29_405_000, 0)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -168,11 +168,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// The range of component `y` is `[0, 63]`.
 	fn draw_lottery(x: u32, y: u32, ) -> Weight {
 		// Minimum execution time: 78_612 nanoseconds.
-		Weight::from_ref_time(79_396_000)
+		Weight::from_parts(79_396_000, 0)
 			// Standard Error: 46_210
-			.saturating_add(Weight::from_ref_time(908_503).saturating_mul(x.into()))
+			.saturating_add(Weight::from_parts(908_503, 0).saturating_mul(x.into()))
 			// Standard Error: 735_204
-			.saturating_add(Weight::from_ref_time(17_320_055).saturating_mul(y.into()))
+			.saturating_add(Weight::from_parts(17_320_055, 0).saturating_mul(y.into()))
 			.saturating_add(T::DbWeight::get().reads(11))
 			.saturating_add(T::DbWeight::get().reads((3_u64).saturating_mul(y.into())))
 			.saturating_add(T::DbWeight::get().writes(2))
@@ -185,22 +185,22 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Lottery GasReserve (r:1 w:0)
 	fn process_matured_withdrawals() -> Weight {
 		// Minimum execution time: 52_626 nanoseconds.
-		Weight::from_ref_time(53_534_000)
+		Weight::from_parts(53_534_000, 0)
 			.saturating_add(T::DbWeight::get().reads(6))
 	}
     fn set_min_deposit() -> Weight {
 		// Minimum execution time: 52_626 nanoseconds.
-		Weight::from_ref_time(53_534_000)
+		Weight::from_parts(53_534_000, 0)
 			.saturating_add(T::DbWeight::get().reads(6))
 	}
     fn set_min_withdraw() -> Weight {
 		// Minimum execution time: 52_626 nanoseconds.
-		Weight::from_ref_time(53_534_000)
+		Weight::from_parts(53_534_000, 0)
 			.saturating_add(T::DbWeight::get().reads(6))
 	}
     fn set_gas_reserve() -> Weight {
 		// Minimum execution time: 52_626 nanoseconds.
-		Weight::from_ref_time(53_534_000)
+		Weight::from_parts(53_534_000, 0)
 			.saturating_add(T::DbWeight::get().reads(6))
 	}
 }
@@ -231,11 +231,11 @@ impl WeightInfo for () {
 	/// The range of component `y` is `[0, 63]`.
 	fn deposit(x: u32, y: u32, ) -> Weight {
 		// Minimum execution time: 183_213 nanoseconds.
-		Weight::from_ref_time(191_155_541)
+		Weight::from_parts(191_155_541, 0)
 			// Standard Error: 525
-			.saturating_add(Weight::from_ref_time(158_552).saturating_mul(x.into()))
+			.saturating_add(Weight::from_parts(158_552, 0).saturating_mul(x.into()))
 			// Standard Error: 8_276
-			.saturating_add(Weight::from_ref_time(295_360).saturating_mul(y.into()))
+			.saturating_add(Weight::from_parts(295_360, 0).saturating_mul(y.into()))
 			.saturating_add(RocksDbWeight::get().reads(25))
 			.saturating_add(RocksDbWeight::get().writes(13))
 	}
@@ -259,11 +259,11 @@ impl WeightInfo for () {
 	/// The range of component `y` is `[0, 63]`.
 	fn request_withdraw(x: u32, y: u32, ) -> Weight {
 		// Minimum execution time: 110_186 nanoseconds.
-		Weight::from_ref_time(114_775_116)
+		Weight::from_parts(114_775_116, 0)
 			// Standard Error: 1_466
-			.saturating_add(Weight::from_ref_time(106_892).saturating_mul(x.into()))
+			.saturating_add(Weight::from_parts(106_892, 0).saturating_mul(x.into()))
 			// Standard Error: 23_106
-			.saturating_add(Weight::from_ref_time(106_427).saturating_mul(y.into()))
+			.saturating_add(Weight::from_parts(106_427, 0).saturating_mul(y.into()))
 			.saturating_add(RocksDbWeight::get().reads(16))
 			.saturating_add(RocksDbWeight::get().writes(9))
 	}
@@ -274,9 +274,9 @@ impl WeightInfo for () {
 	/// The range of component `y` is `[0, 63]`.
 	fn claim_my_winnings(y: u32, ) -> Weight {
 		// Minimum execution time: 47_723 nanoseconds.
-		Weight::from_ref_time(50_397_562)
+		Weight::from_parts(50_397_562, 0)
 			// Standard Error: 1_406
-			.saturating_add(Weight::from_ref_time(151_698).saturating_mul(y.into()))
+			.saturating_add(Weight::from_parts(151_698, 0).saturating_mul(y.into()))
 			.saturating_add(RocksDbWeight::get().reads(5))
 			.saturating_add(RocksDbWeight::get().writes(4))
 	}
@@ -288,7 +288,7 @@ impl WeightInfo for () {
 	// Storage: Scheduler Agenda (r:1 w:1)
 	fn start_lottery() -> Weight {
 		// Minimum execution time: 40_198 nanoseconds.
-		Weight::from_ref_time(43_685_000)
+		Weight::from_parts(43_685_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(6))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
@@ -296,7 +296,7 @@ impl WeightInfo for () {
 	// Storage: Scheduler Agenda (r:1 w:1)
 	fn stop_lottery() -> Weight {
 		// Minimum execution time: 28_772 nanoseconds.
-		Weight::from_ref_time(29_405_000)
+		Weight::from_parts(29_405_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
@@ -314,11 +314,11 @@ impl WeightInfo for () {
 	/// The range of component `y` is `[0, 63]`.
 	fn draw_lottery(x: u32, y: u32, ) -> Weight {
 		// Minimum execution time: 78_612 nanoseconds.
-		Weight::from_ref_time(79_396_000)
+		Weight::from_parts(79_396_000, 0)
 			// Standard Error: 46_210
-			.saturating_add(Weight::from_ref_time(908_503).saturating_mul(x.into()))
+			.saturating_add(Weight::from_parts(908_503, 0).saturating_mul(x.into()))
 			// Standard Error: 735_204
-			.saturating_add(Weight::from_ref_time(17_320_055).saturating_mul(y.into()))
+			.saturating_add(Weight::from_parts(17_320_055, 0).saturating_mul(y.into()))
 			.saturating_add(RocksDbWeight::get().reads(11))
 			.saturating_add(RocksDbWeight::get().reads((3_u64).saturating_mul(y.into())))
 			.saturating_add(RocksDbWeight::get().writes(2))
@@ -331,22 +331,22 @@ impl WeightInfo for () {
 	// Storage: Lottery GasReserve (r:1 w:0)
 	fn process_matured_withdrawals() -> Weight {
 		// Minimum execution time: 52_626 nanoseconds.
-		Weight::from_ref_time(53_534_000)
+		Weight::from_parts(53_534_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(6))
 	}
     fn set_min_deposit() -> Weight {
 		// Minimum execution time: 52_626 nanoseconds.
-		Weight::from_ref_time(53_534_000)
+		Weight::from_parts(53_534_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(6))
 	}
     fn set_min_withdraw() -> Weight {
 		// Minimum execution time: 52_626 nanoseconds.
-		Weight::from_ref_time(53_534_000)
+		Weight::from_parts(53_534_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(6))
 	}
     fn set_gas_reserve() -> Weight {
 		// Minimum execution time: 52_626 nanoseconds.
-		Weight::from_ref_time(53_534_000)
+		Weight::from_parts(53_534_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(6))
 	}
 }

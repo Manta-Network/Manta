@@ -22,7 +22,7 @@ use manta_primitives::constants::RocksDbWeight;
 
 use frame_support::{
     dispatch::Weight,
-    migrations::migrate_from_pallet_version_to_storage_version,
+    migrations::{migrate_from_pallet_version_to_storage_version, PalletVersionToStorageVersionHelper},
     traits::{GetStorageVersion, OnRuntimeUpgrade, PalletInfoAccess},
 };
 #[cfg(feature = "try-runtime")]
@@ -40,7 +40,7 @@ pub struct MigratePalletPv2Sv<T>(PhantomData<T>);
 
 impl<T> OnRuntimeUpgrade for MigratePalletPv2Sv<T>
 where
-    T: GetStorageVersion + PalletInfoAccess,
+    T: GetStorageVersion + PalletInfoAccess + PalletVersionToStorageVersionHelper,
 {
     fn on_runtime_upgrade() -> Weight {
         let db_weight = RocksDbWeight::get();

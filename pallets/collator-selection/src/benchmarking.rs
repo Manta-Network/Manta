@@ -24,9 +24,10 @@ use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whiteli
 use frame_support::{
     assert_ok,
     codec::Decode,
-    traits::{Currency, EnsureOrigin, Get},
+    traits::{Currency, Get},
 };
 use frame_system::{EventRecord, RawOrigin};
+use frame_system::pallet_prelude::BlockNumberFor;
 use pallet_authorship::EventHandler;
 use pallet_session::{self as session, SessionManager};
 use sp_arithmetic::Percent;
@@ -115,10 +116,9 @@ benchmarks! {
     set_invulnerables {
         let b in 1 .. T::MaxInvulnerables::get();
         let new_invulnerables = (0..b).map(|c| account("candidate", c, SEED)).collect::<Vec<_>>();
-        let origin = T::UpdateOrigin::successful_origin();
     }: {
         assert_ok!(
-            <CollatorSelection<T>>::set_invulnerables(origin, new_invulnerables.clone())
+            <CollatorSelection<T>>::set_invulnerables(RawOrigin::Root.into(), new_invulnerables.clone())
         );
     }
     verify {
@@ -127,10 +127,9 @@ benchmarks! {
 
     set_desired_candidates {
         let max: u32 = 999;
-        let origin = T::UpdateOrigin::successful_origin();
     }: {
         assert_ok!(
-            <CollatorSelection<T>>::set_desired_candidates(origin, max)
+            <CollatorSelection<T>>::set_desired_candidates(RawOrigin::Root.into(), max)
         );
     }
     verify {
@@ -139,10 +138,9 @@ benchmarks! {
 
     set_candidacy_bond {
         let bond: BalanceOf<T> = T::Currency::minimum_balance() * 10u32.into();
-        let origin = T::UpdateOrigin::successful_origin();
     }: {
         assert_ok!(
-            <CollatorSelection<T>>::set_candidacy_bond(origin, bond)
+            <CollatorSelection<T>>::set_candidacy_bond(RawOrigin::Root.into(), bond)
         );
     }
     verify {
@@ -151,10 +149,9 @@ benchmarks! {
 
     set_eviction_baseline {
         let percentile = Percent::from_percent(80u8);
-        let origin = T::UpdateOrigin::successful_origin();
     }: {
         assert_ok!(
-            <CollatorSelection<T>>::set_eviction_baseline(origin, percentile)
+            <CollatorSelection<T>>::set_eviction_baseline(RawOrigin::Root.into(), percentile)
         );
     }
     verify {
@@ -163,10 +160,9 @@ benchmarks! {
 
     set_eviction_tolerance {
         let percentage = Percent::from_percent(10u8);
-        let origin = T::UpdateOrigin::successful_origin();
     }: {
         assert_ok!(
-            <CollatorSelection<T>>::set_eviction_tolerance(origin, percentage)
+            <CollatorSelection<T>>::set_eviction_tolerance(RawOrigin::Root.into(), percentage)
         );
     }
     verify {
@@ -226,10 +222,9 @@ benchmarks! {
 
         let leaving = <Candidates<T>>::get().last().unwrap().who.clone();
         whitelist!(leaving);
-        let origin = T::UpdateOrigin::successful_origin();
     }: {
         assert_ok!(
-            <CollatorSelection<T>>::remove_collator(origin, leaving.clone())
+            <CollatorSelection<T>>::remove_collator(RawOrigin::Root.into(), leaving.clone())
         );
     }
     verify {
@@ -257,10 +252,9 @@ benchmarks! {
             Vec::new()
         ).unwrap();
 
-        let origin = T::UpdateOrigin::successful_origin();
     }: {
         assert_ok!(
-            <CollatorSelection<T>>::register_candidate(origin, caller.clone())
+            <CollatorSelection<T>>::register_candidate(RawOrigin::Root.into(), caller.clone())
         );
     }
     verify {
@@ -275,7 +269,7 @@ benchmarks! {
             T::Currency::minimum_balance() * 4u32.into(),
         );
         let author = account("author", 0, SEED);
-        let new_block: T::BlockNumber = 10u32.into();
+        let new_block: BlockNumberFor<T> = 10u32.into();
 
         frame_system::Pallet::<T>::set_block_number(new_block);
         assert!(T::Currency::free_balance(&author) == 0u32.into());

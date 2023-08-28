@@ -46,8 +46,11 @@ pub mod pallet {
     use crate::weights::WeightInfo;
     use frame_support::{
         pallet_prelude::*,
-        traits::{tokens::ExistenceRequirement, Contains, StorageVersion},
-        transactional, PalletId,
+        traits::{
+            tokens::{ExistenceRequirement, Provenance},
+            Contains, StorageVersion,
+        },
+        transactional, DefaultNoBound, PalletId,
     };
     use frame_system::pallet_prelude::*;
     use manta_primitives::{
@@ -197,22 +200,13 @@ pub mod pallet {
 
     /// Genesis Configuration
     #[pallet::genesis_config]
+    #[derive(DefaultNoBound)]
     pub struct GenesisConfig<T: Config> {
         pub start_id: T::AssetId,
     }
 
-    #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
-        #[inline]
-        fn default() -> Self {
-            Self {
-                start_id: <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(),
-            }
-        }
-    }
-
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         #[inline]
         fn build(&self) {
             assert!(
@@ -618,7 +612,7 @@ pub mod pallet {
                 asset_id,
                 &beneficiary,
                 amount,
-                true,
+                Provenance::Minted,
             )
             .map_err(|_| Error::<T>::MintError)?;
             Self::deposit_event(Event::<T>::AssetMinted {
@@ -782,7 +776,7 @@ pub mod pallet {
                 asset_id,
                 &who,
                 total_supply,
-                true,
+                Provenance::Minted,
             )
             .map_err(|_| Error::<T>::MintError)?;
 

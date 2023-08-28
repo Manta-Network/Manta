@@ -52,11 +52,10 @@ fn init_setup<
     let amount = existential_deposit.saturating_mul(ED_MULTIPLIER.into());
     let source_caller = T::Lookup::unlookup(caller.clone());
     let _ = pallet_balances::Pallet::<T, I>::make_free_balance_be(caller, amount);
-    assert_ok!(pallet_balances::Pallet::<T, I>::set_balance(
+    assert_ok!(pallet_balances::Pallet::<T, I>::force_set_balance(
         RawOrigin::Root.into(),
         source_caller,
         amount,
-        amount
     ));
     assert_eq!(
         pallet_balances::Pallet::<T, I>::free_balance(caller),

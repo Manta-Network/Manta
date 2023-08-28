@@ -20,12 +20,11 @@
 //! Mock runtime for asset-manager
 
 use crate as pallet_asset_manager;
-use crate::mock::sp_api_hidden_includes_construct_runtime::hidden_include::traits::GenesisBuild;
 use frame_support::{
     construct_runtime,
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU128, ConstU32},
+    traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64},
     PalletId,
 };
 use frame_system as system;
@@ -36,13 +35,13 @@ use manta_primitives::{
         AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, ASSET_STRING_LIMIT},
-    types::{AccountId, Balance, BlockNumber, CalamariAssetId, Header},
+    types::{AccountId, Balance, CalamariAssetId},
 };
 use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
+use sp_runtime::BuildStorage;
 use xcm::{
-    prelude::{Parachain, X1},
-    v1::MultiLocation,
+    latest::prelude::{Parachain, X1, *},
     VersionedMultiLocation,
 };
 parameter_types! {
@@ -57,15 +56,14 @@ impl system::Config for Runtime {
     type DbWeight = ();
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
+    type Block = Block;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = ConstU32<250>;
+    type BlockHashCount = ConstU64<250>;
     type Version = ();
     type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
@@ -125,6 +123,10 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<1>;
+    type MaxHolds = ConstU32<1>;
 }
 
 pub struct MantaAssetRegistry;
@@ -181,7 +183,7 @@ parameter_types! {
     pub const StartNonNativeAssetId: CalamariAssetId = 8;
     pub const NativeAssetId: CalamariAssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
-        VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
+        VersionedMultiLocation::V3(MultiLocation::new(1, X1(Parachain(1024)))));
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
         metadata: AssetStorageMetadata {
             name: b"Calamari".to_vec(),
@@ -231,16 +233,12 @@ impl pallet_asset_manager::Config for Runtime {
     type WeightInfo = ();
 }
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
 construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub struct Runtime
     {
-        System: frame_system::{Pallet, Call, Storage, Config, Event<T>} = 0,
+        System: frame_system::{Pallet, Call, Storage, Config<T>, Event<T>} = 0,
         Assets: pallet_assets::{Pallet, Storage, Event<T>} = 1,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>} = 2,
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 3,
@@ -250,8 +248,8 @@ construct_runtime!(
 pub const PALLET_BALANCES_INDEX: u8 = 3;
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    let mut t = frame_system::GenesisConfig::default()
-        .build_storage::<Runtime>()
+    let mut t = frame_system::GenesisConfig::<Runtime>::default()
+        .build_storage()
         .unwrap();
     pallet_asset_manager::GenesisConfig::<Runtime> {
         start_id: <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),

@@ -103,11 +103,10 @@ where
 /// Initializes a test by funding accounts, reserving_sbt, set mintInfo for mintId=0.
 #[inline]
 fn initialize_test() {
-    assert_ok!(Balances::set_balance(
+    assert_ok!(Balances::force_set_balance(
         MockOrigin::root(),
         ALICE,
         1_000_000_000_000_000,
-        0
     ));
     assert_ok!(MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None));
 }
@@ -117,11 +116,10 @@ fn initialize_test() {
 fn to_private_mint_not_available() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        assert_ok!(Balances::set_balance(
+        assert_ok!(Balances::force_set_balance(
             MockOrigin::root(),
             ALICE,
             1_000_000_000_000_000,
-            0
         ));
         assert_ok!(MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE), None));
 
@@ -206,11 +204,10 @@ fn to_private_relay_signature_works() {
         .unwrap();
         let public_account: AccountId32 = account_pair.public().into();
 
-        assert_ok!(Balances::set_balance(
+        assert_ok!(Balances::force_set_balance(
             MockOrigin::root(),
             ALICE,
             1_000_000_000_000_000,
-            0
         ));
         assert_ok!(MantaSBTPallet::reserve_sbt(
             MockOrigin::signed(ALICE),

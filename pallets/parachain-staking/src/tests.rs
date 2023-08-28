@@ -7650,7 +7650,7 @@ fn deferred_payment_steady_state_event_flow() {
                         total_exposed_amount: 400,
                     },
                     Event::NewRound {
-                        starting_block: (round - 1) * 5,
+                        starting_block: (round as u64 - 1) * 5,
                         round,
                         selected_collators_number: 4,
                         total_balance: 1600,

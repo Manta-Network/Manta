@@ -59,7 +59,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Randomness InherentIncluded (r:0 w:1)
 	fn set_babe_randomness_results() -> Weight {
 		// Minimum execution time: 14_410 nanoseconds.
-		Weight::from_ref_time(14_737_000)
+		Weight::from_parts(14_737_000, 0)
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
@@ -74,7 +74,7 @@ impl WeightInfo for () {
 	// Storage: Randomness InherentIncluded (r:0 w:1)
 	fn set_babe_randomness_results() -> Weight {
 		// Minimum execution time: 14_410 nanoseconds.
-		Weight::from_ref_time(14_737_000)
+		Weight::from_parts(14_737_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(3))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}

@@ -132,7 +132,8 @@ fn depositing_and_withdrawing_in_freezeout_should_not_work() {
             assert_ok!(Lottery::start_lottery(RawOrigin::Root.into(),));
             assert!(Lottery::not_in_drawing_freezeout());
             roll_to(
-                Lottery::next_drawing_at().unwrap() - <Test as Config>::DrawingFreezeout::get(),
+                Lottery::next_drawing_at().unwrap() as u32
+                    - <Test as Config>::DrawingFreezeout::get(),
             );
             assert!(!Lottery::not_in_drawing_freezeout());
             assert_noop!(
@@ -514,7 +515,7 @@ fn winner_distribution_should_be_equality_with_equal_deposits() {
                 <<Test as pallet_parachain_staking::Config>::MinDelegatorStk as frame_support::traits::Get<pallet_parachain_staking::BalanceOf<Test>>>::get();
             let deposit_amount: pallet_parachain_staking::BalanceOf<Test> = min_delegator_bond * 10_000u128;
             for user in 0..NUMBER_OF_USERS {
-                System::set_block_number(user);
+                System::set_block_number(user.into());
                 let (depositor, _) =
                     crate::mock::from_bench::create_funded_user::<Test>("depositor", USER_SEED - 1 - user, deposit_amount);
                 assert_ok!(Lottery::deposit(
@@ -525,13 +526,12 @@ fn winner_distribution_should_be_equality_with_equal_deposits() {
             // loop 10000 times, starting from block 5000 to hopefully be outside of drawing freezeout
             for x in 5_000..5_000+NUMBER_OF_DRAWINGS {
                 // advance block number to reseed RNG
-                System::set_block_number(NUMBER_OF_USERS + x);
+                System::set_block_number((NUMBER_OF_USERS + x).into());
                 // simulate accrued staking rewards
-                assert_ok!(Balances::mutate_account(
-                    &Lottery::account_id(),
-                    |acc| {
-                        acc.free = acc.free.saturating_add(WINNING_AMT.into());
-                    }
+                assert_ok!(Balances::force_set_balance(
+                    Origin::root(),
+                    Lottery::account_id(),
+                    Balances::free_balance(&Lottery::account_id()).saturating_add(WINNING_AMT.into()),
                 ));
                 // draw lottery
                 assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));

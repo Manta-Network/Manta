@@ -21,11 +21,11 @@ use crate::{
 };
 use frame_support::{
     assert_noop, assert_ok,
-    traits::{Currency, GenesisBuild, OnInitialize, ReservableCurrency},
+    traits::{Currency, OnInitialize, ReservableCurrency},
 };
 use pallet_balances::Error as BalancesError;
 use sp_arithmetic::Percent;
-use sp_runtime::{testing::UintAuthorityId, traits::BadOrigin};
+use sp_runtime::{testing::UintAuthorityId, traits::BadOrigin, BuildStorage};
 
 const ALICE: u64 = 1;
 const BOB: u64 = 2;
@@ -742,8 +742,8 @@ fn manta_dont_kick_collator_at_tolerance() {
 #[should_panic = "duplicate invulnerables in genesis."]
 fn cannot_set_genesis_value_twice() {
     sp_tracing::try_init_simple();
-    let mut t = frame_system::GenesisConfig::default()
-        .build_storage::<Test>()
+    let mut t = frame_system::GenesisConfig::<Test>::default()
+        .build_storage()
         .unwrap();
     let invulnerables = vec![1, 1];
 

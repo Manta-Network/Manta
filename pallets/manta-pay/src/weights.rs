@@ -61,7 +61,7 @@ where
     /// Storage: MantaPay Shards (r:0 w:1)
     /// ```
     fn to_private() -> Weight {
-        Weight::from_ref_time(36_400_000_000)
+        Weight::from_parts(36_400_000_000, 0)
             .saturating_add(T::DbWeight::get().reads(6_u64))
             .saturating_add(T::DbWeight::get().writes(7_u64))
     }
@@ -77,7 +77,7 @@ where
     /// Storage: MantaPay Shards (r:0 w:1)
     /// ```
     fn to_public() -> Weight {
-        Weight::from_ref_time(44_100_000_000)
+        Weight::from_parts(44_100_000_000, 0)
             .saturating_add(T::DbWeight::get().reads(10_u64))
             .saturating_add(T::DbWeight::get().writes(12_u64))
     }
@@ -92,7 +92,7 @@ where
     /// Storage: MantaPay Shards (r:0 w:2)
     /// ```
     fn private_transfer() -> Weight {
-        Weight::from_ref_time(51_500_000_000)
+        Weight::from_parts(51_500_000_000, 0)
             .saturating_add(T::DbWeight::get().reads(9_u64))
             .saturating_add(T::DbWeight::get().writes(13_u64))
     }
@@ -100,6 +100,6 @@ where
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:2 w:2)
     fn public_transfer() -> Weight {
-        Weight::from_ref_time(46_629_000)
+        Weight::from_parts(46_629_000, 0)
     }
 }
