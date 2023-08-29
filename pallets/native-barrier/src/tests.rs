@@ -347,7 +347,7 @@ fn limits_should_grow_appropriately() {
 
         initialize_native_barrier(daily_limit, Duration::from_secs(advance_10));
         loop_on_init_and_assert_accounts(Some(0));
-        assert_eq!(NativeBarrier::get_last_day_processed(), None);
+        assert_eq!(NativeBarrier::get_last_day_processed(), Some(0));
 
         // roll 20 days (10 days after start)
         advance_mock_time(Duration::from_secs(advance_10 * 2));
