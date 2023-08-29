@@ -32,9 +32,11 @@ use rand_chacha::ChaCha20Rng;
 use scale_codec::Encode;
 use std::{
     env,
-    fs::{self, OpenOptions},
+    fs::{self, File, OpenOptions},
     io::Write,
     path::PathBuf,
+    sync::Arc,
+    thread,
 };
 /// UTXO Accumulator for Building Circuits
 type UtxoAccumulator =
@@ -143,4 +145,76 @@ fn main() -> Result<()> {
 
     write_const_array!(target_file, TO_PRIVATE, to_private)?;
     Ok(directory.close()?)
+}
+
+#[allow(dead_code)]
+fn generate_coins_by_multithreading() -> Result<()> {
+    use std::time::Instant;
+    let now = Instant::now();
+
+    let target_file = env::args()
+        .nth(1)
+        .map(PathBuf::from)
+        .unwrap_or(env::current_dir()?.join("precomputed_coins.rs"));
+    assert!(
+        !target_file.exists(),
+        "Specify a file to place the generated files: {target_file:?}.",
+    );
+    fs::create_dir_all(
+        target_file
+            .parent()
+            .expect("This file should have a parent."),
+    )?;
+
+    let directory = tempfile::tempdir().expect("Unable to generate temporary test directory.");
+    println!("[INFO] Temporary Directory: {directory:?}");
+
+    let rng = Arc::new(ChaCha20Rng::from_seed([0; 32]));
+    let (proving_context, _, parameters, utxo_accumulator_model) =
+        load_parameters(directory.path()).expect("Unable to load parameters.");
+
+    let cpu_num = num_cpus::get() as u128;
+    let total_coins_to_be_minted = 1024;
+    let batch = total_coins_to_be_minted / cpu_num; // how many coins in one thread
+    let mut threads = vec![];
+    for i in 0..cpu_num {
+        let start = i * batch;
+        let end = batch + start;
+        let utxo = utxo_accumulator_model.clone();
+        let mut utxo_accumulator = Arc::new(UtxoAccumulator::new(utxo));
+        let mut r = rng.clone();
+        let context = Arc::new(proving_context.clone());
+        let params = Arc::new(parameters.clone());
+        let thread_join_handle = thread::spawn(move || {
+            let mut mints = Vec::new();
+            for i in start..end {
+                let asset_id = (i % 3).into();
+                println!("Iteration count: {:?}", i);
+
+                let to_private = to_private_example(
+                    &context.to_private,
+                    &params,
+                    &mut *Arc::make_mut(&mut utxo_accumulator),
+                    asset_id,
+                    1,
+                    &mut *Arc::make_mut(&mut r),
+                );
+                mints.push(to_private.clone());
+                println!("to_private size: {:?}", to_private.encode().len());
+            }
+            let path = format!("precomputed_mints-{}-to_{}", start, end);
+            let mut file = File::create(path).unwrap();
+            file.write_all(&<[TransferPost]>::encode(&mints)).unwrap();
+        });
+        threads.push(thread_join_handle);
+    }
+
+    for t in threads {
+        let _ = t.join();
+    }
+
+    let elapsed = now.elapsed();
+    println!("Elapsed: {:.2?}", elapsed);
+
+    Ok(())
 }
