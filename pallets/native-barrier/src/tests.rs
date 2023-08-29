@@ -38,7 +38,10 @@ fn extrinsics_as_normal_user_should_not_work() {
             sp_runtime::DispatchError::BadOrigin
         );
         assert_noop!(
-            NativeBarrierPallet::remove_accounts_from_native_barrier(RuntimeOrigin::signed(1), vec![]),
+            NativeBarrierPallet::remove_accounts_from_native_barrier(
+                RuntimeOrigin::signed(1),
+                vec![]
+            ),
             sp_runtime::DispatchError::BadOrigin
         );
     });
@@ -235,7 +238,7 @@ fn start_in_the_future_should_work() {
         let future_days = 10;
 
         initialize_native_barrier(daily_limit, Duration::default());
-        
+
         // transfer more than limit should work
         assert_ok!(Balances::transfer(
             RuntimeOrigin::signed(1),
@@ -348,7 +351,7 @@ fn limits_should_grow_appropriately() {
 
         initialize_native_barrier(daily_limit, Duration::from_secs(advance_10));
         loop_on_init_and_assert_accounts(Some(0));
-        assert_eq!(NativeBarrierPallet::get_last_day_processed(), None);
+        assert_eq!(NativeBarrierPallet::get_last_day_processed(), Some(0));
 
         // roll 20 days (10 days after start)
         advance_mock_time(Duration::from_secs(advance_10 * 2));

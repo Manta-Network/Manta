@@ -168,12 +168,13 @@ pub mod pallet {
                     let days_since_start =
                         (now.as_secs() - start_unix_time.as_secs()) / (24 * 60 * 60);
 
-                    // Default 0 is ok, it would only be used the first time
-                    let last_day_processed = <LastDayProcessed<T>>::get().unwrap_or(0);
-
-                    if days_since_start > last_day_processed || days_since_start == 0 {
-                        Self::reset_remaining_limit(days_since_start - last_day_processed);
-                        <LastDayProcessed<T>>::put(days_since_start);
+                    if let Some(last_day_processed) = <LastDayProcessed<T>>::get() {
+                        if days_since_start > last_day_processed {
+                            Self::reset_remaining_limit(days_since_start - last_day_processed);
+                            <LastDayProcessed<T>>::put(days_since_start);
+                        }
+                    } else {
+                        <LastDayProcessed<T>>::put(0);
                     }
                 }
             }
@@ -194,6 +195,9 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
             <Configurations<T>>::set(init);
+            if <LastDayProcessed<T>>::get().is_none() {
+                <LastDayProcessed<T>>::put(0);
+            }
             Self::deposit_event(Event::NativeBarrierInitialized { init });
             Ok(())
         }
