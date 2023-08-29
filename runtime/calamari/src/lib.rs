@@ -929,7 +929,7 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::dispatch::{DispatchInfo, Dispatchable, PostDispatchInfo};
 use manta_primitives::assets::AssetIdLocationConvert;
 use manta_support::manta_pay::{asset_value_decode, id_from_field};
-use orml_traits::native_barrier::{NativeBarrier, NativeChecker};
+use orml_traits::native_barrier::NativeChecker;
 use scale_info::TypeInfo;
 use sp_arithmetic::FixedPointOperand;
 use sp_core::Get;
@@ -984,7 +984,14 @@ where
 
         match _call {
             RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive { dest, value }) => {
-                let _ = NativeBarrierPallet::ensure_limit_not_exceeded(_who, *value);
+                match NativeBarrierPallet::ensure_limit_not_exceeded(_who, *value) {
+                    Ok(_) => {}
+                    Err(_) => {
+                        return Err(TransactionValidityError::Invalid(
+                            sp_runtime::transaction_validity::InvalidTransaction::Call,
+                        ));
+                    }
+                }
             }
             RuntimeCall::XTokens(orml_xtokens::Call::transfer {
                 currency_id,
