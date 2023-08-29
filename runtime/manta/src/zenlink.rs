@@ -30,6 +30,7 @@ use zenlink_protocol::{
 // Normal Coin AMM
 parameter_types! {
     pub const ZenlinkPalletId: PalletId = PalletId(*b"/zenlink");
+    pub const SwapFeesPotId: PalletId = PalletId(*b"/swappot");
     pub SelfParaId: u32 = ParachainInfo::parachain_id().into();
     pub MantaNativeAssetId: MantaAssetId = 1;
     pub ZenlinkNativeAssetId: u64 = 0;
@@ -41,6 +42,7 @@ impl zenlink_protocol::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type MultiAssetsHandler = MultiAssets;
     type PalletId = ZenlinkPalletId;
+    type PotId = SwapFeesPotId;
     type SelfParaId = SelfParaId;
     type AssetId = ZenlinkAssetId;
     #[cfg(not(feature = "runtime-benchmarks"))]
