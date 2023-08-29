@@ -541,14 +541,15 @@ pub mod pallet {
         ///
         /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
         /// * `asset_id`: AssetId to be updated.
-        /// * `metadata`: new `metadata` to be associated with `asset_id`.
+        /// * `metadata`: new `metadata` to be associated with `asset_id`, note `is_frozen`
+        /// flag in metadata will have no effect and and cannot be changed.
         #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::update_asset_metadata())]
         #[transactional]
         pub fn update_asset_metadata(
             origin: OriginFor<T>,
             asset_id: T::AssetId,
-            metadata: AssetRegistryMetadata<Balance>,
+            metadata: AssetStorageMetadata,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
@@ -561,10 +562,25 @@ pub mod pallet {
             );
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::update_asset_metadata(
                 &asset_id,
-                metadata.clone().into(),
+                metadata.clone(),
             )?;
-            AssetIdMetadata::<T>::insert(asset_id, &metadata);
-            Self::deposit_event(Event::<T>::AssetMetadataUpdated { asset_id, metadata });
+
+            let mut registered_metadata =
+                AssetIdMetadata::<T>::get(asset_id).ok_or(Error::<T>::UpdateNonExistentAsset)?;
+            let new_metadata = AssetStorageMetadata {
+                name: metadata.name,
+                symbol: metadata.symbol,
+                decimals: metadata.decimals,
+                // is frozen flag doesn't do anything in metadata
+                is_frozen: registered_metadata.metadata.is_frozen,
+            };
+            registered_metadata.metadata = new_metadata;
+
+            AssetIdMetadata::<T>::insert(asset_id, &registered_metadata);
+            Self::deposit_event(Event::<T>::AssetMetadataUpdated {
+                asset_id,
+                metadata: registered_metadata,
+            });
             Ok(())
         }
 
