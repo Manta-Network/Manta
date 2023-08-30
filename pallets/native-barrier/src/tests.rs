@@ -247,6 +247,7 @@ fn start_in_the_future_should_work() {
         let future_days = 10;
 
         // transfer more than limit should work
+        assert_eq!(NativeBarrier::get_remaining_limit(1), None);
         assert_ok!(Balances::transfer(
             RuntimeOrigin::signed(1),
             2,
@@ -255,18 +256,30 @@ fn start_in_the_future_should_work() {
 
         initialize_native_barrier(daily_limit, Duration::from_secs(advance_10));
 
-        // limit should be multiple of daily limit (now - epoch_start)
-        // roll one day
+        // has 1 daily limit but can over-spend it as the barrier is in the future
+        assert_eq!(NativeBarrier::get_remaining_limit(1), Some(daily_limit));
+        assert_ok!(Balances::transfer(
+            RuntimeOrigin::signed(1),
+            2,
+            daily_limit * 2
+        ),);
+        // The limit should not have been updated
+        assert_eq!(NativeBarrier::get_remaining_limit(1), Some(daily_limit));
+
         advance_mock_time(Duration::from_secs(advance_10 * 2));
         NativeBarrier::on_initialize(1);
 
         // check that limit has been updated
         // transfer more than limit should not work
+        assert_eq!(
+            NativeBarrier::get_remaining_limit(1),
+            Some(daily_limit + 10 * daily_limit)
+        );
         assert_err!(
             Balances::transfer(
                 RuntimeOrigin::signed(1),
                 2,
-                (future_days as u128 + 1) * daily_limit + 1
+                daily_limit + future_days as u128 * daily_limit + 1
             ),
             Error::<Runtime>::NativeBarrierLimitExceeded
         );
