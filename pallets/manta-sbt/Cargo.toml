@@ -85,6 +85,7 @@ precompute-coins = [
   "manta-pay/bip32",
   "manta-pay/arkworks",
   "manta-util/std",
+  "num_cpus",
   "rand_chacha",
   "tempfile",
 ]
@@ -95,6 +96,7 @@ anyhow = { version = "1.0.55", optional = true, default-features = false }
 base64 = { version = "0.20", default-features = false, features = ["alloc"] }
 indoc = { version = "2.0.1", optional = true, default-features = false }
 libsecp256k1 = { version = "0.7", default-features = false, features = ["hmac", "static-context"], optional = true }
+num_cpus = { version = "1.16.0", optional = true }
 rand_chacha = { version = "0.3.1", optional = true, default-features = false }
 sha3 = { version = "0.10.6", default-features = false }
 tempfile = { version = "3.3.0", optional = true, default-features = false }
