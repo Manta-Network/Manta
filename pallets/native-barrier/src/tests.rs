@@ -29,7 +29,8 @@ fn extrinsics_as_normal_user_should_not_work() {
         assert_noop!(
             NativeBarrier::initialize_native_barrier(
                 RuntimeOrigin::signed(1),
-                Some((10u128, Default::default()))
+                Some((10u128, Default::default())),
+                None
             ),
             sp_runtime::DispatchError::BadOrigin
         );
@@ -57,7 +58,8 @@ fn extrinsics_as_root_should_work() {
         );
         assert_ok!(NativeBarrier::initialize_native_barrier(
             RawOrigin::Root.into(),
-            Some((10, Duration::default()))
+            Some((10, Duration::default())),
+            None
         ));
         assert_ok!(NativeBarrier::add_accounts_to_native_barrier(
             RawOrigin::Root.into(),
@@ -104,7 +106,8 @@ fn initialize_native_barrier(daily_limit: u128, start_unix_time: Duration) {
 
     assert_ok!(NativeBarrier::initialize_native_barrier(
         RawOrigin::Root.into(),
-        Some((daily_limit, start_unix_time))
+        Some((daily_limit, start_unix_time)),
+        None
     ));
     assert_ok!(NativeBarrier::add_accounts_to_native_barrier(
         RawOrigin::Root.into(),
@@ -204,6 +207,7 @@ fn start_in_the_past_should_work() {
 
         assert_ok!(NativeBarrier::initialize_native_barrier(
             RawOrigin::Root.into(),
+            None,
             None
         ));
 
@@ -301,6 +305,7 @@ fn start_in_the_future_should_work() {
 
         assert_ok!(NativeBarrier::initialize_native_barrier(
             RawOrigin::Root.into(),
+            None,
             None
         ));
 

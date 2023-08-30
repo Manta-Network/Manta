@@ -37,7 +37,11 @@ benchmarks! {
     on_initialize {
         let daily_limit = T::Balance::zero();
         let start_unix_time = Duration::default();
-        let _ = NativeBarrier::<T>::initialize_native_barrier(RawOrigin::Root.into(), Some((daily_limit, start_unix_time)))?;
+        let _ = NativeBarrier::<T>::initialize_native_barrier(
+            RawOrigin::Root.into(),
+            Some((daily_limit, start_unix_time)),
+            None
+        )?;
         let barrier_addresses: Vec<T::AccountId> = vec![
             account("address_0", 0, SEED),
             account("address_1", 0, SEED),
@@ -64,7 +68,7 @@ benchmarks! {
         let caller: T::AccountId = whitelisted_caller();
         let daily_limit = T::Balance::zero();
         let start_unix_time = Duration::default();
-    }: initialize_native_barrier(RawOrigin::Root, Some((daily_limit, start_unix_time)))
+    }: initialize_native_barrier(RawOrigin::Root, Some((daily_limit, start_unix_time)), None)
     verify {
         assert_eq!(NativeBarrier::<T>::get_configurations().unwrap(), (daily_limit, start_unix_time));
     }
@@ -75,7 +79,11 @@ benchmarks! {
         let caller: T::AccountId = whitelisted_caller();
         let daily_limit = T::Balance::zero();
         let start_unix_time = Duration::default();
-        let _ = NativeBarrier::<T>::initialize_native_barrier(RawOrigin::Root.into(), Some((daily_limit, start_unix_time)))?;
+        let _ = NativeBarrier::<T>::initialize_native_barrier(
+            RawOrigin::Root.into(),
+            Some((daily_limit, start_unix_time)),
+            None
+        )?;
         let barrier_addresses: Vec<T::AccountId> = vec![
             account("address_0", 0, SEED),
             account("address_1", 0, SEED),
@@ -95,7 +103,11 @@ benchmarks! {
     remove_accounts_from_native_barrier {
         let caller: T::AccountId = whitelisted_caller();
         let daily_limit = T::Balance::zero();
-        let _ = NativeBarrier::<T>::initialize_native_barrier(RawOrigin::Root.into(), Some((daily_limit, Default::default())))?;
+        let _ = NativeBarrier::<T>::initialize_native_barrier(
+            RawOrigin::Root.into(),
+            Some((daily_limit, Default::default())),
+            None
+        )?;
         let barrier_addresses: Vec<T::AccountId> = vec![
             account("address_0", 0, SEED),
             account("address_1", 0, SEED),
