@@ -241,7 +241,7 @@ zenlink_protocol,bootstrap_update,496532242000,0.496532242,0.0002
 zenlink_protocol,bootstrap_refund,495995301000,0.495995301,0.0002
 zenlink_protocol,bootstrap_charge_reward,495840000000,0.49584,0.0002
 zenlink_protocol,bootstrap_withdraw_reward,495570000000,0.49557,0.0002
-pallet_native_barrier,initialize_native_barrier,495014678000,0.495014678,0.0002
+pallet_native_barrier,initialize_native_barrier,1095014678000,0.495014678,0.0002
 pallet_native_barrier,add_accounts_to_native_barrier,495576570000,0.49557657,0.0002
 pallet_native_barrier,remove_accounts_from_native_barrier,495419336000,0.495419336,0.0002
 frame_system,remark-length=32,511804103000,0.511804103,0.2

@@ -81,7 +81,7 @@ manta_collator_selection,set_eviction_baseline,4979835900000000,0.0049798359,0.0
 manta_collator_selection,set_eviction_tolerance,4979973540000000,0.00497997354,0.0002
 pallet_asset_manager,register_asset,5316307190000000,0.00531630719,0.0002
 pallet_asset_manager,update_asset_location,5015632340000000,0.00501563234,0.0002
-pallet_asset_manager,update_asset_metadata,5442350760000000,0.00544235076,0.0002
+pallet_asset_manager,update_asset_metadata,5272350760000000,0.00527235076,0.0002
 pallet_asset_manager,set_units_per_second,4990541800000000,0.0049905418,0.0002
 pallet_asset_manager,mint_asset,5462457200000000,0.0054624572,0.0002
 pallet_asset_manager,set_min_xcm_fee,5010191960000000,0.00501019196,0.0002
@@ -240,9 +240,9 @@ zenlink_protocol,bootstrap_update,6232524390000000,0.00623252439,0.0002
 zenlink_protocol,bootstrap_refund,5237140050000000,0.00523714005,0.0002
 zenlink_protocol,bootstrap_charge_reward,5819700000000000,0.0058197,0.0002
 zenlink_protocol,bootstrap_withdraw_reward,5549700000000000,0.0055497,0.0002
-pallet_native_barrier,initialize_native_barrier,4979846780000000,0.00497984678,0.0002
-pallet_native_barrier,add_accounts_to_native_barrier,4985465700000000,0.0049854657,0.0002
-pallet_native_barrier,remove_accounts_from_native_barrier,4983893360000000,0.00498389336,0.0002
+pallet_native_barrier,initialize_native_barrier,4981338030000000,0.00498133803,0.0002
+pallet_native_barrier,add_accounts_to_native_barrier,4985476220000000,0.00498547622,0.0002
+pallet_native_barrier,remove_accounts_from_native_barrier,4983884450000000,0.00498388445,0.0002
 frame_system,remark-length=32,5430846460000000,0.00543084646,0.2
 frame_system,remark-length=64,5430846460000000,0.00543084646,0.2
 frame_system,set_heap_pages,7383150000000000,0.00738315,0.2
@@ -325,7 +325,7 @@ manta_collator_selection,set_eviction_baseline,6114600000000000,0.0061146,0.2
 manta_collator_selection,set_eviction_tolerance,6252240000000000,0.00625224,0.2
 pallet_asset_manager,register_asset,12915890000000000,0.01291589,0.2
 pallet_asset_manager,update_asset_location,11941040000000000,0.01194104,0.2
-pallet_asset_manager,update_asset_metadata,9089460000000000,0.00908946,0.2
+pallet_asset_manager,update_asset_metadata,8919460000000000,0.00891946,0.2
 pallet_asset_manager,set_units_per_second,6830500000000000,0.0068305,0.2
 pallet_asset_manager,mint_asset,9215900000000000,0.0092159,0.2
 pallet_asset_manager,set_min_xcm_fee,6500660000000000,0.00650066,0.2
@@ -484,9 +484,9 @@ zenlink_protocol,bootstrap_update,10053090000000000,0.01005309,0.2
 zenlink_protocol,bootstrap_refund,13668750000000000,0.01366875,0.2
 zenlink_protocol,bootstrap_charge_reward,6818700000000000,0.0068187,0.2
 zenlink_protocol,bootstrap_withdraw_reward,6548700000000000,0.0065487,0.2
-pallet_native_barrier,initialize_native_barrier,6125480000000000,0.00612548,0.2
-pallet_native_barrier,add_accounts_to_native_barrier,11744400000000000,0.0117444,0.2
-pallet_native_barrier,remove_accounts_from_native_barrier,10172060000000000,0.01017206,0.2
+pallet_native_barrier,initialize_native_barrier,7616730000000000,0.00761673,0.2
+pallet_native_barrier,add_accounts_to_native_barrier,11754920000000000,0.01175492,0.2
+pallet_native_barrier,remove_accounts_from_native_barrier,10163150000000000,0.01016315,0.2
 frame_system,remark-length=32,5959432300000000,0.0059594323,1
 frame_system,remark-length=64,5959432300000000,0.0059594323,1
 frame_system,set_heap_pages,16720950000000000,0.01672095,1
@@ -569,7 +569,7 @@ manta_collator_selection,set_eviction_baseline,10658200000000000,0.0106582,1
 manta_collator_selection,set_eviction_tolerance,11346400000000000,0.0113464,1
 pallet_asset_manager,register_asset,43344650000000000,0.04334465,1
 pallet_asset_manager,update_asset_location,39670400000000000,0.0396704,1
-pallet_asset_manager,update_asset_metadata,23692500000000000,0.0236925,1
+pallet_asset_manager,update_asset_metadata,23522500000000000,0.0235225,1
 pallet_asset_manager,set_units_per_second,14197700000000000,0.0141977,1
 pallet_asset_manager,mint_asset,24244700000000000,0.0242447,1
 pallet_asset_manager,set_min_xcm_fee,12468500000000000,0.0124685,1
@@ -728,6 +728,6 @@ zenlink_protocol,bootstrap_update,25350650000000000,0.02535065,1
 zenlink_protocol,bootstrap_refund,47428950000000000,0.04742895,1
 zenlink_protocol,bootstrap_charge_reward,10818700000000000,0.0108187,1
 zenlink_protocol,bootstrap_withdraw_reward,10548700000000000,0.0105487,1
-pallet_native_barrier,initialize_native_barrier,10712600000000000,0.0107126,1
-pallet_native_barrier,add_accounts_to_native_barrier,38807200000000000,0.0388072,1
-pallet_native_barrier,remove_accounts_from_native_barrier,30945500000000000,0.0309455,1
+pallet_native_barrier,initialize_native_barrier,18168850000000000,0.01816885,1
+pallet_native_barrier,add_accounts_to_native_barrier,38859800000000000,0.0388598,1
+pallet_native_barrier,remove_accounts_from_native_barrier,30900950000000000,0.03090095,1
