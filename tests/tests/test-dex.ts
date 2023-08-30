@@ -12,6 +12,7 @@ import {
     USDT_METADATA
 } from "../constants";
 import {BN} from "@polkadot/util";
+import { delay } from "../test-util";
 
 describeWithManta("Manta RPC (Dex)", (context) => {
     step("dex add liquidity should work", async function () {
@@ -91,6 +92,9 @@ describeWithManta("Manta RPC (Dex)", (context) => {
 
         callData = api.tx.zenlinkProtocol.swapExactAssetsForAssets(100,10,[1,8],alice,1000000);
         await executeTx(context, callData);
+
+        await delay(24000);
+
         const swapFeesBalance = (await api.query.system.account("0x2f73776170706f74000000000000000000000000000000000000000000000000")).data.free.toString();
         console.log("Swap fees pot balance: ", swapFeesBalance);
         const swapFeesBalance2 = (await api.query.system.account("0x2f73776170706f7400000000000000000000000000000000000000000000000000")).data.free.toString();
