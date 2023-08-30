@@ -92,7 +92,7 @@ jobs:
           name: manta
           path: target/production/manta
   calamari-integration-test:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
+    if: contains(github.event.pull_request.labels.*.name, 'A-calamari')
     needs: [build-node-current]
     runs-on: runtime-integration-test
     timeout-minutes: 240
@@ -381,7 +381,7 @@ jobs:
           path: $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log
   docker-image-test:
     timeout-minutes: 120
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
+    if: contains(github.event.pull_request.labels.*.name, 'A-calamari')
     needs: [build-node-current]
     runs-on: ubuntu-20.04
     strategy:
