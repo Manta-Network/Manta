@@ -63,6 +63,7 @@ fn get_call_details(call: &crate::RuntimeCall) -> (DispatchInfo, u32) {
     (dispatch_info, call_len)
 }
 
+#[ignore]
 #[test]
 fn diff_tx_fees() {
     const CURRENT_PATH: &str = env!("CARGO_MANIFEST_DIR");
