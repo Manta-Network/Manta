@@ -6387,7 +6387,7 @@ dependencies = [
 [[package]]
 name = "orml-traits"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed87ba5bb12c756b3973b3f59a430bab22fc0cc9"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#4ff694c4b1e3c4a187410dddf948d86624601a24"
 dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
@@ -6405,7 +6405,7 @@ dependencies = [
 [[package]]
 name = "orml-utilities"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed87ba5bb12c756b3973b3f59a430bab22fc0cc9"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#4ff694c4b1e3c4a187410dddf948d86624601a24"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -15010,7 +15010,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=ghzlatarev/v0937#42ad51efd91c870f3eff0320f154d9e6578cb07d"
+source = "git+https://github.com/manta-network/Zenlink?branch=ghzlatarev/v0937#f4123e65b5157476cfda301207309652e06e710e"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -15030,7 +15030,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol-rpc"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=ghzlatarev/v0937#42ad51efd91c870f3eff0320f154d9e6578cb07d"
+source = "git+https://github.com/manta-network/Zenlink?branch=ghzlatarev/v0937#f4123e65b5157476cfda301207309652e06e710e"
 dependencies = [
  "jsonrpsee",
  "parity-scale-codec",
@@ -15045,7 +15045,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol-runtime-api"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=ghzlatarev/v0937#42ad51efd91c870f3eff0320f154d9e6578cb07d"
+source = "git+https://github.com/manta-network/Zenlink?branch=ghzlatarev/v0937#f4123e65b5157476cfda301207309652e06e710e"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
