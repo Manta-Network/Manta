@@ -15010,7 +15010,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=ghzlatarev/v0937#f4123e65b5157476cfda301207309652e06e710e"
+source = "git+https://github.com/manta-network/Zenlink?branch=ghzlatarev/v0937#162ff634879ac9c8195f68f13747d627d76702a2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -15030,7 +15030,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol-rpc"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=ghzlatarev/v0937#f4123e65b5157476cfda301207309652e06e710e"
+source = "git+https://github.com/manta-network/Zenlink?branch=ghzlatarev/v0937#162ff634879ac9c8195f68f13747d627d76702a2"
 dependencies = [
  "jsonrpsee",
  "parity-scale-codec",
@@ -15045,7 +15045,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol-runtime-api"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=ghzlatarev/v0937#f4123e65b5157476cfda301207309652e06e710e"
+source = "git+https://github.com/manta-network/Zenlink?branch=ghzlatarev/v0937#162ff634879ac9c8195f68f13747d627d76702a2"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
