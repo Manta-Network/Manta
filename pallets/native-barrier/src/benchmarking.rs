@@ -40,7 +40,6 @@ benchmarks! {
         let _ = NativeBarrier::<T>::initialize_native_barrier(
             RawOrigin::Root.into(),
             Some((daily_limit, start_unix_time)),
-            None
         )?;
         let barrier_addresses: Vec<T::AccountId> = vec![
             account("address_0", 0, SEED),
@@ -68,7 +67,7 @@ benchmarks! {
         let caller: T::AccountId = whitelisted_caller();
         let daily_limit = T::Balance::zero();
         let start_unix_time = Duration::default();
-    }: initialize_native_barrier(RawOrigin::Root, Some((daily_limit, start_unix_time)), None)
+    }: initialize_native_barrier(RawOrigin::Root, Some((daily_limit, start_unix_time)))
     verify {
         assert_eq!(NativeBarrier::<T>::get_configurations().unwrap(), (daily_limit, start_unix_time));
     }
@@ -82,7 +81,6 @@ benchmarks! {
         let _ = NativeBarrier::<T>::initialize_native_barrier(
             RawOrigin::Root.into(),
             Some((daily_limit, start_unix_time)),
-            None
         )?;
         let barrier_addresses: Vec<T::AccountId> = vec![
             account("address_0", 0, SEED),
@@ -106,7 +104,6 @@ benchmarks! {
         let _ = NativeBarrier::<T>::initialize_native_barrier(
             RawOrigin::Root.into(),
             Some((daily_limit, Default::default())),
-            None
         )?;
         let barrier_addresses: Vec<T::AccountId> = vec![
             account("address_0", 0, SEED),

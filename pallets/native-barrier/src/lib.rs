@@ -192,22 +192,11 @@ pub mod pallet {
         pub fn initialize_native_barrier(
             origin: OriginFor<T>,
             init: Option<(T::Balance, Duration)>,
-            accounts: Option<Vec<T::AccountId>>,
         ) -> DispatchResult {
             ensure_root(origin)?;
             <Configurations<T>>::set(init);
             if <LastDayProcessed<T>>::get().is_none() {
                 <LastDayProcessed<T>>::put(0);
-            }
-            if let Some(accounts_inner) = accounts {
-                for account_id in accounts_inner.iter() {
-                    if !RemainingLimit::<T>::contains_key(account_id) {
-                        RemainingLimit::<T>::insert(account_id, T::Balance::zero());
-                    }
-                }
-                Self::deposit_event(Event::AccountsAddedToBarrier {
-                    accounts: accounts_inner,
-                });
             }
             Self::deposit_event(Event::NativeBarrierInitialized { init });
             Ok(())
@@ -224,10 +213,10 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            if Configurations::<T>::get().is_some() {
+            if let Some((daily_limit, _)) = Configurations::<T>::get() {
                 for account_id in accounts.iter() {
                     if !RemainingLimit::<T>::contains_key(account_id) {
-                        RemainingLimit::<T>::insert(account_id, T::Balance::zero());
+                        RemainingLimit::<T>::insert(account_id, daily_limit);
                     }
                 }
 

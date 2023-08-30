@@ -30,7 +30,6 @@ fn extrinsics_as_normal_user_should_not_work() {
             NativeBarrier::initialize_native_barrier(
                 RuntimeOrigin::signed(1),
                 Some((10u128, Default::default())),
-                None
             ),
             sp_runtime::DispatchError::BadOrigin
         );
@@ -59,7 +58,6 @@ fn extrinsics_as_root_should_work() {
         assert_ok!(NativeBarrier::initialize_native_barrier(
             RawOrigin::Root.into(),
             Some((10, Duration::default())),
-            None
         ));
         assert_ok!(NativeBarrier::add_accounts_to_native_barrier(
             RawOrigin::Root.into(),
@@ -107,7 +105,6 @@ fn initialize_native_barrier(daily_limit: u128, start_unix_time: Duration) {
     assert_ok!(NativeBarrier::initialize_native_barrier(
         RawOrigin::Root.into(),
         Some((daily_limit, start_unix_time)),
-        None
     ));
     assert_ok!(NativeBarrier::add_accounts_to_native_barrier(
         RawOrigin::Root.into(),
@@ -126,15 +123,17 @@ fn start_in_the_past_should_work() {
         initialize_native_barrier(daily_limit, Duration::default());
         advance_mock_time(Duration::from_secs(day_in_secs));
 
-        // transfer under limit should not work until next block
+        // transfer more than 1 limit should not work until next block
+        assert_eq!(NativeBarrier::get_remaining_limit(1), Some(daily_limit));
         assert_err!(
-            Balances::transfer(RuntimeOrigin::signed(1), 2, daily_limit / 2),
+            Balances::transfer(RuntimeOrigin::signed(1), 2, daily_limit + 1),
             Error::<Runtime>::NativeBarrierLimitExceeded
         );
 
         NativeBarrier::on_initialize(1);
 
         // transfer under limit should now work
+        assert_eq!(NativeBarrier::get_remaining_limit(1), Some(2 * daily_limit));
         assert_ok!(Balances::transfer(
             RuntimeOrigin::signed(1),
             2,
@@ -142,12 +141,16 @@ fn start_in_the_past_should_work() {
         ));
 
         // transfer more than limit should not work
+        assert_eq!(
+            NativeBarrier::get_remaining_limit(1),
+            Some(daily_limit + daily_limit / 2)
+        );
         assert_err!(
-            Balances::transfer(RuntimeOrigin::signed(1), 2, daily_limit / 2 + 1),
+            Balances::transfer(RuntimeOrigin::signed(1), 2, 2 * daily_limit + 1),
             Error::<Runtime>::NativeBarrierLimitExceeded
         );
         assert_err!(
-            Balances::transfer_keep_alive(RuntimeOrigin::signed(1), 2, daily_limit / 2 + 1),
+            Balances::transfer_keep_alive(RuntimeOrigin::signed(1), 2, 2 * daily_limit + 1),
             Error::<Runtime>::NativeBarrierLimitExceeded
         );
         assert_err!(
@@ -162,11 +165,15 @@ fn start_in_the_past_should_work() {
 
         // check that limit has been updated
         // transfer more than limit should not work
+        assert_eq!(
+            NativeBarrier::get_remaining_limit(1),
+            Some(2 * daily_limit + daily_limit / 2)
+        );
         assert_err!(
             Balances::transfer(
                 RuntimeOrigin::signed(1),
                 2,
-                daily_limit + daily_limit / 2 + 1
+                2 * daily_limit + daily_limit / 2 + 1
             ),
             Error::<Runtime>::NativeBarrierLimitExceeded
         );
@@ -174,7 +181,7 @@ fn start_in_the_past_should_work() {
             Balances::transfer_keep_alive(
                 RuntimeOrigin::signed(1),
                 2,
-                daily_limit + daily_limit / 2 + 1
+                2 * daily_limit + daily_limit / 2 + 1
             ),
             Error::<Runtime>::NativeBarrierLimitExceeded
         );
@@ -200,15 +207,15 @@ fn start_in_the_past_should_work() {
             3,
             daily_limit * 5
         ));
+        assert_eq!(NativeBarrier::get_remaining_limit(2), Some(3 * daily_limit));
         assert_err!(
-            Balances::transfer(RuntimeOrigin::signed(2), 2, daily_limit * 2 + 1),
+            Balances::transfer(RuntimeOrigin::signed(2), 2, 3 * daily_limit + 1),
             Error::<Runtime>::NativeBarrierLimitExceeded
         );
 
         assert_ok!(NativeBarrier::initialize_native_barrier(
             RawOrigin::Root.into(),
             None,
-            None
         ));
 
         // transfer more than limit should work for all
@@ -267,7 +274,7 @@ fn start_in_the_future_should_work() {
             Balances::transfer_keep_alive(
                 RuntimeOrigin::signed(1),
                 2,
-                future_days as u128 * daily_limit + 1
+                daily_limit + future_days as u128 * daily_limit + 1
             ),
             Error::<Runtime>::NativeBarrierLimitExceeded
         );
@@ -298,7 +305,7 @@ fn start_in_the_future_should_work() {
             Balances::transfer(
                 RuntimeOrigin::signed(2),
                 2,
-                future_days as u128 * daily_limit + 1
+                daily_limit + future_days as u128 * daily_limit + 1
             ),
             Error::<Runtime>::NativeBarrierLimitExceeded
         );
@@ -306,7 +313,6 @@ fn start_in_the_future_should_work() {
         assert_ok!(NativeBarrier::initialize_native_barrier(
             RawOrigin::Root.into(),
             None,
-            None
         ));
 
         // transfer more than limit should work for all
@@ -351,17 +357,17 @@ fn limits_should_grow_appropriately() {
         let advance_10 = 10 * 86400;
 
         initialize_native_barrier(daily_limit, Duration::from_secs(advance_10));
-        loop_on_init_and_assert_accounts(Some(0));
+        loop_on_init_and_assert_accounts(Some(daily_limit));
         assert_eq!(NativeBarrier::get_last_day_processed(), Some(0));
 
         // roll 20 days (10 days after start)
         advance_mock_time(Duration::from_secs(advance_10 * 2));
-        loop_on_init_and_assert_accounts(Some(daily_limit * 10));
+        loop_on_init_and_assert_accounts(Some(daily_limit + daily_limit * 10));
         assert_eq!(NativeBarrier::get_last_day_processed(), Some(10));
 
         // roll another 10 days
         advance_mock_time(Duration::from_secs(advance_10));
-        loop_on_init_and_assert_accounts(Some(daily_limit * 20));
+        loop_on_init_and_assert_accounts(Some(daily_limit + daily_limit * 20));
         assert_eq!(NativeBarrier::get_last_day_processed(), Some(20));
     });
 }
