@@ -81,5 +81,24 @@ describeWithManta("Manta RPC (Dex)", (context) => {
 
         state = await api.query.assets.account(10, alice);
         expect(JSON.parse(JSON.stringify(state))).to.equal(null);
+
+        callData = api.tx.zenlinkProtocol.createPair([parachainId,0,1], [parachainId,2,8]);
+        await executeTx(context, callData, true);
+
+        callData = api.tx.zenlinkProtocol.addLiquidity([parachainId,0,1], [parachainId,2,8],
+            MANTA_1K, USDT_10M, MANTA_1K, USDT_10M, 1000);
+        await executeTx(context, callData);
+
+        callData = api.tx.zenlinkProtocol.swapExactAssetsForAssets(100,10,[1,8],alice,1000000);
+        await executeTx(context, callData);
+        const swapFeesBalance = (await api.query.system.account("0x2f73776170706f74000000000000000000000000000000000000000000000000")).data.free.toString();
+        console.log("Swap fees pot balance: ", swapFeesBalance);
+        const swapFeesBalance2 = (await api.query.system.account("0x2f73776170706f7400000000000000000000000000000000000000000000000000")).data.free.toString();
+        console.log("Swap fees pot balance: ", swapFeesBalance2);
+		// #[pallet::compact] amount_in: AssetBalance,
+		// 	#[pallet::compact] amount_out_min: AssetBalance,
+		// 	path: Vec<T::AssetId>,
+		// 	recipient: T::AccountId,
+		// 	#[pallet::compact] deadline: T::BlockNumber,
     });
 });
