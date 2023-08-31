@@ -83,6 +83,11 @@ describeWithManta("Manta RPC (Dex)", (context) => {
         state = await api.query.assets.account(10, alice);
         expect(JSON.parse(JSON.stringify(state))).to.equal(null);
 
+        callData = api.tx.zenlinkProtocol.setNativeSwapFeesFactor(200);
+        await executeTx(context, callData, true);
+
+        await delay(12000);
+
         callData = api.tx.zenlinkProtocol.createPair([parachainId,0,1], [parachainId,2,8]);
         await executeTx(context, callData, true);
 
