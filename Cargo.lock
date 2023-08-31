@@ -1122,7 +1122,7 @@ dependencies = [
  "manta-primitives",
  "nimbus-primitives",
  "orml-traits 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?rev=2f31315b2c2997acd2f6e35c0bb406d91bb40fc2)",
- "orml-xtokens",
+ "orml-xtokens 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?rev=2f31315b2c2997acd2f6e35c0bb406d91bb40fc2)",
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-aura",
@@ -4180,8 +4180,8 @@ dependencies = [
  "manta-primitives",
  "manta-runtime",
  "nimbus-primitives",
- "orml-traits 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?rev=2f31315b2c2997acd2f6e35c0bb406d91bb40fc2)",
- "orml-xtokens",
+ "orml-traits 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37)",
+ "orml-xtokens 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37)",
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",
@@ -5528,8 +5528,8 @@ dependencies = [
  "manta-collator-selection",
  "manta-primitives",
  "nimbus-primitives",
- "orml-traits 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?rev=2f31315b2c2997acd2f6e35c0bb406d91bb40fc2)",
- "orml-xtokens",
+ "orml-traits 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37)",
+ "orml-xtokens 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37)",
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-aura",
@@ -6451,11 +6451,46 @@ dependencies = [
 [[package]]
 name = "orml-xcm-support"
 version = "0.4.1-dev"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#9a1b0f1cf1835225b638311971eba5f30a1187c8"
+dependencies = [
+ "frame-support",
+ "orml-traits 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37)",
+ "parity-scale-codec",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
+name = "orml-xcm-support"
+version = "0.4.1-dev"
 source = "git+https://github.com/manta-network/open-runtime-module-library.git?rev=2f31315b2c2997acd2f6e35c0bb406d91bb40fc2#2f31315b2c2997acd2f6e35c0bb406d91bb40fc2"
 dependencies = [
  "frame-support",
  "orml-traits 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?rev=2f31315b2c2997acd2f6e35c0bb406d91bb40fc2)",
  "parity-scale-codec",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
+name = "orml-xtokens"
+version = "0.4.1-dev"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#9a1b0f1cf1835225b638311971eba5f30a1187c8"
+dependencies = [
+ "cumulus-primitives-core",
+ "frame-support",
+ "frame-system",
+ "orml-traits 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37)",
+ "orml-xcm-support 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37)",
+ "pallet-xcm",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-io",
  "sp-runtime",
  "sp-std",
  "xcm",
@@ -6471,7 +6506,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "orml-traits 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?rev=2f31315b2c2997acd2f6e35c0bb406d91bb40fc2)",
- "orml-xcm-support",
+ "orml-xcm-support 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?rev=2f31315b2c2997acd2f6e35c0bb406d91bb40fc2)",
  "pallet-xcm",
  "parity-scale-codec",
  "scale-info",
@@ -10087,7 +10122,7 @@ dependencies = [
  "lazy_static",
  "manta-primitives",
  "orml-traits 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?rev=2f31315b2c2997acd2f6e35c0bb406d91bb40fc2)",
- "orml-xtokens",
+ "orml-xtokens 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?rev=2f31315b2c2997acd2f6e35c0bb406d91bb40fc2)",
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",
