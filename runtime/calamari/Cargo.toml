@@ -108,8 +108,8 @@ runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
 
 # Third party (vendored) dependencies
-orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.37" }
-orml-xtokens = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.37" }
+orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "ghzlatarev/polkadot-v0.9.37" }
+orml-xtokens = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "ghzlatarev/polkadot-v0.9.37" }
 
 zenlink-protocol = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37", default-features = false }
 zenlink-protocol-runtime-api = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37", default-features = false }
