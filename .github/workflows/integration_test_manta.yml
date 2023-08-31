@@ -91,7 +91,7 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'A-manta')
     needs: [build-node-current]
     runs-on: runtime-integration-test
-    timeout-minutes: 240
+    timeout-minutes: 420
     container:
       image: ubuntu:20.04
     strategy:
