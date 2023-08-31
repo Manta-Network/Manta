@@ -95,7 +95,7 @@ describeWithManta("Manta RPC (Dex)", (context) => {
             MANTA_1K, USDT_10M, MANTA_1K, USDT_10M, 1000);
         await executeTx(context, callData);
 
-        callData = api.tx.zenlinkProtocol.swapExactAssetsForAssets(100,10,[[parachainId,0,1],[parachainId,2,8],alice,1000000);
+        callData = api.tx.zenlinkProtocol.swapExactAssetsForAssets(100,10,[[parachainId,0,1],[parachainId,2,8]],alice,1000000);
         await executeTx(context, callData);
 
         await delay(24000);
