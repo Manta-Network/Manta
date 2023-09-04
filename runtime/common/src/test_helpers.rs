@@ -15,26 +15,26 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use sp_std::vec;
+use frame_support::pallet_prelude::Weight;
 use xcm::{
     latest::{
         prelude::{
-            All, Any, BuyExecution, ClearOrigin, Concrete, DepositAsset, InitiateReserveWithdraw,
+            All, BuyExecution, ClearOrigin, Concrete, DepositAsset, InitiateReserveWithdraw,
             Limited, MultiAssets, ReserveAssetDeposited, TransferReserveAsset, Wild, WithdrawAsset,
         },
         Xcm,
     },
-    v1::{
+    v3::{
         Fungibility::*,
         Junction::{AccountId32, Parachain},
         Junctions::*,
-        MultiAsset, MultiLocation,
+        MultiAsset, MultiLocation, NetworkId,
     },
 };
 
 // 4_000_000_000 is a typical configuration value provided to dApp developers for `dest_weight`
 // argument when sending xcm message to Manta. ie moonbeam, sub-wallet, phala, etc
-pub const ADVERTISED_DEST_WEIGHT: u64 = 4_000_000_000;
-
+pub const ADVERTISED_DEST_WEIGHT: Weight = Weight::from_parts(4_000_000_000, 0);
 // Composition of self_reserve message composed by xTokens on the sender side
 pub fn self_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
     Xcm(vec![
@@ -54,15 +54,14 @@ pub fn self_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
                 }),
                 fun: Fungible(10000000000000),
             },
-            weight_limit: Limited(3999999999),
+            weight_limit: Limited(3999999999.into()),
         },
         DepositAsset {
             assets: Wild(All),
-            max_assets: 1,
             beneficiary: MultiLocation {
                 parents: 0,
                 interior: X1(AccountId32 {
-                    network: Any,
+                    network: Some(NetworkId::Kusama),
                     id: [
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                         0, 0, 0, 0, 0, 0, 0,
@@ -92,15 +91,14 @@ pub fn to_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
                 }),
                 fun: Fungible(10000000000000),
             },
-            weight_limit: Limited(3999999999),
+            weight_limit: Limited(3999999999.into()),
         },
         DepositAsset {
             assets: Wild(All),
-            max_assets: 1,
             beneficiary: MultiLocation {
                 parents: 0,
                 interior: X1(AccountId32 {
-                    network: Any,
+                    network: Some(NetworkId::Kusama),
                     id: [
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                         0, 0, 0, 0, 0, 0, 0,
@@ -135,15 +133,14 @@ pub fn to_reserve_xcm_message_sender_side<T>() -> Xcm<T> {
                         id: Concrete(dummy_multi_location),
                         fun: Fungible(10000000000000),
                     },
-                    weight_limit: Limited(3999999999),
+                    weight_limit: Limited(3999999999.into()),
                 },
                 DepositAsset {
                     assets: Wild(All),
-                    max_assets: 1,
                     beneficiary: MultiLocation {
                         parents: 0,
                         interior: X1(AccountId32 {
-                            network: Any,
+                            network: Some(NetworkId::Kusama),
                             id: [
                                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -178,15 +175,14 @@ pub fn self_reserve_xcm_message_sender_side<T>() -> Xcm<T> {
                     id: Concrete(dummy_multi_location),
                     fun: Fungible(10000000000000),
                 },
-                weight_limit: Limited(3999999999),
+                weight_limit: Limited(3999999999.into()),
             },
             DepositAsset {
                 assets: Wild(All),
-                max_assets: 1,
                 beneficiary: MultiLocation {
                     parents: 0,
                     interior: X1(AccountId32 {
-                        network: Any,
+                        network: Some(NetworkId::Kusama),
                         id: [
                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                             0, 0, 0, 0, 0, 0, 0, 0,

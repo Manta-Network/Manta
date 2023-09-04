@@ -59,7 +59,7 @@ where
         + fungible::Mutate<C::AccountId>
         + Currency<C::AccountId, Balance = A::Balance>,
     NonNative: fungibles::Inspect<C::AccountId, AssetId = A::AssetId, Balance = A::Balance>
-        + Mutate<C::AccountId>
+        + Mutate<C::AccountId>,
 {
     type CurrencyId = A::AssetId;
     type Balance = A::Balance;

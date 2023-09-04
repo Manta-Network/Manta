@@ -66,6 +66,7 @@ pallet-asset-manager = { path = '../../pallets/asset-manager' }
 default = ["std"]
 std = [
   "frame-support/std",
+  "frame-system/std",
   "manta-primitives/std",
   "pallet-transaction-payment/std",
   "sp-runtime/std",

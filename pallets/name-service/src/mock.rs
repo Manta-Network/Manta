@@ -24,10 +24,7 @@ use frame_support::{
     traits::{ConstU128, ConstU32, ConstU64, Everything},
     PalletId,
 };
-use manta_primitives::{
-    constants::NAME_SERVICE_PALLET_ID,
-    types::Balance,
-};
+use manta_primitives::{constants::NAME_SERVICE_PALLET_ID, types::Balance};
 
 use sp_core::H256;
 use sp_runtime::{

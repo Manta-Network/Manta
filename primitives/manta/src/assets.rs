@@ -32,6 +32,7 @@ use frame_support::{
 };
 use frame_system::Config;
 use scale_info::TypeInfo;
+use sp_runtime::traits::{Convert, MaybeEquivalence};
 use xcm::{latest::prelude::*, VersionedMultiLocation};
 
 /// Asset Id
@@ -297,24 +298,46 @@ pub trait UnitsPerSecond: AssetIdType {
 /// Converter struct implementing `Convert`. MultiLocation to AssetId and the reverse.
 pub struct AssetIdLocationConvert<M>(PhantomData<M>);
 
-// impl<M> Convert<MultiLocation, M::AssetId> for AssetIdLocationConvert<M>
-// where
-//     M: AssetIdLocationMap,
-//     M::AssetId: Clone,
-//     M::Location: Clone + From<MultiLocation> + Into<Option<MultiLocation>>,
-// {
-//     #[inline]
-//     fn convert_ref(location: impl Borrow<MultiLocation>) -> Result<M::AssetId, ()> {
-//         M::asset_id(&location.borrow().clone().into()).ok_or(())
-//     }
+impl<M> Convert<MultiLocation, Option<M::AssetId>> for AssetIdLocationConvert<M>
+where
+    M: AssetIdLocationMap,
+    M::AssetId: Clone,
+    M::Location: Clone + From<MultiLocation> + Into<Option<MultiLocation>>,
+{
+    #[inline]
+    fn convert(location: MultiLocation) -> Option<<M as AssetIdType>::AssetId> {
+        M::asset_id(&location.into())
+    }
+}
 
-//     #[inline]
-//     fn reverse_ref(asset_id: impl Borrow<M::AssetId>) -> Result<MultiLocation, ()> {
-//         M::location(asset_id.borrow())
-//             .and_then(Into::into)
-//             .ok_or(())
-//     }
-// }
+impl<M> Convert<Option<M::AssetId>, MultiLocation> for AssetIdLocationConvert<M>
+where
+    M: AssetIdLocationMap,
+    M::AssetId: Clone,
+    M::Location: Clone + From<MultiLocation> + Into<Option<MultiLocation>>,
+{
+    #[inline]
+    fn convert(asset_id: Option<M::AssetId>) -> MultiLocation {
+        M::location(&asset_id.unwrap())
+            .and_then(Into::into)
+            .unwrap()
+    }
+}
+
+impl<M> MaybeEquivalence<MultiLocation, M::AssetId> for AssetIdLocationConvert<M>
+where
+    M: AssetIdLocationMap,
+    M::AssetId: Clone,
+    M::Location: Clone + From<MultiLocation> + Into<Option<MultiLocation>>,
+{
+    fn convert(location: &MultiLocation) -> Option<M::AssetId> {
+        M::asset_id(&location.clone().into())
+    }
+
+    fn convert_back(asset_id: &M::AssetId) -> Option<MultiLocation> {
+        M::location(asset_id).and_then(Into::into)
+    }
+}
 
 /// Fungible Ledger Error
 #[derive(Clone, Copy, Debug, Decode, Encode, Eq, PartialEq, TypeInfo)]

@@ -21,7 +21,8 @@ use crate::{
     LpToAssetIdPair, NextAssetId, UnitsPerSecond,
 };
 use frame_support::{
-    assert_noop, assert_ok, traits::fungibles::metadata::Inspect, traits::Contains,
+    assert_noop, assert_ok,
+    traits::{fungibles::metadata::Inspect, Contains},
 };
 use manta_primitives::{
     assets::{AssetConfig, AssetLocation, AssetRegistryMetadata, FungibleLedger},

@@ -38,6 +38,13 @@ manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.
 [features]
 default = ["std"]
 
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "manta-primitives/runtime-benchmarks",
+]
+
 # Serde Serialization
 serde = [
   "manta-pay/serde",

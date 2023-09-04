@@ -23,8 +23,7 @@ use frame_support::{
     assert_ok,
     traits::{Currency, EstimateCallFee, Get, OnFinalize, OnInitialize},
 };
-use frame_system::pallet_prelude::BlockNumberFor;
-use frame_system::RawOrigin;
+use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use pallet_parachain_staking::{
     benchmarks::{create_funded_collator, create_funded_user, parachain_staking_on_finalize},
     BalanceOf, Pallet as Staking,

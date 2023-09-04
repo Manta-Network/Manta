@@ -28,7 +28,7 @@ use sp_core::H256;
 use sp_io;
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
-    Perbill, Percent, BuildStorage,
+    BuildStorage, Perbill, Percent,
 };
 
 pub type AccountId = u64;
@@ -632,7 +632,6 @@ pub mod block_author {
     pub trait Config: frame_system::Config {}
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(_);
 
     #[pallet::storage]

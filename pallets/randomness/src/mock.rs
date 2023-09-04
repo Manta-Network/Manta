@@ -17,12 +17,14 @@
 //! A minimal runtime including the pallet-randomness pallet
 use super::*;
 use crate as pallet_randomness;
-use frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
-use frame_support::pallet_prelude::ConstU32;
+use frame_support::{
+    construct_runtime, pallet_prelude::ConstU32, parameter_types, traits::Everything,
+    weights::Weight,
+};
 use sp_core::{H160, H256};
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
-    Perbill, BuildStorage,
+    BuildStorage, Perbill,
 };
 use sp_std::convert::{TryFrom, TryInto};
 
@@ -75,7 +77,7 @@ impl frame_system::Config for Test {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: u128 = 0;
+    pub const ExistentialDeposit: u128 = 1;
 }
 impl pallet_balances::Config for Test {
     type MaxReserves = ();

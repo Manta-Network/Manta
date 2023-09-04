@@ -19,7 +19,7 @@ use crate as collator_selection;
 use frame_support::{
     ord_parameter_types, parameter_types,
     traits::{
-        ConstU16, ConstU32, ConstU64, ConstBool, FindAuthor, ValidatorRegistration, ValidatorSet,OnInitialize,
+        ConstBool, ConstU16, ConstU32, ConstU64, FindAuthor, ValidatorRegistration, ValidatorSet,
     },
     PalletId,
 };
@@ -30,8 +30,7 @@ use sp_core::H256;
 use sp_runtime::{
     testing::UintAuthorityId,
     traits::{BlakeTwo256, IdentityLookup, OpaqueKeys},
-    RuntimeAppPublic,
-    BuildStorage,
+    BuildStorage, RuntimeAppPublic,
 };
 
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -146,7 +145,8 @@ impl pallet_session::SessionHandler<u64> for TestSessionHandler {
         SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
     }
     fn on_new_session<Ks: OpaqueKeys>(_: bool, keys: &[(u64, Ks)], _: &[(u64, Ks)]) {
-        SessionChangeBlock::set(System::block_number() as u64);
+        SessionChangeBlock::set(System::block_number());
+        dbg!(keys.len());
         SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
     }
     fn on_before_session_ending() {}
@@ -250,11 +250,9 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     t.into()
 }
 
-pub fn initialize_to_block(n: BlockNumber) {
-    for i in System::block_number() + 1..=n as u64 {
+pub fn initialize_to_block(n: u64) {
+    for i in System::block_number() + 1..=n {
         System::set_block_number(i);
-        System::on_initialize(
-            i,
-        );
+        <AllPalletsWithSystem as frame_support::traits::OnInitialize<u64>>::on_initialize(i);
     }
 }

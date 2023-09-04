@@ -26,8 +26,7 @@ use frame_support::{
     codec::Decode,
     traits::{Currency, Get},
 };
-use frame_system::{EventRecord, RawOrigin};
-use frame_system::pallet_prelude::BlockNumberFor;
+use frame_system::{pallet_prelude::BlockNumberFor, EventRecord, RawOrigin};
 use pallet_authorship::EventHandler;
 use pallet_session::{self as session, SessionManager};
 use sp_arithmetic::Percent;

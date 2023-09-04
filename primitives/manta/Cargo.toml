@@ -34,9 +34,10 @@ orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-libr
 default = ["std"]
 runtime-benchmarks = [
   'frame-benchmarking/runtime-benchmarks',
-  'frame-support/runtime-benchmarks',
-  'frame-system/runtime-benchmarks',
+  "frame-system/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
   'xcm-builder/runtime-benchmarks',
+  'xcm-executor/runtime-benchmarks',
 ]
 std = [
   'codec/std',
@@ -46,6 +47,7 @@ std = [
   'log/std',
   'frame-support/std',
   'frame-system/std',
+  'frame-benchmarking/std',
   'sp-core/std',
   'sp-runtime/std',
   'xcm-executor/std',

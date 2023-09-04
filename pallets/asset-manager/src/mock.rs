@@ -38,8 +38,10 @@ use manta_primitives::{
     types::{AccountId, Balance, CalamariAssetId},
 };
 use sp_core::H256;
-use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
-use sp_runtime::BuildStorage;
+use sp_runtime::{
+    traits::{BlakeTwo256, IdentityLookup},
+    BuildStorage,
+};
 use xcm::{
     latest::prelude::{Parachain, X1, *},
     VersionedMultiLocation,
@@ -101,7 +103,7 @@ impl pallet_assets::Config for Runtime {
     type WeightInfo = ();
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = CalamariAssetId;
-    type CreateOrigin = AsEnsureOriginWithArg<EnsureNever<AccountId>>;
+    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
     type CallbackHandle = ();
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = ();

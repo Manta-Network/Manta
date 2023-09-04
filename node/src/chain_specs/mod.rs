@@ -47,7 +47,7 @@ pub const MANTA_ENDOWMENT: Balance = 100_000_000 * MANTA;
 pub const STAGING_TELEMETRY_URL: &str = "wss://api.telemetry.manta.systems/submit/";
 
 /// Manta Network Chain Spec
-pub type ChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<manta_runtime::RuntimeGenesisConfig, Extensions>;
 
 /// The extensions for the [`ChainSpec`].
 #[derive(

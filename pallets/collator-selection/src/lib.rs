@@ -62,6 +62,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
+
 pub use pallet::*;
 
 #[cfg(test)]
@@ -78,6 +80,7 @@ pub mod weights;
 #[frame_support::pallet]
 pub mod pallet {
     pub use crate::weights::WeightInfo;
+    use alloc::{collections::BTreeSet, vec::Vec};
     use core::ops::Div;
     use frame_support::{
         dispatch::{DispatchClass, DispatchResultWithPostInfo},
@@ -90,8 +93,7 @@ pub mod pallet {
             Currency, EnsureOrigin, ExistenceRequirement::KeepAlive, ReservableCurrency,
             StorageVersion, ValidatorRegistration, ValidatorSet,
         },
-        DefaultNoBound,
-        PalletId,
+        DefaultNoBound, PalletId,
     };
     use frame_system::{pallet_prelude::*, Config as SystemConfig};
     use nimbus_primitives::{AccountLookup, CanAuthor, NimbusId};
@@ -236,26 +238,10 @@ pub mod pallet {
         pub desired_candidates: u32,
     }
 
-    // #[cfg(feature = "std")]
-    // impl<T: Config> Default for GenesisConfig<T> {
-    //     fn default() -> Self {
-    //         Self {
-    //             invulnerables: Default::default(),
-    //             candidacy_bond: Default::default(),
-    //             eviction_baseline: Percent::zero(), // Note: eviction disabled by default
-    //             eviction_tolerance: Percent::one(), // Note: eviction disabled by default
-    //             desired_candidates: Default::default(),
-    //         }
-    //     }
-    // }
-
     #[pallet::genesis_build]
     impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
-            let duplicate_invulnerables = self
-                .invulnerables
-                .iter()
-                .collect::<std::collections::BTreeSet<_>>();
+            let duplicate_invulnerables = self.invulnerables.iter().collect::<BTreeSet<_>>();
             assert!(
                 duplicate_invulnerables.len() == self.invulnerables.len(),
                 "duplicate invulnerables in genesis."

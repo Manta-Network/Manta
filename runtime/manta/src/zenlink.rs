@@ -47,7 +47,8 @@ impl zenlink_protocol::Config for Runtime {
     type LpGenerate = AssetManagerLpGenerate;
     #[cfg(feature = "runtime-benchmarks")]
     type LpGenerate = mock_benchmark::MockAssetManagerLpGenerate;
-    type WeightInfo = crate::weights::zenlink_protocol::SubstrateWeight<Runtime>;
+    type WeightInfo = ();
+    type TargetChains = ();
 }
 
 pub struct AssetManagerLpGenerate;
@@ -207,7 +208,7 @@ mod mock_benchmark {
             min_balance: 1u128,
             is_sufficient: true,
         };
-        let location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+        let location = AssetLocation(VersionedMultiLocation::V3(MultiLocation::new(
             1,
             X3(
                 Parachain(SelfParaId::get()),

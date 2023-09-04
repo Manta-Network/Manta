@@ -22,6 +22,7 @@ pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch 
 pallet-collective = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v1.0.0" }
 pallet-democracy = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v1.0.0" }
 pallet-membership = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v1.0.0" }
+pallet-message-queue = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 pallet-scheduler = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v1.0.0" }
 pallet-session = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v1.0.0" }
 pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v1.0.0" }

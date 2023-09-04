@@ -49,6 +49,7 @@ fn setup_3_candidates() {
         RuntimeOrigin::signed(RootAccount::get()),
         3
     ));
+    assert_eq!(crate::DesiredCandidates::<Test>::get(), 3);
     assert_ok!(CollatorSelection::register_as_candidate(
         RuntimeOrigin::signed(CHAD)
     ));
@@ -73,6 +74,7 @@ fn setup_3_candidates() {
         UintAuthorityId(EVE).into(),
         vec![]
     ));
+    assert_eq!(CollatorSelection::candidates().len(), 3);
 }
 
 #[test]

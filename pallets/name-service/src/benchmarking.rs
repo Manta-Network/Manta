@@ -21,8 +21,7 @@
 use crate::{Call, Config, Event, Pallet};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::traits::{Currency, Get};
-use frame_system::RawOrigin;
-use frame_system::pallet_prelude::BlockNumberFor;
+use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use manta_support::manta_pay::AccountId;
 use sp_runtime::traits::Hash;
 use sp_std::prelude::*;

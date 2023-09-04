@@ -58,8 +58,8 @@ use polkadot_parachain::primitives::{
 use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, VersionedXcm};
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowUnpaidExecutionFrom, ConvertedConcreteAssetId, EnsureXcmOrigin, FixedRateOfFungible,
-    LocationInverter, ParentIsPreset, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    AllowUnpaidExecutionFrom, ConvertedConcreteId, EnsureXcmOrigin, FixedRateOfFungible,
+    ParentIsPreset, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeRevenue,
     TakeWeightCredit, WeightInfoBounds,
 };
@@ -84,13 +84,12 @@ parameter_types! {
 impl frame_system::Config for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
+    type Block = Block;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type BlockWeights = ();
@@ -124,11 +123,15 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<1>;
+    type MaxHolds = ConstU32<1>;
 }
 
 parameter_types! {
-    pub const ReservedXcmpWeight: Weight = Weight::from_ref_time(WEIGHT_PER_SECOND.saturating_div(4));
-    pub const ReservedDmpWeight: Weight = Weight::from_ref_time(WEIGHT_PER_SECOND.saturating_div(4));
+    pub const ReservedXcmpWeight: Weight = Weight::from_parts(WEIGHT_PER_SECOND.saturating_div(4), 0);
+    pub const ReservedDmpWeight: Weight = Weight::from_parts(WEIGHT_PER_SECOND.saturating_div(4), 0);
 }
 
 parameter_types! {
@@ -208,7 +211,7 @@ parameter_types! {
     // Used in native traders
     // This might be able to skipped.
     // We have to use `here()` because of reanchoring logic
-    pub ParaTokenPerSecond: (xcm::v2::AssetId, u128) = (Concrete(MultiLocation::here()), 1_000_000_000);
+    pub ParaTokenPerSecond: (xcm::v3::AssetId, u128, u128) = (Concrete(MultiLocation::here()), 1_000_000_000, 1_000_000_000);
     pub const MaxInstructions: u32 = 100;
 }
 
@@ -223,12 +226,7 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
     // Used when the incoming asset is a fungible concrete asset matching the given location or name:
     IsNativeConcrete<SelfReserve>,
     // Used to match incoming assets which are not the native asset.
-    ConvertedConcreteAssetId<
-        CalamariAssetId,
-        Balance,
-        AssetIdLocationConvert<AssetManager>,
-        JustTry,
-    >,
+    ConvertedConcreteId<CalamariAssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
 >;
 
 pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
@@ -267,6 +265,7 @@ pub type Barrier = (
 parameter_types! {
     /// Xcm fees will go to the asset manager (we don't implement treasury yet for mock parachain)
     pub XcmFeesAccount: AccountId = AssetManager::account_id();
+    pub const MaxAssetsIntoHolding: u32 = 64;
 }
 
 /// Xcm fee of native token
@@ -291,12 +290,7 @@ impl TakeRevenue for XcmNativeFeeToTreasury {
 pub type CalamariXcmFeesToAccount = XcmFeesToAccount<
     AccountId,
     Assets,
-    ConvertedConcreteAssetId<
-        CalamariAssetId,
-        Balance,
-        AssetIdLocationConvert<AssetManager>,
-        JustTry,
-    >,
+    ConvertedConcreteId<CalamariAssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
     XcmFeesAccount,
 >;
 
@@ -310,7 +304,7 @@ impl Config for XcmExecutorConfig {
     // Combinations of (Location, Asset) pairs which we trust as reserves.
     type IsReserve = MultiNativeAsset;
     type IsTeleporter = ();
-    type LocationInverter = LocationInverter<Ancestry>;
+    type UniversalLocation = UniversalLocation;
     type Barrier = Barrier;
     type Weigher = WeightInfoBounds<RuntimeXcmWeight, RuntimeCall, MaxInstructions>;
     // Trader is the means to purchasing weight credit for XCM execution.
@@ -328,6 +322,16 @@ impl Config for XcmExecutorConfig {
     type AssetClaims = PolkadotXcm;
     // This is needed for the version change notifier work
     type SubscriptionService = PolkadotXcm;
+    type Aliasers = Nothing;
+    type AssetLocker = PolkadotXcm;
+    type AssetExchanger = ();
+    type PalletInstancesInfo = ();
+    type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
+    type MessageExporter = ();
+    type UniversalAliases = Nothing;
+    type CallDispatcher = RuntimeCall;
+    type SafeCallFilter = Everything;
+    type FeeManager = ();
 }
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
@@ -338,6 +342,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
     type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToCallOrigin;
+    type PriceForSiblingDelivery = ();
     type WeightInfo = ();
 }
 
@@ -357,7 +362,6 @@ pub mod mock_msg_queue {
 
     // without storage info is a work around
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
@@ -412,19 +416,16 @@ pub mod mock_msg_queue {
             max_weight: Weight,
         ) -> Result<Weight, XcmError> {
             let hash = Encode::using_encoded(&xcm, T::Hashing::hash);
+            let message_hash = Encode::using_encoded(&xcm, sp_io::hashing::blake2_256);
             let (result, event) = match Xcm::<T::RuntimeCall>::try_from(xcm) {
                 Ok(xcm) => {
-                    let location = (1, Parachain(sender.into()));
-                    match T::XcmExecutor::execute_xcm(location, xcm, max_weight.ref_time()) {
+                    let location = (Parent, Parachain(sender.into()));
+                    match T::XcmExecutor::execute_xcm(location, xcm, message_hash, max_weight) {
                         Outcome::Error(e) => (Err(e), Event::Fail(Some(hash), e)),
-                        Outcome::Complete(w) => {
-                            (Ok(Weight::from_ref_time(w)), Event::Success(Some(hash)))
-                        }
+                        Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
                         // As far as the caller is concerned, this was dispatched without error, so
                         // we just report the weight used.
-                        Outcome::Incomplete(w, e) => {
-                            (Ok(Weight::from_ref_time(w)), Event::Fail(Some(hash), e))
-                        }
+                        Outcome::Incomplete(w, e) => (Ok(w), Event::Fail(Some(hash), e)),
                     }
                 }
                 Err(()) => (
@@ -469,21 +470,19 @@ pub mod mock_msg_queue {
         ) -> Weight {
             for (_i, (_sent_at, data)) in iter.enumerate() {
                 let id = sp_io::hashing::blake2_256(&data[..]);
-                let maybe_msg = VersionedXcm::<T::RuntimeCall>::decode(&mut &data[..])
-                    .map(Xcm::<T::RuntimeCall>::try_from);
-                match maybe_msg {
+                let maybe_versioned = VersionedXcm::<T::RuntimeCall>::decode(&mut &data[..]);
+                match maybe_versioned {
                     Err(_) => {
                         Self::deposit_event(Event::InvalidFormat(id));
                     }
-                    Ok(Err(())) => {
-                        Self::deposit_event(Event::UnsupportedVersion(id));
-                    }
-                    Ok(Ok(x)) => {
-                        let outcome =
-                            T::XcmExecutor::execute_xcm(Parent, x.clone(), limit.ref_time());
-                        <ReceivedDmp<T>>::append(x);
-                        Self::deposit_event(Event::ExecutedDownward(id, outcome));
-                    }
+                    Ok(versioned) => match Xcm::try_from(versioned) {
+                        Err(()) => Self::deposit_event(Event::UnsupportedVersion(id)),
+                        Ok(x) => {
+                            let outcome = T::XcmExecutor::execute_xcm(Parent, x.clone(), id, limit);
+                            <ReceivedDmp<T>>::append(x);
+                            Self::deposit_event(Event::ExecutedDownward(id, outcome));
+                        }
+                    },
                 }
             }
             limit
@@ -521,11 +520,25 @@ impl pallet_xcm::Config for Runtime {
     type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Nothing;
     type Weigher = WeightInfoBounds<RuntimeXcmWeight, RuntimeCall, MaxInstructions>;
-    type LocationInverter = LocationInverter<Ancestry>;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
     type AdvertisedXcmVersion = CurrentXcmVersion;
+    type Currency = Balances;
+    type CurrencyMatcher = ();
+    type TrustedLockers = ();
+    type UniversalLocation = UniversalLocation;
+    type AdminOrigin = EnsureRoot<AccountId>;
+    type SovereignAccountOf = LocationToAccountId;
+    type MaxRemoteLockConsumers = ConstU32<0>;
+    type MaxLockers = ConstU32<8>;
+    type RemoteLockConsumerIdentifier = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type ReachableDest = ReachableDest;
+    #[cfg(feature = "manta")]
+    type WeightInfo = manta_runtime::weights::pallet_xcm::WeightInfo<Runtime>;
+    #[cfg(feature = "calamari")]
+    type WeightInfo = calamari_runtime::weights::pallet_xcm::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -592,7 +605,7 @@ parameter_types! {
     pub const StartNonNativeAssetId: CalamariAssetId = 8;
     pub const NativeAssetId: CalamariAssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
-        VersionedMultiLocation::V1(SelfReserve::get()));
+        VersionedMultiLocation::V3(SelfReserve::get()));
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
         metadata: AssetStorageMetadata {
             name: b"ParaAToken".to_vec(),
@@ -655,23 +668,21 @@ pub enum CurrencyId {
 
 /// Maps a xTokens CurrencyId to a xcm MultiLocation implemented by some asset manager
 pub struct CurrencyIdtoMultiLocation<AssetXConverter>(sp_std::marker::PhantomData<AssetXConverter>);
-impl<AssetXConverter> sp_runtime::traits::Convert<CurrencyId, Option<MultiLocation>>
+impl<AssetXConverter> Convert<CurrencyId, Option<MultiLocation>>
     for CurrencyIdtoMultiLocation<AssetXConverter>
 where
-    AssetXConverter: xcm_executor::traits::Convert<MultiLocation, CalamariAssetId>,
+    AssetXConverter: Convert<Option<CalamariAssetId>, MultiLocation>,
 {
     fn convert(currency: CurrencyId) -> Option<MultiLocation> {
         match currency {
-            CurrencyId::MantaCurrency(asset_id) => match AssetXConverter::reverse_ref(asset_id) {
-                Ok(location) => Some(location),
-                Err(_) => None,
-            },
+            CurrencyId::MantaCurrency(asset_id) => Some(AssetXConverter::convert(Some(asset_id))),
         }
     }
 }
 
 parameter_types! {
-    pub const BaseXcmWeight: u64 = 100_000_000;
+    pub const BaseXcmWeight: Weight = Weight::from_parts(100_000_000, 10);
+    pub UniversalLocation: InteriorMultiLocation = X2(GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into()));
     pub const MaxAssetsForTransfer: usize = 3;
 }
 
@@ -694,11 +705,11 @@ impl orml_xtokens::Config for Runtime {
     type SelfLocation = SelfReserve;
     type Weigher = WeightInfoBounds<RuntimeXcmWeight, RuntimeCall, MaxInstructions>;
     type BaseXcmWeight = BaseXcmWeight;
-    type LocationInverter = LocationInverter<Ancestry>;
+    type UniversalLocation = UniversalLocation;
     type MaxAssetsForTransfer = MaxAssetsForTransfer;
     type MinXcmFee = AssetManager;
     type MultiLocationsFilter = AssetManager;
-    type OutgoingAssetsFilter = AssetManager;
+    // type OutgoingAssetsFilter = AssetManager;
     type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
 }
 
@@ -710,12 +721,9 @@ type Block = frame_system::mocking::MockBlock<Runtime>;
 pub const PALLET_ASSET_INDEX: u8 = 1;
 
 construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub struct Runtime
     {
-        System: frame_system::{Pallet, Call, Storage, Config, Event<T>} = 0,
+        System: frame_system::{Pallet, Call, Storage, Config<T>, Event<T>} = 0,
         Assets: pallet_assets::{Pallet, Storage, Event<T>} = 1,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>} = 2,
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 3,
@@ -723,9 +731,9 @@ construct_runtime!(
         PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin} = 5,
         XTokens: orml_xtokens::{Pallet, Call, Event<T>, Storage} = 6,
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 7,
-        ParachainInfo: parachain_info::{Pallet, Storage, Config} = 8,
+        ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 8,
         XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 9,
-        ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned} = 10,
+        ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned} = 10,
     }
 );
 
@@ -743,7 +751,7 @@ pub(crate) fn on_runtime_upgrade() {
 }
 
 pub(crate) fn para_roll_to(n: u32) {
-    while System::block_number() < n {
+    while System::block_number() < n as u64 {
         PolkadotXcm::on_finalize(System::block_number());
         Balances::on_finalize(System::block_number());
         System::on_finalize(System::block_number());
@@ -775,7 +783,7 @@ pub(crate) fn create_asset_metadata(
 }
 
 pub(crate) fn create_asset_location(parents: u8, para_id: u32) -> AssetLocation {
-    AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+    AssetLocation(VersionedMultiLocation::V3(MultiLocation::new(
         parents,
         X1(Parachain(para_id)),
     )))
@@ -811,7 +819,7 @@ where
 {
     let mut asset_id = 0;
     let mut dummy_mult_loc = match source_location.0.clone() {
-        VersionedMultiLocation::V1(some_location) => some_location,
+        VersionedMultiLocation::V3(some_location) => some_location,
         _ => MultiLocation::default(),
     };
     // Use some fake location as dummy to fill in gaps between Native and Non-Native assets

@@ -47,89 +47,300 @@ use sp_std::marker::PhantomData;
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainInfo ParachainId (r:1 w:0)
+	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
 	// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
-	pub(crate) fn query_holding() -> Weight {
-		Weight::from_ref_time(1_123_184_000)
+	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	pub fn report_holding() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `75`
+		//  Estimated: `3540`
+		// Minimum execution time: 340_875_000 picoseconds.
+		Weight::from_parts(349_790_000, 3540)
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
-	pub(crate) fn buy_execution() -> Weight {
-		Weight::from_ref_time(4_823_000)
+	pub fn buy_execution() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 3_898_000 picoseconds.
+		Weight::from_parts(3_994_000, 0)
 	}
 	// Storage: PolkadotXcm Queries (r:1 w:0)
-	pub(crate) fn query_response() -> Weight {
-		Weight::from_ref_time(15_297_000)
+	// Proof Skipped: PolkadotXcm Queries (max_values: None, max_size: None, mode: Measured)
+	pub fn query_response() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `69`
+		//  Estimated: `3534`
+		// Minimum execution time: 10_760_000 picoseconds.
+		Weight::from_parts(11_070_000, 3534)
 			.saturating_add(T::DbWeight::get().reads(1))
 	}
-	pub(crate) fn transact() -> Weight {
-		Weight::from_ref_time(17_869_000)
+	pub fn transact() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 13_340_000 picoseconds.
+		Weight::from_parts(13_787_000, 0)
 	}
-	pub(crate) fn refund_surplus() -> Weight {
-		Weight::from_ref_time(4_767_000)
+	pub fn refund_surplus() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 4_205_000 picoseconds.
+		Weight::from_parts(4_328_000, 0)
 	}
-	pub(crate) fn set_error_handler() -> Weight {
-		Weight::from_ref_time(1_042_000)
+	pub fn set_error_handler() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_675_000 picoseconds.
+		Weight::from_parts(2_761_000, 0)
 	}
-	pub(crate) fn set_appendix() -> Weight {
-		Weight::from_ref_time(1_036_000)
+	pub fn set_appendix() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_648_000 picoseconds.
+		Weight::from_parts(2_723_000, 0)
 	}
-	pub(crate) fn clear_error() -> Weight {
-		Weight::from_ref_time(1_049_000)
+	pub fn clear_error() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_675_000 picoseconds.
+		Weight::from_parts(2_866_000, 0)
 	}
-	pub(crate) fn descend_origin() -> Weight {
-		Weight::from_ref_time(8_431_000)
+	pub fn descend_origin() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 3_584_000 picoseconds.
+		Weight::from_parts(3_679_000, 0)
 	}
-	pub(crate) fn clear_origin() -> Weight {
-		Weight::from_ref_time(3_117_000)
+	pub fn clear_origin() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_686_000 picoseconds.
+		Weight::from_parts(2_750_000, 0)
 	}
+	// Storage: ParachainInfo ParachainId (r:1 w:0)
+	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
 	// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
-	pub(crate) fn report_error() -> Weight {
-		Weight::from_ref_time(29_507_000)
-			.saturating_add(T::DbWeight::get().reads(5))
+	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	pub fn report_error() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `75`
+		//  Estimated: `3540`
+		// Minimum execution time: 24_994_000 picoseconds.
+		Weight::from_parts(25_553_000, 3540)
+			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	// Storage: PolkadotXcm AssetTraps (r:1 w:1)
-	pub(crate) fn claim_asset() -> Weight {
-		Weight::from_ref_time(21_262_000)
+	// Proof Skipped: PolkadotXcm AssetTraps (max_values: None, max_size: None, mode: Measured)
+	pub fn claim_asset() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `126`
+		//  Estimated: `3591`
+		// Minimum execution time: 15_960_000 picoseconds.
+		Weight::from_parts(16_240_000, 3591)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	pub(crate) fn trap() -> Weight {
-		Weight::from_ref_time(1_026_000)
+	pub fn trap() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_659_000 picoseconds.
+		Weight::from_parts(2_732_000, 0)
 	}
 	// Storage: PolkadotXcm VersionNotifyTargets (r:1 w:1)
+	// Proof Skipped: PolkadotXcm VersionNotifyTargets (max_values: None, max_size: None, mode: Measured)
 	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
 	// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
-	pub(crate) fn subscribe_version() -> Weight {
-		Weight::from_ref_time(18_064_000)
+	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	pub fn subscribe_version() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `75`
+		//  Estimated: `3540`
+		// Minimum execution time: 28_083_000 picoseconds.
+		Weight::from_parts(28_531_000, 3540)
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
 	// Storage: PolkadotXcm VersionNotifyTargets (r:0 w:1)
-	pub(crate) fn unsubscribe_version() -> Weight {
-		Weight::from_ref_time(2_753_000)
+	// Proof Skipped: PolkadotXcm VersionNotifyTargets (max_values: None, max_size: None, mode: Measured)
+	pub fn unsubscribe_version() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 4_884_000 picoseconds.
+		Weight::from_parts(4_996_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: ParachainInfo ParachainId (r:1 w:0)
+	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
 	// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
-	pub(crate) fn initiate_reserve_withdraw() -> Weight {
-		Weight::from_ref_time(1_337_867_000)
+	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	pub fn initiate_reserve_withdraw() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `75`
+		//  Estimated: `3540`
+		// Minimum execution time: 383_046_000 picoseconds.
+		Weight::from_parts(397_796_000, 3540)
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(2))
+	}
+	pub fn burn_asset() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 118_811_000 picoseconds.
+		Weight::from_parts(121_240_000, 0)
+	}
+	pub fn expect_asset() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 12_406_000 picoseconds.
+		Weight::from_parts(12_637_000, 0)
+	}
+	pub fn expect_origin() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_758_000 picoseconds.
+		Weight::from_parts(2_831_000, 0)
+	}
+	pub fn expect_error() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_703_000 picoseconds.
+		Weight::from_parts(2_798_000, 0)
+	}
+	pub fn expect_transact_status() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_892_000 picoseconds.
+		Weight::from_parts(2_930_000, 0)
+	}
+	// Storage: ParachainInfo ParachainId (r:1 w:0)
+	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
+	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
+	// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
+	// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
+	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
+	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
+	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	pub fn query_pallet() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `75`
+		//  Estimated: `3540`
+		// Minimum execution time: 28_960_000 picoseconds.
+		Weight::from_parts(29_596_000, 3540)
+			.saturating_add(T::DbWeight::get().reads(6))
+			.saturating_add(T::DbWeight::get().writes(2))
+	}
+	pub fn expect_pallet() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 5_303_000 picoseconds.
+		Weight::from_parts(5_444_000, 0)
+	}
+	// Storage: ParachainInfo ParachainId (r:1 w:0)
+	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
+	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
+	// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
+	// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
+	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
+	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
+	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	pub fn report_transact_status() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `75`
+		//  Estimated: `3540`
+		// Minimum execution time: 25_221_000 picoseconds.
+		Weight::from_parts(25_842_000, 3540)
+			.saturating_add(T::DbWeight::get().reads(6))
+			.saturating_add(T::DbWeight::get().writes(2))
+	}
+	pub fn clear_transact_status() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_734_000 picoseconds.
+		Weight::from_parts(2_787_000, 0)
+	}
+	pub fn set_topic() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_625_000 picoseconds.
+		Weight::from_parts(2_692_000, 0)
+	}
+	pub fn clear_topic() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_638_000 picoseconds.
+		Weight::from_parts(2_705_000, 0)
+	}
+	pub fn set_fees_mode() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_666_000 picoseconds.
+		Weight::from_parts(2_738_000, 0)
+	}
+	pub fn unpaid_execution() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_857_000 picoseconds.
+		Weight::from_parts(2_966_000, 0)
 	}
 }

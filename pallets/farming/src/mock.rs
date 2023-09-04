@@ -35,6 +35,7 @@ use manta_primitives::{
     currencies::Currencies,
     types::CalamariAssetId,
 };
+use orml_traits::{arithmetic::CheckedSub, MultiCurrency};
 use sp_core::{ConstU128, ConstU32, H256};
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
@@ -45,7 +46,6 @@ use xcm::{
     v3::MultiLocation,
     VersionedMultiLocation,
 };
-use orml_traits::{arithmetic::CheckedSub, MultiCurrency};
 
 use crate as pallet_farming;
 

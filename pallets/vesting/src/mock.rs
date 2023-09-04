@@ -16,11 +16,16 @@
 
 use super::*;
 use crate as calamari_vesting;
-use frame_support::{parameter_types, traits::{ConstU64, ConstU32}};
+use frame_support::{
+    parameter_types,
+    traits::{ConstU32, ConstU64},
+};
 use manta_primitives::types::BlockNumber;
 use sp_core::H256;
-use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
-use sp_runtime::BuildStorage;
+use sp_runtime::{
+    traits::{BlakeTwo256, IdentityLookup},
+    BuildStorage,
+};
 
 type Block = frame_system::mocking::MockBlock<Test>;
 

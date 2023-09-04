@@ -46,6 +46,7 @@ pub type AssetAccountOf<T, I> = pallet_assets::AssetAccount<
     <T as pallet_assets::Config<I>>::Balance,
     DepositBalanceOf<T, I>,
     <T as pallet_assets::Config<I>>::Extra,
+    <T as frame_system::Config>::AccountId,
 >;
 
 type OldAssetId = u32;

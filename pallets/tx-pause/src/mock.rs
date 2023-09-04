@@ -30,8 +30,10 @@ use frame_system::EnsureRoot;
 use manta_primitives::types::Balance;
 
 use sp_core::H256;
-use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
-use sp_runtime::BuildStorage;
+use sp_runtime::{
+    traits::{BlakeTwo256, IdentityLookup},
+    BuildStorage,
+};
 
 pub type AccountId = u128;
 

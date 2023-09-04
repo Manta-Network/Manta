@@ -64,7 +64,7 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = StringLimit;
     type Freezer = ();
     type Extra = ();
-    type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
+    type WeightInfo = ();
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = MantaAssetId;
     #[cfg(feature = "runtime-benchmarks")]
@@ -130,7 +130,7 @@ parameter_types! {
     pub const StartNonNativeAssetId: MantaAssetId = 8;
     pub const NativeAssetId: MantaAssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
-        VersionedMultiLocation::V1(SelfReserve::get()));
+        VersionedMultiLocation::V3(SelfReserve::get()));
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
         metadata: AssetStorageMetadata {
             name: b"Manta".to_vec(),
@@ -183,7 +183,7 @@ impl pallet_asset_manager::Config for Runtime {
         pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 4>,
     >;
     type PalletId = AssetManagerPalletId;
-    type WeightInfo = weights::pallet_asset_manager::SubstrateWeight<Runtime>;
+    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -193,7 +193,7 @@ parameter_types! {
 
 impl pallet_manta_pay::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
+    type WeightInfo = pallet_manta_pay::weights::SubstrateWeight<Runtime>;
     type AssetConfig = MantaAssetConfig;
     type PalletId = MantaPayPalletId;
 }
@@ -213,5 +213,5 @@ impl pallet_manta_sbt::Config for Runtime {
     type Now = Timestamp;
     type Signature = Signature;
     type PublicKey = Signer;
-    type WeightInfo = weights::pallet_manta_sbt::SubstrateWeight<Runtime>;
+    type WeightInfo = ();
 }

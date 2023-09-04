@@ -91,7 +91,8 @@ pub mod pallet {
         traits::{
             tokens::{fungible::Inspect, WithdrawReasons},
             Currency, Get, Imbalance, LockIdentifier, LockableCurrency, ReservableCurrency,
-        }, DefaultNoBound,
+        },
+        DefaultNoBound,
     };
     use frame_system::pallet_prelude::*;
     use parity_scale_codec::Decode;
@@ -623,6 +624,7 @@ pub mod pallet {
         pub candidates: Vec<(T::AccountId, BalanceOf<T>)>,
         /// Vec of tuples of the format (delegator AccountId, collator AccountId, delegation Amount)
         pub delegations: Vec<(T::AccountId, T::AccountId, BalanceOf<T>)>,
+        #[serde(skip)]
         pub inflation_config: InflationInfo<BalanceOf<T>>,
     }
 

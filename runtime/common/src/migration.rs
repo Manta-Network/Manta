@@ -22,7 +22,9 @@ use manta_primitives::constants::RocksDbWeight;
 
 use frame_support::{
     dispatch::Weight,
-    migrations::{migrate_from_pallet_version_to_storage_version, PalletVersionToStorageVersionHelper},
+    migrations::{
+        migrate_from_pallet_version_to_storage_version, PalletVersionToStorageVersionHelper,
+    },
     traits::{GetStorageVersion, OnRuntimeUpgrade, PalletInfoAccess},
 };
 #[cfg(feature = "try-runtime")]
@@ -90,6 +92,8 @@ mod test {
     struct MockForMigrationTesting {}
 
     impl GetStorageVersion for MockForMigrationTesting {
+        type CurrentStorageVersion = StorageVersion;
+
         fn current_storage_version() -> StorageVersion {
             StorageVersion::new(10)
         }
@@ -145,7 +149,7 @@ mod test {
                 StorageVersion::new(0)
             );
             let weight = MigratePalletPv2Sv::<MockForMigrationTesting>::on_runtime_upgrade();
-            assert_eq!(Weight::from_ref_time(100_000 * 1000 * 2), weight);
+            assert_eq!(Weight::from_parts(100_000 * 1000 * 2, 0), weight);
             assert!(
                 sp_io::storage::get(&pallet_version_key(MockForMigrationTesting::name())).is_none()
             );

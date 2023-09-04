@@ -305,7 +305,7 @@ fn reward_fees_to_block_author_and_treasury() {
             });
 
             let len = 10;
-            let info = info_from_weight(Weight::from_ref_time(100));
+            let info = info_from_weight(Weight::from_parts(100, 0));
             let maybe_pre = ChargeTransactionPayment::<Runtime>::from(0)
                 .pre_dispatch(&BOB, &call, &info, len)
                 .unwrap();

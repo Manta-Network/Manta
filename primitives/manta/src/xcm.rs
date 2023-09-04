@@ -29,8 +29,9 @@ use frame_support::{
     ensure,
     pallet_prelude::Get,
     traits::{
-        fungibles::Mutate, tokens::ExistenceRequirement, tokens::Provenance, Contains,
-        ProcessMessageError,
+        fungibles::Mutate,
+        tokens::{ExistenceRequirement, Provenance},
+        Contains, ContainsPair, ProcessMessageError,
     },
 };
 use frame_system::Config;
@@ -51,8 +52,8 @@ use xcm::{
 use xcm_builder::TakeRevenue;
 use xcm_executor::{
     traits::{
-        FilterAssetLocation, MatchesFungible, MatchesFungibles, Properties, ShouldExecute,
-        TransactAsset, WeightTrader,
+        ConvertLocation, FilterAssetLocation, MatchesFungible, MatchesFungibles, Properties,
+        ShouldExecute, TransactAsset, WeightTrader,
     },
     Assets,
 };
@@ -89,7 +90,7 @@ impl Reserve for MultiAsset {
 /// Filters multi-native assets whose reserve is same as the `origin`.
 pub struct MultiNativeAsset;
 
-impl FilterAssetLocation for MultiNativeAsset {
+impl ContainsPair<MultiAsset, MultiLocation> for MultiNativeAsset {
     #[inline]
     fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
         asset.reserve().map(|r| r == *origin).unwrap_or(false)
@@ -142,7 +143,7 @@ where
     #[inline]
     fn new() -> Self {
         Self {
-            weight: 0.into(),
+            weight: Weight::from_parts(0, 0),
             refund_cache: None,
             __: PhantomData,
         }
@@ -198,7 +199,7 @@ where
                 }
                 let required = MultiAsset {
                     fun: Fungibility::Fungible(amount),
-                    id: XcmAssetId::Concrete(id.clone()),
+                    id: XcmAssetId::Concrete(id),
                 };
 
                 log::debug!(
@@ -265,7 +266,7 @@ where
             *prev_amount = prev_amount.saturating_sub(amount);
             Some(MultiAsset {
                 fun: Fungibility::Fungible(amount),
-                id: XcmAssetId::Concrete(id.clone()),
+                id: XcmAssetId::Concrete(*id),
             })
         } else {
             None
@@ -281,7 +282,7 @@ where
     #[inline]
     fn drop(&mut self) {
         if let Some((id, amount, _)) = &self.refund_cache {
-            R::take_revenue((id.clone(), *amount).into());
+            R::take_revenue((*id, *amount).into());
         }
     }
 }
@@ -346,7 +347,7 @@ impl<T, A, AccountIdConverter, Native, NonNative>
 where
     T: Config,
     A: AssetConfig<T>,
-    AccountIdConverter: Convert<MultiLocation, T::AccountId>,
+    AccountIdConverter: ConvertLocation<T::AccountId>,
     Native: MatchesFungible<A::Balance>,
     NonNative: MatchesFungibles<A::AssetId, A::Balance>,
 {
@@ -359,7 +360,8 @@ where
         asset: &MultiAsset,
         location: &MultiLocation,
     ) -> Result<(A::AssetId, T::AccountId, A::Balance)> {
-        let receiver = AccountIdConverter::convert(*location);
+        let receiver =
+            AccountIdConverter::convert_location(location).ok_or(XcmError::InvalidLocation)?; // todo
         let (asset_id, amount) = match (
             Native::matches_fungible(asset),
             NonNative::matches_fungibles(asset),
@@ -382,7 +384,7 @@ where
     A: AssetConfig<T>,
     A::AssetId: Clone,
     A::Balance: Clone,
-    AccountIdConverter: Convert<MultiLocation, T::AccountId>,
+    AccountIdConverter: ConvertLocation<T::AccountId>,
     Native: MatchesFungible<A::Balance>,
     NonNative: MatchesFungibles<A::AssetId, A::Balance>,
 {
