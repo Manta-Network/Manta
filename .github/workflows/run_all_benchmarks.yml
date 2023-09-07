@@ -50,7 +50,7 @@ jobs:
       - name: init
         run: |
           sudo apt update
-          sudo apt install -y pkg-config libssl-dev protobuf-compiler build-essential
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler build-essential clang curl llvm libudev-dev libclang-dev
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
