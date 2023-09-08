@@ -61,6 +61,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
       - name: init nodejs && yarn
         run: |
+          sudo apt install gcc g++ make -y
           curl -s https://deb.nodesource.com/setup_16.x | sudo bash
           sudo apt install nodejs -y
           node -v
