@@ -19,7 +19,7 @@ env:
 jobs:
   run-benchmarks:
     timeout-minutes: 720
-    runs-on: runtime-integration-test
+    runs-on: runtime-large
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v3
@@ -50,7 +50,7 @@ jobs:
       - name: init
         run: |
           sudo apt update
-          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler build-essential clang curl llvm libudev-dev libclang-dev
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
@@ -61,7 +61,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
       - name: init nodejs && yarn
         run: |
-          curl -s https://deb.nodesource.com/setup_16.x | sudo bash
+          curl -s https://deb.nodesource.com/setup_18.x | sudo bash
           sudo apt install nodejs -y
           node -v
           sudo npm install --global yarn
@@ -75,7 +75,7 @@ jobs:
           CARGO_TERM_COLOR: always
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo build --profile production --features runtime-benchmarks --verbose --timings
+          RUSTC_BOOTSTRAP=1 cargo build --profile production --features runtime-benchmarks --timings
       - name: create-chainspec
         run: |
           ${{ github.workspace }}/target/production/manta build-spec --chain $CHAIN_SPEC --disable-default-bootnode --raw > ${{ github.workspace }}/tests/data/fork.json
