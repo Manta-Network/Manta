@@ -53,8 +53,8 @@ jobs:
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
-          rustup toolchain install nightly-2023-03-13
-          rustup default nightly-2023-03-13
+          rustup toolchain install nightly-2023-09-01
+          rustup default nightly-2023-09-01
           cargo install taplo-cli
       - name: cache cargo
         uses: Swatinem/rust-cache@v2
