@@ -2923,7 +2923,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         use zenlink_protocol::AssetId as ZenlinkAssetId;
         assert_eq!(
             crate::RuntimeCall::get_call_names("ZenlinkProtocol").len(),
-            16,
+            17,
             "Please update new extrinsic here."
         );
         // set_fee_receiver
@@ -3164,6 +3164,20 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         calamari_runtime_calls.push((
             "zenlink_protocol",
             "bootstrap_withdraw_reward",
+            dispatch_info,
+            call_len,
+        ));
+
+        // set_native_swap_fee_factor
+        let call = crate::RuntimeCall::ZenlinkProtocol(
+            zenlink_protocol::Call::set_native_swap_fee_factor {
+                native_swap_fees_factor: 200u128,
+            },
+        );
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "zenlink_protocol",
+            "set_native_swap_fee_factor",
             dispatch_info,
             call_len,
         ));

@@ -6387,7 +6387,7 @@ dependencies = [
 [[package]]
 name = "orml-traits"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed87ba5bb12c756b3973b3f59a430bab22fc0cc9"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#9a1b0f1cf1835225b638311971eba5f30a1187c8"
 dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
@@ -6405,7 +6405,7 @@ dependencies = [
 [[package]]
 name = "orml-utilities"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed87ba5bb12c756b3973b3f59a430bab22fc0cc9"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#9a1b0f1cf1835225b638311971eba5f30a1187c8"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -6419,7 +6419,7 @@ dependencies = [
 [[package]]
 name = "orml-xcm-support"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed87ba5bb12c756b3973b3f59a430bab22fc0cc9"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#9a1b0f1cf1835225b638311971eba5f30a1187c8"
 dependencies = [
  "frame-support",
  "orml-traits",
@@ -6433,7 +6433,7 @@ dependencies = [
 [[package]]
 name = "orml-xtokens"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#ed87ba5bb12c756b3973b3f59a430bab22fc0cc9"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#9a1b0f1cf1835225b638311971eba5f30a1187c8"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
@@ -15010,7 +15010,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#c2acc36bea02e6c2aa38f3b290e255dfd5c164dd"
+source = "git+https://github.com/manta-network/Zenlink?branch=ghzlatarev/v0937#c581a0b7a1aa38451465bbb4ff82eb93f05348f2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -15030,7 +15030,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol-rpc"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#c2acc36bea02e6c2aa38f3b290e255dfd5c164dd"
+source = "git+https://github.com/manta-network/Zenlink?branch=ghzlatarev/v0937#c581a0b7a1aa38451465bbb4ff82eb93f05348f2"
 dependencies = [
  "jsonrpsee",
  "parity-scale-codec",
@@ -15045,7 +15045,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol-runtime-api"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#c2acc36bea02e6c2aa38f3b290e255dfd5c164dd"
+source = "git+https://github.com/manta-network/Zenlink?branch=ghzlatarev/v0937#c581a0b7a1aa38451465bbb4ff82eb93f05348f2"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
