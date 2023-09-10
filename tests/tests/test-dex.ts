@@ -4,7 +4,8 @@ import {describeWithManta, executeTx, remark} from "./util";
 import '@polkadot/api-augment';
 import {
     LP_1K, LP_2K,
-    LP_USDT_USDC_METADATA, MANTA_1K, USDC_10M, USDC_20M,
+    LP_USDT_USDC_METADATA, LP_NATIVE_USDT_METADATA,
+    MANTA_1K, MANTA_1M, MANTA_10M, USDC_10M, USDC_20M,
     USDC_LOCATION,
     USDC_METADATA,
     USDT_10M, USDT_20M,
@@ -83,31 +84,28 @@ describeWithManta("Manta RPC (Dex)", (context) => {
         state = await api.query.assets.account(10, alice);
         expect(JSON.parse(JSON.stringify(state))).to.equal(null);
 
-        callData = api.tx.zenlinkProtocol.setNativeSwapFeeFactor(200);
+        let fees_factor = 200; // 0.5%
+        callData = api.tx.zenlinkProtocol.setNativeSwapFeeFactor(fees_factor);
         await executeTx(context, callData, true);
 
-        await delay(12000);
-
-        callData = api.tx.zenlinkProtocol.createPair([parachainId,0,1], [parachainId,2,8]);
+        callData = api.tx.assetManager.registerLpAsset(1, 8, LP_NATIVE_USDT_METADATA);
         await executeTx(context, callData, true);
 
-        callData = api.tx.zenlinkProtocol.addLiquidity([parachainId,0,1], [parachainId,2,8],
-            MANTA_1K, USDT_10M, MANTA_1K, USDT_10M, 1000);
+        await new Promise((res) => setTimeout(res, 2000));
+
+        callData = api.tx.zenlinkProtocol.createPair([parachainId,0,0], [parachainId,2,8]);
+        await executeTx(context, callData, true);
+
+        callData = api.tx.zenlinkProtocol.addLiquidity([parachainId,0,0], [parachainId,2,8],
+            MANTA_10M, USDT_10M, MANTA_10M, USDT_10M, 1000);
         await executeTx(context, callData);
 
-        callData = api.tx.zenlinkProtocol.swapExactAssetsForAssets(100,10,[[parachainId,0,1],[parachainId,2,8]],alice,1000000);
+        callData = api.tx.zenlinkProtocol.swapExactAssetsForAssets(MANTA_1M,100,[[parachainId,0,0],[parachainId,2,8]],alice,1000);
         await executeTx(context, callData);
 
-        await delay(24000);
-
-        const swapFeesBalance = (await api.query.system.account("0x2f73776170706f74000000000000000000000000000000000000000000000000")).data.free.toString();
+        const expectedSwapFee = new BN("5000000000000000000000");
+        const swapFeesBalance = (await api.query.system.account("dfZ2W8UP6LNgBri4nYSZaXXLUpXbvZM6KhpxPQnFJiKkdVvZi")).data.free.toString();
         console.log("Swap fees pot balance: ", swapFeesBalance);
-        const swapFeesBalance2 = (await api.query.system.account("0x2f73776170706f7400000000000000000000000000000000000000000000000000")).data.free.toString();
-        console.log("Swap fees pot balance: ", swapFeesBalance2);
-		// #[pallet::compact] amount_in: AssetBalance,
-		// 	#[pallet::compact] amount_out_min: AssetBalance,
-		// 	path: Vec<T::AssetId>,
-		// 	recipient: T::AccountId,
-		// 	#[pallet::compact] deadline: T::BlockNumber,
+        expect(swapFeesBalance).to.equal(expectedSwapFee.toString())
     });
 });

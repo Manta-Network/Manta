@@ -2,6 +2,8 @@ import {BN} from "@polkadot/util";
 
 export const MANTA_1B = "1000000000000000000000000000";
 export const MANTA_1K = new BN("1000000000000000000000");
+export const MANTA_1M = new BN("1000000000000000000000000");
+export const MANTA_10M = new BN("10000000000000000000000000");
 export const LP_1K = "1000000000000000";
 export const LP_2K = "2000000000000000";
 export const USDT_10M = new BN("10000000000000");
@@ -83,6 +85,17 @@ export const MANDEX_METADATA = {
 export const LP_USDT_USDC_METADATA = {
     metadata: {
         name: "LP-USDC-USDT",
+        symbol: "LP",
+        decimals: 12,
+        isFrozen: false
+    },
+    minBalance: 1,
+    isSufficient: true
+};
+
+export const LP_NATIVE_USDT_METADATA = {
+    metadata: {
+        name: "LP-NATIVE-USDT",
         symbol: "LP",
         decimals: 12,
         isFrozen: false
