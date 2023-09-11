@@ -7455,6 +7455,7 @@ dependencies = [
  "manta-pay",
  "manta-primitives",
  "manta-util",
+ "num_cpus",
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",
