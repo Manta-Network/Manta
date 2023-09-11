@@ -43,7 +43,7 @@ use manta_primitives::{
         AssetRegistryMetadata, AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL, WEIGHT_PER_SECOND},
-    types::{BlockNumber, CalamariAssetId, Header},
+    types::{BlockNumber, CalamariAssetId},
     xcm::{
         AccountIdToMultiLocation, AllowTopLevelPaidExecutionDescendOriginFirst,
         AllowTopLevelPaidExecutionFrom, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,
@@ -715,7 +715,6 @@ impl orml_xtokens::Config for Runtime {
 
 impl parachain_info::Config for Runtime {}
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
 pub const PALLET_ASSET_INDEX: u8 = 1;

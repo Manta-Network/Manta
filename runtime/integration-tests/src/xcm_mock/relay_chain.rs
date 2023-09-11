@@ -31,10 +31,7 @@ use sp_runtime::{
     AccountId32,
 };
 
-use manta_primitives::{
-    types::{BlockNumber, Header},
-    xcm::AllowTopLevelPaidExecutionFrom,
-};
+use manta_primitives::{types::BlockNumber, xcm::AllowTopLevelPaidExecutionFrom};
 use polkadot_parachain::primitives::Id as ParaId;
 use polkadot_runtime_parachains::{
     configuration,
@@ -150,7 +147,26 @@ parameter_types! {
     pub const MaxAssetsIntoHolding: u32 = 64;
 }
 
-pub type XcmRouter = super::RelayChainXcmRouter;
+pub struct TestSendXcm;
+impl SendXcm for TestSendXcm {
+    type Ticket = (MultiLocation, Xcm<()>, XcmHash);
+    fn validate(
+        dest: &mut Option<MultiLocation>,
+        msg: &mut Option<Xcm<()>>,
+    ) -> SendResult<(MultiLocation, Xcm<()>, XcmHash)> {
+        let msg = msg.take().unwrap();
+        let hash = fake_message_hash(&msg);
+        let triplet = (dest.take().unwrap(), msg, hash);
+        Ok((triplet, MultiAssets::new()))
+    }
+    fn deliver(triplet: (MultiLocation, Xcm<()>, XcmHash)) -> Result<XcmHash, SendError> {
+        let hash = triplet.2;
+        SENT_XCM.with(|q| q.borrow_mut().push(triplet));
+        Ok(hash)
+    }
+}
+
+pub type XcmRouter = TestSendXcm;
 pub type Barrier = (
     TakeWeightCredit,
     AllowTopLevelPaidExecutionFrom<Everything>,

@@ -233,7 +233,7 @@ impl Config for XcmExecutorConfig {
     // i.e. units_per_second in `AssetManager`
     type Trader = (
         FixedRateOfFungible<ParaTokenPerSecond, XcmNativeFeeToTreasury>,
-        // FirstAssetTrader<AssetManager, CalamariXcmFeesToAccount>, // todo
+        FirstAssetTrader<AssetManager, CalamariXcmFeesToAccount>,
     );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;

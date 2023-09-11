@@ -23,7 +23,7 @@
 // pub mod pallet_asset_manager;
 // pub mod pallet_assets;
 // pub mod pallet_author_inherent;
-// pub mod pallet_balances;
+pub mod pallet_balances;
 // pub mod pallet_collective;
 // pub mod pallet_democracy;
 // pub mod pallet_farming;

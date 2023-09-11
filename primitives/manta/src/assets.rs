@@ -17,6 +17,7 @@
 //! Asset Utilities
 use crate::{constants::TEST_DEFAULT_ASSET_ED, types::Balance as MantaBalance};
 use alloc::vec::Vec;
+use core::fmt::Debug;
 use codec::{Decode, Encode};
 use core::marker::PhantomData;
 use frame_support::{
@@ -506,12 +507,12 @@ impl<C, A, Native, NonNative> FungibleLedger for NativeAndNonNative<C, A, Native
 where
     C: Config,
     A: AssetConfig<C>,
-    A::AssetId: Clone + PartialOrd,
-    A::Balance: Clone + PartialOrd,
+    A::AssetId: Clone + PartialOrd + Debug,
+    A::Balance: Clone + PartialOrd + Debug + Copy,
     Native: fungible::Inspect<C::AccountId, Balance = A::Balance>
         + Currency<C::AccountId, Balance = A::Balance>,
     NonNative: fungibles::Inspect<C::AccountId, AssetId = A::AssetId, Balance = A::Balance>
-        + Mutate<C::AccountId>,
+        + fungibles::Mutate<C::AccountId>,
 {
     type AccountId = C::AccountId;
 

@@ -31,7 +31,7 @@ use runtime_common::test_helpers::{
     to_reserve_xcm_message_receiver_side, to_reserve_xcm_message_sender_side,
     ADVERTISED_DEST_WEIGHT,
 };
-use xcm::{latest::prelude::*, v2, v3::Response, VersionedMultiLocation, WrapVersion};
+use xcm::{latest::prelude::*, v3::Response, VersionedMultiLocation, WrapVersion};
 use xcm_executor::traits::ConvertLocation;
 use xcm_executor::traits::WeightBounds;
 use xcm_simulator::TestExt;
@@ -2201,67 +2201,6 @@ fn withdraw_and_deposit() {
 
 /// Scenario:
 /// A parachain wants to be notified that a transfer worked correctly.
-/// It sends a `QueryHolding` after the deposit to get notified on success.
-///
-/// Asserts that the balances are updated correctly and the expected XCM is sent.
-// #[test]
-// fn query_holding() {
-//     MockNet::reset();
-
-//     let send_amount = 10;
-//     let query_id_set = 1234;
-
-//     // Send a message which fully succeeds on the relay chain
-//     ParaA::execute_with(|| {
-//         let message = Xcm(vec![
-//             WithdrawAsset((Here, send_amount).into()),
-//             buy_execution((Here, send_amount)),
-//             DepositAsset {
-//                 assets: All.into(),
-//                 beneficiary: Parachain(2).into(),
-//             },
-//             v2::Instruction::QueryHolding {
-//                 query_id: query_id_set,
-//                 dest: Parachain(1).into(),
-//                 assets: All.into(),
-//                 max_response_weight: 1_000_000_000,
-//             }.try_into().unwrap(),
-//         ]);
-//         // Send withdraw and deposit with query holding
-//         assert_ok!(ParachainPalletXcm::send_xcm(Here, Parent, message,));
-//     });
-
-//     // Check that transfer was executed
-//     Relay::execute_with(|| {
-//         // Withdraw executed
-//         assert_eq!(
-//             relay_chain::Balances::free_balance(para_account_id(1)),
-//             INITIAL_BALANCE - send_amount
-//         );
-//         // Deposit executed
-//         assert_eq!(
-//             relay_chain::Balances::free_balance(para_account_id(2)),
-//             send_amount
-//         );
-//     });
-
-//     // Check that QueryResponse message was received
-//     // AllowKnownQueryResponses<PolkadotXcm> barrier impl should have let it through:
-//     ParaA::execute_with(|| {
-//         assert_eq!(
-//             parachain::MsgQueue::received_dmp(),
-//             vec![Xcm(vec![QueryResponse {
-//                 query_id: query_id_set,
-//                 response: Response::Assets(MultiAssets::new()),
-//                 max_weight: 1_000_000_000.into(),
-//                 querier: None,
-//             }])],
-//         );
-//     });
-// }
-
-/// Scenario:
-/// A parachain wants to be notified that a transfer worked correctly.
 /// It includes a `QueryHolding` order after the deposit to get notified on success.
 /// This somewhat abuses `QueryHolding` as an indication of execution success. It works because
 /// order execution halts on error (so no `QueryResponse` will be sent if the previous order failed).
@@ -3144,7 +3083,7 @@ fn transfer_multicurrencies_should_work_scenarios() {
         interior: X2(
             Parachain(para_b_id),
             AccountId32 {
-                network: Some(NetworkId::ByGenesis([1u8; 32])),
+                network: None,
                 id: ALICE.into(),
             },
         ),

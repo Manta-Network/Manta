@@ -20,7 +20,6 @@ pub mod parachain;
 pub mod relay_chain;
 pub mod xcm_tests;
 
-use frame_support::traits::GenesisBuild;
 use polkadot_parachain::primitives::Id as ParaId;
 use sp_runtime::traits::AccountIdConversion;
 use sp_runtime::BuildStorage;

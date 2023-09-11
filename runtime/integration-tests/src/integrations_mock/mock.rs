@@ -17,7 +17,7 @@
 #![cfg(test)]
 
 use super::{ALICE, ALICE_SESSION_KEYS, *};
-use frame_support::traits::{GenesisBuild, OnFinalize, OnInitialize};
+use frame_support::traits::{OnFinalize, OnInitialize};
 use manta_primitives::{
     assets::AssetConfig,
     types::{AccountId, Balance},
@@ -161,13 +161,6 @@ impl ExtBuilder {
         .assimilate_storage(&mut t)
         .unwrap();
 
-        // <pallet_xcm::GenesisConfig<Runtime>>::assimilate_storage(
-        //     &pallet_xcm::GenesisConfig {
-        //         safe_xcm_version: self.safe_xcm_version,
-        //     },
-        //     &mut t,
-        // )
-        // .unwrap();
         pallet_xcm::GenesisConfig::<Runtime> {
             safe_xcm_version: Some(2),
             ..Default::default()

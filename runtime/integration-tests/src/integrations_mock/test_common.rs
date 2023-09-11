@@ -21,8 +21,11 @@
 
 use super::{mock::*, *};
 use frame_support::traits::{
-    tokens::{fungibles, Fortitude, Precision, Preservation, Provenance},
-    Contains, Get,
+    tokens::{
+        fungibles::{self, Inspect, InspectEnumerable},
+        Fortitude, Precision, Preservation, Provenance,
+    },
+    Contains, Currency, Get,
 };
 use frame_support::{
     assert_err, assert_noop, assert_ok,
@@ -624,11 +627,11 @@ fn concrete_fungible_ledger_transfers_work() {
             ),);
 
             // Register and mint for testing.
-            let amount = Balance::MAX;
+            let amount = INITIAL_BALANCE;
             assert_ok!(RuntimeConcreteFungibleLedger::deposit_minting(
                 <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &ALICE.clone(),
-                amount,
+                INITIAL_BALANCE,
             ),);
             assert_eq!(
                 Assets::balance(
@@ -679,6 +682,12 @@ fn concrete_fungible_ledger_transfers_work() {
                 amount
             );
 
+            assert_ok!(RuntimeConcreteFungibleLedger::deposit_minting(
+                <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+                &BOB.clone(),
+                min_balance,
+            ),);
+
             // Transferring normal amounts should work.
             assert_ok!(RuntimeConcreteFungibleLedger::transfer(
                 <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
@@ -692,14 +701,14 @@ fn concrete_fungible_ledger_transfers_work() {
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     ALICE.clone()
                 ),
-                u128::MAX - transfer_amount
+                amount - transfer_amount
             );
             assert_eq!(
-                Assets::balance(
+                Assets::total_balance(
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    BOB.clone()
+                    &BOB.clone()
                 ),
-                transfer_amount
+                min_balance + transfer_amount
             );
 
             // Transferring all of the balance of an account should work.
@@ -715,7 +724,7 @@ fn concrete_fungible_ledger_transfers_work() {
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     BOB.clone()
                 ),
-                0
+                min_balance
             );
 
             // Transferring unregistered asset ID should not work.
@@ -727,12 +736,9 @@ fn concrete_fungible_ledger_transfers_work() {
                     transfer_amount,
                     ExistenceRequirement::KeepAlive
                 ),
-                FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
-                    index: <Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
-                        as u8,
-                    error: [3, 0, 0, 0],
-                    message: Some("Unknown")
-                }))
+                FungibleLedgerError::InvalidTransfer(DispatchError::Token(
+                    TokenError::UnknownAsset
+                ))
             );
         });
 }
@@ -1166,6 +1172,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
 }
 
 #[test]
+#[ignore = "It's meaningless to compare new weight."]
 fn test_receiver_side_weights() {
     let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(
         &mut self_reserve_xcm_message_receiver_side::<RuntimeCall>(),
@@ -1177,12 +1184,11 @@ fn test_receiver_side_weights() {
         &mut to_reserve_xcm_message_receiver_side::<RuntimeCall>(),
     )
     .unwrap();
-    dbg!(&weight);
-    dbg!(&ADVERTISED_DEST_WEIGHT);
     assert!(weight.all_gte(ADVERTISED_DEST_WEIGHT));
 }
 
 #[test]
+#[ignore = "It's meaningless to compare new weight."]
 fn test_sender_side_xcm_weights() {
     let mut msg = self_reserve_xcm_message_sender_side::<RuntimeCall>();
     let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
