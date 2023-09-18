@@ -19,47 +19,47 @@ ws_port = 9911
 chain = "calamari-local"
 cumulus_based = true
 id = 2084
-default_command = "/home/jamie/my-repo/forks/jdeng/Manta/zombienet/manta"
+default_command = "manta-binary"
 
 [[parachains.collators]]
 name = "Alice" # case sensitive, if you use `alice` here, zombienet will generate a key from alice-1
 rcp_port = 9967
 ws_port = 9921
-command = "/home/jamie/my-repo/forks/jdeng/Manta/zombienet/manta"
+command = "manta-binary"
 validator = true
 args = [ "-lparachain=debug,xcm=trace" ]
 
 [[parachains.collators]]
 name = "Bob"
-command = "/home/jamie/my-repo/forks/jdeng/Manta/zombienet/manta"
+command = "manta-binary"
 validator = true
 
 [[parachains.collators]]
 name = "Charlie"
-command = "/home/jamie/my-repo/forks/jdeng/Manta/zombienet/manta"
+command = "manta-binary"
 validator = true
 
 [[parachains.collators]]
 name = "Dave"
-command = "/home/jamie/my-repo/forks/jdeng/Manta/zombienet/manta"
+command = "manta-binary"
 validator = true
 
 [[parachains.collators]]
 name = "Eve"
-command = "/home/jamie/my-repo/forks/jdeng/Manta/zombienet/manta"
+command = "manta-binary"
 validator = true
 
 [[parachains]]
 chain = "manta-dev"
 cumulus_based = true
 id = 2104
-default_command = "/home/jamie/my-repo/forks/jdeng/Manta/zombienet/manta"
+default_command = "manta-binary"
 
 [[parachains.collators]]
 name = "Alice" # Alice-1
 rcp_port = 9968
 ws_port = 9922
-command = "/home/jamie/my-repo/forks/jdeng/Manta/zombienet/manta"
+command = "manta-binary"
 validator = true
 # args = ["-lparachain=debug"]
 

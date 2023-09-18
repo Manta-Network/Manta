@@ -3,7 +3,7 @@ timeout = 300
 
 [relaychain]
 chain = "rococo-local"
-default_command = "/home/jamie/my-repo/forks/jdeng/Manta/zombienet/polkadot"
+default_command = "polkadot-binary"
 
 [[relaychain.nodes]]
 name = "alice"
@@ -21,28 +21,28 @@ cumulus_based = true
 id = 2084
 
 [[parachains.collators]]
-command = "/home/jamie/my-repo/forks/jdeng/Manta/zombienet/demo/manta"
+command = "manta-binary"
 name = "Alice"
 validator = true
 rcp_port = 9967
 ws_port = 9921
 
 [[parachains.collators]]
-command = "/home/jamie/my-repo/forks/jdeng/Manta/zombienet/demo/manta"
+command = "manta-binary"
 name = "Bob"
 validator = true
 
 [[parachains.collators]]
-command = "/home/jamie/my-repo/forks/jdeng/Manta/zombienet/demo/manta"
+command = "manta-binary"
 name = "Charlie"
 validator = true
 
 [[parachains.collators]]
-command = "/home/jamie/my-repo/forks/jdeng/Manta/zombienet/demo/manta"
+command = "manta-binary"
 name = "Dave"
 validator = true
 
 [[parachains.collators]]
-command = "/home/jamie/my-repo/forks/jdeng/Manta/zombienet/demo/manta"
+command = "manta-binary"
 name = "Eve"
 validator = true
