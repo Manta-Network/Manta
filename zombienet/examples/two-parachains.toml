@@ -1,0 +1,76 @@
+[settings]
+timeout = 300
+
+[relaychain]
+chain = "rococo-local"
+default_command = "/home/jamie/my-repo/forks/jdeng/Manta/zombienet/polkadot"
+
+[[relaychain.nodes]]
+name = "eve"
+validator = true
+ws_port = 9944
+
+[[relaychain.nodes]]
+name = "bob"
+validator = true
+ws_port = 9911
+
+[[parachains]]
+chain = "calamari-local"
+cumulus_based = true
+default_command = "manta-binary"
+id = 2084
+
+[[parachains.collators]]
+args = ["-lparachain=debug,xcm=trace"]
+command = "manta-binary"
+name = "Alice"                         # case sensitive, if you use `alice` here, zombienet will generate a key from alice-1
+rcp_port = 9967
+validator = true
+ws_port = 9921
+
+[[parachains.collators]]
+command = "manta-binary"
+name = "Bob"
+validator = true
+
+[[parachains.collators]]
+command = "manta-binary"
+name = "Charlie"
+validator = true
+
+[[parachains.collators]]
+command = "manta-binary"
+name = "Dave"
+validator = true
+
+[[parachains.collators]]
+command = "manta-binary"
+name = "Eve"
+validator = true
+
+[[parachains]]
+chain = "manta-dev"
+cumulus_based = true
+default_command = "manta-binary"
+id = 2104
+
+[[parachains.collators]]
+command = "manta-binary"
+name = "Alice"           # Alice-1
+rcp_port = 9968
+validator = true
+ws_port = 9922
+# args = ["-lparachain=debug"]
+
+[[hrmp_channels]]
+max_capacity = 4
+max_message_size = 524288
+recipient = 2084
+sender = 2104
+
+[[hrmp_channels]]
+max_capacity = 4
+max_message_size = 524288
+recipient = 2104
+sender = 2084

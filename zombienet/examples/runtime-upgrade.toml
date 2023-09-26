@@ -1,0 +1,48 @@
+[settings]
+timeout = 300
+
+[relaychain]
+chain = "rococo-local"
+default_command = "polkadot-binary"
+
+[[relaychain.nodes]]
+name = "alice"
+validator = true
+ws_port = 9944
+
+[[relaychain.nodes]]
+name = "bob"
+validator = true
+ws_port = 9911
+
+[[parachains]]
+chain = "calamari-local"
+cumulus_based = true
+id = 2084
+
+[[parachains.collators]]
+command = "manta-binary"
+name = "Alice"
+rcp_port = 9967
+validator = true
+ws_port = 9921
+
+[[parachains.collators]]
+command = "manta-binary"
+name = "Bob"
+validator = true
+
+[[parachains.collators]]
+command = "manta-binary"
+name = "Charlie"
+validator = true
+
+[[parachains.collators]]
+command = "manta-binary"
+name = "Dave"
+validator = true
+
+[[parachains.collators]]
+command = "manta-binary"
+name = "Eve"
+validator = true

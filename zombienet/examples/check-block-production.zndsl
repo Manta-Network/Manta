@@ -1,0 +1,10 @@
+Description: Block Production Test
+Network: ./small-network.toml
+Creds: config
+
+# metrics
+Alice: reports node_roles is 4
+
+# logs
+alice: parachain 2084 is registered within 225 seconds
+Alice: reports block height is at least 5 within 250 seconds
