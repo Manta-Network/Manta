@@ -7,8 +7,6 @@
     - https://github.com/paritytech/cumulus/tree/master/zombienet
     - https://github.com/paritytech/polkadot/tree/master/zombienet_tests
 
-- Demo docs: [demo](https://www.notion.so/mantanetwork/Zombienet-Demo-fa7e38568b474498b73f5e13adf906f9?pvs=4)
-
 ## Install zombienet
 
 According to your platform, download the latest pre-compiled binary from [zombinet](https://github.com/paritytech/zombienet/releases) repository.
