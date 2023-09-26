@@ -18,59 +18,59 @@ ws_port = 9911
 [[parachains]]
 chain = "calamari-local"
 cumulus_based = true
-id = 2084
 default_command = "manta-binary"
+id = 2084
 
 [[parachains.collators]]
-name = "Alice" # case sensitive, if you use `alice` here, zombienet will generate a key from alice-1
+args = ["-lparachain=debug,xcm=trace"]
+command = "manta-binary"
+name = "Alice"                         # case sensitive, if you use `alice` here, zombienet will generate a key from alice-1
 rcp_port = 9967
+validator = true
 ws_port = 9921
-command = "manta-binary"
-validator = true
-args = [ "-lparachain=debug,xcm=trace" ]
 
 [[parachains.collators]]
+command = "manta-binary"
 name = "Bob"
-command = "manta-binary"
 validator = true
 
 [[parachains.collators]]
+command = "manta-binary"
 name = "Charlie"
-command = "manta-binary"
 validator = true
 
 [[parachains.collators]]
+command = "manta-binary"
 name = "Dave"
-command = "manta-binary"
 validator = true
 
 [[parachains.collators]]
-name = "Eve"
 command = "manta-binary"
+name = "Eve"
 validator = true
 
 [[parachains]]
 chain = "manta-dev"
 cumulus_based = true
-id = 2104
 default_command = "manta-binary"
+id = 2104
 
 [[parachains.collators]]
-name = "Alice" # Alice-1
-rcp_port = 9968
-ws_port = 9922
 command = "manta-binary"
+name = "Alice"           # Alice-1
+rcp_port = 9968
 validator = true
+ws_port = 9922
 # args = ["-lparachain=debug"]
 
 [[hrmp_channels]]
-sender = 2104
-recipient = 2084
 max_capacity = 4
 max_message_size = 524288
+recipient = 2084
+sender = 2104
 
 [[hrmp_channels]]
-sender = 2084
-recipient = 2104
 max_capacity = 4
 max_message_size = 524288
+recipient = 2104
+sender = 2084

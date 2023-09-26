@@ -23,8 +23,8 @@ id = 2084
 [[parachains.collators]]
 command = "manta-binary"
 name = "Alice"
-validator = true
 rcp_port = 9967
+validator = true
 ws_port = 9921
 
 [[parachains.collators]]

@@ -23,9 +23,9 @@ id = 2084
 
 [[parachains.collators]]
 command = "manta-binary"
-name = "Alice" # cannot use alice here, alice has been occupied by one of relaychain node
-validator = true
+name = "Alice"           # cannot use alice here, alice has been occupied by one of relaychain node
 rcp_port = 9967
+validator = true
 ws_port = 9921
 
 [[parachains.collators]]
