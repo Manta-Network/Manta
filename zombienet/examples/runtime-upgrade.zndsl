@@ -1,0 +1,9 @@
+Description: Runtime Upgrade Test
+Network: ./runtime-upgrade.toml
+Creds: config
+
+alice: parachain 2084 is registered within 225 seconds
+bob: parachain 2084 perform upgrade with ./calamari-runtime-v4400.compact.compressed.wasm within 300 seconds
+Bob: reports block height is at least 5 within 250 seconds
+Dave: reports block height is at least 5 within 250 seconds
+Dave: js-script ./runtime.unpragde.js within 600 seconds
