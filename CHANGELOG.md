@@ -14,7 +14,6 @@
 - [\#1234](https://github.com/Manta-Network/Manta/pull/1234) Serialize/deserialize vfr key [MACA]
 - [\#1191](https://github.com/Manta-Network/Manta/pull/1191) Fix metadata diff checker workflow [MACA]
 - [\#1243](https://github.com/Manta-Network/Manta/pull/1243) Add manta docker image to publish
-- [\#1236](https://github.com/Manta-Network/Manta/pull/1236) Update Asset metadata call to not have dummy parameters [MACA]
 - [\#1253](https://github.com/Manta-Network/Manta/pull/1253) Fix benchmark [CA]
 
 ## v4.4.0
