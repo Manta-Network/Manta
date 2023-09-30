@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## v4.4.0-1
+### Added
+- [\#1240](https://github.com/Manta-Network/Manta/pull/1240) :sparkle: org `arc-runner` patch 1 [MACA]
+- [\#1241](https://github.com/Manta-Network/Manta/pull/1241) :bug: arc-runner patch 1.1 [MACA]
+- [\#1238](https://github.com/Manta-Network/Manta/pull/1238) localdev tests [MA]
+- [\#1242](https://github.com/Manta-Network/Manta/pull/1242) :rocket: arc runner migration patch 2.1 [MACA]
+- [\#1244](https://github.com/Manta-Network/Manta/pull/1244) more lottery tests [MACA]
+- [\#1250](https://github.com/Manta-Network/Manta/pull/1250) :wrench: allow all benchmarks to be triggered on feature branch
+- [\#1249](https://github.com/Manta-Network/Manta/pull/1249) Add zombienet examples
+
+### Fixed
+- [\#1234](https://github.com/Manta-Network/Manta/pull/1234) Serialize/deserialize vfr key [MACA]
+- [\#1191](https://github.com/Manta-Network/Manta/pull/1191) Fix metadata diff checker workflow [MACA]
+- [\#1243](https://github.com/Manta-Network/Manta/pull/1243) Add manta docker image to publish
+- [\#1253](https://github.com/Manta-Network/Manta/pull/1253) Fix benchmark [CA]
+
 ## v4.4.0
 ### Added
 - [\#1083](https://github.com/Manta-Network/Manta/pull/1083) tx fees diff support [MACA]

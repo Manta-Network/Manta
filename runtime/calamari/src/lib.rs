@@ -143,10 +143,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 4400,
+    spec_version: 4401,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 15,
+    transaction_version: 16,
     state_version: 0,
 };
 
@@ -245,10 +245,6 @@ impl Contains<RuntimeCall> for BaseFilter {
                                 | pallet_democracy::Call::cancel_proposal {..}
                                 | pallet_democracy::Call::clear_public_proposals {..})
             | RuntimeCall::Treasury(_) // Treasury calls are filtered while it is accumulating funds.
-            // Everything except transfer() is filtered out until it is practically needed:
-            | RuntimeCall::XTokens(
-                                orml_xtokens::Call::transfer_with_fee {..}
-                                | orml_xtokens::Call::transfer_multiasset {..})
             // Filter callables from XCM pallets, we use XTokens exclusively
             | RuntimeCall::XcmpQueue(_) | RuntimeCall::DmpQueue(_) => false,
 
@@ -306,10 +302,7 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::MantaPay(_)
             | RuntimeCall::MantaSbt(_)
             | RuntimeCall::NameService(_)
-            | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..}
-                | orml_xtokens::Call::transfer_multicurrencies {..}
-                | orml_xtokens::Call::transfer_multiassets {..}
-                | orml_xtokens::Call::transfer_multiasset_with_fee {..})
+            | RuntimeCall::XTokens(_)
             | RuntimeCall::TransactionPause(_)
             | RuntimeCall::ZenlinkProtocol(_)
             | RuntimeCall::Farming(_)
