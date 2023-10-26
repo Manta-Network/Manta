@@ -244,7 +244,6 @@ impl Contains<RuntimeCall> for BaseFilter {
             | pallet_assets::Call::finish_destroy {..}
             | pallet_assets::Call::mint {..}
             | pallet_assets::Call::burn {..}
-            | pallet_assets::Call::create {..}
             | pallet_assets::Call::force_transfer {..}
             | pallet_assets::Call::freeze {..}
             | pallet_assets::Call::thaw {..}
