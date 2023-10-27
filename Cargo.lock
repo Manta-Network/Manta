@@ -1118,8 +1118,8 @@ dependencies = [
  "hex-literal",
  "lazy_static",
  "log",
- "manta-collator-selection",
- "manta-primitives",
+ "manta-collator-selection 4.4.0",
+ "manta-primitives 4.4.0",
  "nimbus-primitives",
  "orml-traits",
  "orml-xtokens",
@@ -1142,7 +1142,7 @@ dependencies = [
  "pallet-membership",
  "pallet-multisig",
  "pallet-name-service",
- "pallet-parachain-staking",
+ "pallet-parachain-staking 4.4.0",
  "pallet-preimage",
  "pallet-randomness",
  "pallet-ranked-collective",
@@ -1164,11 +1164,11 @@ dependencies = [
  "polkadot-primitives",
  "polkadot-runtime-parachains",
  "reqwest",
- "runtime-common",
+ "runtime-common 4.4.0",
  "scale-info",
  "serde",
  "serde_json",
- "session-key-primitives",
+ "session-key-primitives 4.4.0",
  "smallvec",
  "sp-api",
  "sp-application-crypto",
@@ -1203,7 +1203,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "manta-primitives",
+ "manta-primitives 4.4.0",
  "pallet-balances",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -4176,8 +4176,8 @@ dependencies = [
  "frame-support",
  "frame-system",
  "lazy_static",
- "manta-collator-selection",
- "manta-primitives",
+ "manta-collator-selection 4.4.0",
+ "manta-primitives 4.4.0",
  "manta-runtime",
  "nimbus-primitives",
  "orml-traits",
@@ -4191,7 +4191,7 @@ dependencies = [
  "pallet-manta-sbt",
  "pallet-manta-support",
  "pallet-membership",
- "pallet-parachain-staking",
+ "pallet-parachain-staking 4.4.0",
  "pallet-scheduler",
  "pallet-session",
  "pallet-transaction-payment",
@@ -4203,9 +4203,9 @@ dependencies = [
  "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-runtime-parachains",
- "runtime-common",
+ "runtime-common 4.4.0",
  "scale-info",
- "session-key-primitives",
+ "session-key-primitives 4.4.0",
  "sp-arithmetic",
  "sp-core",
  "sp-io",
@@ -5314,7 +5314,7 @@ dependencies = [
  "hex-literal",
  "jsonrpsee",
  "log",
- "manta-primitives",
+ "manta-primitives 4.4.0",
  "manta-runtime",
  "nimbus-consensus",
  "nimbus-primitives",
@@ -5324,7 +5324,7 @@ dependencies = [
  "pallet-lottery",
  "pallet-manta-pay",
  "pallet-manta-sbt",
- "pallet-parachain-staking",
+ "pallet-parachain-staking 4.4.0",
  "pallet-transaction-payment-rpc",
  "parity-scale-codec",
  "polkadot-cli",
@@ -5352,7 +5352,7 @@ dependencies = [
  "sc-transaction-pool",
  "sc-transaction-pool-api",
  "serde",
- "session-key-primitives",
+ "session-key-primitives 4.4.0",
  "sp-api",
  "sp-application-crypto",
  "sp-arithmetic",
@@ -5403,7 +5403,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "manta-primitives",
+ "manta-primitives 4.4.0",
  "nimbus-primitives",
  "pallet-aura",
  "pallet-authorship",
@@ -5422,6 +5422,27 @@ dependencies = [
  "sp-staking",
  "sp-std",
  "sp-tracing",
+]
+
+[[package]]
+name = "manta-collator-selection"
+version = "4.4.0"
+source = "git+https://github.com/Manta-Network/Manta.git#0814f5d3c1490be7f6a04d0b41593c3da93e5800"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "nimbus-primitives",
+ "pallet-authorship",
+ "pallet-session",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
 ]
 
 [[package]]
@@ -5504,6 +5525,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "manta-primitives"
+version = "4.4.0"
+source = "git+https://github.com/Manta-Network/Manta.git#0814f5d3c1490be7f6a04d0b41593c3da93e5800"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "orml-traits",
+ "parity-scale-codec",
+ "scale-info",
+ "smallvec",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
+]
+
+[[package]]
 name = "manta-runtime"
 version = "4.4.0"
 dependencies = [
@@ -5525,8 +5567,8 @@ dependencies = [
  "frame-try-runtime",
  "hex-literal",
  "log",
- "manta-collator-selection",
- "manta-primitives",
+ "manta-collator-selection 4.4.0",
+ "manta-primitives 4.4.0",
  "nimbus-primitives",
  "orml-traits",
  "orml-xtokens",
@@ -5548,7 +5590,7 @@ dependencies = [
  "pallet-membership",
  "pallet-multisig",
  "pallet-name-service",
- "pallet-parachain-staking",
+ "pallet-parachain-staking 4.4.0",
  "pallet-preimage",
  "pallet-randomness",
  "pallet-scheduler",
@@ -5568,10 +5610,10 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-runtime-parachains",
- "runtime-common",
+ "runtime-common 4.4.0",
  "scale-info",
  "serde",
- "session-key-primitives",
+ "session-key-primitives 4.4.0",
  "smallvec",
  "sp-api",
  "sp-application-crypto",
@@ -6491,7 +6533,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "manta-primitives",
+ "manta-primitives 4.4.0",
  "orml-traits",
  "pallet-assets",
  "pallet-balances",
@@ -6853,7 +6895,7 @@ dependencies = [
  "frame-system",
  "hex-literal",
  "log",
- "manta-primitives",
+ "manta-primitives 4.4.0",
  "orml-traits",
  "pallet-asset-manager",
  "pallet-assets",
@@ -6873,7 +6915,7 @@ name = "pallet-farming-rpc-api"
 version = "4.4.0"
 dependencies = [
  "jsonrpsee",
- "manta-primitives",
+ "manta-primitives 4.4.0",
  "pallet-farming-rpc-runtime-api",
  "parity-scale-codec",
  "serde",
@@ -6888,7 +6930,7 @@ dependencies = [
 name = "pallet-farming-rpc-runtime-api"
 version = "4.4.0"
 dependencies = [
- "manta-primitives",
+ "manta-primitives 4.4.0",
  "parity-scale-codec",
  "sp-api",
  "sp-std",
@@ -6990,37 +7032,28 @@ dependencies = [
 
 [[package]]
 name = "pallet-lottery"
-version = "4.4.0"
+version = "1.0.0"
+source = "git+https://github.com/jumboshrimpslab/lottery-polkadot.git#903c0c30044dc78917c80cca8e1971965a390a75"
 dependencies = [
- "calamari-runtime",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "function_name",
  "jsonrpsee",
- "lazy_static",
  "log",
- "manta-collator-selection",
- "manta-primitives",
- "pallet-balances",
- "pallet-parachain-staking",
- "pallet-preimage",
- "pallet-randomness",
- "pallet-scheduler",
- "pallet-transaction-payment",
+ "manta-primitives 4.4.0 (git+https://github.com/Manta-Network/Manta.git)",
+ "pallet-parachain-staking 4.4.0 (git+https://github.com/Manta-Network/Manta.git)",
  "parity-scale-codec",
  "rand 0.8.5",
- "runtime-common",
+ "runtime-common 4.4.0 (git+https://github.com/Manta-Network/Manta.git)",
  "scale-info",
- "session-key-primitives",
- "similar-asserts",
+ "session-key-primitives 4.4.0 (git+https://github.com/Manta-Network/Manta.git)",
  "sp-api",
  "sp-arithmetic",
  "sp-blockchain",
  "sp-core",
  "sp-io",
  "sp-runtime",
- "sp-staking",
  "sp-std",
 ]
 
@@ -7039,7 +7072,7 @@ dependencies = [
  "manta-accounting",
  "manta-crypto",
  "manta-pay",
- "manta-primitives",
+ "manta-primitives 4.4.0",
  "manta-util",
  "pallet-asset-manager",
  "pallet-assets",
@@ -7075,7 +7108,7 @@ dependencies = [
  "manta-accounting",
  "manta-crypto",
  "manta-pay",
- "manta-primitives",
+ "manta-primitives 4.4.0",
  "manta-util",
  "num_cpus",
  "pallet-asset-manager",
@@ -7112,7 +7145,7 @@ dependencies = [
  "manta-accounting",
  "manta-crypto",
  "manta-pay",
- "manta-primitives",
+ "manta-primitives 4.4.0",
  "manta-util",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
@@ -7181,7 +7214,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "manta-primitives",
+ "manta-primitives 4.4.0",
  "pallet-balances",
  "pallet-manta-support",
  "parity-scale-codec",
@@ -7304,8 +7337,8 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "manta-collator-selection",
- "manta-primitives",
+ "manta-collator-selection 4.4.0",
+ "manta-primitives 4.4.0",
  "pallet-balances",
  "pallet-session",
  "parity-scale-codec",
@@ -7315,6 +7348,28 @@ dependencies = [
  "sp-arithmetic",
  "sp-core",
  "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+ "substrate-fixed 0.5.9 (git+https://github.com/Manta-Network/substrate-fixed.git?tag=v0.5.9)",
+]
+
+[[package]]
+name = "pallet-parachain-staking"
+version = "4.4.0"
+source = "git+https://github.com/Manta-Network/Manta.git#0814f5d3c1490be7f6a04d0b41593c3da93e5800"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "manta-collator-selection 4.4.0 (git+https://github.com/Manta-Network/Manta.git)",
+ "manta-primitives 4.4.0 (git+https://github.com/Manta-Network/Manta.git)",
+ "pallet-session",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
  "sp-runtime",
  "sp-staking",
  "sp-std",
@@ -7356,20 +7411,19 @@ dependencies = [
 [[package]]
 name = "pallet-randomness"
 version = "4.4.0"
+source = "git+https://github.com/jumboshrimpslab/lottery-polkadot.git#903c0c30044dc78917c80cca8e1971965a390a75"
 dependencies = [
- "derive_more",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex",
  "log",
- "manta-primitives",
+ "manta-primitives 4.4.0 (git+https://github.com/Manta-Network/Manta.git)",
  "nimbus-primitives",
- "pallet-balances",
  "parity-scale-codec",
  "scale-info",
  "serde",
- "session-key-primitives",
+ "session-key-primitives 4.4.0 (git+https://github.com/Manta-Network/Manta.git)",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -7675,7 +7729,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "manta-primitives",
+ "manta-primitives 4.4.0",
  "pallet-balances",
  "parity-scale-codec",
  "scale-info",
@@ -10053,7 +10107,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "lazy_static",
- "manta-primitives",
+ "manta-primitives 4.4.0",
  "orml-traits",
  "orml-xtokens",
  "pallet-asset-manager",
@@ -10078,6 +10132,18 @@ dependencies = [
  "xcm-builder",
  "xcm-executor",
  "xcm-simulator",
+]
+
+[[package]]
+name = "runtime-common"
+version = "4.4.0"
+source = "git+https://github.com/Manta-Network/Manta.git#0814f5d3c1490be7f6a04d0b41593c3da93e5800"
+dependencies = [
+ "frame-support",
+ "manta-primitives 4.4.0 (git+https://github.com/Manta-Network/Manta.git)",
+ "pallet-transaction-payment",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -11651,7 +11717,25 @@ name = "session-key-primitives"
 version = "4.4.0"
 dependencies = [
  "async-trait",
- "manta-primitives",
+ "manta-primitives 4.4.0",
+ "nimbus-primitives",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-application-crypto",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
+]
+
+[[package]]
+name = "session-key-primitives"
+version = "4.4.0"
+source = "git+https://github.com/Manta-Network/Manta.git#0814f5d3c1490be7f6a04d0b41593c3da93e5800"
+dependencies = [
+ "async-trait",
+ "manta-primitives 4.4.0 (git+https://github.com/Manta-Network/Manta.git)",
  "nimbus-primitives",
  "parity-scale-codec",
  "scale-info",
