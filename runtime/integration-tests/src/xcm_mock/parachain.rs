@@ -108,6 +108,23 @@ impl frame_system::Config for Runtime {
     type MaxConsumers = ConstU32<16>;
 }
 
+pub struct MockNativeBarrier;
+impl orml_traits::native_barrier::NativeBarrier<AccountId, Balance> for MockNativeBarrier {
+    fn update_native_barrier(_account_id: &AccountId, _amount: Balance) {}
+    fn ensure_limit_not_exceeded(
+        _account_id: &AccountId,
+        _amount: Balance,
+    ) -> frame_support::dispatch::DispatchResult {
+        Ok(())
+    }
+}
+
+impl orml_traits::native_barrier::NativeChecker<CurrencyId> for MockNativeBarrier {
+    fn is_native(_currency_id: &CurrencyId) -> bool {
+        true
+    }
+}
+
 parameter_types! {
     pub ExistentialDeposit: Balance = 1;
     pub const MaxLocks: u32 = 50;
@@ -124,6 +141,7 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
+    type NativeBarrierType = MockNativeBarrier;
 }
 
 parameter_types! {
@@ -700,6 +718,7 @@ impl orml_xtokens::Config for Runtime {
     type MultiLocationsFilter = AssetManager;
     type OutgoingAssetsFilter = AssetManager;
     type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
+    type NativeBarrierType = MockNativeBarrier;
 }
 
 impl parachain_info::Config for Runtime {}

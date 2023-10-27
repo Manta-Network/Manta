@@ -108,6 +108,7 @@ impl pallet_balances::Config for Test {
     type WeightInfo = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
+    type NativeBarrierType = MockNativeBarrier;
 }
 
 parameter_types! {
@@ -260,6 +261,23 @@ impl pallet_asset_manager::Config for Test {
     type PermissionlessAssetRegistryCost = ConstU128<1000>;
 }
 
+pub struct MockNativeBarrier;
+impl orml_traits::native_barrier::NativeBarrier<AccountId32, Balance> for MockNativeBarrier {
+    fn update_native_barrier(_account_id: &AccountId32, _amount: Balance) {}
+    fn ensure_limit_not_exceeded(
+        _account_id: &AccountId32,
+        _amount: Balance,
+    ) -> frame_support::dispatch::DispatchResult {
+        Ok(())
+    }
+}
+
+impl orml_traits::native_barrier::NativeChecker<u64> for MockNativeBarrier {
+    fn is_native(_currency_id: &u64) -> bool {
+        true
+    }
+}
+
 parameter_types! {
     pub const MantaPayPalletId: PalletId = MANTA_PAY_PALLET_ID;
 }
@@ -269,6 +287,7 @@ impl crate::Config for Test {
     type WeightInfo = crate::weights::SubstrateWeight<Self>;
     type PalletId = MantaPayPalletId;
     type AssetConfig = MantaAssetConfig;
+    type NativeBarrierType = MockNativeBarrier;
 }
 
 parameter_types! {

@@ -482,6 +482,14 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = NativeTokenExistentialDeposit;
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
+    type NativeBarrierType = NativeBarrier;
+}
+
+impl pallet_native_barrier::Config for Runtime {
+    type Balance = Balance;
+    type RuntimeEvent = RuntimeEvent;
+    type UnixTime = Timestamp;
+    type WeightInfo = weights::pallet_native_barrier::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -991,6 +999,7 @@ construct_runtime!(
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
         XTokens: orml_xtokens::{Pallet, Call, Event<T>, Storage} = 34,
+        NativeBarrier: pallet_native_barrier::{Pallet, Call, Event<T>, Storage} = 35,
 
         // Handy utilities.
         Utility: pallet_utility::{Pallet, Call, Event} = 40,
@@ -1086,6 +1095,7 @@ mod benches {
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
         [pallet_name_service, NameService]
+        [pallet_native_barrier, NativeBarrier]
         // Dex
         [zenlink_protocol, ZenlinkProtocol]
         [pallet_farming, Farming]
@@ -1362,11 +1372,11 @@ impl_runtime_apis! {
 
     impl pallet_farming_rpc_runtime_api::FarmingRuntimeApi<Block, AccountId, CalamariAssetId, PoolId> for Runtime {
         fn get_farming_rewards(who: AccountId, pid: PoolId) -> Vec<(CalamariAssetId, Balance)> {
-            Farming::get_farming_rewards(&who, pid).unwrap_or(Vec::new())
+            Farming::get_farming_rewards(&who, pid).unwrap_or_default()
         }
 
         fn get_gauge_rewards(who: AccountId, pid: PoolId) -> Vec<(CalamariAssetId, Balance)> {
-            Farming::get_gauge_rewards(&who, pid).unwrap_or(Vec::new())
+            Farming::get_gauge_rewards(&who, pid).unwrap_or_default()
         }
     }
 

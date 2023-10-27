@@ -16,8 +16,8 @@
 
 use super::{
     weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, CouncilCollective,
-    NativeTokenExistentialDeposit, Runtime, RuntimeEvent, RuntimeOrigin, TechnicalCollective,
-    Timestamp, MANTA,
+    NativeBarrier, NativeTokenExistentialDeposit, Runtime, RuntimeEvent, RuntimeOrigin,
+    TechnicalCollective, Timestamp, MANTA,
 };
 
 use manta_primitives::{
@@ -196,6 +196,7 @@ impl pallet_manta_pay::Config for Runtime {
     type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
     type AssetConfig = MantaAssetConfig;
     type PalletId = MantaPayPalletId;
+    type NativeBarrierType = NativeBarrier;
 }
 
 impl pallet_manta_sbt::Config for Runtime {

@@ -48,6 +48,7 @@ runtime-benchmarks = [
 try-runtime = [
   "frame-support/try-runtime",
   "frame-system/try-runtime",
+  "pallet-native-barrier/try-runtime",
 ]
 
 # Serde Serialization
@@ -72,6 +73,8 @@ std = [
   "manta-util/std",
   "manta-pay/std",
   "manta-support/std",
+  "pallet-native-barrier/std",
+  "orml-traits/std",
 ]
 
 # Precompute Benchmark Transactions
@@ -119,6 +122,8 @@ manta-pay = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5
 manta-primitives = { path = "../../primitives/manta", default-features = false }
 manta-support = { package = "pallet-manta-support", path = "../manta-support", default-features = false }
 manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.15", default-features = false }
+orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "ghzlatarev/polkadot-v0.9.37" }
+pallet-native-barrier = { path = '../native-barrier', default-features = false }
 
 [dev-dependencies]
 lazy_static = "1.4.0"
@@ -126,7 +131,7 @@ manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v
 manta-pay = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.15", features = ["groth16", "parameters", "scale", "download", "test"] }
 pallet-asset-manager = { path = "../asset-manager" }
 pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
-pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37" }
+pallet-balances = { path = "../balances" }
 pallet-tx-pause = { path = '../tx-pause' }
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }

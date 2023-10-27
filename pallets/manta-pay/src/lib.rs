@@ -118,6 +118,7 @@ pub type FungibleLedgerError = assets::FungibleLedgerError<StandardAssetId, Asse
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    use orml_traits::native_barrier::NativeBarrier;
     use sp_runtime::traits::{AccountIdConversion, Zero};
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -142,6 +143,8 @@ pub mod pallet {
 
         /// Pallet ID
         type PalletId: Get<PalletId>;
+
+        type NativeBarrierType: NativeBarrier<Self::AccountId, AssetValue>;
     }
 
     /// Fungible Ledger Implementation for [`Config`]
@@ -225,6 +228,17 @@ pub mod pallet {
                     Error::<T>::ZeroTransfer
                 );
             }
+
+            let asset_id = id_from_field(post.receiver_posts[0].utxo.public_asset.id)
+                .ok_or(Error::<T>::InvalidAssetId)?;
+
+            if asset_id == <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get() {
+                <T::NativeBarrierType>::ensure_limit_not_exceeded(
+                    &origin,
+                    asset_value_decode(post.sources[0]),
+                )?;
+            }
+
             Self::post_transaction(None, vec![origin], vec![], post)
         }
 

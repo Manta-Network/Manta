@@ -44,7 +44,7 @@ frame-try-runtime = { git = "https://github.com/paritytech/substrate.git", defau
 pallet-assets = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 pallet-aura = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 pallet-authorship = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
-pallet-balances = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
+pallet-balances = { path = "../../pallets/balances", default-features = false }
 pallet-collective = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 pallet-democracy = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 pallet-membership = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
@@ -85,8 +85,8 @@ xcm-builder = { git = 'https://github.com/paritytech/polkadot.git', default-feat
 xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.37" }
 
 # Third party (vendored) dependencies
-orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.37" }
-orml-xtokens = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.37" }
+orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "ghzlatarev/polkadot-v0.9.37" }
+orml-xtokens = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "ghzlatarev/polkadot-v0.9.37" }
 
 zenlink-protocol = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37", default-features = false }
 zenlink-protocol-runtime-api = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37", default-features = false }
@@ -102,6 +102,7 @@ pallet-lottery = { path = '../../pallets/pallet-lottery', default-features = fal
 pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
 pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
 pallet-name-service = { path = '../../pallets/name-service', default-features = false }
+pallet-native-barrier = { path = '../../pallets/native-barrier', default-features = false }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
 pallet-randomness = { path = '../../pallets/randomness', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
@@ -163,6 +164,7 @@ runtime-benchmarks = [
   'pallet-name-service/runtime-benchmarks',
   "zenlink-protocol/runtime-benchmarks",
   'pallet-farming/runtime-benchmarks',
+  'pallet-native-barrier/runtime-benchmarks',
 ]
 try-runtime = [
   'frame-try-runtime',
@@ -207,6 +209,7 @@ try-runtime = [
   'pallet-lottery/try-runtime',
   "zenlink-protocol/try-runtime",
   "pallet-farming/try-runtime",
+  "pallet-native-barrier/try-runtime",
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
@@ -285,6 +288,7 @@ std = [
   "zenlink-protocol-runtime-api/std",
   "pallet-farming/std",
   "pallet-farming-rpc-runtime-api/std",
+  "pallet-native-barrier/std",
 ]
 # A feature that should be enabled when the runtime should be build for on-chain
 # deployment. This will disable stuff that shouldn't be part of the on-chain wasm

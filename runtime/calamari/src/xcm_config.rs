@@ -15,9 +15,10 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    assets_config::CalamariAssetConfig, AssetManager, Assets, Balances, DmpQueue,
-    EnsureRootOrMoreThanHalfCouncil, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime,
-    RuntimeCall, RuntimeEvent, RuntimeOrigin, Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
+    assets_config::{CalamariAssetConfig, NativeAssetLocation},
+    AssetManager, Assets, Balances, DmpQueue, EnsureRootOrMoreThanHalfCouncil, NativeBarrier,
+    ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
+    Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
 use codec::{Decode, Encode};
 use core::marker::PhantomData;
@@ -347,6 +348,16 @@ impl Contains<CurrencyId> for AssetManager {
     }
 }
 
+impl orml_traits::native_barrier::NativeChecker<CurrencyId> for NativeBarrier {
+    fn is_native(currency_id: &CurrencyId) -> bool {
+        let asset_location =
+            CurrencyIdtoMultiLocation::<AssetIdLocationConvert<AssetManager>>::convert(
+                currency_id.clone(),
+            );
+        asset_location == NativeAssetLocation::get().into() || asset_location == Some(Here.into())
+    }
+}
+
 // The XCM message wrapper wrapper
 impl orml_xtokens::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
@@ -375,5 +386,6 @@ impl orml_xtokens::Config for Runtime {
     type MinXcmFee = AssetManager;
     type MultiLocationsFilter = AssetManager;
     type OutgoingAssetsFilter = AssetManager;
+    type NativeBarrierType = NativeBarrier;
     type ReserveProvider = AbsoluteReserveProvider;
 }

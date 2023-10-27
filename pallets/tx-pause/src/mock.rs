@@ -72,6 +72,22 @@ impl frame_system::Config for Runtime {
     type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
+pub struct MockNativeBarrier;
+impl orml_traits::native_barrier::NativeBarrier<AccountId, Balance> for MockNativeBarrier {
+    fn update_native_barrier(_account_id: &AccountId, _amount: Balance) {}
+    fn ensure_limit_not_exceeded(
+        _account_id: &AccountId,
+        _amount: Balance,
+    ) -> frame_support::dispatch::DispatchResult {
+        Ok(())
+    }
+}
+
+impl orml_traits::native_barrier::NativeChecker<u64> for MockNativeBarrier {
+    fn is_native(_currency_id: &u64) -> bool {
+        true
+    }
+}
 
 parameter_types! {
     pub const NativeTokenExistentialDeposit: Balance = 10;
@@ -87,6 +103,7 @@ impl pallet_balances::Config for Runtime {
     type MaxReserves = ConstU32<50>;
     type ReserveIdentifier = ();
     type WeightInfo = ();
+    type NativeBarrierType = MockNativeBarrier;
 }
 
 ord_parameter_types! {
