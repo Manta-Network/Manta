@@ -1,4 +1,7 @@
 # CHANGELOG
+## v4.4.0-2
+### Changed
+- [\#1258](https://github.com/Manta-Network/Manta/pull/1258) Allow pallet-assets transfers [CA]
 
 ## v4.4.0-1
 ### Added
