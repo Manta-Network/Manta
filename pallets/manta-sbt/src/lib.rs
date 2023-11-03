@@ -800,7 +800,7 @@ pub mod pallet {
         SBTReserved {
             /// Public Account reserving SBT mints
             who: T::AccountId,
-            /// Account which recieves reserved AssetIds, can be the same as the above account
+            /// Account which receives reserved AssetIds, can be the same as the above account
             reserve_account: T::AccountId,
             /// Start of `AssetIds` reserved for use on private ledger
             start_id: StandardAssetId,
@@ -979,7 +979,7 @@ pub mod pallet {
         /// Sender Ledger [`OutgoingNote`] failed to decode
         SenderLedgerOutgoingNodeDecodeFailed,
 
-        /// Reciever Ledger Utxo decode failed
+        /// Receiver Ledger Utxo decode failed
         ReceiverLedgerUtxoDecodeFailed,
 
         /// Receiver Ledger Wrong Checksum Error

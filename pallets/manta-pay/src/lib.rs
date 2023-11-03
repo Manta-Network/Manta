@@ -472,7 +472,7 @@ pub mod pallet {
         /// Sender Ledger [`OutgoingNote`] failed to decode
         SenderLedgerOutgoingNodeDecodeFailed,
 
-        /// Reciever Ledger Utxo decode failed
+        /// Receiver Ledger Utxo decode failed
         ReceiverLedgerUtxoDecodeFailed,
 
         /// Receiver Ledger Wrong Checksum Error
