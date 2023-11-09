@@ -7002,7 +7002,11 @@ dependencies = [
  "log",
  "manta-collator-selection",
  "manta-primitives",
+ "orml-traits",
+ "pallet-asset-manager",
+ "pallet-assets",
  "pallet-balances",
+ "pallet-farming",
  "pallet-parachain-staking",
  "pallet-preimage",
  "pallet-randomness",
@@ -7022,6 +7026,7 @@ dependencies = [
  "sp-runtime",
  "sp-staking",
  "sp-std",
+ "xcm",
 ]
 
 [[package]]

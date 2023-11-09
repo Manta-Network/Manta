@@ -104,6 +104,8 @@ pub mod pallet {
         PalletId,
     };
     use frame_system::{pallet_prelude::*, RawOrigin};
+    use manta_primitives::types::PoolId;
+    use orml_traits::MultiCurrency;
     use pallet_parachain_staking::BalanceOf;
     use sp_arithmetic::traits::SaturatedConversion;
     use sp_core::U256;
@@ -118,7 +120,9 @@ pub mod pallet {
     pub type CallOf<T> = <T as Config>::RuntimeCall;
 
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_parachain_staking::Config {
+    pub trait Config:
+        frame_system::Config + pallet_parachain_staking::Config + pallet_farming::Config
+    {
         /// The aggregated `RuntimeCall` type.
         type RuntimeCall: Parameter
             + Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>
@@ -131,7 +135,18 @@ pub mod pallet {
             Self::PalletsOrigin,
             Hash = Self::Hash,
         >;
-        // Randomness source to use for determining lottery winner
+        /// CurrencyId for the JUMBO token
+        type JumboShrimpCurrencyId: Get<<Self as pallet_farming::Config>::CurrencyId>;
+        /// PoolId for JumboShrimp Farming Pool
+        type PoolId: Get<PoolId>;
+        /// Helper to convert between Balance types of `MultiCurrency` and `Currency` (most likely equivalent types in runtime)
+        type BalanceConversion: Copy
+            + Into<
+                <<Self as pallet_farming::Config>::MultiCurrency as MultiCurrency<
+                    <Self as frame_system::Config>::AccountId,
+                >>::Balance,
+            > + From<BalanceOf<Self>>;
+        /// Randomness source to use for determining lottery winner
         type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
         /// Something that can estimate the cost of sending an extrinsic
         type EstimateCallFee: frame_support::traits::EstimateCallFee<
@@ -393,6 +408,19 @@ pub mod pallet {
                 Self::min_deposit() >= <T as pallet_parachain_staking::Config>::MinDelegation::get(),
                 Error::<T>::PalletMisconfigured
             };
+
+            let convert_amount: T::BalanceConversion = amount.into();
+            <T as pallet_farming::Config>::MultiCurrency::deposit(
+                T::JumboShrimpCurrencyId::get(),
+                &caller_account,
+                convert_amount.into(),
+            )?;
+            pallet_farming::Pallet::<T>::deposit_farming(
+                caller_account.clone(),
+                T::PoolId::get(),
+                convert_amount.into(),
+                None,
+            )?;
 
             // Transfer funds to pot
             <T as pallet_parachain_staking::Config>::Currency::transfer(
