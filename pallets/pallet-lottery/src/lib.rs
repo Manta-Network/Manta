@@ -409,6 +409,7 @@ pub mod pallet {
                 Error::<T>::PalletMisconfigured
             };
 
+            // mint JUMBO token and put it in farming pool
             let convert_amount: T::BalanceConversion = amount.into();
             <T as pallet_farming::Config>::MultiCurrency::deposit(
                 T::JumboShrimpCurrencyId::get(),
@@ -489,6 +490,15 @@ pub mod pallet {
                 Self::not_in_drawing_freezeout(),
                 Error::<T>::TooCloseToDrawing
             );
+
+            let convert_amount: T::BalanceConversion = amount.into();
+            pallet_farming::Pallet::<T>::withdraw_farming(caller.clone(), T::PoolId::get())?;
+            <T as pallet_farming::Config>::MultiCurrency::withdraw(
+                T::JumboShrimpCurrencyId::get(),
+                &caller,
+                convert_amount.into(),
+            )?;
+
             let now = <frame_system::Pallet<T>>::block_number();
             log::debug!("Requesting withdraw of {:?} tokens", amount);
             // Ensure user has enough funds active and mark them as offboarding (remove from `ActiveBalancePerUser`)
