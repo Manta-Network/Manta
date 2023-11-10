@@ -444,32 +444,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let exchanger = ensure_signed(origin)?;
 
-            let pool_info = Self::pool_infos(pool_id).ok_or(Error::<T>::PoolDoesNotExist)?;
-            ensure!(
-                PoolState::state_valid(Action::Withdraw, pool_info.state),
-                Error::<T>::InvalidPoolState
-            );
-
-            let share_info = Self::shares_and_withdrawn_rewards(pool_id, &exchanger)
-                .ok_or(Error::<T>::ShareInfoNotExists)?;
-            ensure!(
-                share_info.withdraw_list.len() < pool_info.withdraw_limit_count.into(),
-                Error::<T>::WithdrawLimitCountExceeded
-            );
-
-            Self::remove_share(
-                &exchanger,
-                pool_id,
-                remove_value,
-                pool_info.withdraw_limit_time,
-            )?;
-
-            Self::deposit_event(Event::Withdrawn {
-                who: exchanger,
-                pid: pool_id,
-                remove_value,
-            });
-            Ok(())
+            Self::withdraw_amount(exchanger, pool_id, remove_value)
         }
 
         /// `claim` operation can claim rewards and also un-stake if user share info has `withdraw_list`.
@@ -954,5 +929,47 @@ impl<T: Config> Pallet<T> {
             pid: pool_id,
         });
         Ok(())
+    }
+
+    pub fn withdraw_amount(
+        exchanger: T::AccountId,
+        pool_id: PoolId,
+        remove_value: Option<BalanceOf<T>>,
+    ) -> DispatchResult {
+        let pool_info = Self::pool_infos(pool_id).ok_or(Error::<T>::PoolDoesNotExist)?;
+        ensure!(
+            PoolState::state_valid(Action::Withdraw, pool_info.state),
+            Error::<T>::InvalidPoolState
+        );
+
+        let share_info = Self::shares_and_withdrawn_rewards(pool_id, &exchanger)
+            .ok_or(Error::<T>::ShareInfoNotExists)?;
+        ensure!(
+            share_info.withdraw_list.len() < pool_info.withdraw_limit_count.into(),
+            Error::<T>::WithdrawLimitCountExceeded
+        );
+
+        Self::remove_share(
+            &exchanger,
+            pool_id,
+            remove_value,
+            pool_info.withdraw_limit_time,
+        )?;
+
+        Self::deposit_event(Event::Withdrawn {
+            who: exchanger,
+            pid: pool_id,
+            remove_value,
+        });
+        Ok(())
+    }
+
+    pub fn withdraw_and_unstake(
+        exchanger: T::AccountId,
+        pool_id: PoolId,
+        remove_value: Option<BalanceOf<T>>,
+    ) -> DispatchResult {
+        Self::withdraw_amount(exchanger.clone(), pool_id, remove_value)?;
+        Self::withdraw_farming(exchanger, pool_id)
     }
 }

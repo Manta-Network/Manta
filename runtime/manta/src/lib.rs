@@ -410,6 +410,10 @@ parameter_types! {
     pub DrawingFreezeout: BlockNumber = prod_or_fast!(1 * DAYS, 1 * MINUTES);
     /// Time in blocks until a collator is done unstaking
     pub UnstakeLockTime: BlockNumber = LeaveDelayRounds::get() * DefaultBlocksPerRound::get();
+    /// JumboShrimp CurrencyId
+    pub JumboShrimpCurrencyId: MantaAssetId = 8;
+    /// Farming PoolId for JUMBO token
+    pub JumboShrimpPoolId: PoolId = 0;
 }
 impl pallet_lottery::Config for Runtime {
     type RuntimeCall = RuntimeCall;
@@ -423,6 +427,9 @@ impl pallet_lottery::Config for Runtime {
     type DrawingInterval = DrawingInterval;
     type DrawingFreezeout = DrawingFreezeout;
     type UnstakeLockTime = UnstakeLockTime;
+    type JumboShrimpCurrencyId = JumboShrimpCurrencyId;
+    type PoolId = JumboShrimpPoolId;
+    type BalanceConversion = Balance;
     type WeightInfo = weights::pallet_lottery::SubstrateWeight<Runtime>;
 }
 

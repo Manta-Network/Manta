@@ -448,9 +448,9 @@ parameter_types! {
     /// Time in blocks until a collator is done unstaking
     pub UnstakeLockTime: BlockNumber = LeaveDelayRounds::get() * DefaultBlocksPerRound::get();
     /// JumboShrimp CurrencyId
-    pub JumboShrimpCurrencyId: CalamariAssetId = 10;
+    pub JumboShrimpCurrencyId: CalamariAssetId = 8;
     /// Farming PoolId for JUMBO token
-    pub JumboShrimpPoolId: PoolId = 5;
+    pub JumboShrimpPoolId: PoolId = 0;
 }
 impl pallet_lottery::Config for Runtime {
     type RuntimeCall = RuntimeCall;

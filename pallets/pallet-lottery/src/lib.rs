@@ -492,7 +492,11 @@ pub mod pallet {
             );
 
             let convert_amount: T::BalanceConversion = amount.into();
-            pallet_farming::Pallet::<T>::withdraw_farming(caller.clone(), T::PoolId::get())?;
+            pallet_farming::Pallet::<T>::withdraw_and_unstake(
+                caller.clone(),
+                T::PoolId::get(),
+                Some(convert_amount.into()),
+            )?;
             <T as pallet_farming::Config>::MultiCurrency::withdraw(
                 T::JumboShrimpCurrencyId::get(),
                 &caller,

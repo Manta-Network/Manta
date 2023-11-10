@@ -21,7 +21,7 @@ use crate as pallet_lottery;
 use crate::{pallet, Config};
 use calamari_runtime::currency::KMA;
 use frame_support::{
-    construct_runtime, ord_parameter_types,
+    assert_ok, construct_runtime, ord_parameter_types,
     pallet_prelude::*,
     parameter_types,
     traits::{
@@ -33,7 +33,7 @@ use frame_system::{pallet_prelude::*, EnsureNever, EnsureSignedBy};
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
-        AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
+        AssetStorageMetadata, BalanceType, FungibleLedger, LocationType, NativeAndNonNative,
     },
     constants::ASSET_MANAGER_PALLET_ID,
     currencies::Currencies,
@@ -43,11 +43,11 @@ use pallet_parachain_staking::{InflationInfo, Range};
 use sp_core::H256;
 
 use sp_runtime::{
-    traits::{BlakeTwo256, Hash, IdentityLookup},
+    traits::{AccountIdConversion, BlakeTwo256, Hash, IdentityLookup},
     Perbill, Percent,
 };
 use xcm::{
-    prelude::{Parachain, X1},
+    prelude::{Junctions, Parachain, X1},
     v2::MultiLocation,
     VersionedMultiLocation,
 };
@@ -56,7 +56,10 @@ pub type AccountId = u64;
 pub type Balance = u128;
 
 pub const ALICE: AccountId = 1;
+pub const BOB: AccountId = 2;
 pub const TREASURY_ACCOUNT: AccountId = 10;
+pub const JUMBO: Balance = 1_000_000_000_000;
+pub const JUMBO_ID: CalamariAssetId = 8;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -482,9 +485,9 @@ parameter_types! {
     /// Time in blocks until a collator is done unstaking
     pub UnstakeLockTime: BlockNumber = LeaveDelayRounds::get() * DefaultBlocksPerRound::get();
     /// JumboShrimp CurrencyId
-    pub JumboShrimpCurrencyId: CalamariAssetId = 10;
+    pub JumboShrimpCurrencyId: CalamariAssetId = JUMBO_ID;
     /// Farming PoolId for JUMBO token
-    pub JumboShrimpPoolId: PoolId = 5;
+    pub JumboShrimpPoolId: PoolId = 0;
 }
 
 use frame_support::traits::Currency;
@@ -619,10 +622,112 @@ impl ExtBuilder {
         }
         .assimilate_storage(&mut t)
         .expect("pallet_lottery's storage can be assimilated");
+        pallet_asset_manager::GenesisConfig::<Test> {
+            start_id: <MantaAssetConfig as AssetConfig<Test>>::StartNonNativeAssetId::get(),
+        }
+        .assimilate_storage(&mut t)
+        .expect("pallet_asset_manager storage fails");
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
+
+        ext.execute_with(|| {
+            let jumbo_asset_metadata =
+                create_asset_metadata("Jumbo", "JUMBO", 12, 1u128, false, true);
+            let native_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+                0,
+                Junctions::Here,
+            )));
+            // registering manta native asset should work.
+            AssetManager::register_asset(
+                RuntimeOrigin::root(),
+                native_location,
+                jumbo_asset_metadata,
+            )
+            .unwrap();
+
+            assert_ok!(
+                <MantaAssetConfig as AssetConfig<Test>>::FungibleLedger::deposit_minting(
+                    JUMBO_ID,
+                    &TREASURY_ACCOUNT,
+                    1_000 * JUMBO
+                )
+            );
+            assert_ok!(
+                <MantaAssetConfig as AssetConfig<Test>>::FungibleLedger::deposit_minting(
+                    JUMBO_ID,
+                    &ALICE,
+                    1_000 * JUMBO
+                )
+            );
+            assert_ok!(
+                <MantaAssetConfig as AssetConfig<Test>>::FungibleLedger::deposit_minting(
+                    JUMBO_ID,
+                    &BOB,
+                    1_000_000 * JUMBO
+                )
+            );
+
+            init_jumbo_farming();
+        });
+
         ext
+    }
+}
+
+fn init_jumbo_farming() {
+    let tokens_proportion = vec![(JUMBO_ID, Perbill::from_percent(100))];
+    let tokens = JUMBO;
+    let basic_rewards = vec![(JUMBO_ID, JUMBO)];
+
+    assert_ok!(Farming::create_farming_pool(
+        RuntimeOrigin::signed(ALICE),
+        tokens_proportion,
+        basic_rewards,
+        None,
+        0, // min_deposit_to_start
+        0, // after_block_to_start
+        0, // withdraw_limit_time
+        0, // claim_limit_time
+        5  // withdraw_limit_count
+    ));
+
+    let pool_id = 0;
+    let charge_rewards = vec![(JUMBO_ID, 100 * JUMBO)];
+
+    assert_ok!(Farming::charge(
+        RuntimeOrigin::signed(ALICE),
+        pool_id,
+        charge_rewards
+    ));
+    assert_ok!(Farming::deposit(
+        RuntimeOrigin::signed(ALICE),
+        pool_id,
+        tokens,
+        None
+    ));
+
+    let share_info = Farming::shares_and_withdrawn_rewards(pool_id, &ALICE).unwrap();
+    assert_eq!(share_info.share, tokens);
+}
+
+pub(crate) fn create_asset_metadata(
+    name: &str,
+    symbol: &str,
+    decimals: u8,
+    min_balance: u128,
+    is_frozen: bool,
+    is_sufficient: bool,
+) -> AssetRegistryMetadata<Balance> {
+    AssetRegistryMetadata {
+        metadata: AssetStorageMetadata {
+            name: name.as_bytes().to_vec(),
+            symbol: symbol.as_bytes().to_vec(),
+            decimals,
+            is_frozen,
+        },
+        min_balance,
+        is_sufficient,
     }
 }
 
