@@ -25,7 +25,7 @@ pub fn genesis_spec() -> MantaChainSpec {
     let genesis_collators: Vec<Collator> = vec![
         Collator::new(
             hex!("0c9429df04f4c051d022a262d5c786d4cde9688bd230c139814f935f14709975").into(),
-            Some("/dns/c1.calamari.seabird.systems/tcp/30433/p2p/12D3KooWGdvxcAc9KK4ihY4GhC6Mh9QEFiqfVMvHBKHs7HYACPMm".parse().unwrap()),
+            Some("/dns/c1.manta.seabird.systems/tcp/30433/p2p/12D3KooWGdvxcAc9KK4ihY4GhC6Mh9QEFiqfVMvHBKHs7HYACPMm".parse().unwrap()),
             SessionKeys::new((
                 hex!("0c9429df04f4c051d022a262d5c786d4cde9688bd230c139814f935f14709975").unchecked_into(),
                 hex!("0c9429df04f4c051d022a262d5c786d4cde9688bd230c139814f935f14709975").unchecked_into()
@@ -33,7 +33,7 @@ pub fn genesis_spec() -> MantaChainSpec {
         ),
         Collator::new(
             hex!("969bf93aac86684a129d71ab97335a8f462b46516d916c9b62bbf3c1ac2d860e").into(),
-            Some("/dns/c2.calamari.seabird.systems/tcp/30433/p2p/12D3KooWRC2JTv5UdGqesaCwP61CeohNmNQk6jBQUK2AB3PmSsNZ".parse().unwrap()),
+            Some("/dns/c2.manta.seabird.systems/tcp/30433/p2p/12D3KooWRC2JTv5UdGqesaCwP61CeohNmNQk6jBQUK2AB3PmSsNZ".parse().unwrap()),
             SessionKeys::new((
                 hex!("969bf93aac86684a129d71ab97335a8f462b46516d916c9b62bbf3c1ac2d860e").unchecked_into(),
                 hex!("969bf93aac86684a129d71ab97335a8f462b46516d916c9b62bbf3c1ac2d860e").unchecked_into()
@@ -41,7 +41,7 @@ pub fn genesis_spec() -> MantaChainSpec {
         ),
         Collator::new(
             hex!("2234305637d7b6c529caf0169870b2319ece97d59bff1c2c1258dfbeffee9620").into(),
-            Some("/dns/c3.calamari.seabird.systems/tcp/30433/p2p/12D3KooWBWE83sP71QNfhPJr6umSWRyV2rF3tG1ZtauMyEyLprC3".parse().unwrap()),
+            Some("/dns/c3.manta.seabird.systems/tcp/30433/p2p/12D3KooWBWE83sP71QNfhPJr6umSWRyV2rF3tG1ZtauMyEyLprC3".parse().unwrap()),
             SessionKeys::new((
                 hex!("2234305637d7b6c529caf0169870b2319ece97d59bff1c2c1258dfbeffee9620").unchecked_into(),
                 hex!("2234305637d7b6c529caf0169870b2319ece97d59bff1c2c1258dfbeffee9620").unchecked_into()
@@ -49,7 +49,7 @@ pub fn genesis_spec() -> MantaChainSpec {
         ),
         Collator::new(
             hex!("543074b204c62b78c366486839dd0cd7d07f16f3d0226bbcc8a3b41d4a88887a").into(),
-            Some("/dns/c4.calamari.seabird.systems/tcp/30433/p2p/12D3KooWCvAKZDGGd3B81QRhJh8a3TsNbojEtdH8WF2p8mFsVyv1".parse().unwrap()),
+            Some("/dns/c4.manta.seabird.systems/tcp/30433/p2p/12D3KooWCvAKZDGGd3B81QRhJh8a3TsNbojEtdH8WF2p8mFsVyv1".parse().unwrap()),
             SessionKeys::new((
                 hex!("543074b204c62b78c366486839dd0cd7d07f16f3d0226bbcc8a3b41d4a88887a").unchecked_into(),
                 hex!("543074b204c62b78c366486839dd0cd7d07f16f3d0226bbcc8a3b41d4a88887a").unchecked_into()
@@ -57,7 +57,7 @@ pub fn genesis_spec() -> MantaChainSpec {
         ),
         Collator::new(
             hex!("acc4608e1c31f3f98ea1a0f3a8a74ade8aca396f269c26c1dd9019e812b11503").into(),
-            Some("/dns/c5.calamari.seabird.systems/tcp/30433/p2p/12D3KooWQghBNgKanHtS4pCwBGeexw2QPvfgV15eMjr2YckVHCAD".parse().unwrap()),
+            Some("/dns/c5.manta.seabird.systems/tcp/30433/p2p/12D3KooWQghBNgKanHtS4pCwBGeexw2QPvfgV15eMjr2YckVHCAD".parse().unwrap()),
             SessionKeys::new((
                 hex!("acc4608e1c31f3f98ea1a0f3a8a74ade8aca396f269c26c1dd9019e812b11503").unchecked_into(),
                 hex!("acc4608e1c31f3f98ea1a0f3a8a74ade8aca396f269c26c1dd9019e812b11503").unchecked_into()
