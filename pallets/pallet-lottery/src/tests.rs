@@ -898,6 +898,7 @@ fn many_deposit_withdrawals_work() {
             (*EVE, HIGH_BALANCE),
         ])
         .with_funded_lottery_account(HIGH_BALANCE)
+        .with_farming()
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance);
@@ -965,4 +966,60 @@ fn reward_collators_for_round(round: u32, collators: &[AccountId]) {
     for c in collators {
         pallet_parachain_staking::AwardedPts::<Test>::insert(round, c, 20);
     }
+}
+
+#[test]
+fn farming_deposit_withdraw() {
+    let balance = 500_000_000 * UNIT;
+    let half_balance = 250_000_000 * UNIT;
+    let quarter_balance = 125_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![(*ALICE, HIGH_BALANCE), (*BOB, HIGH_BALANCE)])
+        .with_candidates(vec![(*BOB, balance)])
+        .with_funded_lottery_account(balance)
+        .with_farming()
+        .build()
+        .execute_with(|| {
+            assert!(HIGH_BALANCE > balance);
+            assert_eq!(0, Lottery::staked_collators(*BOB));
+            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
+            let alice_post_deposit_balance = Balances::free_balance(*ALICE);
+            assert_eq!(balance, Lottery::staked_collators(*BOB));
+            assert_eq!(balance, Lottery::total_pot());
+            assert_eq!(balance, Lottery::sum_of_deposits());
+
+            assert_ok!(Lottery::request_withdraw(
+                Origin::signed(*ALICE),
+                half_balance
+            ));
+            // surplus = balance - half_balance = half_balance
+            assert_eq!(half_balance, Lottery::surplus_unstaking_balance());
+
+            roll_one_block();
+            assert_ok!(Lottery::request_withdraw(
+                Origin::signed(*ALICE),
+                quarter_balance
+            ));
+            assert_eq!(balance, Lottery::staked_collators(*BOB));
+            // surplus = half_balance - quarter_balance = quarter_balance
+            assert_eq!(quarter_balance, Lottery::surplus_unstaking_balance());
+
+            pallet_parachain_staking::AwardedPts::<Test>::insert(2, *BOB, 20);
+            roll_to_round_begin(3);
+            // funds should be unlocked now and BOB is finished unstaking, so it's eligible for redepositing
+            assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
+            assert_eq!(
+                alice_post_deposit_balance + half_balance + quarter_balance,
+                Balances::free_balance(*ALICE)
+            );
+            assert_eq!(0, Lottery::surplus_unstaking_balance());
+            assert_eq!(0, Lottery::unlocked_unstaking_funds());
+            assert!(Lottery::withdrawal_request_queue().is_empty());
+            assert!(crate::UnstakingCollators::<Test>::get().is_empty());
+            // draw lottery rebalance will restake surplus funds to collators.
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 1);
+            assert_eq!(quarter_balance, Lottery::staked_collators(*BOB));
+            assert_eq!(quarter_balance, Lottery::total_pot());
+            assert_eq!(quarter_balance, Lottery::sum_of_deposits());
+        });
 }

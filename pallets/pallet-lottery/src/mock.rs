@@ -43,7 +43,7 @@ use pallet_parachain_staking::{InflationInfo, Range};
 use sp_core::H256;
 
 use sp_runtime::{
-    traits::{AccountIdConversion, BlakeTwo256, Hash, IdentityLookup},
+    traits::{BlakeTwo256, Hash, IdentityLookup},
     Perbill, Percent,
 };
 use xcm::{
@@ -485,7 +485,7 @@ parameter_types! {
     /// Time in blocks until a collator is done unstaking
     pub UnstakeLockTime: BlockNumber = LeaveDelayRounds::get() * DefaultBlocksPerRound::get();
     /// JumboShrimp CurrencyId
-    pub JumboShrimpCurrencyId: CalamariAssetId = JUMBO_ID;
+    pub JumboFarmingCurrencyID: CalamariAssetId = JUMBO_ID;
     /// Farming PoolId for JUMBO token
     pub JumboShrimpPoolId: PoolId = 0;
 }
@@ -527,7 +527,7 @@ impl Config for Test {
     type DrawingInterval = DrawingInterval;
     type DrawingFreezeout = DrawingFreezeout;
     type UnstakeLockTime = UnstakeLockTime;
-    type JumboShrimpCurrencyId = JumboShrimpCurrencyId;
+    type JumboFarmingCurrencyID = JumboFarmingCurrencyID;
     type PoolId = JumboShrimpPoolId;
     type BalanceConversion = Balance;
     type WeightInfo = ();
@@ -544,6 +544,8 @@ pub(crate) struct ExtBuilder {
     delegations: Vec<(AccountId, AccountId, Balance)>,
     // inflation config
     inflation: InflationInfo<Balance>,
+    // enable farming
+    with_farming: bool,
 }
 
 impl Default for ExtBuilder {
@@ -571,6 +573,7 @@ impl Default for ExtBuilder {
                     max: Perbill::from_percent(5),
                 },
             },
+            with_farming: false,
         }
     }
 }
@@ -584,6 +587,11 @@ impl ExtBuilder {
 
     pub(crate) fn with_balances(mut self, balances: Vec<(AccountId, Balance)>) -> Self {
         self.balances = balances;
+        self
+    }
+
+    pub(crate) fn with_farming(mut self) -> Self {
+        self.with_farming = true;
         self
     }
 
@@ -619,6 +627,7 @@ impl ExtBuilder {
             min_deposit: 5_000 * KMA,
             min_withdraw: 5_000 * KMA,
             gas_reserve: 10_000 * KMA,
+            farming_pool_live: self.with_farming,
         }
         .assimilate_storage(&mut t)
         .expect("pallet_lottery's storage can be assimilated");

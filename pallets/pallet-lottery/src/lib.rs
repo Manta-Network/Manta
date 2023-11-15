@@ -136,7 +136,7 @@ pub mod pallet {
             Hash = Self::Hash,
         >;
         /// CurrencyId for the JUMBO token
-        type JumboShrimpCurrencyId: Get<<Self as pallet_farming::Config>::CurrencyId>;
+        type JumboFarmingCurrencyID: Get<<Self as pallet_farming::Config>::CurrencyId>;
         /// PoolId for JumboShrimp Farming Pool
         type PoolId: Get<PoolId>;
         /// Helper to convert between Balance types of `MultiCurrency` and `Currency` (most likely equivalent types in runtime)
@@ -280,12 +280,21 @@ pub mod pallet {
     pub(super) type StakedCollators<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, ValueQuery>;
 
+    /// Boolean for the minting of a farming token on `deposit` call
+    #[pallet::storage]
+    pub(super) type MintFarmingToken<T: Config> = StorageValue<_, bool, ValueQuery>;
+
+    /// Requires the burning of a farming token when withdrawing from lottery when value is `true`
+    #[pallet::storage]
+    pub(super) type DestroyFarmingToken<T: Config> = StorageValue<_, bool, ValueQuery>;
+
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
         /// amount of token to keep in the pot for paying gas fees
         pub gas_reserve: BalanceOf<T>,
         pub min_deposit: BalanceOf<T>,
         pub min_withdraw: BalanceOf<T>,
+        pub farming_pool_live: bool,
     }
 
     #[cfg(feature = "std")]
@@ -295,6 +304,7 @@ pub mod pallet {
                 min_deposit: 1u32.into(),
                 min_withdraw: 1u32.into(),
                 gas_reserve: 10_000u32.into(),
+                farming_pool_live: false,
             }
         }
     }
@@ -306,6 +316,8 @@ pub mod pallet {
             GasReserve::<T>::set(self.gas_reserve);
             MinDeposit::<T>::set(self.min_deposit);
             MinWithdraw::<T>::set(self.min_withdraw);
+            MintFarmingToken::<T>::set(self.farming_pool_live);
+            MintFarmingToken::<T>::set(self.farming_pool_live);
         }
     }
 
@@ -409,19 +421,21 @@ pub mod pallet {
                 Error::<T>::PalletMisconfigured
             };
 
-            // mint JUMBO token and put it in farming pool
-            let convert_amount: T::BalanceConversion = amount.into();
-            <T as pallet_farming::Config>::MultiCurrency::deposit(
-                T::JumboShrimpCurrencyId::get(),
-                &caller_account,
-                convert_amount.into(),
-            )?;
-            pallet_farming::Pallet::<T>::deposit_farming(
-                caller_account.clone(),
-                T::PoolId::get(),
-                convert_amount.into(),
-                None,
-            )?;
+            if MintFarmingToken::<T>::get() {
+                // mint JUMBO token and put it in farming pool
+                let convert_amount: T::BalanceConversion = amount.into();
+                <T as pallet_farming::Config>::MultiCurrency::deposit(
+                    T::JumboFarmingCurrencyID::get(),
+                    &caller_account,
+                    convert_amount.into(),
+                )?;
+                pallet_farming::Pallet::<T>::deposit_farming(
+                    caller_account.clone(),
+                    T::PoolId::get(),
+                    convert_amount.into(),
+                    None,
+                )?;
+            }
 
             // Transfer funds to pot
             <T as pallet_parachain_staking::Config>::Currency::transfer(
@@ -491,17 +505,19 @@ pub mod pallet {
                 Error::<T>::TooCloseToDrawing
             );
 
-            let convert_amount: T::BalanceConversion = amount.into();
-            pallet_farming::Pallet::<T>::withdraw_and_unstake(
-                caller.clone(),
-                T::PoolId::get(),
-                Some(convert_amount.into()),
-            )?;
-            <T as pallet_farming::Config>::MultiCurrency::withdraw(
-                T::JumboShrimpCurrencyId::get(),
-                &caller,
-                convert_amount.into(),
-            )?;
+            if DestroyFarmingToken::<T>::get() {
+                let convert_amount: T::BalanceConversion = amount.into();
+                pallet_farming::Pallet::<T>::withdraw_and_unstake(
+                    caller.clone(),
+                    T::PoolId::get(),
+                    Some(convert_amount.into()),
+                )?;
+                <T as pallet_farming::Config>::MultiCurrency::withdraw(
+                    T::JumboFarmingCurrencyID::get(),
+                    &caller,
+                    convert_amount.into(),
+                )?;
+            }
 
             let now = <frame_system::Pallet<T>>::block_number();
             log::debug!("Requesting withdraw of {:?} tokens", amount);
@@ -889,6 +905,19 @@ pub mod pallet {
         pub fn set_gas_reserve(origin: OriginFor<T>, gas_reserve: BalanceOf<T>) -> DispatchResult {
             T::ManageOrigin::ensure_origin(origin.clone())?;
             GasReserve::<T>::set(gas_reserve);
+            Ok(())
+        }
+        #[pallet::call_index(12)]
+        #[pallet::weight(<T as Config>::WeightInfo::set_gas_reserve())]
+        pub fn set_farming_params(
+            origin: OriginFor<T>,
+            mint_farming_token: bool,
+            burn_farming_token: bool,
+        ) -> DispatchResult {
+            T::ManageOrigin::ensure_origin(origin)?;
+
+            MintFarmingToken::<T>::set(mint_farming_token);
+            DestroyFarmingToken::<T>::set(burn_farming_token);
             Ok(())
         }
     }
