@@ -20,7 +20,7 @@ use crate::{
         roll_one_block, roll_to, roll_to_round_begin, roll_to_round_end, AccountId, Balance,
         Balances, ExtBuilder, Lottery, ParachainStaking, RuntimeOrigin as Origin, System, Test,
     },
-    Config, Error,
+    Config, DestroyFarmingToken, Error, MintFarmingToken,
 };
 
 use frame_support::{assert_noop, assert_ok, traits::Currency};
@@ -898,7 +898,6 @@ fn many_deposit_withdrawals_work() {
             (*EVE, HIGH_BALANCE),
         ])
         .with_funded_lottery_account(HIGH_BALANCE)
-        .with_farming()
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance);
@@ -966,6 +965,26 @@ fn reward_collators_for_round(round: u32, collators: &[AccountId]) {
     for c in collators {
         pallet_parachain_staking::AwardedPts::<Test>::insert(round, c, 20);
     }
+}
+
+#[test]
+fn enable_farming_works() {
+    ExtBuilder::default().build().execute_with(|| {
+        assert!(!MintFarmingToken::<Test>::get());
+        assert!(!DestroyFarmingToken::<Test>::get());
+        assert_noop!(
+            Lottery::set_farming_params(Origin::signed(*BOB), true, true),
+            sp_runtime::DispatchError::BadOrigin
+        );
+
+        assert_ok!(Lottery::set_farming_params(Origin::root(), true, false));
+        assert!(MintFarmingToken::<Test>::get());
+        assert!(!DestroyFarmingToken::<Test>::get());
+
+        assert_ok!(Lottery::set_farming_params(Origin::root(), false, true));
+        assert!(!MintFarmingToken::<Test>::get());
+        assert!(DestroyFarmingToken::<Test>::get());
+    });
 }
 
 #[test]

@@ -43,7 +43,7 @@ use pallet_parachain_staking::{InflationInfo, Range};
 use sp_core::H256;
 
 use sp_runtime::{
-    traits::{BlakeTwo256, Hash, IdentityLookup},
+    traits::{AccountIdConversion, BlakeTwo256, Hash, IdentityLookup},
     Perbill, Percent,
 };
 use xcm::{
@@ -59,7 +59,9 @@ pub const ALICE: AccountId = 1;
 pub const BOB: AccountId = 2;
 pub const TREASURY_ACCOUNT: AccountId = 10;
 pub const JUMBO: Balance = 1_000_000_000_000;
-pub const JUMBO_ID: CalamariAssetId = 8;
+pub const MANTA_ID: CalamariAssetId = 1;
+pub const V_MANTA_ID: CalamariAssetId = 8;
+pub const JUMBO_ID: CalamariAssetId = 9;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -485,7 +487,7 @@ parameter_types! {
     /// Time in blocks until a collator is done unstaking
     pub UnstakeLockTime: BlockNumber = LeaveDelayRounds::get() * DefaultBlocksPerRound::get();
     /// JumboShrimp CurrencyId
-    pub JumboFarmingCurrencyID: CalamariAssetId = JUMBO_ID;
+    pub JumboFarmingCurrencyID: CalamariAssetId = V_MANTA_ID;
     /// Farming PoolId for JUMBO token
     pub JumboShrimpPoolId: PoolId = 0;
 }
@@ -641,13 +643,25 @@ impl ExtBuilder {
         ext.execute_with(|| System::set_block_number(1));
 
         ext.execute_with(|| {
+            let v_manta_asset_metadata =
+                create_asset_metadata("vManta", "vMANTA", 12, 1u128, false, true);
             let jumbo_asset_metadata =
                 create_asset_metadata("Jumbo", "JUMBO", 12, 1u128, false, true);
+            let v_manta_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+                1,
+                Junctions::Here,
+            )));
             let native_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
                 0,
                 Junctions::Here,
             )));
-            // registering manta native asset should work.
+            // register vMANTA and JUMBO asset should work.
+            AssetManager::register_asset(
+                RuntimeOrigin::root(),
+                v_manta_location,
+                v_manta_asset_metadata,
+            )
+            .unwrap();
             AssetManager::register_asset(
                 RuntimeOrigin::root(),
                 native_location,
@@ -657,11 +671,20 @@ impl ExtBuilder {
 
             assert_ok!(
                 <MantaAssetConfig as AssetConfig<Test>>::FungibleLedger::deposit_minting(
+                    V_MANTA_ID,
+                    &TREASURY_ACCOUNT,
+                    1_000 * JUMBO
+                )
+            );
+
+            assert_ok!(
+                <MantaAssetConfig as AssetConfig<Test>>::FungibleLedger::deposit_minting(
                     JUMBO_ID,
                     &TREASURY_ACCOUNT,
                     1_000 * JUMBO
                 )
             );
+
             assert_ok!(
                 <MantaAssetConfig as AssetConfig<Test>>::FungibleLedger::deposit_minting(
                     JUMBO_ID,
@@ -669,11 +692,12 @@ impl ExtBuilder {
                     1_000 * JUMBO
                 )
             );
+
             assert_ok!(
                 <MantaAssetConfig as AssetConfig<Test>>::FungibleLedger::deposit_minting(
-                    JUMBO_ID,
-                    &BOB,
-                    1_000_000 * JUMBO
+                    V_MANTA_ID,
+                    &ALICE,
+                    1_000 * JUMBO
                 )
             );
 
@@ -685,7 +709,7 @@ impl ExtBuilder {
 }
 
 fn init_jumbo_farming() {
-    let tokens_proportion = vec![(JUMBO_ID, Perbill::from_percent(100))];
+    let tokens_proportion = vec![(V_MANTA_ID, Perbill::from_percent(100))];
     let tokens = JUMBO;
     let basic_rewards = vec![(JUMBO_ID, JUMBO)];
 
