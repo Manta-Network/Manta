@@ -7016,6 +7016,7 @@ dependencies = [
  "rand 0.8.5",
  "runtime-common",
  "scale-info",
+ "serde",
  "session-key-primitives",
  "similar-asserts",
  "sp-api",

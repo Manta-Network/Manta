@@ -18,7 +18,7 @@
 use core::marker::PhantomData;
 
 use crate as pallet_lottery;
-use crate::{pallet, Config};
+use crate::{pallet, Config, FarmingParamsOf};
 use calamari_runtime::currency::KMA;
 use frame_support::{
     assert_ok, construct_runtime, ord_parameter_types,
@@ -43,7 +43,7 @@ use pallet_parachain_staking::{InflationInfo, Range};
 use sp_core::H256;
 
 use sp_runtime::{
-    traits::{AccountIdConversion, BlakeTwo256, Hash, IdentityLookup},
+    traits::{BlakeTwo256, Hash, IdentityLookup},
     Perbill, Percent,
 };
 use xcm::{
@@ -56,10 +56,8 @@ pub type AccountId = u64;
 pub type Balance = u128;
 
 pub const ALICE: AccountId = 1;
-pub const BOB: AccountId = 2;
 pub const TREASURY_ACCOUNT: AccountId = 10;
 pub const JUMBO: Balance = 1_000_000_000_000;
-pub const MANTA_ID: CalamariAssetId = 1;
 pub const V_MANTA_ID: CalamariAssetId = 8;
 pub const JUMBO_ID: CalamariAssetId = 9;
 
@@ -529,8 +527,6 @@ impl Config for Test {
     type DrawingInterval = DrawingInterval;
     type DrawingFreezeout = DrawingFreezeout;
     type UnstakeLockTime = UnstakeLockTime;
-    type JumboFarmingCurrencyID = JumboFarmingCurrencyID;
-    type PoolId = JumboShrimpPoolId;
     type BalanceConversion = Balance;
     type WeightInfo = ();
 }
@@ -625,11 +621,23 @@ impl ExtBuilder {
         }
         .assimilate_storage(&mut t)
         .expect("Parachain Staking's storage can be assimilated");
+
+        let farming_params = if self.with_farming {
+            FarmingParamsOf::<Test> {
+                mint_farming_token: true,
+                destroy_farming_token: true,
+                pool_id: 0,
+                currency_id: 8,
+            }
+        } else {
+            FarmingParamsOf::<Test>::default()
+        };
+
         pallet_lottery::GenesisConfig::<Test> {
             min_deposit: 5_000 * KMA,
             min_withdraw: 5_000 * KMA,
             gas_reserve: 10_000 * KMA,
-            farming_pool_live: self.with_farming,
+            farming_pool_params: farming_params,
         }
         .assimilate_storage(&mut t)
         .expect("pallet_lottery's storage can be assimilated");

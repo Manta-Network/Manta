@@ -20,7 +20,7 @@ use crate::{
         roll_one_block, roll_to, roll_to_round_begin, roll_to_round_end, AccountId, Balance,
         Balances, ExtBuilder, Lottery, ParachainStaking, RuntimeOrigin as Origin, System, Test,
     },
-    Config, DestroyFarmingToken, Error, MintFarmingToken,
+    Config, Error, FarmingParameters,
 };
 
 use frame_support::{assert_noop, assert_ok, traits::Currency};
@@ -970,20 +970,36 @@ fn reward_collators_for_round(round: u32, collators: &[AccountId]) {
 #[test]
 fn enable_farming_works() {
     ExtBuilder::default().build().execute_with(|| {
-        assert!(!MintFarmingToken::<Test>::get());
-        assert!(!DestroyFarmingToken::<Test>::get());
+        let farming_params = FarmingParameters::<Test>::get();
+        assert!(!farming_params.mint_farming_token);
+        assert!(!farming_params.destroy_farming_token);
+        assert_eq!(farming_params.currency_id, 0);
+        assert_eq!(farming_params.pool_id, 0);
+
         assert_noop!(
-            Lottery::set_farming_params(Origin::signed(*BOB), true, true),
+            Lottery::set_farming_params(Origin::signed(*BOB), true, true, 1, 1),
             sp_runtime::DispatchError::BadOrigin
         );
 
-        assert_ok!(Lottery::set_farming_params(Origin::root(), true, false));
-        assert!(MintFarmingToken::<Test>::get());
-        assert!(!DestroyFarmingToken::<Test>::get());
+        let farming_params = FarmingParameters::<Test>::get();
+        assert!(!farming_params.mint_farming_token);
+        assert!(!farming_params.destroy_farming_token);
+        assert_eq!(farming_params.currency_id, 0);
+        assert_eq!(farming_params.pool_id, 0);
 
-        assert_ok!(Lottery::set_farming_params(Origin::root(), false, true));
-        assert!(!MintFarmingToken::<Test>::get());
-        assert!(DestroyFarmingToken::<Test>::get());
+        assert_ok!(Lottery::set_farming_params(
+            Origin::root(),
+            true,
+            true,
+            1,
+            1
+        ));
+
+        let farming_params = FarmingParameters::<Test>::get();
+        assert!(farming_params.mint_farming_token);
+        assert!(farming_params.destroy_farming_token);
+        assert_eq!(farming_params.currency_id, 1);
+        assert_eq!(farming_params.pool_id, 1);
     });
 }
 

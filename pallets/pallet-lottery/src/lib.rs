@@ -107,6 +107,8 @@ pub mod pallet {
     use manta_primitives::types::PoolId;
     use orml_traits::MultiCurrency;
     use pallet_parachain_staking::BalanceOf;
+    #[cfg(feature = "std")]
+    use serde::{Deserialize, Serialize};
     use sp_arithmetic::traits::SaturatedConversion;
     use sp_core::U256;
     use sp_runtime::{
@@ -135,10 +137,6 @@ pub mod pallet {
             Self::PalletsOrigin,
             Hash = Self::Hash,
         >;
-        /// CurrencyId for the JUMBO token
-        type JumboFarmingCurrencyID: Get<<Self as pallet_farming::Config>::CurrencyId>;
-        /// PoolId for JumboShrimp Farming Pool
-        type PoolId: Get<PoolId>;
         /// Helper to convert between Balance types of `MultiCurrency` and `Currency` (most likely equivalent types in runtime)
         type BalanceConversion: Copy
             + Into<
@@ -280,13 +278,20 @@ pub mod pallet {
     pub(super) type StakedCollators<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, ValueQuery>;
 
+    #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+    #[derive(Clone, Copy, Encode, Decode, TypeInfo, Default)]
+    pub struct FarmingParams<T: Default + Copy> {
+        pub mint_farming_token: bool,
+        pub destroy_farming_token: bool,
+        pub pool_id: PoolId,
+        pub currency_id: T,
+    }
+
+    pub type FarmingParamsOf<T> = FarmingParams<<T as pallet_farming::Config>::CurrencyId>;
+
     /// Boolean for the minting of a farming token on `deposit` call
     #[pallet::storage]
-    pub(super) type MintFarmingToken<T: Config> = StorageValue<_, bool, ValueQuery>;
-
-    /// Requires the burning of a farming token when withdrawing from lottery when value is `true`
-    #[pallet::storage]
-    pub(super) type DestroyFarmingToken<T: Config> = StorageValue<_, bool, ValueQuery>;
+    pub(super) type FarmingParameters<T: Config> = StorageValue<_, FarmingParamsOf<T>, ValueQuery>;
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
@@ -294,7 +299,7 @@ pub mod pallet {
         pub gas_reserve: BalanceOf<T>,
         pub min_deposit: BalanceOf<T>,
         pub min_withdraw: BalanceOf<T>,
-        pub farming_pool_live: bool,
+        pub farming_pool_params: FarmingParamsOf<T>,
     }
 
     #[cfg(feature = "std")]
@@ -304,7 +309,12 @@ pub mod pallet {
                 min_deposit: 1u32.into(),
                 min_withdraw: 1u32.into(),
                 gas_reserve: 10_000u32.into(),
-                farming_pool_live: false,
+                farming_pool_params: FarmingParamsOf::<T> {
+                    mint_farming_token: false,
+                    destroy_farming_token: false,
+                    pool_id: 0,
+                    currency_id: <T as pallet_farming::Config>::CurrencyId::default(),
+                },
             }
         }
     }
@@ -316,8 +326,7 @@ pub mod pallet {
             GasReserve::<T>::set(self.gas_reserve);
             MinDeposit::<T>::set(self.min_deposit);
             MinWithdraw::<T>::set(self.min_withdraw);
-            MintFarmingToken::<T>::set(self.farming_pool_live);
-            MintFarmingToken::<T>::set(self.farming_pool_live);
+            FarmingParameters::<T>::set(self.farming_pool_params);
         }
     }
 
@@ -421,17 +430,18 @@ pub mod pallet {
                 Error::<T>::PalletMisconfigured
             };
 
-            if MintFarmingToken::<T>::get() {
+            let farming_params = FarmingParameters::<T>::get();
+            if farming_params.mint_farming_token {
                 // mint JUMBO token and put it in farming pool
                 let convert_amount: T::BalanceConversion = amount.into();
                 <T as pallet_farming::Config>::MultiCurrency::deposit(
-                    T::JumboFarmingCurrencyID::get(),
+                    farming_params.currency_id,
                     &caller_account,
                     convert_amount.into(),
                 )?;
                 pallet_farming::Pallet::<T>::deposit_farming(
                     caller_account.clone(),
-                    T::PoolId::get(),
+                    farming_params.pool_id,
                     convert_amount.into(),
                     None,
                 )?;
@@ -505,15 +515,16 @@ pub mod pallet {
                 Error::<T>::TooCloseToDrawing
             );
 
-            if DestroyFarmingToken::<T>::get() {
+            let farming_params = FarmingParameters::<T>::get();
+            if farming_params.destroy_farming_token {
                 let convert_amount: T::BalanceConversion = amount.into();
                 pallet_farming::Pallet::<T>::withdraw_and_unstake(
                     caller.clone(),
-                    T::PoolId::get(),
+                    farming_params.pool_id,
                     Some(convert_amount.into()),
                 )?;
                 <T as pallet_farming::Config>::MultiCurrency::withdraw(
-                    T::JumboFarmingCurrencyID::get(),
+                    farming_params.currency_id,
                     &caller,
                     convert_amount.into(),
                 )?;
@@ -913,11 +924,19 @@ pub mod pallet {
             origin: OriginFor<T>,
             mint_farming_token: bool,
             burn_farming_token: bool,
+            pool_id: PoolId,
+            currency_id: <T as pallet_farming::Config>::CurrencyId,
         ) -> DispatchResult {
             T::ManageOrigin::ensure_origin(origin)?;
 
-            MintFarmingToken::<T>::set(mint_farming_token);
-            DestroyFarmingToken::<T>::set(burn_farming_token);
+            let farming_params = FarmingParamsOf::<T> {
+                mint_farming_token,
+                destroy_farming_token: burn_farming_token,
+                pool_id,
+                currency_id,
+            };
+            FarmingParameters::<T>::set(farming_params);
+
             Ok(())
         }
     }
