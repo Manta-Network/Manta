@@ -17,22 +17,15 @@
 use crate::{
     assert_last_event,
     mock::{
-        roll_one_block, roll_to, roll_to_round_begin, roll_to_round_end, AccountId, Balance,
-        Balances, ExtBuilder, Lottery, ParachainStaking, RuntimeOrigin as Origin, System, Test,
+        roll_one_block, roll_to, roll_to_round_begin, roll_to_round_end, AccountId, Assets,
+        Balance, Balances, ExtBuilder, Lottery, ParachainStaking, RuntimeOrigin as Origin, System,
+        Test, ALICE, BOB, CHARLIE, DAVE, EVE, TREASURY_ACCOUNT, V_MANTA_ID,
     },
     Config, Error, FarmingParameters,
 };
 
 use frame_support::{assert_noop, assert_ok, traits::Currency};
 use frame_system::RawOrigin;
-
-lazy_static::lazy_static! {
-    pub(crate) static ref ALICE: AccountId = 1;
-    pub(crate) static ref BOB: AccountId = 2;
-    pub(crate) static ref CHARLIE: AccountId =3;
-    pub(crate) static ref DAVE: AccountId =4;
-    pub(crate) static ref EVE: AccountId =5;
-}
 
 const UNIT: Balance = 1_000_000_000_000;
 const HIGH_BALANCE: Balance = 1_000_000_000 * UNIT;
@@ -120,13 +113,13 @@ fn restarting_funded_lottery_should_work() {
 fn depositing_and_withdrawing_in_freezeout_should_not_work() {
     let balance = 300_000_000 * UNIT;
     ExtBuilder::default()
-        .with_balances(vec![(*ALICE, HIGH_BALANCE), (*BOB, HIGH_BALANCE)])
-        .with_candidates(vec![(*BOB, balance)])
+        .with_balances(vec![(ALICE, HIGH_BALANCE), (BOB, HIGH_BALANCE)])
+        .with_candidates(vec![(BOB, balance)])
         .with_funded_lottery_account(HIGH_BALANCE)
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance);
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
             assert_eq!(Lottery::sum_of_deposits(), balance);
             assert_eq!(Lottery::total_pot(), balance);
             assert_ok!(Lottery::start_lottery(RawOrigin::Root.into(),));
@@ -136,11 +129,11 @@ fn depositing_and_withdrawing_in_freezeout_should_not_work() {
             );
             assert!(!Lottery::not_in_drawing_freezeout());
             assert_noop!(
-                Lottery::deposit(Origin::signed(*ALICE), balance),
+                Lottery::deposit(Origin::signed(ALICE), balance),
                 Error::<Test>::TooCloseToDrawing
             );
             assert_noop!(
-                Lottery::request_withdraw(Origin::signed(*ALICE), balance),
+                Lottery::request_withdraw(Origin::signed(ALICE), balance),
                 Error::<Test>::TooCloseToDrawing
             );
             assert_eq!(Lottery::sum_of_deposits(), balance);
@@ -152,32 +145,32 @@ fn depositing_and_withdrawing_in_freezeout_should_not_work() {
 fn depositing_and_withdrawing_should_work() {
     let balance = 500_000_000 * UNIT;
     ExtBuilder::default()
-        .with_balances(vec![(*ALICE, HIGH_BALANCE), (*BOB, HIGH_BALANCE)])
-        .with_candidates(vec![(*BOB, balance)])
+        .with_balances(vec![(ALICE, HIGH_BALANCE), (BOB, HIGH_BALANCE)])
+        .with_candidates(vec![(BOB, balance)])
         .with_funded_lottery_account(HIGH_BALANCE)
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance);
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
             assert_last_event!(crate::mock::RuntimeEvent::Lottery(
                 crate::Event::Deposited {
-                    account: *ALICE,
+                    account: ALICE,
                     amount: balance
                 }
             ));
-            assert_eq!(Lottery::active_balance_per_user(*ALICE), balance);
+            assert_eq!(Lottery::active_balance_per_user(ALICE), balance);
             assert_eq!(Lottery::sum_of_deposits(), balance);
             assert_eq!(Lottery::total_pot(), balance);
 
-            assert_ok!(Lottery::request_withdraw(Origin::signed(*ALICE), balance));
+            assert_ok!(Lottery::request_withdraw(Origin::signed(ALICE), balance));
             assert_last_event!(crate::mock::RuntimeEvent::Lottery(
                 crate::Event::ScheduledWithdraw {
-                    account: *ALICE,
+                    account: ALICE,
                     amount: balance
                 }
             ));
             assert_eq!(Lottery::sum_of_deposits(), balance);
-            assert_eq!(Lottery::active_balance_per_user(*ALICE), 0);
+            assert_eq!(Lottery::active_balance_per_user(ALICE), 0);
             assert_eq!(Lottery::total_pot(), 0);
             assert_eq!(Lottery::withdrawal_request_queue().len(), 1);
             assert_eq!(Lottery::surplus_unstaking_balance(), 0);
@@ -189,54 +182,54 @@ fn depositing_and_withdrawing_partial_in_one_block_should_work() {
     let balance = 500_000_000 * UNIT;
     let half_balance = 250_000_000 * UNIT;
     ExtBuilder::default()
-        .with_balances(vec![(*ALICE, HIGH_BALANCE), (*BOB, HIGH_BALANCE)])
-        .with_candidates(vec![(*BOB, balance)])
+        .with_balances(vec![(ALICE, HIGH_BALANCE), (BOB, HIGH_BALANCE)])
+        .with_candidates(vec![(BOB, balance)])
         .with_funded_lottery_account(HIGH_BALANCE)
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance);
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
-            assert_eq!(Lottery::active_balance_per_user(*ALICE), balance);
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
+            assert_eq!(Lottery::active_balance_per_user(ALICE), balance);
             assert_eq!(Lottery::sum_of_deposits(), balance);
             assert_eq!(Lottery::total_pot(), balance);
-            assert_eq!(Lottery::staked_collators(*BOB), balance);
+            assert_eq!(Lottery::staked_collators(BOB), balance);
             assert_eq!(crate::UnstakingCollators::<Test>::get().len(), 0);
 
             assert_ok!(Lottery::request_withdraw(
-                Origin::signed(*ALICE),
+                Origin::signed(ALICE),
                 half_balance
             ));
             assert_eq!(Lottery::sum_of_deposits(), balance);
-            assert_eq!(Lottery::active_balance_per_user(*ALICE), half_balance);
+            assert_eq!(Lottery::active_balance_per_user(ALICE), half_balance);
             assert_eq!(Lottery::total_pot(), half_balance);
             assert_eq!(Lottery::withdrawal_request_queue().len(), 1);
             assert_eq!(Lottery::surplus_unstaking_balance(), half_balance);
             assert_eq!(crate::UnstakingCollators::<Test>::get().len(), 1);
-            assert_eq!(Lottery::staked_collators(*BOB), balance);
+            assert_eq!(Lottery::staked_collators(BOB), balance);
 
             assert_ok!(Lottery::request_withdraw(
-                Origin::signed(*ALICE),
+                Origin::signed(ALICE),
                 half_balance
             ));
             assert_eq!(Lottery::sum_of_deposits(), balance);
-            assert_eq!(Lottery::active_balance_per_user(*ALICE), 0);
+            assert_eq!(Lottery::active_balance_per_user(ALICE), 0);
             assert_eq!(Lottery::total_pot(), 0);
             assert_eq!(Lottery::withdrawal_request_queue().len(), 2);
             assert_eq!(Lottery::surplus_unstaking_balance(), 0);
-            assert_eq!(Lottery::staked_collators(*BOB), balance);
+            assert_eq!(Lottery::staked_collators(BOB), balance);
             assert_eq!(crate::UnstakingCollators::<Test>::get().len(), 1);
 
             assert_noop!(
-                Lottery::request_withdraw(Origin::signed(*ALICE), half_balance),
+                Lottery::request_withdraw(Origin::signed(ALICE), half_balance),
                 Error::<Test>::NoDepositForAccount
             );
 
             assert_noop!(
-                Lottery::deposit(Origin::signed(*ALICE), half_balance),
+                Lottery::deposit(Origin::signed(ALICE), half_balance),
                 Error::<Test>::NoCollatorForDeposit
             );
             assert_noop!(
-                Lottery::deposit(Origin::signed(*BOB), half_balance),
+                Lottery::deposit(Origin::signed(BOB), half_balance),
                 Error::<Test>::NoCollatorForDeposit
             );
         });
@@ -246,25 +239,25 @@ fn depositing_and_withdrawing_partial_in_one_block_should_work() {
 fn processing_withdrawing_leaves_correct_balance_with_user() {
     let balance = 500_000_000 * UNIT;
     ExtBuilder::default()
-        .with_balances(vec![(*ALICE, HIGH_BALANCE), (*BOB, HIGH_BALANCE)])
-        .with_candidates(vec![(*BOB, balance)])
+        .with_balances(vec![(ALICE, HIGH_BALANCE), (BOB, HIGH_BALANCE)])
+        .with_candidates(vec![(BOB, balance)])
         .with_funded_lottery_account(HIGH_BALANCE)
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance);
-            let alice_starting_balance = Balances::free_balance(*ALICE);
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
+            let alice_starting_balance = Balances::free_balance(ALICE);
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
             assert_eq!(
-                Balances::free_balance(*ALICE),
+                Balances::free_balance(ALICE),
                 alice_starting_balance - balance
             );
             assert_eq!(Lottery::sum_of_deposits(), balance);
             assert_eq!(Lottery::total_pot(), balance);
 
-            assert_ok!(Lottery::request_withdraw(Origin::signed(*ALICE), balance));
+            assert_ok!(Lottery::request_withdraw(Origin::signed(ALICE), balance));
             assert_eq!(Lottery::sum_of_deposits(), balance);
             assert_eq!(Lottery::total_pot(), 0);
-            let alice_balance_after_request = Balances::free_balance(*ALICE);
+            let alice_balance_after_request = Balances::free_balance(ALICE);
             assert_eq!(
                 alice_balance_after_request,
                 alice_starting_balance - balance
@@ -275,10 +268,10 @@ fn processing_withdrawing_leaves_correct_balance_with_user() {
             assert_ok!(Lottery::process_matured_withdrawals(RawOrigin::Root.into()));
             assert_eq!(Lottery::sum_of_deposits(), 0);
             assert_eq!(
-                Balances::free_balance(*ALICE),
+                Balances::free_balance(ALICE),
                 alice_balance_after_request + balance
             );
-            assert_eq!(Balances::free_balance(*ALICE), alice_starting_balance);
+            assert_eq!(Balances::free_balance(ALICE), alice_starting_balance);
             assert_eq!(Lottery::withdrawal_request_queue().len(), 0);
             assert_eq!(Lottery::unlocked_unstaking_funds(), 0);
         });
@@ -289,16 +282,16 @@ fn multiple_request_withdraw_processing_withdrawing_leaves_correct_balance_with_
     let balance = 500_000_000 * UNIT;
     let one = 100_000_000 * UNIT;
     ExtBuilder::default()
-        .with_balances(vec![(*ALICE, HIGH_BALANCE), (*BOB, HIGH_BALANCE)])
-        .with_candidates(vec![(*BOB, balance)])
+        .with_balances(vec![(ALICE, HIGH_BALANCE), (BOB, HIGH_BALANCE)])
+        .with_candidates(vec![(BOB, balance)])
         .with_funded_lottery_account(HIGH_BALANCE)
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance);
-            let alice_starting_balance = Balances::free_balance(*ALICE);
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
+            let alice_starting_balance = Balances::free_balance(ALICE);
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
             assert_eq!(
-                Balances::free_balance(*ALICE),
+                Balances::free_balance(ALICE),
                 alice_starting_balance - balance
             );
             assert_eq!(Lottery::sum_of_deposits(), balance);
@@ -306,13 +299,13 @@ fn multiple_request_withdraw_processing_withdrawing_leaves_correct_balance_with_
 
             // request withdraw 5 times
             for i in 1..6 {
-                assert_ok!(Lottery::request_withdraw(Origin::signed(*ALICE), one));
+                assert_ok!(Lottery::request_withdraw(Origin::signed(ALICE), one));
                 assert_eq!(Lottery::total_pot(), balance - i * one);
             }
 
             assert_eq!(Lottery::sum_of_deposits(), balance);
             assert_eq!(Lottery::total_pot(), 0);
-            let alice_balance_after_request = Balances::free_balance(*ALICE);
+            let alice_balance_after_request = Balances::free_balance(ALICE);
             assert_eq!(
                 alice_balance_after_request,
                 alice_starting_balance - balance
@@ -323,10 +316,10 @@ fn multiple_request_withdraw_processing_withdrawing_leaves_correct_balance_with_
             assert_ok!(Lottery::process_matured_withdrawals(RawOrigin::Root.into()));
             assert_eq!(Lottery::sum_of_deposits(), 0);
             assert_eq!(
-                Balances::free_balance(*ALICE),
+                Balances::free_balance(ALICE),
                 alice_balance_after_request + balance
             );
-            assert_eq!(Balances::free_balance(*ALICE), alice_starting_balance);
+            assert_eq!(Balances::free_balance(ALICE), alice_starting_balance);
             assert_eq!(Lottery::withdrawal_request_queue().len(), 0);
             assert_eq!(Lottery::unlocked_unstaking_funds(), 0);
         });
@@ -336,24 +329,24 @@ fn multiple_request_withdraw_processing_withdrawing_leaves_correct_balance_with_
 fn double_processing_withdrawals_does_not_double_pay() {
     let balance = 500_000_000 * UNIT;
     ExtBuilder::default()
-        .with_balances(vec![(*ALICE, HIGH_BALANCE), (*BOB, HIGH_BALANCE)])
-        .with_candidates(vec![(*BOB, balance)])
+        .with_balances(vec![(ALICE, HIGH_BALANCE), (BOB, HIGH_BALANCE)])
+        .with_candidates(vec![(BOB, balance)])
         .with_funded_lottery_account(HIGH_BALANCE)
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance);
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
-            assert_ok!(Lottery::request_withdraw(Origin::signed(*ALICE), balance));
-            let alice_balance_after_request = Balances::free_balance(*ALICE);
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
+            assert_ok!(Lottery::request_withdraw(Origin::signed(ALICE), balance));
+            let alice_balance_after_request = Balances::free_balance(ALICE);
             roll_to_round_begin(3);
             assert_ok!(Lottery::process_matured_withdrawals(RawOrigin::Root.into()));
             assert_eq!(
-                Balances::free_balance(*ALICE),
+                Balances::free_balance(ALICE),
                 alice_balance_after_request + balance
             );
             assert_ok!(Lottery::process_matured_withdrawals(RawOrigin::Root.into()));
             assert_eq!(
-                Balances::free_balance(*ALICE),
+                Balances::free_balance(ALICE),
                 alice_balance_after_request + balance
             );
         });
@@ -366,63 +359,59 @@ fn deposit_staking_to_one_underallocated_collator_works() {
     let balance6 = 60_000_000 * UNIT;
     ExtBuilder::default()
         .with_balances(vec![
-            (*ALICE, HIGH_BALANCE),
-            (*BOB, HIGH_BALANCE),
-            (*CHARLIE, HIGH_BALANCE),
+            (ALICE, HIGH_BALANCE),
+            (BOB, HIGH_BALANCE),
+            (CHARLIE, HIGH_BALANCE),
         ])
         .with_candidates(vec![
-            (*ALICE, balance4),
-            (*BOB, balance5),
-            (*CHARLIE, balance6),
+            (ALICE, balance4),
+            (BOB, balance5),
+            (CHARLIE, balance6),
         ])
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance6 + balance5 + balance4);
             assert_eq!(
-                ParachainStaking::candidate_info(*ALICE)
+                ParachainStaking::candidate_info(ALICE)
                     .unwrap()
                     .total_counted,
                 balance4
             );
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance6));
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance6));
             // Median = 50k, ALICE is the only underallocated collator, gets all token
             assert_eq!(
-                ParachainStaking::candidate_info(*ALICE)
+                ParachainStaking::candidate_info(ALICE)
                     .unwrap()
                     .total_counted,
                 balance4 + balance6
             );
 
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance5));
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance5));
             //  Median = 60k, BOB is the only underallocated, gets all token
             assert_eq!(
-                ParachainStaking::candidate_info(*BOB)
-                    .unwrap()
-                    .total_counted,
+                ParachainStaking::candidate_info(BOB).unwrap().total_counted,
                 balance5 + balance5
             );
 
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance4));
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance4));
             // Median = 100k CHARLIE is the only underallocated, gets all token
             assert_eq!(
-                ParachainStaking::candidate_info(*CHARLIE)
+                ParachainStaking::candidate_info(CHARLIE)
                     .unwrap()
                     .total_counted,
                 balance6 + balance4
             );
 
             // Now all 3 tie at 100k, there is no underallocation, deposit is given randomly
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance6));
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance6));
             assert!(
-                (ParachainStaking::candidate_info(*ALICE)
+                (ParachainStaking::candidate_info(ALICE)
                     .unwrap()
                     .total_counted
                     == balance4 + balance6 + balance6)
-                    || (ParachainStaking::candidate_info(*BOB)
-                        .unwrap()
-                        .total_counted
+                    || (ParachainStaking::candidate_info(BOB).unwrap().total_counted
                         == balance5 + balance5 + balance6)
-                    || (ParachainStaking::candidate_info(*CHARLIE)
+                    || (ParachainStaking::candidate_info(CHARLIE)
                         .unwrap()
                         .total_counted
                         == balance6 + balance4 + balance6),
@@ -434,42 +423,40 @@ fn deposit_staking_to_one_underallocated_collator_works() {
 fn unstaking_works_with_zero_collators_left() {
     let balance = 50_000_000 * UNIT;
     ExtBuilder::default()
-        .with_balances(vec![(*ALICE, HIGH_BALANCE), (*BOB, HIGH_BALANCE)])
-        .with_candidates(vec![(*ALICE, balance), (*BOB, balance)])
+        .with_balances(vec![(ALICE, HIGH_BALANCE), (BOB, HIGH_BALANCE)])
+        .with_candidates(vec![(ALICE, balance), (BOB, balance)])
         .with_funded_lottery_account(HIGH_BALANCE)
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance);
             assert_eq!(
-                ParachainStaking::candidate_info(*ALICE)
+                ParachainStaking::candidate_info(ALICE)
                     .unwrap()
                     .total_counted,
                 balance
             );
             assert_eq!(crate::StakedCollators::<Test>::iter().count(), 0);
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
             assert_eq!(crate::StakedCollators::<Test>::iter().count(), 2);
-            assert_eq!(Balances::free_balance(*ALICE), HIGH_BALANCE - 2 * balance);
+            assert_eq!(Balances::free_balance(ALICE), HIGH_BALANCE - 2 * balance);
             assert_eq!(
                 Balances::free_balance(crate::Pallet::<Test>::account_id()),
                 HIGH_BALANCE + 2 * balance
             );
             assert_eq!(
-                ParachainStaking::candidate_info(*ALICE)
+                ParachainStaking::candidate_info(ALICE)
                     .unwrap()
                     .total_counted,
                 balance * 2
             );
             assert_eq!(
-                ParachainStaking::candidate_info(*BOB)
-                    .unwrap()
-                    .total_counted,
+                ParachainStaking::candidate_info(BOB).unwrap().total_counted,
                 balance * 2
             );
 
             assert_ok!(Lottery::request_withdraw(
-                Origin::signed(*ALICE),
+                Origin::signed(ALICE),
                 balance * 2
             ));
             assert_eq!(crate::StakedCollators::<Test>::iter().count(), 2);
@@ -484,7 +471,7 @@ fn unstaking_works_with_zero_collators_left() {
             assert_eq!(Lottery::withdrawal_request_queue().len(), 0);
             assert_eq!(Lottery::surplus_unstaking_balance(), 0);
             assert_eq!(Lottery::unlocked_unstaking_funds(), 0);
-            assert_eq!(Balances::free_balance(*ALICE), HIGH_BALANCE);
+            assert_eq!(Balances::free_balance(ALICE), HIGH_BALANCE);
             assert_eq!(
                 Balances::free_balance(crate::Pallet::<Test>::account_id()),
                 HIGH_BALANCE
@@ -497,10 +484,10 @@ fn winner_distribution_should_be_equality_with_equal_deposits() {
     let balance = 500_000_000 * UNIT;
     ExtBuilder::default()
         .with_balances(vec![
-            (*ALICE, HIGH_BALANCE),
-            (*BOB, HIGH_BALANCE),
+            (ALICE, HIGH_BALANCE),
+            (BOB, HIGH_BALANCE),
         ])
-        .with_candidates(vec![(*BOB, balance)])
+        .with_candidates(vec![(BOB, balance)])
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance);
@@ -559,34 +546,34 @@ fn winner_distribution_should_be_equality_with_equal_deposits() {
 fn depsiting_to_one_collator_multiple_times_in_one_block_should_work() {
     let balance = 50_000_000 * UNIT;
     ExtBuilder::default()
-        .with_balances(vec![(*ALICE, HIGH_BALANCE), (*BOB, HIGH_BALANCE)])
-        .with_candidates(vec![(*BOB, balance)])
+        .with_balances(vec![(ALICE, HIGH_BALANCE), (BOB, HIGH_BALANCE)])
+        .with_candidates(vec![(BOB, balance)])
         .with_funded_lottery_account(HIGH_BALANCE)
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance);
-            assert_eq!(Lottery::staked_collators(*BOB), 0);
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
-            assert_eq!(Lottery::staked_collators(*BOB), balance);
+            assert_eq!(Lottery::staked_collators(BOB), 0);
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
+            assert_eq!(Lottery::staked_collators(BOB), balance);
             assert_last_event!(crate::mock::RuntimeEvent::Lottery(
                 crate::Event::Deposited {
-                    account: *ALICE,
+                    account: ALICE,
                     amount: balance
                 }
             ));
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
-            assert_eq!(Lottery::staked_collators(*BOB), 2 * balance);
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
+            assert_eq!(Lottery::staked_collators(BOB), 2 * balance);
             assert_last_event!(crate::mock::RuntimeEvent::Lottery(
                 crate::Event::Deposited {
-                    account: *ALICE,
+                    account: ALICE,
                     amount: balance
                 }
             ));
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
-            assert_eq!(Lottery::staked_collators(*BOB), 3 * balance);
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
+            assert_eq!(Lottery::staked_collators(BOB), 3 * balance);
             assert_last_event!(crate::mock::RuntimeEvent::Lottery(
                 crate::Event::Deposited {
-                    account: *ALICE,
+                    account: ALICE,
                     amount: balance
                 }
             ));
@@ -599,34 +586,34 @@ fn depsiting_to_two_collator_multiple_times_in_one_block_should_work() {
     let balance = 50_000_000 * UNIT;
     let balance1 = 20_000_000 * UNIT;
     ExtBuilder::default()
-        .with_balances(vec![(*ALICE, HIGH_BALANCE), (*BOB, HIGH_BALANCE)])
-        .with_candidates(vec![(*ALICE, balance1), (*BOB, balance)])
+        .with_balances(vec![(ALICE, HIGH_BALANCE), (BOB, HIGH_BALANCE)])
+        .with_candidates(vec![(ALICE, balance1), (BOB, balance)])
         .with_funded_lottery_account(HIGH_BALANCE)
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance);
-            assert_eq!(Lottery::staked_collators(*BOB), 0);
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance1));
-            assert_eq!(Lottery::staked_collators(*ALICE), balance1);
+            assert_eq!(Lottery::staked_collators(BOB), 0);
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance1));
+            assert_eq!(Lottery::staked_collators(ALICE), balance1);
             assert_last_event!(crate::mock::RuntimeEvent::Lottery(
                 crate::Event::Deposited {
-                    account: *ALICE,
+                    account: ALICE,
                     amount: balance1
                 }
             ));
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance1));
-            assert_eq!(Lottery::staked_collators(*ALICE), 2 * balance1);
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance1));
+            assert_eq!(Lottery::staked_collators(ALICE), 2 * balance1);
             assert_last_event!(crate::mock::RuntimeEvent::Lottery(
                 crate::Event::Deposited {
-                    account: *ALICE,
+                    account: ALICE,
                     amount: balance1
                 }
             ));
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance1));
-            assert_eq!(Lottery::staked_collators(*BOB), balance1);
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance1));
+            assert_eq!(Lottery::staked_collators(BOB), balance1);
             assert_last_event!(crate::mock::RuntimeEvent::Lottery(
                 crate::Event::Deposited {
-                    account: *ALICE,
+                    account: ALICE,
                     amount: balance1
                 }
             ));
@@ -638,24 +625,24 @@ fn depsiting_to_two_collator_multiple_times_in_one_block_should_work() {
 fn deposit_withdraw_deposit_to_new_joined_collator_works() {
     let balance = 50_000_000 * UNIT;
     ExtBuilder::default()
-        .with_balances(vec![(*ALICE, HIGH_BALANCE), (*BOB, HIGH_BALANCE)])
-        .with_candidates(vec![(*BOB, balance)])
+        .with_balances(vec![(ALICE, HIGH_BALANCE), (BOB, HIGH_BALANCE)])
+        .with_candidates(vec![(BOB, balance)])
         .with_funded_lottery_account(HIGH_BALANCE)
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance);
-            assert_eq!(Lottery::staked_collators(*BOB), 0);
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
-            assert_eq!(Lottery::staked_collators(*BOB), balance);
+            assert_eq!(Lottery::staked_collators(BOB), 0);
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
+            assert_eq!(Lottery::staked_collators(BOB), balance);
 
-            assert_ok!(Lottery::request_withdraw(Origin::signed(*ALICE), balance));
-            assert_eq!(Lottery::staked_collators(*BOB), balance);
+            assert_ok!(Lottery::request_withdraw(Origin::signed(ALICE), balance));
+            assert_eq!(Lottery::staked_collators(BOB), balance);
             assert_eq!(Lottery::withdrawal_request_queue().len(), 1);
             assert_eq!(ParachainStaking::selected_candidates().len(), 1);
 
             // join a new collator because BOB is now ineligible to receive deposits
             assert_noop!(
-                Lottery::deposit(Origin::signed(*ALICE), balance),
+                Lottery::deposit(Origin::signed(ALICE), balance),
                 Error::<Test>::NoCollatorForDeposit
             );
             let (new_collator, _) = crate::mock::from_bench::create_funded_user::<Test>(
@@ -675,7 +662,7 @@ fn deposit_withdraw_deposit_to_new_joined_collator_works() {
             assert_eq!(ParachainStaking::selected_candidates()[1], new_collator);
             // pretend the collator got some rewards
             pallet_parachain_staking::AwardedPts::<Test>::insert(1, new_collator, 20);
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
             assert_eq!(Lottery::staked_collators(new_collator), balance);
         });
 }
@@ -686,21 +673,21 @@ fn deposit_withdraw_partial_draw_lottery_works() {
     let half_balance = 250_000_000 * UNIT;
     let quarter_balance = 125_000_000 * UNIT;
     ExtBuilder::default()
-        .with_balances(vec![(*ALICE, HIGH_BALANCE), (*BOB, HIGH_BALANCE)])
-        .with_candidates(vec![(*BOB, balance)])
+        .with_balances(vec![(ALICE, HIGH_BALANCE), (BOB, HIGH_BALANCE)])
+        .with_candidates(vec![(BOB, balance)])
         .with_funded_lottery_account(balance)
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance);
-            assert_eq!(0, Lottery::staked_collators(*BOB));
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
-            let alice_post_deposit_balance = Balances::free_balance(*ALICE);
-            assert_eq!(balance, Lottery::staked_collators(*BOB));
+            assert_eq!(0, Lottery::staked_collators(BOB));
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
+            let alice_post_deposit_balance = Balances::free_balance(ALICE);
+            assert_eq!(balance, Lottery::staked_collators(BOB));
             assert_eq!(balance, Lottery::total_pot());
             assert_eq!(balance, Lottery::sum_of_deposits());
 
             assert_ok!(Lottery::request_withdraw(
-                Origin::signed(*ALICE),
+                Origin::signed(ALICE),
                 half_balance
             ));
             // surplus = balance - half_balance = half_balance
@@ -708,20 +695,20 @@ fn deposit_withdraw_partial_draw_lottery_works() {
 
             roll_one_block();
             assert_ok!(Lottery::request_withdraw(
-                Origin::signed(*ALICE),
+                Origin::signed(ALICE),
                 quarter_balance
             ));
-            assert_eq!(balance, Lottery::staked_collators(*BOB));
+            assert_eq!(balance, Lottery::staked_collators(BOB));
             // surplus = half_balance - quarter_balance = quarter_balance
             assert_eq!(quarter_balance, Lottery::surplus_unstaking_balance());
 
-            pallet_parachain_staking::AwardedPts::<Test>::insert(2, *BOB, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(2, BOB, 20);
             roll_to_round_begin(3);
             // funds should be unlocked now and BOB is finished unstaking, so it's eligible for redepositing
             assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
             assert_eq!(
                 alice_post_deposit_balance + half_balance + quarter_balance,
-                Balances::free_balance(*ALICE)
+                Balances::free_balance(ALICE)
             );
             assert_eq!(0, Lottery::surplus_unstaking_balance());
             assert_eq!(0, Lottery::unlocked_unstaking_funds());
@@ -729,7 +716,7 @@ fn deposit_withdraw_partial_draw_lottery_works() {
             assert!(crate::UnstakingCollators::<Test>::get().is_empty());
             // draw lottery rebalance will restake surplus funds to collators.
             assert_eq!(crate::StakedCollators::<Test>::iter().count(), 1);
-            assert_eq!(quarter_balance, Lottery::staked_collators(*BOB));
+            assert_eq!(quarter_balance, Lottery::staked_collators(BOB));
             assert_eq!(quarter_balance, Lottery::total_pot());
             assert_eq!(quarter_balance, Lottery::sum_of_deposits());
         });
@@ -741,8 +728,8 @@ fn multiround_withdraw_partial_deposit_works() {
     let half_balance = 250_000_000 * UNIT;
     let quarter_balance = 125_000_000 * UNIT;
     ExtBuilder::default()
-        .with_balances(vec![(*ALICE, HIGH_BALANCE), (*BOB, HIGH_BALANCE)])
-        .with_candidates(vec![(*BOB, balance)])
+        .with_balances(vec![(ALICE, HIGH_BALANCE), (BOB, HIGH_BALANCE)])
+        .with_candidates(vec![(BOB, balance)])
         .with_funded_lottery_account(balance)
         .build()
         .execute_with(|| {
@@ -751,38 +738,38 @@ fn multiround_withdraw_partial_deposit_works() {
             assert!(
                 <Test as pallet_parachain_staking::Config>::LeaveCandidatesDelay::get() == 1u32
             );
-            assert_eq!(0, Lottery::staked_collators(*BOB));
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
-            let alice_post_deposit_balance = Balances::free_balance(*ALICE);
-            assert_eq!(balance, Lottery::staked_collators(*BOB));
+            assert_eq!(0, Lottery::staked_collators(BOB));
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
+            let alice_post_deposit_balance = Balances::free_balance(ALICE);
+            assert_eq!(balance, Lottery::staked_collators(BOB));
             assert_eq!(balance, Lottery::total_pot());
             assert_eq!(balance, Lottery::sum_of_deposits());
 
             roll_one_block(); // ensure this unlocks *after* round 3 start
             assert_ok!(Lottery::request_withdraw(
-                Origin::signed(*ALICE),
+                Origin::signed(ALICE),
                 half_balance
             ));
-            assert_eq!(balance, Lottery::staked_collators(*BOB));
+            assert_eq!(balance, Lottery::staked_collators(BOB));
             assert_eq!(1, Lottery::withdrawal_request_queue().len());
             assert_eq!(half_balance, Lottery::surplus_unstaking_balance());
 
             // withdrawing funds are still locked
             roll_to_round_begin(2);
             roll_one_block(); // ensure this unlocks *after* round 3 start
-            pallet_parachain_staking::AwardedPts::<Test>::insert(1, *BOB, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(1, BOB, 20);
             assert_ok!(Lottery::request_withdraw(
-                Origin::signed(*ALICE),
+                Origin::signed(ALICE),
                 quarter_balance
             ));
-            assert_eq!(balance, Lottery::staked_collators(*BOB));
+            assert_eq!(balance, Lottery::staked_collators(BOB));
             assert_eq!(2, Lottery::withdrawal_request_queue().len());
             assert_eq!(
                 half_balance - quarter_balance,
                 Lottery::surplus_unstaking_balance()
             );
             assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
-            assert_eq!(balance, Lottery::staked_collators(*BOB));
+            assert_eq!(balance, Lottery::staked_collators(BOB));
             assert_eq!(
                 half_balance - quarter_balance,
                 Lottery::surplus_unstaking_balance()
@@ -792,28 +779,28 @@ fn multiround_withdraw_partial_deposit_works() {
 
             // collator becomes unstaked on draw_lottery, must keep quarter for withdrawal, can restake other quarter
             roll_to_round_begin(3);
-            pallet_parachain_staking::AwardedPts::<Test>::insert(2, *BOB, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(2, BOB, 20);
             assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
             // balance - half - quarter
-            assert_eq!(quarter_balance, Lottery::staked_collators(*BOB));
+            assert_eq!(quarter_balance, Lottery::staked_collators(BOB));
             assert_eq!(quarter_balance, Lottery::unlocked_unstaking_funds());
             assert_eq!(0, Lottery::surplus_unstaking_balance());
             assert_eq!(
                 alice_post_deposit_balance + half_balance,
-                Balances::free_balance(*ALICE)
+                Balances::free_balance(ALICE)
             );
             assert_eq!(1, Lottery::withdrawal_request_queue().len());
             assert!(crate::UnstakingCollators::<Test>::get().is_empty());
 
             roll_to_round_begin(4);
-            pallet_parachain_staking::AwardedPts::<Test>::insert(3, *BOB, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(3, BOB, 20);
             // second withdrawal can be paid out at new round
             assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
             assert_eq!(
                 alice_post_deposit_balance + half_balance + quarter_balance,
-                Balances::free_balance(*ALICE)
+                Balances::free_balance(ALICE)
             );
-            assert_eq!(quarter_balance, Lottery::staked_collators(*BOB));
+            assert_eq!(quarter_balance, Lottery::staked_collators(BOB));
             assert_eq!(0, Lottery::surplus_unstaking_balance());
             assert_eq!(0, Lottery::unlocked_unstaking_funds());
             assert!(Lottery::withdrawal_request_queue().is_empty());
@@ -827,19 +814,19 @@ fn multiround_withdraw_partial_with_two_collators_works() {
     let quarter_balance = 125_000_000 * UNIT;
     ExtBuilder::default()
         .with_balances(vec![
-            (*ALICE, HIGH_BALANCE),
-            (*BOB, HIGH_BALANCE),
-            (*CHARLIE, HIGH_BALANCE),
+            (ALICE, HIGH_BALANCE),
+            (BOB, HIGH_BALANCE),
+            (CHARLIE, HIGH_BALANCE),
         ])
-        .with_candidates(vec![(*BOB, balance), (*CHARLIE, balance)])
+        .with_candidates(vec![(BOB, balance), (CHARLIE, balance)])
         .with_funded_lottery_account(reserve) // minimally fund lottery
         .build()
         .execute_with(|| {
             assert_eq!(reserve, Lottery::gas_reserve()); // XXX: Cant use getter in the ExtBuilder
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
             assert_eq!(crate::StakedCollators::<Test>::iter().count(), 1);
             assert_ok!(Lottery::request_withdraw(
-                Origin::signed(*ALICE),
+                Origin::signed(ALICE),
                 quarter_balance
             ));
 
@@ -847,11 +834,11 @@ fn multiround_withdraw_partial_with_two_collators_works() {
             assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
             roll_one_block();
             assert_ok!(Lottery::request_withdraw(
-                Origin::signed(*ALICE),
+                Origin::signed(ALICE),
                 quarter_balance
             ));
             assert_ok!(Lottery::request_withdraw(
-                Origin::signed(*ALICE),
+                Origin::signed(ALICE),
                 quarter_balance
             ));
             assert_eq!(3, Lottery::withdrawal_request_queue().len());
@@ -859,16 +846,16 @@ fn multiround_withdraw_partial_with_two_collators_works() {
             assert_eq!(crate::UnstakingCollators::<Test>::get().len(), 1);
 
             roll_to_round_begin(3);
-            pallet_parachain_staking::AwardedPts::<Test>::insert(3, *BOB, 20);
-            pallet_parachain_staking::AwardedPts::<Test>::insert(3, *CHARLIE, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(3, BOB, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(3, CHARLIE, 20);
             assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
             assert_eq!(2, Lottery::withdrawal_request_queue().len());
             assert_eq!(crate::StakedCollators::<Test>::iter().count(), 0);
             assert_eq!(crate::UnstakingCollators::<Test>::get().len(), 0);
 
             roll_to_round_begin(4);
-            pallet_parachain_staking::AwardedPts::<Test>::insert(4, *BOB, 20);
-            pallet_parachain_staking::AwardedPts::<Test>::insert(4, *CHARLIE, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(4, BOB, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(4, CHARLIE, 20);
             assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
             assert_eq!(0, Lottery::unlocked_unstaking_funds());
             assert_eq!(0, Lottery::surplus_unstaking_balance());
@@ -884,24 +871,24 @@ fn many_deposit_withdrawals_work() {
     let mut round_count = 2;
     ExtBuilder::default()
         .with_balances(vec![
-            (*ALICE, HIGH_BALANCE),
-            (*BOB, HIGH_BALANCE),
-            (*CHARLIE, HIGH_BALANCE),
-            (*DAVE, HIGH_BALANCE),
-            (*EVE, HIGH_BALANCE),
+            (ALICE, HIGH_BALANCE),
+            (BOB, HIGH_BALANCE),
+            (CHARLIE, HIGH_BALANCE),
+            (DAVE, HIGH_BALANCE),
+            (EVE, HIGH_BALANCE),
         ])
         .with_candidates(vec![
-            (*ALICE, HIGH_BALANCE),
-            (*BOB, HIGH_BALANCE),
-            (*CHARLIE, HIGH_BALANCE),
-            (*DAVE, HIGH_BALANCE),
-            (*EVE, HIGH_BALANCE),
+            (ALICE, HIGH_BALANCE),
+            (BOB, HIGH_BALANCE),
+            (CHARLIE, HIGH_BALANCE),
+            (DAVE, HIGH_BALANCE),
+            (EVE, HIGH_BALANCE),
         ])
         .with_funded_lottery_account(HIGH_BALANCE)
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance);
-            let all_collators = &[*ALICE, *BOB, *CHARLIE, *DAVE, *EVE];
+            let all_collators = &[ALICE, BOB, CHARLIE, DAVE, EVE];
             reward_collators_for_round(round_count - 1, all_collators);
             roll_to_round_end(1);
             assert_ok!(Lottery::start_lottery(RawOrigin::Root.into()));
@@ -977,7 +964,7 @@ fn enable_farming_works() {
         assert_eq!(farming_params.pool_id, 0);
 
         assert_noop!(
-            Lottery::set_farming_params(Origin::signed(*BOB), true, true, 1, 1),
+            Lottery::set_farming_params(Origin::signed(BOB), true, true, 1, 1),
             sp_runtime::DispatchError::BadOrigin
         );
 
@@ -1009,22 +996,23 @@ fn farming_deposit_withdraw() {
     let half_balance = 250_000_000 * UNIT;
     let quarter_balance = 125_000_000 * UNIT;
     ExtBuilder::default()
-        .with_balances(vec![(*ALICE, HIGH_BALANCE), (*BOB, HIGH_BALANCE)])
-        .with_candidates(vec![(*BOB, balance)])
+        .with_balances(vec![(ALICE, HIGH_BALANCE), (BOB, HIGH_BALANCE)])
+        .with_candidates(vec![(BOB, balance)])
         .with_funded_lottery_account(balance)
         .with_farming()
         .build()
         .execute_with(|| {
             assert!(HIGH_BALANCE > balance);
-            assert_eq!(0, Lottery::staked_collators(*BOB));
-            assert_ok!(Lottery::deposit(Origin::signed(*ALICE), balance));
-            let alice_post_deposit_balance = Balances::free_balance(*ALICE);
-            assert_eq!(balance, Lottery::staked_collators(*BOB));
+            assert_eq!(0, Lottery::staked_collators(BOB));
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
+            let alice_post_deposit_balance = Balances::free_balance(ALICE);
+            assert_eq!(balance, Lottery::staked_collators(BOB));
             assert_eq!(balance, Lottery::total_pot());
             assert_eq!(balance, Lottery::sum_of_deposits());
+            assert_eq!(balance, Assets::balance(V_MANTA_ID, ALICE));
 
             assert_ok!(Lottery::request_withdraw(
-                Origin::signed(*ALICE),
+                Origin::signed(ALICE),
                 half_balance
             ));
             // surplus = balance - half_balance = half_balance
@@ -1032,20 +1020,20 @@ fn farming_deposit_withdraw() {
 
             roll_one_block();
             assert_ok!(Lottery::request_withdraw(
-                Origin::signed(*ALICE),
+                Origin::signed(ALICE),
                 quarter_balance
             ));
-            assert_eq!(balance, Lottery::staked_collators(*BOB));
+            assert_eq!(balance, Lottery::staked_collators(BOB));
             // surplus = half_balance - quarter_balance = quarter_balance
             assert_eq!(quarter_balance, Lottery::surplus_unstaking_balance());
 
-            pallet_parachain_staking::AwardedPts::<Test>::insert(2, *BOB, 20);
+            pallet_parachain_staking::AwardedPts::<Test>::insert(2, BOB, 20);
             roll_to_round_begin(3);
             // funds should be unlocked now and BOB is finished unstaking, so it's eligible for redepositing
             assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
             assert_eq!(
                 alice_post_deposit_balance + half_balance + quarter_balance,
-                Balances::free_balance(*ALICE)
+                Balances::free_balance(ALICE)
             );
             assert_eq!(0, Lottery::surplus_unstaking_balance());
             assert_eq!(0, Lottery::unlocked_unstaking_funds());
@@ -1053,7 +1041,7 @@ fn farming_deposit_withdraw() {
             assert!(crate::UnstakingCollators::<Test>::get().is_empty());
             // draw lottery rebalance will restake surplus funds to collators.
             assert_eq!(crate::StakedCollators::<Test>::iter().count(), 1);
-            assert_eq!(quarter_balance, Lottery::staked_collators(*BOB));
+            assert_eq!(quarter_balance, Lottery::staked_collators(BOB));
             assert_eq!(quarter_balance, Lottery::total_pot());
             assert_eq!(quarter_balance, Lottery::sum_of_deposits());
         });

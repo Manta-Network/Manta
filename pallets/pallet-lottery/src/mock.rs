@@ -37,7 +37,7 @@ use manta_primitives::{
     },
     constants::ASSET_MANAGER_PALLET_ID,
     currencies::Currencies,
-    types::{BlockNumber, CalamariAssetId, Header, PoolId},
+    types::{BlockNumber, CalamariAssetId, Header},
 };
 use pallet_parachain_staking::{InflationInfo, Range};
 use sp_core::H256;
@@ -56,6 +56,10 @@ pub type AccountId = u64;
 pub type Balance = u128;
 
 pub const ALICE: AccountId = 1;
+pub const BOB: AccountId = 2;
+pub const CHARLIE: AccountId = 3;
+pub const DAVE: AccountId = 4;
+pub const EVE: AccountId = 5;
 pub const TREASURY_ACCOUNT: AccountId = 10;
 pub const JUMBO: Balance = 1_000_000_000_000;
 pub const V_MANTA_ID: CalamariAssetId = 8;
@@ -484,10 +488,6 @@ parameter_types! {
     pub DrawingFreezeout: BlockNumber = 5;
     /// Time in blocks until a collator is done unstaking
     pub UnstakeLockTime: BlockNumber = LeaveDelayRounds::get() * DefaultBlocksPerRound::get();
-    /// JumboShrimp CurrencyId
-    pub JumboFarmingCurrencyID: CalamariAssetId = V_MANTA_ID;
-    /// Farming PoolId for JUMBO token
-    pub JumboShrimpPoolId: PoolId = 0;
 }
 
 use frame_support::traits::Currency;
@@ -679,22 +679,6 @@ impl ExtBuilder {
 
             assert_ok!(
                 <MantaAssetConfig as AssetConfig<Test>>::FungibleLedger::deposit_minting(
-                    V_MANTA_ID,
-                    &TREASURY_ACCOUNT,
-                    1_000 * JUMBO
-                )
-            );
-
-            assert_ok!(
-                <MantaAssetConfig as AssetConfig<Test>>::FungibleLedger::deposit_minting(
-                    JUMBO_ID,
-                    &TREASURY_ACCOUNT,
-                    1_000 * JUMBO
-                )
-            );
-
-            assert_ok!(
-                <MantaAssetConfig as AssetConfig<Test>>::FungibleLedger::deposit_minting(
                     JUMBO_ID,
                     &ALICE,
                     1_000 * JUMBO
@@ -703,9 +687,7 @@ impl ExtBuilder {
 
             assert_ok!(
                 <MantaAssetConfig as AssetConfig<Test>>::FungibleLedger::deposit_minting(
-                    V_MANTA_ID,
-                    &ALICE,
-                    1_000 * JUMBO
+                    V_MANTA_ID, &ALICE, JUMBO
                 )
             );
 

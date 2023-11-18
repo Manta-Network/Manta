@@ -6998,7 +6998,6 @@ dependencies = [
  "frame-system",
  "function_name",
  "jsonrpsee",
- "lazy_static",
  "log",
  "manta-collator-selection",
  "manta-primitives",

@@ -41,7 +41,6 @@ rand = { version = "0.8.5", default-features = false, optional = true }
 
 [dev-dependencies]
 calamari-runtime = { path = "../../runtime/calamari", default-features = false }
-lazy_static = "1.4.0"
 manta-collator-selection = { path = "../collator-selection", default-features = false }
 pallet-asset-manager = { path = "../asset-manager", default-features = false }
 pallet-assets = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
