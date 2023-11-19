@@ -37,7 +37,7 @@ use manta_primitives::{
     },
     constants::ASSET_MANAGER_PALLET_ID,
     currencies::Currencies,
-    types::{BlockNumber, CalamariAssetId, Header},
+    types::{BlockNumber, CalamariAssetId, Header, PoolId},
 };
 use pallet_parachain_staking::{InflationInfo, Range};
 use sp_core::H256;
@@ -63,10 +63,12 @@ pub const EVE: AccountId = 5;
 pub const TREASURY_ACCOUNT: AccountId = 10;
 
 pub const JUMBO: Balance = 1_000_000_000_000;
-pub const INIT_JUMBO_AMOUNT: Balance = 1_000 * JUMBO;
+pub const INIT_JUMBO_AMOUNT: Balance = 100 * JUMBO;
 pub const INIT_V_MANTA_AMOUNT: Balance = JUMBO;
 pub const V_MANTA_ID: CalamariAssetId = 8;
 pub const JUMBO_ID: CalamariAssetId = 9;
+
+pub const POOL_ID: PoolId = 0;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;

@@ -18,9 +18,9 @@ use crate::{
     assert_last_event,
     mock::{
         roll_one_block, roll_to, roll_to_round_begin, roll_to_round_end, AccountId, Assets,
-        Balance, Balances, ExtBuilder, Lottery, ParachainStaking, RuntimeOrigin as Origin, System,
-        Test, ALICE, BOB, CHARLIE, DAVE, EVE, INIT_JUMBO_AMOUNT, INIT_V_MANTA_AMOUNT, JUMBO_ID,
-        TREASURY_ACCOUNT, V_MANTA_ID,
+        Balance, Balances, ExtBuilder, Farming, Lottery, ParachainStaking, RuntimeOrigin as Origin,
+        System, Test, ALICE, BOB, CHARLIE, DAVE, EVE, INIT_JUMBO_AMOUNT, INIT_V_MANTA_AMOUNT,
+        JUMBO_ID, POOL_ID, V_MANTA_ID,
     },
     Config, Error, FarmingParameters,
 };
@@ -1029,6 +1029,14 @@ fn farming_deposit_withdraw() {
             // surplus = balance - half_balance = half_balance
             assert_eq!(half_balance, Lottery::surplus_unstaking_balance());
 
+            assert_eq!(
+                half_balance + INIT_V_MANTA_AMOUNT,
+                Assets::total_supply(V_MANTA_ID)
+            );
+            // no rewards when no time has past
+            assert_eq!(0, Assets::balance(JUMBO_ID, ALICE));
+            assert_eq!(0, Assets::balance(JUMBO_ID, ALICE));
+
             roll_one_block();
             assert_ok!(Lottery::request_withdraw(
                 Origin::signed(ALICE),
@@ -1037,6 +1045,14 @@ fn farming_deposit_withdraw() {
             assert_eq!(balance, Lottery::staked_collators(BOB));
             // surplus = half_balance - quarter_balance = quarter_balance
             assert_eq!(quarter_balance, Lottery::surplus_unstaking_balance());
+
+            assert_eq!(
+                quarter_balance + INIT_V_MANTA_AMOUNT,
+                Assets::total_supply(V_MANTA_ID)
+            );
+            // no rewards when no time has past
+            assert_eq!(0, Assets::balance(V_MANTA_ID, ALICE));
+            assert_eq!(0, Assets::balance(JUMBO_ID, ALICE));
 
             pallet_parachain_staking::AwardedPts::<Test>::insert(2, BOB, 20);
             roll_to_round_begin(3);
@@ -1055,5 +1071,73 @@ fn farming_deposit_withdraw() {
             assert_eq!(quarter_balance, Lottery::staked_collators(BOB));
             assert_eq!(quarter_balance, Lottery::total_pot());
             assert_eq!(quarter_balance, Lottery::sum_of_deposits());
+
+            assert_eq!(
+                quarter_balance + INIT_V_MANTA_AMOUNT,
+                Assets::total_supply(V_MANTA_ID)
+            );
+            // no rewards when no time has past
+            assert_eq!(0, Assets::balance(V_MANTA_ID, ALICE));
+            assert_eq!(0, Assets::balance(JUMBO_ID, ALICE));
+        });
+}
+
+#[test]
+fn fails_withdrawing_more_than_vmanta() {
+    let balance = 500_000_000 * UNIT;
+    let half_balance = 250_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE, HIGH_BALANCE),
+            (BOB, HIGH_BALANCE),
+            (CHARLIE, HIGH_BALANCE),
+        ])
+        .with_candidates(vec![(BOB, balance)])
+        .with_funded_lottery_account(balance)
+        .with_farming()
+        .build()
+        .execute_with(|| {
+            assert_ok!(Lottery::deposit(Origin::signed(CHARLIE), balance));
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
+
+            assert_eq!(
+                (balance * 2) + INIT_V_MANTA_AMOUNT,
+                Assets::total_supply(V_MANTA_ID)
+            );
+            assert_eq!(0, Assets::balance(V_MANTA_ID, CHARLIE));
+            assert_ok!(Farming::withdraw(
+                Origin::signed(CHARLIE),
+                POOL_ID,
+                Some(half_balance)
+            ));
+            assert_ok!(Farming::withdraw_claim(Origin::signed(CHARLIE), POOL_ID));
+            assert_eq!(half_balance, Assets::balance(V_MANTA_ID, CHARLIE));
+            assert_eq!(
+                (balance * 2) + INIT_V_MANTA_AMOUNT,
+                Assets::total_supply(V_MANTA_ID)
+            );
+
+            assert_ok!(Assets::transfer(
+                Origin::signed(CHARLIE),
+                V_MANTA_ID,
+                ALICE,
+                half_balance
+            ));
+            assert_noop!(
+                Lottery::request_withdraw(Origin::signed(CHARLIE), balance),
+                pallet_assets::Error::<Test>::BalanceLow
+            );
+            assert_eq!(0, Assets::balance(V_MANTA_ID, CHARLIE));
+
+            assert_ok!(Assets::transfer(
+                Origin::signed(ALICE),
+                V_MANTA_ID,
+                CHARLIE,
+                half_balance
+            ));
+            // will work if V_MANTA is not in farming pool but is in user account
+            assert_ok!(Lottery::request_withdraw(Origin::signed(CHARLIE), balance));
+            // no leftover V_MANTA
+            assert_eq!(0, Assets::balance(V_MANTA_ID, CHARLIE));
         });
 }
