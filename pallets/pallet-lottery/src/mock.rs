@@ -737,7 +737,7 @@ fn init_jumbo_farming() {
         None
     ));
 
-    let share_info = Farming::shares_and_withdrawn_rewards(pool_id, &ALICE).unwrap();
+    let share_info = Farming::shares_and_withdrawn_rewards(pool_id, ALICE).unwrap();
     assert_eq!(share_info.share, tokens);
 }
 
