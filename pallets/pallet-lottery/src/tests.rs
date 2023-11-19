@@ -19,7 +19,8 @@ use crate::{
     mock::{
         roll_one_block, roll_to, roll_to_round_begin, roll_to_round_end, AccountId, Assets,
         Balance, Balances, ExtBuilder, Lottery, ParachainStaking, RuntimeOrigin as Origin, System,
-        Test, ALICE, BOB, CHARLIE, DAVE, EVE, TREASURY_ACCOUNT, V_MANTA_ID,
+        Test, ALICE, BOB, CHARLIE, DAVE, EVE, INIT_JUMBO_AMOUNT, INIT_V_MANTA_AMOUNT, JUMBO_ID,
+        TREASURY_ACCOUNT, V_MANTA_ID,
     },
     Config, Error, FarmingParameters,
 };
@@ -1002,6 +1003,9 @@ fn farming_deposit_withdraw() {
         .with_farming()
         .build()
         .execute_with(|| {
+            assert_eq!(INIT_JUMBO_AMOUNT, Assets::total_supply(JUMBO_ID));
+            assert_eq!(INIT_V_MANTA_AMOUNT, Assets::total_supply(V_MANTA_ID));
+
             assert!(HIGH_BALANCE > balance);
             assert_eq!(0, Lottery::staked_collators(BOB));
             assert_ok!(Lottery::deposit(Origin::signed(ALICE), balance));
@@ -1009,7 +1013,14 @@ fn farming_deposit_withdraw() {
             assert_eq!(balance, Lottery::staked_collators(BOB));
             assert_eq!(balance, Lottery::total_pot());
             assert_eq!(balance, Lottery::sum_of_deposits());
-            assert_eq!(balance, Assets::balance(V_MANTA_ID, ALICE));
+
+            // asset accounting is correct
+            assert_eq!(INIT_JUMBO_AMOUNT, Assets::total_supply(JUMBO_ID));
+            assert_eq!(
+                balance + INIT_V_MANTA_AMOUNT,
+                Assets::total_supply(V_MANTA_ID)
+            );
+            assert_eq!(0, Assets::balance(V_MANTA_ID, ALICE));
 
             assert_ok!(Lottery::request_withdraw(
                 Origin::signed(ALICE),

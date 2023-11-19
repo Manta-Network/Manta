@@ -61,7 +61,10 @@ pub const CHARLIE: AccountId = 3;
 pub const DAVE: AccountId = 4;
 pub const EVE: AccountId = 5;
 pub const TREASURY_ACCOUNT: AccountId = 10;
+
 pub const JUMBO: Balance = 1_000_000_000_000;
+pub const INIT_JUMBO_AMOUNT: Balance = 1_000 * JUMBO;
+pub const INIT_V_MANTA_AMOUNT: Balance = JUMBO;
 pub const V_MANTA_ID: CalamariAssetId = 8;
 pub const JUMBO_ID: CalamariAssetId = 9;
 
@@ -681,13 +684,15 @@ impl ExtBuilder {
                 <MantaAssetConfig as AssetConfig<Test>>::FungibleLedger::deposit_minting(
                     JUMBO_ID,
                     &ALICE,
-                    1_000 * JUMBO
+                    INIT_JUMBO_AMOUNT,
                 )
             );
 
             assert_ok!(
                 <MantaAssetConfig as AssetConfig<Test>>::FungibleLedger::deposit_minting(
-                    V_MANTA_ID, &ALICE, JUMBO
+                    V_MANTA_ID,
+                    &ALICE,
+                    INIT_V_MANTA_AMOUNT
                 )
             );
 
