@@ -1,9 +1,6 @@
 # CHANGELOG
-## v4.4.0-2
-### Changed
-- [\#1258](https://github.com/Manta-Network/Manta/pull/1258) Allow pallet-assets transfers [CA]
 
-## v4.4.0-1
+## v4.5.0
 ### Added
 - [\#1240](https://github.com/Manta-Network/Manta/pull/1240) :sparkle: org `arc-runner` patch 1 [MACA]
 - [\#1241](https://github.com/Manta-Network/Manta/pull/1241) :bug: arc-runner patch 1.1 [MACA]
@@ -12,12 +9,21 @@
 - [\#1244](https://github.com/Manta-Network/Manta/pull/1244) more lottery tests [MACA]
 - [\#1250](https://github.com/Manta-Network/Manta/pull/1250) :wrench: allow all benchmarks to be triggered on feature branch
 - [\#1249](https://github.com/Manta-Network/Manta/pull/1249) Add zombienet examples
+- [\#1261](https://github.com/Manta-Network/Manta/pull/1261) Add Farming functionality to Lottery
+
+### Changed
+- [\#1235](https://github.com/Manta-Network/Manta/pull/1235) Update reference hardware and lower CI machine specs [MACA]
+- [\#1237](https://github.com/Manta-Network/Manta/pull/1237) Zombienet migration [MACA]
+- [\#1192](https://github.com/Manta-Network/Manta/pull/1192) Rebenchmark mantaSbt [MACA]
+- [\#1254](https://github.com/Manta-Network/Manta/pull/1254) Allow all xtokens extrinsics in calamari [CA]
 
 ### Fixed
 - [\#1234](https://github.com/Manta-Network/Manta/pull/1234) Serialize/deserialize vfr key [MACA]
 - [\#1191](https://github.com/Manta-Network/Manta/pull/1191) Fix metadata diff checker workflow [MACA]
 - [\#1243](https://github.com/Manta-Network/Manta/pull/1243) Add manta docker image to publish
+- [\#1236](https://github.com/Manta-Network/Manta/pull/1236) Update Asset metadata call to not have dummy parameters [MACA]
 - [\#1253](https://github.com/Manta-Network/Manta/pull/1253) Fix benchmark [CA]
+- [\#1260](https://github.com/Manta-Network/Manta/pull/1260) fix manta testnet dns
 
 ## v4.4.0
 ### Added
