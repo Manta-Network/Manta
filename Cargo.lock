@@ -6998,11 +6998,14 @@ dependencies = [
  "frame-system",
  "function_name",
  "jsonrpsee",
- "lazy_static",
  "log",
  "manta-collator-selection",
  "manta-primitives",
+ "orml-traits",
+ "pallet-asset-manager",
+ "pallet-assets",
  "pallet-balances",
+ "pallet-farming",
  "pallet-parachain-staking",
  "pallet-preimage",
  "pallet-randomness",
@@ -7012,6 +7015,7 @@ dependencies = [
  "rand 0.8.5",
  "runtime-common",
  "scale-info",
+ "serde",
  "session-key-primitives",
  "similar-asserts",
  "sp-api",
@@ -7022,6 +7026,7 @@ dependencies = [
  "sp-runtime",
  "sp-staking",
  "sp-std",
+ "xcm",
 ]
 
 [[package]]

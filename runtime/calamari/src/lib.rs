@@ -460,6 +460,7 @@ impl pallet_lottery::Config for Runtime {
     type DrawingInterval = DrawingInterval;
     type DrawingFreezeout = DrawingFreezeout;
     type UnstakeLockTime = UnstakeLockTime;
+    type BalanceConversion = Balance;
     type WeightInfo = weights::pallet_lottery::SubstrateWeight<Runtime>;
 }
 impl pallet_authorship::Config for Runtime {

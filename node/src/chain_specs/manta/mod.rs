@@ -130,6 +130,7 @@ fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
             min_deposit: 500 * MANTA,
             min_withdraw: 10 * MANTA,
             gas_reserve: 1_000 * MANTA,
+            farming_pool_params: Default::default(),
         },
         parachain_info: manta_runtime::ParachainInfoConfig {
             parachain_id: MANTA_PARACHAIN_ID.into(),
