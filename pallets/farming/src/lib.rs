@@ -430,51 +430,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let exchanger = ensure_signed(origin)?;
 
-            let mut pool_info = Self::pool_infos(pool_id).ok_or(Error::<T>::PoolDoesNotExist)?;
-            ensure!(
-                PoolState::state_valid(Action::Deposit, pool_info.state),
-                Error::<T>::InvalidPoolState
-            );
-
-            if let PoolState::Charged = pool_info.state {
-                let n: BlockNumberFor<T> = frame_system::Pallet::<T>::block_number();
-                ensure!(
-                    n >= pool_info.after_block_to_start,
-                    Error::<T>::CanNotDeposit
-                );
-            }
-
-            // basic token proportion * add_value * token_proportion
-            // if basic token proportion and token_proportion both equals to 100%, then the final amount to transfer is equal to add_value
-            let native_amount = pool_info.basic_token.1.saturating_reciprocal_mul(add_value);
-            pool_info.tokens_proportion.iter().try_for_each(
-                |(token, proportion)| -> DispatchResult {
-                    T::MultiCurrency::transfer(
-                        *token,
-                        &exchanger,
-                        &pool_info.keeper,
-                        *proportion * native_amount,
-                    )
-                },
-            )?;
-            Self::add_share(&exchanger, pool_id, &mut pool_info, add_value);
-
-            if let Some((gauge_value, gauge_block)) = gauge_info {
-                Self::gauge_add(
-                    &exchanger,
-                    pool_info.gauge.ok_or(Error::<T>::GaugePoolNotExist)?,
-                    gauge_value,
-                    gauge_block,
-                )?;
-            }
-
-            Self::deposit_event(Event::Deposited {
-                who: exchanger,
-                pid: pool_id,
-                add_value,
-                gauge_info,
-            });
-            Ok(())
+            Self::deposit_farming(exchanger, pool_id, add_value, gauge_info)
         }
 
         /// `Withdraw` operation only remove share and get claim rewards, then update `withdraw_list` of user share info.
@@ -488,32 +444,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let exchanger = ensure_signed(origin)?;
 
-            let pool_info = Self::pool_infos(pool_id).ok_or(Error::<T>::PoolDoesNotExist)?;
-            ensure!(
-                PoolState::state_valid(Action::Withdraw, pool_info.state),
-                Error::<T>::InvalidPoolState
-            );
-
-            let share_info = Self::shares_and_withdrawn_rewards(pool_id, &exchanger)
-                .ok_or(Error::<T>::ShareInfoNotExists)?;
-            ensure!(
-                share_info.withdraw_list.len() < pool_info.withdraw_limit_count.into(),
-                Error::<T>::WithdrawLimitCountExceeded
-            );
-
-            Self::remove_share(
-                &exchanger,
-                pool_id,
-                remove_value,
-                pool_info.withdraw_limit_time,
-            )?;
-
-            Self::deposit_event(Event::Withdrawn {
-                who: exchanger,
-                pid: pool_id,
-                remove_value,
-            });
-            Ok(())
+            Self::withdraw_amount(exchanger, pool_id, remove_value)
         }
 
         /// `claim` operation can claim rewards and also un-stake if user share info has `withdraw_list`.
@@ -555,14 +486,7 @@ pub mod pallet {
         pub fn withdraw_claim(origin: OriginFor<T>, pool_id: PoolId) -> DispatchResult {
             let exchanger = ensure_signed(origin)?;
 
-            let pool_info = Self::pool_infos(pool_id).ok_or(Error::<T>::PoolDoesNotExist)?;
-            Self::process_withdraw_list(&exchanger, pool_id, &pool_info, false)?;
-
-            Self::deposit_event(Event::WithdrawClaimed {
-                who: exchanger,
-                pid: pool_id,
-            });
-            Ok(())
+            Self::withdraw_farming(exchanger, pool_id)
         }
 
         #[pallet::call_index(6)]
@@ -941,5 +865,111 @@ impl<T: Config> Pallet<T> {
                 .as_u128()
                 .saturated_into();
         total_reward_proportion
+    }
+
+    pub fn deposit_farming(
+        exchanger: T::AccountId,
+        pool_id: PoolId,
+        add_value: BalanceOf<T>,
+        gauge_info: Option<(BalanceOf<T>, BlockNumberFor<T>)>,
+    ) -> DispatchResult {
+        let mut pool_info = Self::pool_infos(pool_id).ok_or(Error::<T>::PoolDoesNotExist)?;
+        ensure!(
+            PoolState::state_valid(Action::Deposit, pool_info.state),
+            Error::<T>::InvalidPoolState
+        );
+
+        if let PoolState::Charged = pool_info.state {
+            let n: BlockNumberFor<T> = frame_system::Pallet::<T>::block_number();
+            ensure!(
+                n >= pool_info.after_block_to_start,
+                Error::<T>::CanNotDeposit
+            );
+        }
+
+        // basic token proportion * add_value * token_proportion
+        // if basic token proportion and token_proportion both equals to 100%, then the final amount to transfer is equal to add_value
+        let native_amount = pool_info.basic_token.1.saturating_reciprocal_mul(add_value);
+        pool_info.tokens_proportion.iter().try_for_each(
+            |(token, proportion)| -> DispatchResult {
+                T::MultiCurrency::transfer(
+                    *token,
+                    &exchanger,
+                    &pool_info.keeper,
+                    *proportion * native_amount,
+                )
+            },
+        )?;
+        Self::add_share(&exchanger, pool_id, &mut pool_info, add_value);
+
+        if let Some((gauge_value, gauge_block)) = gauge_info {
+            Self::gauge_add(
+                &exchanger,
+                pool_info.gauge.ok_or(Error::<T>::GaugePoolNotExist)?,
+                gauge_value,
+                gauge_block,
+            )?;
+        }
+
+        Self::deposit_event(Event::Deposited {
+            who: exchanger,
+            pid: pool_id,
+            add_value,
+            gauge_info,
+        });
+        Ok(())
+    }
+
+    pub fn withdraw_farming(exchanger: T::AccountId, pool_id: PoolId) -> DispatchResult {
+        let pool_info = Self::pool_infos(pool_id).ok_or(Error::<T>::PoolDoesNotExist)?;
+        Self::process_withdraw_list(&exchanger, pool_id, &pool_info, false)?;
+
+        Self::deposit_event(Event::WithdrawClaimed {
+            who: exchanger,
+            pid: pool_id,
+        });
+        Ok(())
+    }
+
+    pub fn withdraw_amount(
+        exchanger: T::AccountId,
+        pool_id: PoolId,
+        remove_value: Option<BalanceOf<T>>,
+    ) -> DispatchResult {
+        let pool_info = Self::pool_infos(pool_id).ok_or(Error::<T>::PoolDoesNotExist)?;
+        ensure!(
+            PoolState::state_valid(Action::Withdraw, pool_info.state),
+            Error::<T>::InvalidPoolState
+        );
+
+        let share_info = Self::shares_and_withdrawn_rewards(pool_id, &exchanger)
+            .ok_or(Error::<T>::ShareInfoNotExists)?;
+        ensure!(
+            share_info.withdraw_list.len() < pool_info.withdraw_limit_count.into(),
+            Error::<T>::WithdrawLimitCountExceeded
+        );
+
+        Self::remove_share(
+            &exchanger,
+            pool_id,
+            remove_value,
+            pool_info.withdraw_limit_time,
+        )?;
+
+        Self::deposit_event(Event::Withdrawn {
+            who: exchanger,
+            pid: pool_id,
+            remove_value,
+        });
+        Ok(())
+    }
+
+    pub fn withdraw_and_unstake(
+        exchanger: T::AccountId,
+        pool_id: PoolId,
+        remove_value: Option<BalanceOf<T>>,
+    ) -> DispatchResult {
+        Self::withdraw_amount(exchanger.clone(), pool_id, remove_value)?;
+        Self::withdraw_farming(exchanger, pool_id)
     }
 }

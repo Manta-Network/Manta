@@ -104,7 +104,11 @@ pub mod pallet {
         PalletId,
     };
     use frame_system::{pallet_prelude::*, RawOrigin};
+    use manta_primitives::types::PoolId;
+    use orml_traits::MultiCurrency;
     use pallet_parachain_staking::BalanceOf;
+    #[cfg(feature = "std")]
+    use serde::{Deserialize, Serialize};
     use sp_arithmetic::traits::SaturatedConversion;
     use sp_core::U256;
     use sp_runtime::{
@@ -118,7 +122,9 @@ pub mod pallet {
     pub type CallOf<T> = <T as Config>::RuntimeCall;
 
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_parachain_staking::Config {
+    pub trait Config:
+        frame_system::Config + pallet_parachain_staking::Config + pallet_farming::Config
+    {
         /// The aggregated `RuntimeCall` type.
         type RuntimeCall: Parameter
             + Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>
@@ -131,7 +137,14 @@ pub mod pallet {
             Self::PalletsOrigin,
             Hash = Self::Hash,
         >;
-        // Randomness source to use for determining lottery winner
+        /// Helper to convert between Balance types of `MultiCurrency` and `Currency` (most likely equivalent types in runtime)
+        type BalanceConversion: Copy
+            + Into<
+                <<Self as pallet_farming::Config>::MultiCurrency as MultiCurrency<
+                    <Self as frame_system::Config>::AccountId,
+                >>::Balance,
+            > + From<BalanceOf<Self>>;
+        /// Randomness source to use for determining lottery winner
         type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
         /// Something that can estimate the cost of sending an extrinsic
         type EstimateCallFee: frame_support::traits::EstimateCallFee<
@@ -265,12 +278,28 @@ pub mod pallet {
     pub(super) type StakedCollators<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, ValueQuery>;
 
+    #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+    #[derive(Clone, Copy, Encode, Decode, TypeInfo, Default)]
+    pub struct FarmingParams<T: Default + Copy> {
+        pub mint_farming_token: bool,
+        pub destroy_farming_token: bool,
+        pub pool_id: PoolId,
+        pub currency_id: T,
+    }
+
+    pub type FarmingParamsOf<T> = FarmingParams<<T as pallet_farming::Config>::CurrencyId>;
+
+    /// Boolean for the minting of a farming token on `deposit` call
+    #[pallet::storage]
+    pub(super) type FarmingParameters<T: Config> = StorageValue<_, FarmingParamsOf<T>, ValueQuery>;
+
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
         /// amount of token to keep in the pot for paying gas fees
         pub gas_reserve: BalanceOf<T>,
         pub min_deposit: BalanceOf<T>,
         pub min_withdraw: BalanceOf<T>,
+        pub farming_pool_params: FarmingParamsOf<T>,
     }
 
     #[cfg(feature = "std")]
@@ -280,6 +309,12 @@ pub mod pallet {
                 min_deposit: 1u32.into(),
                 min_withdraw: 1u32.into(),
                 gas_reserve: 10_000u32.into(),
+                farming_pool_params: FarmingParamsOf::<T> {
+                    mint_farming_token: false,
+                    destroy_farming_token: false,
+                    pool_id: 0,
+                    currency_id: <T as pallet_farming::Config>::CurrencyId::default(),
+                },
             }
         }
     }
@@ -291,6 +326,7 @@ pub mod pallet {
             GasReserve::<T>::set(self.gas_reserve);
             MinDeposit::<T>::set(self.min_deposit);
             MinWithdraw::<T>::set(self.min_withdraw);
+            FarmingParameters::<T>::set(self.farming_pool_params);
         }
     }
 
@@ -394,6 +430,23 @@ pub mod pallet {
                 Error::<T>::PalletMisconfigured
             };
 
+            let farming_params = FarmingParameters::<T>::get();
+            if farming_params.mint_farming_token {
+                // mint JUMBO token and put it in farming pool
+                let convert_amount: T::BalanceConversion = amount.into();
+                <T as pallet_farming::Config>::MultiCurrency::deposit(
+                    farming_params.currency_id,
+                    &caller_account,
+                    convert_amount.into(),
+                )?;
+                pallet_farming::Pallet::<T>::deposit_farming(
+                    caller_account.clone(),
+                    farming_params.pool_id,
+                    convert_amount.into(),
+                    None,
+                )?;
+            }
+
             // Transfer funds to pot
             <T as pallet_parachain_staking::Config>::Currency::transfer(
                 &caller_account,
@@ -461,6 +514,22 @@ pub mod pallet {
                 Self::not_in_drawing_freezeout(),
                 Error::<T>::TooCloseToDrawing
             );
+
+            let farming_params = FarmingParameters::<T>::get();
+            if farming_params.destroy_farming_token {
+                let convert_amount: T::BalanceConversion = amount.into();
+                pallet_farming::Pallet::<T>::withdraw_and_unstake(
+                    caller.clone(),
+                    farming_params.pool_id,
+                    Some(convert_amount.into()),
+                )?;
+                <T as pallet_farming::Config>::MultiCurrency::withdraw(
+                    farming_params.currency_id,
+                    &caller,
+                    convert_amount.into(),
+                )?;
+            }
+
             let now = <frame_system::Pallet<T>>::block_number();
             log::debug!("Requesting withdraw of {:?} tokens", amount);
             // Ensure user has enough funds active and mark them as offboarding (remove from `ActiveBalancePerUser`)
@@ -847,6 +916,27 @@ pub mod pallet {
         pub fn set_gas_reserve(origin: OriginFor<T>, gas_reserve: BalanceOf<T>) -> DispatchResult {
             T::ManageOrigin::ensure_origin(origin.clone())?;
             GasReserve::<T>::set(gas_reserve);
+            Ok(())
+        }
+        #[pallet::call_index(12)]
+        #[pallet::weight(<T as Config>::WeightInfo::set_gas_reserve())]
+        pub fn set_farming_params(
+            origin: OriginFor<T>,
+            mint_farming_token: bool,
+            burn_farming_token: bool,
+            pool_id: PoolId,
+            currency_id: <T as pallet_farming::Config>::CurrencyId,
+        ) -> DispatchResult {
+            T::ManageOrigin::ensure_origin(origin)?;
+
+            let farming_params = FarmingParamsOf::<T> {
+                mint_farming_token,
+                destroy_farming_token: burn_farming_token,
+                pool_id,
+                currency_id,
+            };
+            FarmingParameters::<T>::set(farming_params);
+
             Ok(())
         }
     }
