@@ -25,6 +25,7 @@
 - [\#1253](https://github.com/Manta-Network/Manta/pull/1253) Fix benchmark [CA]
 - [\#1260](https://github.com/Manta-Network/Manta/pull/1260) fix manta testnet dns
 - [\#1265](https://github.com/Manta-Network/Manta/pull/1265) update Cargo.lock [CA]
+- [\#1266](https://github.com/Manta-Network/Manta/pull/1266) Update changelog [CA]
 
 ## v4.4.0
 ### Added
