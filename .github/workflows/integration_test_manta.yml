@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 env:
   DEBIAN_FRONTEND: noninteractive
-  POLKADOT_BINARY: https://github.com/paritytech/polkadot/releases/download/v1.0.0/polkadot
+  POLKADOT_BINARY: https://github.com/paritytech/polkadot/releases/download/v1.3.0/polkadot
 jobs:
   print-rust-versions:
     if: contains(github.event.pull_request.labels.*.name, 'A-manta')
