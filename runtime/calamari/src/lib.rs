@@ -143,10 +143,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 4402,
+    spec_version: 4500,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 16,
+    transaction_version: 17,
     state_version: 0,
 };
 
@@ -460,6 +460,7 @@ impl pallet_lottery::Config for Runtime {
     type DrawingInterval = DrawingInterval;
     type DrawingFreezeout = DrawingFreezeout;
     type UnstakeLockTime = UnstakeLockTime;
+    type BalanceConversion = Balance;
     type WeightInfo = weights::pallet_lottery::SubstrateWeight<Runtime>;
 }
 impl pallet_authorship::Config for Runtime {

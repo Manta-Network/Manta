@@ -1094,7 +1094,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-runtime"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "calamari-vesting",
  "csv",
@@ -1197,7 +1197,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-vesting"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -4162,7 +4162,7 @@ dependencies = [
 
 [[package]]
 name = "integration-tests"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "calamari-runtime",
  "calamari-vesting",
@@ -5290,7 +5290,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -5397,7 +5397,7 @@ dependencies = [
 
 [[package]]
 name = "manta-collator-selection"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5484,7 +5484,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5505,7 +5505,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "csv",
  "cumulus-pallet-dmp-queue",
@@ -6485,7 +6485,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-manager"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6846,7 +6846,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-farming"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6870,7 +6870,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-farming-rpc-api"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "jsonrpsee",
  "manta-primitives",
@@ -6886,7 +6886,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-farming-rpc-runtime-api"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "manta-primitives",
  "parity-scale-codec",
@@ -6990,7 +6990,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-lottery"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "calamari-runtime",
  "frame-benchmarking",
@@ -6998,11 +6998,14 @@ dependencies = [
  "frame-system",
  "function_name",
  "jsonrpsee",
- "lazy_static",
  "log",
  "manta-collator-selection",
  "manta-primitives",
+ "orml-traits",
+ "pallet-asset-manager",
+ "pallet-assets",
  "pallet-balances",
+ "pallet-farming",
  "pallet-parachain-staking",
  "pallet-preimage",
  "pallet-randomness",
@@ -7012,6 +7015,7 @@ dependencies = [
  "rand 0.8.5",
  "runtime-common",
  "scale-info",
+ "serde",
  "session-key-primitives",
  "similar-asserts",
  "sp-api",
@@ -7022,11 +7026,12 @@ dependencies = [
  "sp-runtime",
  "sp-staking",
  "sp-std",
+ "xcm",
 ]
 
 [[package]]
 name = "pallet-manta-pay"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -7061,7 +7066,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-sbt"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -7101,7 +7106,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-support"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -7176,7 +7181,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-name-service"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7298,7 +7303,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-parachain-staking"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7355,7 +7360,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-randomness"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "derive_more",
  "frame-benchmarking",
@@ -7670,7 +7675,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -10042,7 +10047,7 @@ dependencies = [
 
 [[package]]
 name = "runtime-common"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -11648,7 +11653,7 @@ dependencies = [
 
 [[package]]
 name = "session-key-primitives"
-version = "4.4.0"
+version = "4.5.0"
 dependencies = [
  "async-trait",
  "manta-primitives",
