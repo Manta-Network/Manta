@@ -179,11 +179,11 @@ pub mod pallet {
 
             let now = T::Timestamp::now().as_secs();
             for (n, o) in new_schedule.iter().zip(old_schedule.iter()) {
-                // n == o means we will partialy update vesting schedule.
+                // n == o means we will partially update vesting schedule.
                 // n > o means new schedule is future schedule.
                 // n < o && n > now, also fine.
                 if o.1 <= now {
-                    // Check partialy updating vesting schedule.
+                    // Check partially updating vesting schedule.
                     // We don't change past schedule, just skip it.
                     ensure!(*n == o.1, Error::<T>::InvalidSchedule);
                 } else {

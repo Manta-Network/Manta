@@ -413,7 +413,7 @@ pub mod pallet {
     #[pallet::getter(fn get_para_id)]
     pub type AllowedDestParaIds<T: Config> = StorageMap<_, Blake2_128Concat, ParaId, AssetCount>;
 
-    /// Multilocation of assets that should not be transfered out of the chain
+    /// Multilocation of assets that should not be transferred out of the chain
     #[pallet::storage]
     #[pallet::getter(fn get_filtered_location)]
     pub type FilteredOutgoingAssetLocations<T: Config> =
