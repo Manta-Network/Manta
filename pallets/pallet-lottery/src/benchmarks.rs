@@ -23,7 +23,7 @@ use frame_support::{
     assert_ok,
     traits::{Currency, EstimateCallFee, Get, OnFinalize, OnInitialize},
 };
-use frame_system::RawOrigin;
+use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use pallet_parachain_staking::{
     benchmarks::{create_funded_collator, create_funded_user, parachain_staking_on_finalize},
     BalanceOf, Pallet as Staking,
@@ -36,7 +36,7 @@ const USER_SEED: u32 = 696969;
 /// Run to end block and author
 fn roll_rounds_and_author<T: Config>(rounds: u32) {
     let total_rounds = rounds + 1u32;
-    let round_length: T::BlockNumber = Staking::<T>::round().length.into();
+    let round_length: BlockNumberFor<T> = Staking::<T>::round().length.into();
     let mut now = <frame_system::Pallet<T>>::block_number() + 1u32.into();
     let end = Staking::<T>::round().first + (round_length * total_rounds.into());
     while now < end {
@@ -166,7 +166,7 @@ benchmarks! {
         // should have won now
         let unclaimed_winnings = Pallet::<T>::total_unclaimed_winnings();
         let account_balance_before = <T as pallet_parachain_staking::Config>::Currency::free_balance(&caller);
-        let fee_estimate  = T::EstimateCallFee::estimate_call_fee(&Call::<T>::claim_my_winnings {  }, None::<u64>.into());
+        let fee_estimate  = T::EstimateCallFee::estimate_call_fee(&Call::<T>::claim_my_winnings {  }, None.into());
         assert!(!unclaimed_winnings.is_zero());
         assert_eq!(unclaimed_winnings,Pallet::<T>::unclaimed_winnings_by_account(caller.clone()).unwrap());
     }: _(RawOrigin::Signed(caller.clone()))

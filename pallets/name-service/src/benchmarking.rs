@@ -21,7 +21,7 @@
 use crate::{Call, Config, Event, Pallet};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::traits::{Currency, Get};
-use frame_system::RawOrigin;
+use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use manta_support::manta_pay::AccountId;
 use sp_runtime::traits::Hash;
 use sp_std::prelude::*;
@@ -68,7 +68,7 @@ benchmarks! {
 
         Pallet::<T>::register(origin.clone().into(), username.clone(), caller.clone().into())?;
         // move blocknumber forward so pending register is available to move to records
-        let new_block: T::BlockNumber = 10u32.into();
+        let new_block: BlockNumberFor<T> = 10u32.into();
         frame_system::Pallet::<T>::set_block_number(new_block);
 
     }: accept_register(
@@ -92,7 +92,7 @@ benchmarks! {
 
         Pallet::<T>::register(origin.clone().into(), username.clone(), caller.clone().into())?;
         // move blocknumber forward so pending register is available to move to records
-        let new_block: T::BlockNumber = 10u32.into();
+        let new_block: BlockNumberFor<T> = 10u32.into();
         frame_system::Pallet::<T>::set_block_number(new_block);
         Pallet::<T>::accept_register(origin.clone().into(), username.clone(), caller.clone().into())?;
 
@@ -117,7 +117,7 @@ benchmarks! {
 
         Pallet::<T>::register(origin.clone().into(), username.clone(), caller.clone().into())?;
         // move blocknumber forward so pending register is available to move to records
-        let new_block: T::BlockNumber = 10u32.into();
+        let new_block: BlockNumberFor<T> = 10u32.into();
         frame_system::Pallet::<T>::set_block_number(new_block);
 
     }: cancel_pending_register(
@@ -141,7 +141,7 @@ benchmarks! {
 
         Pallet::<T>::register(origin.clone().into(), username.clone(), caller.clone().into())?;
         // move blocknumber forward so pending register is available to move to records
-        let new_block: T::BlockNumber = 10u32.into();
+        let new_block: BlockNumberFor<T> = 10u32.into();
         frame_system::Pallet::<T>::set_block_number(new_block);
         Pallet::<T>::accept_register(origin.clone().into(), username.clone(), caller.clone().into())?;
 

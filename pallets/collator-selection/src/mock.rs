@@ -19,33 +19,29 @@ use crate as collator_selection;
 use frame_support::{
     ord_parameter_types, parameter_types,
     traits::{
-        ConstU16, ConstU32, ConstU64, FindAuthor, GenesisBuild, ValidatorRegistration, ValidatorSet,
+        ConstBool, ConstU16, ConstU32, ConstU64, FindAuthor, ValidatorRegistration, ValidatorSet,
     },
     PalletId,
 };
 use frame_system::EnsureSignedBy;
-use manta_primitives::types::{BlockNumber, Header};
+use manta_primitives::types::BlockNumber;
 use sp_arithmetic::Percent;
 use sp_core::H256;
 use sp_runtime::{
     testing::UintAuthorityId,
     traits::{BlakeTwo256, IdentityLookup, OpaqueKeys},
-    RuntimeAppPublic,
+    BuildStorage, RuntimeAppPublic,
 };
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub struct Test
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent},
+        Authorship: pallet_authorship::{Pallet, Storage},
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
         CollatorSelection: collator_selection::{Pallet, Call, Storage, Event<T>},
         Aura: pallet_aura::{Pallet, Storage, Config<T>},
@@ -60,15 +56,14 @@ impl frame_system::Config for Test {
     type DbWeight = ();
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
+    type Block = Block;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = ConstU32<250>;
+    type BlockHashCount = ConstU64<250>;
     type Version = ();
     type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<u64>;
@@ -90,6 +85,10 @@ impl pallet_balances::Config for Test {
     type MaxLocks = ();
     type MaxReserves = ConstU32<50>;
     type ReserveIdentifier = [u8; 8];
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<1>;
+    type MaxHolds = ConstU32<1>;
 }
 
 pub struct Author4;
@@ -104,8 +103,6 @@ impl FindAuthor<u64> for Author4 {
 
 impl pallet_authorship::Config for Test {
     type FindAuthor = Author4;
-    type UncleGenerations = ();
-    type FilterUncle = ();
     type EventHandler = CollatorSelection;
 }
 
@@ -120,6 +117,7 @@ impl pallet_aura::Config for Test {
     type AuthorityId = sp_consensus_aura::sr25519::AuthorityId;
     type MaxAuthorities = ConstU32<100_000>;
     type DisabledValidators = ();
+    type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 sp_runtime::impl_opaque_keys! {
@@ -147,7 +145,8 @@ impl pallet_session::SessionHandler<u64> for TestSessionHandler {
         SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
     }
     fn on_new_session<Ks: OpaqueKeys>(_: bool, keys: &[(u64, Ks)], _: &[(u64, Ks)]) {
-        SessionChangeBlock::set(System::block_number() as u64);
+        SessionChangeBlock::set(System::block_number());
+        dbg!(keys.len());
         SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
     }
     fn on_before_session_ending() {}
@@ -215,8 +214,8 @@ impl Config for Test {
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
     sp_tracing::try_init_simple();
-    let mut t = frame_system::GenesisConfig::default()
-        .build_storage::<Test>()
+    let mut t = frame_system::GenesisConfig::<Test>::default()
+        .build_storage()
         .unwrap();
     let invulnerables = vec![1, 2];
     let keys = invulnerables
@@ -251,11 +250,9 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     t.into()
 }
 
-pub fn initialize_to_block(n: BlockNumber) {
+pub fn initialize_to_block(n: u64) {
     for i in System::block_number() + 1..=n {
         System::set_block_number(i);
-        <AllPalletsWithSystem as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(
-            i,
-        );
+        <AllPalletsWithSystem as frame_support::traits::OnInitialize<u64>>::on_initialize(i);
     }
 }

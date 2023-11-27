@@ -26,6 +26,7 @@ use frame_support::{
     traits::{Get, PalletInfoAccess, StorageVersion},
     Twox64Concat,
 };
+use frame_system::pallet_prelude::BlockNumberFor;
 
 /// This migrates the pallet from the standard version by parity to our modified storage.
 impl<T: Config> Pallet<T> {
@@ -35,7 +36,7 @@ impl<T: Config> Pallet<T> {
             log::info!("Executing collator-selection V0->V1 migration!");
 
             // Drain all keys from the old (now unused) map
-            let iter_map = storage_key_iter::<T::AccountId, T::BlockNumber, Twox64Concat>(
+            let iter_map = storage_key_iter::<T::AccountId, BlockNumberFor<T>, Twox64Concat>(
                 Self::name().as_bytes(),
                 b"LastAuthoredBlock",
             )
@@ -76,7 +77,7 @@ impl<T: Config> Pallet<T> {
         if !have_storage_value(Self::name().as_bytes(), b"KickThreshold", &[]) {
             log::warn!("Precheck: KickThreshold does not exist");
         }
-        if storage_key_iter::<T::AccountId, T::BlockNumber, Twox64Concat>(
+        if storage_key_iter::<T::AccountId, BlockNumberFor<T>, Twox64Concat>(
             Self::name().as_bytes(),
             b"LastAuthoredBlock",
         )
@@ -95,7 +96,7 @@ impl<T: Config> Pallet<T> {
         if have_storage_value(Self::name().as_bytes(), b"KickThreshold", &[]) {
             return Err("KickThreshold wasn't removed");
         }
-        if storage_key_iter::<T::AccountId, T::BlockNumber, Twox64Concat>(
+        if storage_key_iter::<T::AccountId, BlockNumberFor<T>, Twox64Concat>(
             Self::name().as_bytes(),
             b"LastAuthoredBlock",
         )

@@ -22,8 +22,12 @@ use crate::{
     Points, Range, Round, ScheduledRequest,
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, vec};
-use frame_support::traits::{tokens::fungible::Inspect, Currency, Get, OnFinalize, OnInitialize};
-use frame_system::RawOrigin;
+use frame_support::traits::{
+    tokens::{fungible::Inspect, Fortitude, Preservation},
+    Currency, Get, OnFinalize, OnInitialize,
+};
+use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
+// use sp_runtime::{BuildStorage, Perbill, Percent};
 use sp_runtime::{Perbill, Percent};
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
@@ -113,7 +117,7 @@ pub fn parachain_staking_on_finalize<T: Config>(author: T::AccountId) {
 /// Run to end block and author
 pub fn roll_to_and_author<T: Config>(round_delay: u32, author: T::AccountId) {
     let total_rounds = round_delay + 1u32;
-    let round_length: T::BlockNumber = Pallet::<T>::round().length.into();
+    let round_length: BlockNumberFor<T> = Pallet::<T>::round().length.into();
     let mut now = <frame_system::Pallet<T>>::block_number() + 1u32.into();
     let end = Pallet::<T>::round().first + (round_length * total_rounds.into());
     while now < end {
@@ -365,10 +369,10 @@ benchmarks! {
             true,
             1u32,
         )?;
-        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
+        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller, Preservation::Preserve, Fortitude::Polite);
     }: _(RawOrigin::Signed(caller.clone()), more)
     verify {
-        let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
+        let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller, Preservation::Preserve, Fortitude::Polite);
         assert!(usable_balance_after < usable_balance_before);
     }
     schedule_candidate_bond_less {
@@ -406,14 +410,14 @@ benchmarks! {
             min_candidate_stk
         )?;
         roll_to_and_author::<T>(<<T as Config>::CandidateBondLessDelay as Get<u32>>::get(), caller.clone());
-        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
+        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller, Preservation::Preserve, Fortitude::Polite);
     }: {
         Pallet::<T>::execute_candidate_bond_less(
             RawOrigin::Signed(caller.clone()).into(),
             caller.clone()
         )?;
     } verify {
-        let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
+        let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller, Preservation::Preserve, Fortitude::Polite);
         assert!(usable_balance_after > usable_balance_before);
     }
 
@@ -741,7 +745,7 @@ benchmarks! {
             bond_less
         )?;
         roll_to_and_author::<T>(<<T as Config>::DelegationBondLessDelay as Get<u32>>::get(), collator.clone());
-        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
+        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller, Preservation::Preserve, Fortitude::Polite);
     }: {
         Pallet::<T>::execute_delegation_request(
             RawOrigin::Signed(caller.clone()).into(),
@@ -750,7 +754,7 @@ benchmarks! {
         )?;
     } verify {
         let expected = total - bond_less;
-        let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
+        let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller, Preservation::Preserve, Fortitude::Polite);
         assert!(usable_balance_after > usable_balance_before);
     }
 
@@ -937,7 +941,7 @@ benchmarks! {
         )> = delegators.iter().map(|x| (x.clone(), <T as Config>::Currency::free_balance(&x))).collect();
         // PREPARE RUN_TO_BLOCK LOOP
         let before_running_round_index = Pallet::<T>::round().current;
-        let round_length: T::BlockNumber = Pallet::<T>::round().length.into();
+        let round_length: BlockNumberFor<T> = Pallet::<T>::round().length.into();
         let reward_delay = <<T as Config>::RewardPaymentDelay as Get<u32>>::get() + 2u32;
         let mut now = <frame_system::Pallet<T>>::block_number() + 1u32.into();
         let mut counter = 0usize;
@@ -1096,8 +1100,8 @@ mod tests {
     use sp_io::TestExternalities;
 
     pub fn new_test_ext() -> TestExternalities {
-        let t = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
+        let t = frame_system::GenesisConfig::<Test>::default()
+            .build_storage()
             .unwrap();
         TestExternalities::new(t)
     }

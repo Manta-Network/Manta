@@ -233,6 +233,7 @@ where
             FungibleLedgerError::InvalidBurn(_) => Self::PublicUpdateInvalidBurn,
             FungibleLedgerError::InvalidTransfer(_) => Self::PublicUpdateInvalidTransfer,
             FungibleLedgerError::EncodeError => Self::FungibleLedgerEncodeError,
+            FungibleLedgerError::Blocked => Self::FungibleLedgerEncodeError, // todo
         }
     }
 }

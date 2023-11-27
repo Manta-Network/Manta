@@ -35,7 +35,7 @@ use sc_service::{Configuration, Error, KeystoreContainer, TFullBackend, TaskMana
 use sc_telemetry::{TelemetryHandle, TelemetryWorkerHandle};
 use sp_api::ConstructRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_keystore::SyncCryptoStorePtr;
+use sp_keystore::KeystorePtr;
 use substrate_prometheus_endpoint::Registry;
 
 use cumulus_client_cli::CollatorOptions;
@@ -93,7 +93,7 @@ pub fn build_nimbus_consensus<RuntimeApi>(
     relay_chain_interface: Arc<dyn RelayChainInterface>,
     transaction_pool: Arc<TransactionPool<RuntimeApi>>,
     _sync_oracle: Arc<NetworkService<Block, Hash>>,
-    keystore: SyncCryptoStorePtr,
+    keystore: KeystorePtr,
     force_authoring: bool,
 ) -> Result<Box<dyn ParachainConsensus<Block>>, Error>
 where
@@ -198,7 +198,7 @@ where
         commands_stream,
         select_chain,
         consensus_data_provider: Some(Box::new(NimbusManualSealConsensusDataProvider {
-            keystore: keystore_container.sync_keystore(),
+            keystore: keystore_container.keystore(),
             client,
             additional_digests_provider: (),
             _phantom: Default::default(),

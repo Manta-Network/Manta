@@ -28,17 +28,15 @@ pub const BOB: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([1u8; 32])
 /// Initializes a test by funding accounts.
 #[inline]
 fn initialize_test() {
-    assert_ok!(Balances::set_balance(
+    assert_ok!(Balances::force_set_balance(
         MockOrigin::root(),
         ALICE,
         1_000_000_000_000_000,
-        0
     ));
-    assert_ok!(Balances::set_balance(
+    assert_ok!(Balances::force_set_balance(
         MockOrigin::root(),
         BOB,
         1_000_000_000_000_000,
-        0
     ));
 }
 

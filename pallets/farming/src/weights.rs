@@ -62,7 +62,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Farming GaugePoolInfos (r:1 w:0)
 	fn on_initialize() -> Weight {
 		// Minimum execution time: 5_170 nanoseconds.
-		Weight::from_ref_time(5_433_000)
+		Weight::from_parts(5_433_000, 0)
 			.saturating_add(T::DbWeight::get().reads(2))
 	}
 	// Storage: Farming PoolNextId (r:1 w:1)
@@ -71,7 +71,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Farming PoolInfos (r:0 w:1)
 	fn create_farming_pool() -> Weight {
 		// Minimum execution time: 27_007 nanoseconds.
-		Weight::from_ref_time(27_448_000)
+		Weight::from_parts(27_448_000, 0)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(4))
 	}
@@ -81,7 +81,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: System Account (r:1 w:1)
 	fn charge() -> Weight {
 		// Minimum execution time: 897_000 nanoseconds.
-		Weight::from_ref_time(902_000_000)
+		Weight::from_parts(902_000_000, 0)
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(5))
 	}
@@ -92,7 +92,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Farming SharesAndWithdrawnRewards (r:1 w:1)
 	fn deposit() -> Weight {
 		// Minimum execution time: 64_240 nanoseconds.
-		Weight::from_ref_time(65_244_000)
+		Weight::from_parts(65_244_000, 0)
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(6))
 	}
@@ -100,7 +100,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Farming SharesAndWithdrawnRewards (r:1 w:1)
 	fn withdraw() -> Weight {
 		// Minimum execution time: 36_542 nanoseconds.
-		Weight::from_ref_time(37_369_000)
+		Weight::from_parts(37_369_000, 0)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -109,7 +109,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Farming GaugeInfos (r:1 w:0)
 	fn claim() -> Weight {
 		// Minimum execution time: 35_822 nanoseconds.
-		Weight::from_ref_time(37_226_000)
+		Weight::from_parts(37_226_000, 0)
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -119,7 +119,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Farming SharesAndWithdrawnRewards (r:1 w:0)
 	fn gauge_withdraw() -> Weight {
 		// Minimum execution time: 37_084 nanoseconds.
-		Weight::from_ref_time(37_875_000)
+		Weight::from_parts(37_875_000, 0)
 			.saturating_add(T::DbWeight::get().reads(4))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -131,7 +131,7 @@ impl WeightInfo for () {
 	// Storage: Farming GaugePoolInfos (r:1 w:0)
 	fn on_initialize() -> Weight {
 		// Minimum execution time: 5_170 nanoseconds.
-		Weight::from_ref_time(5_433_000)
+		Weight::from_parts(5_433_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(2))
 	}
 	// Storage: Farming PoolNextId (r:1 w:1)
@@ -140,7 +140,7 @@ impl WeightInfo for () {
 	// Storage: Farming PoolInfos (r:0 w:1)
 	fn create_farming_pool() -> Weight {
 		// Minimum execution time: 27_007 nanoseconds.
-		Weight::from_ref_time(27_448_000)
+		Weight::from_parts(27_448_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(4))
 	}
@@ -150,7 +150,7 @@ impl WeightInfo for () {
 	// Storage: System Account (r:1 w:1)
 	fn charge() -> Weight {
 		// Minimum execution time: 897_000 nanoseconds.
-		Weight::from_ref_time(902_000_000)
+		Weight::from_parts(902_000_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(5))
 			.saturating_add(RocksDbWeight::get().writes(5))
 	}
@@ -161,7 +161,7 @@ impl WeightInfo for () {
 	// Storage: Farming SharesAndWithdrawnRewards (r:1 w:1)
 	fn deposit() -> Weight {
 		// Minimum execution time: 64_240 nanoseconds.
-		Weight::from_ref_time(65_244_000)
+		Weight::from_parts(65_244_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(6))
 			.saturating_add(RocksDbWeight::get().writes(6))
 	}
@@ -169,7 +169,7 @@ impl WeightInfo for () {
 	// Storage: Farming SharesAndWithdrawnRewards (r:1 w:1)
 	fn withdraw() -> Weight {
 		// Minimum execution time: 36_542 nanoseconds.
-		Weight::from_ref_time(37_369_000)
+		Weight::from_parts(37_369_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
@@ -178,7 +178,7 @@ impl WeightInfo for () {
 	// Storage: Farming GaugeInfos (r:1 w:0)
 	fn claim() -> Weight {
 		// Minimum execution time: 35_822 nanoseconds.
-		Weight::from_ref_time(37_226_000)
+		Weight::from_parts(37_226_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(3))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
@@ -188,7 +188,7 @@ impl WeightInfo for () {
 	// Storage: Farming SharesAndWithdrawnRewards (r:1 w:0)
 	fn gauge_withdraw() -> Weight {
 		// Minimum execution time: 37_084 nanoseconds.
-		Weight::from_ref_time(37_875_000)
+		Weight::from_parts(37_875_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(4))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}

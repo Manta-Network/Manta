@@ -19,7 +19,6 @@ use core::marker::PhantomData;
 
 use crate as pallet_lottery;
 use crate::{pallet, Config, FarmingParamsOf};
-use calamari_runtime::currency::KMA;
 use frame_support::{
     assert_ok, construct_runtime, ord_parameter_types,
     pallet_prelude::*,
@@ -35,7 +34,7 @@ use manta_primitives::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
         AssetStorageMetadata, BalanceType, FungibleLedger, LocationType, NativeAndNonNative,
     },
-    constants::ASSET_MANAGER_PALLET_ID,
+    constants::{ASSET_MANAGER_PALLET_ID, WEIGHT_PER_SECOND},
     currencies::Currencies,
     types::{BlockNumber, CalamariAssetId, Header, PoolId},
 };
@@ -44,16 +43,25 @@ use sp_core::H256;
 
 use sp_runtime::{
     traits::{BlakeTwo256, Hash, IdentityLookup},
-    Perbill, Percent,
+    BuildStorage, Perbill, Percent,
 };
 use xcm::{
     prelude::{Junctions, Parachain, X1},
-    v2::MultiLocation,
+    v3::MultiLocation,
     VersionedMultiLocation,
 };
 
 pub type AccountId = u64;
 pub type Balance = u128;
+
+// Please align these constants to calamari_runtime::staking
+const KMA: Balance = 1_000_000_000_000;
+const NORMAL_COLLATOR_MINIMUM_STAKE: Balance = 4_000_000 * KMA;
+const EARLY_COLLATOR_MINIMUM_STAKE: Balance = 400_000 * KMA;
+const MIN_BOND_TO_BE_CONSIDERED_COLLATOR: Balance = NORMAL_COLLATOR_MINIMUM_STAKE;
+pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(WEIGHT_PER_SECOND, 0)
+    .saturating_div(2)
+    .set_proof_size(cumulus_primitives_core::relay_chain::MAX_POV_SIZE as u64);
 
 pub const ALICE: AccountId = 1;
 pub const BOB: AccountId = 2;
@@ -75,12 +83,9 @@ type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub struct Test
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         ParachainStaking: pallet_parachain_staking::{Pallet, Call, Storage, Config<T>, Event<T>},
         Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>},
@@ -124,14 +129,13 @@ impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type DbWeight = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
+    type Block = Block;
     type RuntimeCall = RuntimeCall;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
@@ -159,6 +163,10 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<1>;
+    type MaxHolds = ConstU32<1>;
 }
 
 parameter_types! {
@@ -168,7 +176,7 @@ parameter_types! {
 }
 
 impl pallet_preimage::Config for Test {
-    type WeightInfo = calamari_runtime::weights::pallet_preimage::SubstrateWeight<Test>;
+    type WeightInfo = ();
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type ManagerOrigin = EnsureRoot<AccountId>;
@@ -201,7 +209,7 @@ impl frame_support::traits::PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
     }
 }
 parameter_types! {
-    pub MaximumSchedulerWeight: Weight = Perbill::from_percent(10) * calamari_runtime::MAXIMUM_BLOCK_WEIGHT;
+    pub MaximumSchedulerWeight: Weight = Perbill::from_percent(10) * MAXIMUM_BLOCK_WEIGHT;
     pub const NoPreimagePostponement: Option<u32> = Some(10);
 }
 impl pallet_scheduler::Config for Test {
@@ -212,7 +220,7 @@ impl pallet_scheduler::Config for Test {
     type MaximumWeight = MaximumSchedulerWeight;
     type ScheduleOrigin = EnsureRoot<AccountId>;
     type MaxScheduledPerBlock = ConstU32<50>; // 50 scheduled calls at most in the queue for a single block.
-    type WeightInfo = calamari_runtime::weights::pallet_scheduler::SubstrateWeight<Test>;
+    type WeightInfo = ();
     type OriginPrivilegeCmp = OriginPrivilegeCmp;
     type Preimages = Preimage;
 }
@@ -291,20 +299,18 @@ impl pallet_parachain_staking::Config for Test {
     type DefaultCollatorCommission = DefaultCollatorCommission;
     type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
     /// Minimum stake on a collator to be considered for block production
-    type MinCollatorStk =
-        ConstU128<{ calamari_runtime::staking::MIN_BOND_TO_BE_CONSIDERED_COLLATOR }>;
+    type MinCollatorStk = ConstU128<{ MIN_BOND_TO_BE_CONSIDERED_COLLATOR }>;
     /// Minimum stake the collator runner must bond to register as collator candidate
-    type MinCandidateStk = ConstU128<{ calamari_runtime::staking::NORMAL_COLLATOR_MINIMUM_STAKE }>;
+    type MinCandidateStk = ConstU128<{ NORMAL_COLLATOR_MINIMUM_STAKE }>;
     /// WHITELIST: Minimum stake required for *a whitelisted* account to be a collator candidate
-    type MinWhitelistCandidateStk =
-        ConstU128<{ calamari_runtime::staking::EARLY_COLLATOR_MINIMUM_STAKE }>;
+    type MinWhitelistCandidateStk = ConstU128<{ EARLY_COLLATOR_MINIMUM_STAKE }>;
     /// Smallest amount that can be delegated
     type MinDelegation = ConstU128<{ 5_000 * KMA }>;
     /// Minimum stake required to be reserved to be a delegator
     type MinDelegatorStk = ConstU128<{ 5_000 * KMA }>;
     type OnCollatorPayout = ();
     type OnNewRound = ();
-    type WeightInfo = calamari_runtime::weights::pallet_parachain_staking::SubstrateWeight<Test>; // XXX: Maybe use the actual calamari weights?
+    type WeightInfo = (); // XXX: Maybe use the actual calamari weights?
 }
 
 parameter_types! {
@@ -407,7 +413,7 @@ parameter_types! {
     pub const NativeAssetId: CalamariAssetId = 1;
     pub const StartNonNativeAssetId: CalamariAssetId = 8;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
-        VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
+        VersionedMultiLocation::V3(MultiLocation::new(1, X1(Parachain(1024)))));
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
         metadata: AssetStorageMetadata {
             name: b"Calamari".to_vec(),
@@ -610,8 +616,8 @@ impl ExtBuilder {
     }
 
     pub(crate) fn build(self) -> sp_io::TestExternalities {
-        let mut t = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
+        let mut t = frame_system::GenesisConfig::<Test>::default()
+            .build_storage()
             .expect("Frame system builds valid default genesis config");
 
         pallet_balances::GenesisConfig::<Test> {
@@ -660,11 +666,11 @@ impl ExtBuilder {
                 create_asset_metadata("vManta", "vMANTA", 12, 1u128, false, true);
             let jumbo_asset_metadata =
                 create_asset_metadata("Jumbo", "JUMBO", 12, 1u128, false, true);
-            let v_manta_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+            let v_manta_location = AssetLocation(VersionedMultiLocation::V3(MultiLocation::new(
                 1,
                 Junctions::Here,
             )));
-            let native_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+            let native_location = AssetLocation(VersionedMultiLocation::V3(MultiLocation::new(
                 0,
                 Junctions::Here,
             )));
@@ -790,7 +796,7 @@ pub mod from_bench {
 }
 
 /// Rolls forward one block. Returns the new block number.
-pub(crate) fn roll_one_block() -> u32 {
+pub(crate) fn roll_one_block() -> u64 {
     Balances::on_finalize(System::block_number());
     System::on_finalize(System::block_number());
     System::set_block_number(System::block_number() + 1);
@@ -805,7 +811,7 @@ pub(crate) fn roll_one_block() -> u32 {
 pub(crate) fn roll_to(n: u32) -> u32 {
     let mut num_blocks = 0;
     let mut block = System::block_number();
-    while block < n {
+    while block < n as u64 {
         block = roll_one_block();
         num_blocks += 1;
     }
@@ -824,7 +830,7 @@ pub(crate) fn roll_to_round_begin(round: u32) -> u32 {
 /// The block following will be the one in which the specified round change occurs.
 pub(crate) fn roll_to_round_end(round: u32) -> u32 {
     let block = round * DefaultBlocksPerRound::get() - 1;
-    roll_to(block)
+    roll_to(block.into())
 }
 
 pub(crate) fn last_event() -> RuntimeEvent {
@@ -849,7 +855,6 @@ pub mod block_author {
     pub trait Config: frame_system::Config {}
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(_);
 
     #[pallet::storage]

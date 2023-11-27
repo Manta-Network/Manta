@@ -28,7 +28,11 @@ use crate::assets::{AssetIdLocationMap, UnitsPerSecond};
 use frame_support::{
     ensure,
     pallet_prelude::Get,
-    traits::{fungibles::Mutate, tokens::ExistenceRequirement, Contains},
+    traits::{
+        fungibles::Mutate,
+        tokens::{ExistenceRequirement, Provenance},
+        Contains, ContainsPair, ProcessMessageError,
+    },
 };
 use frame_system::Config;
 use xcm::{
@@ -36,19 +40,19 @@ use xcm::{
         prelude::{BuyExecution, Concrete, DescendOrigin, WithdrawAsset},
         Error as XcmError,
         WeightLimit::{Limited, Unlimited},
-        Xcm,
+        XcmContext,
     },
-    v1::{
+    v3::{
         AssetId as XcmAssetId, Fungibility,
         Junction::{AccountId32, Parachain},
         Junctions::X1,
-        MultiAsset, MultiLocation, NetworkId,
+        MultiAsset, MultiLocation, NetworkId, Weight as XcmWeight,
     },
 };
 use xcm_builder::TakeRevenue;
 use xcm_executor::{
     traits::{
-        Convert as XcmConvert, FilterAssetLocation, MatchesFungible, MatchesFungibles,
+        ConvertLocation, FilterAssetLocation, MatchesFungible, MatchesFungibles, Properties,
         ShouldExecute, TransactAsset, WeightTrader,
     },
     Assets,
@@ -86,9 +90,9 @@ impl Reserve for MultiAsset {
 /// Filters multi-native assets whose reserve is same as the `origin`.
 pub struct MultiNativeAsset;
 
-impl FilterAssetLocation for MultiNativeAsset {
+impl ContainsPair<MultiAsset, MultiLocation> for MultiNativeAsset {
     #[inline]
-    fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+    fn contains(asset: &MultiAsset, origin: &MultiLocation) -> bool {
         asset.reserve().map(|r| r == *origin).unwrap_or(false)
     }
 }
@@ -105,7 +109,7 @@ where
         MultiLocation {
             parents: 0,
             interior: X1(AccountId32 {
-                network: NetworkId::Any,
+                network: Some(NetworkId::Kusama),
                 id: account.into(),
             }),
         }
@@ -121,7 +125,7 @@ where
     R: TakeRevenue,
 {
     /// Weight
-    weight: u64,
+    weight: Weight,
 
     /// Refund Cache
     refund_cache: Option<(MultiLocation, u128, u128)>,
@@ -139,7 +143,7 @@ where
     #[inline]
     fn new() -> Self {
         Self {
-            weight: 0,
+            weight: Weight::from_parts(0, 0),
             refund_cache: None,
             __: PhantomData,
         }
@@ -148,7 +152,7 @@ where
     /// Buys weight for XCM execution. We always return the [`TooExpensive`](XcmError::TooExpensive)
     /// error if this fails.
     #[inline]
-    fn buy_weight(&mut self, weight: u64, payment: Assets) -> Result<Assets> {
+    fn buy_weight(&mut self, weight: XcmWeight, payment: Assets) -> Result<Assets> {
         log::debug!(
             target: "FirstAssetTrader::buy_weight",
             "weight: {:?}, payment: {:?}",
@@ -185,8 +189,8 @@ where
                     XcmError::TooExpensive
                 })?;
 
-                let amount =
-                    (units_per_second.saturating_mul(weight as u128)) / (WEIGHT_PER_SECOND as u128);
+                let amount = (units_per_second.saturating_mul(weight.ref_time() as u128))
+                    / (WEIGHT_PER_SECOND as u128);
 
                 // we don't need to proceed if amount is zero.
                 // This is very useful in tests.
@@ -195,7 +199,7 @@ where
                 }
                 let required = MultiAsset {
                     fun: Fungibility::Fungible(amount),
-                    id: XcmAssetId::Concrete(id.clone()),
+                    id: XcmAssetId::Concrete(id),
                 };
 
                 log::debug!(
@@ -211,7 +215,8 @@ where
                     );
                     XcmError::TooExpensive
                 })?;
-                self.weight = self.weight.saturating_add(weight);
+                // self.weight = self.weight.saturating_add(weight);
+                self.weight += weight;
 
                 // In case the asset matches the one the trader already stored before, add
                 // to later refund
@@ -252,16 +257,16 @@ where
 
     ///
     #[inline]
-    fn refund_weight(&mut self, weight: u64) -> Option<MultiAsset> {
+    fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
         if let Some((id, prev_amount, units_per_second)) = &mut self.refund_cache {
             let weight = weight.min(self.weight);
             self.weight = self.weight.saturating_sub(weight);
-            let amount =
-                ((*units_per_second).saturating_mul(weight as u128)) / (WEIGHT_PER_SECOND as u128);
+            let amount = ((*units_per_second).saturating_mul(weight.ref_time() as u128))
+                / (WEIGHT_PER_SECOND as u128);
             *prev_amount = prev_amount.saturating_sub(amount);
             Some(MultiAsset {
                 fun: Fungibility::Fungible(amount),
-                id: XcmAssetId::Concrete(id.clone()),
+                id: XcmAssetId::Concrete(*id),
             })
         } else {
             None
@@ -277,7 +282,7 @@ where
     #[inline]
     fn drop(&mut self) {
         if let Some((id, amount, _)) = &self.refund_cache {
-            R::take_revenue((id.clone(), *amount).into());
+            R::take_revenue((*id, *amount).into());
         }
     }
 }
@@ -342,7 +347,7 @@ impl<T, A, AccountIdConverter, Native, NonNative>
 where
     T: Config,
     A: AssetConfig<T>,
-    AccountIdConverter: XcmConvert<MultiLocation, T::AccountId>,
+    AccountIdConverter: ConvertLocation<T::AccountId>,
     Native: MatchesFungible<A::Balance>,
     NonNative: MatchesFungibles<A::AssetId, A::Balance>,
 {
@@ -355,9 +360,8 @@ where
         asset: &MultiAsset,
         location: &MultiLocation,
     ) -> Result<(A::AssetId, T::AccountId, A::Balance)> {
-        let receiver = AccountIdConverter::convert_ref(location).map_err(|_| {
-            XcmError::FailedToTransactAsset("Failed Location to AccountId Conversion")
-        })?;
+        let receiver =
+            AccountIdConverter::convert_location(location).ok_or(XcmError::InvalidLocation)?; // todo
         let (asset_id, amount) = match (
             Native::matches_fungible(asset),
             NonNative::matches_fungibles(asset),
@@ -380,12 +384,16 @@ where
     A: AssetConfig<T>,
     A::AssetId: Clone,
     A::Balance: Clone,
-    AccountIdConverter: XcmConvert<MultiLocation, T::AccountId>,
+    AccountIdConverter: ConvertLocation<T::AccountId>,
     Native: MatchesFungible<A::Balance>,
     NonNative: MatchesFungibles<A::AssetId, A::Balance>,
 {
     #[inline]
-    fn deposit_asset(asset: &MultiAsset, location: &MultiLocation) -> Result {
+    fn deposit_asset(
+        asset: &MultiAsset,
+        location: &MultiLocation,
+        _context: &XcmContext,
+    ) -> Result {
         log::debug!(
             target: "xcm::multi_asset_adapter",
             "deposit_asset asset: {:?}, location: {:?}",
@@ -394,12 +402,16 @@ where
         let (asset_id, who, amount) = Self::match_asset_and_location(asset, location)?;
         // NOTE: If it's non-native asset we want to check with increase in total supply. Otherwise
         //       it will just use false, as it is assumed the native asset supply cannot be changed.
-        A::FungibleLedger::deposit_minting_with_check(asset_id, &who, amount, true)
+        A::FungibleLedger::deposit_minting_with_check(asset_id, &who, amount, Provenance::Minted)
             .map_err(|_| XcmError::FailedToTransactAsset("Failed deposit minting"))
     }
 
     #[inline]
-    fn withdraw_asset(asset: &MultiAsset, location: &MultiLocation) -> Result<Assets> {
+    fn withdraw_asset(
+        asset: &MultiAsset,
+        location: &MultiLocation,
+        _maybe_context: Option<&XcmContext>,
+    ) -> Result<Assets> {
         log::debug!(
             target: "xcm::multi_asset_adapter",
             "withdraw_asset asset: {:?}, location: {:?}",
@@ -417,7 +429,10 @@ where
     }
 }
 
-use xcm::latest::{Instruction::*, Weight};
+use xcm::latest::{
+    Instruction::{self, *},
+    Weight,
+};
 
 /// Allows execution from `origin` if it is contained in `T` (i.e. `T::Contains(origin)`) taking
 /// payments into account.
@@ -428,34 +443,34 @@ pub struct AllowTopLevelPaidExecutionFrom<T>(PhantomData<T>);
 impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionFrom<T> {
     fn should_execute<RuntimeCall>(
         origin: &MultiLocation,
-        message: &mut Xcm<RuntimeCall>,
+        message: &mut [Instruction<RuntimeCall>],
         max_weight: Weight,
-        _weight_credit: &mut Weight,
-    ) -> Result<(), ()> {
+        _weight_credit: &mut Properties,
+    ) -> Result<(), ProcessMessageError> {
         log::trace!(
             target: "xcm::barriers",
             "AllowTopLevelPaidExecutionFrom origin: {:?}, message: {:?}, max_weight: {:?}, weight_credit: {:?}",
             origin, message, max_weight, _weight_credit,
         );
-        ensure!(T::contains(origin), ());
-        let mut iter = message.0.iter_mut();
-        let i = iter.next().ok_or(())?;
+        ensure!(T::contains(origin), ProcessMessageError::Unsupported);
+        let mut iter = message.iter_mut();
+        let i = iter.next().ok_or(ProcessMessageError::Unsupported)?;
         match i {
             ReceiveTeleportedAsset(..)
             | WithdrawAsset(..)
             | ReserveAssetDeposited(..)
             | ClaimAsset { .. } => (),
-            _ => return Err(()),
+            _ => return Err(ProcessMessageError::Unsupported),
         }
-        let mut i = iter.next().ok_or(())?;
+        let mut i = iter.next().ok_or(ProcessMessageError::Unsupported)?;
         while let ClearOrigin = i {
-            i = iter.next().ok_or(())?;
+            i = iter.next().ok_or(ProcessMessageError::Unsupported)?;
         }
         match i {
             BuyExecution {
                 weight_limit: Limited(ref mut weight),
                 ..
-            } if *weight >= max_weight => {
+            } if weight.all_gte(max_weight) => {
                 *weight = max_weight;
             }
             BuyExecution {
@@ -465,14 +480,14 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionFro
                 *weight_limit = Limited(max_weight);
             }
             _ => {
-                return Err(());
+                return Err(ProcessMessageError::Unsupported);
             }
         }
 
         for next in iter {
             if let TransferReserveAsset { .. } = next {
                 // We've currently blocked transfers of MANTA on the instruction level
-                return Err(());
+                return Err(ProcessMessageError::Unsupported);
             }
         }
 
@@ -485,35 +500,35 @@ pub struct AllowTopLevelPaidExecutionDescendOriginFirst<T>(PhantomData<T>);
 impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionDescendOriginFirst<T> {
     fn should_execute<Call>(
         origin: &MultiLocation,
-        message: &mut Xcm<Call>,
-        max_weight: u64,
-        _weight_credit: &mut u64,
-    ) -> Result<(), ()> {
+        message: &mut [xcm::v3::Instruction<Call>],
+        max_weight: Weight,
+        _weight_credit: &mut Properties,
+    ) -> Result<(), ProcessMessageError> {
         log::trace!(
             target: "xcm::barriers",
             "AllowTopLevelPaidExecutionDescendOriginFirst origin:
             {:?}, message: {:?}, max_weight: {:?}, weight_credit: {:?}",
             origin, message, max_weight, _weight_credit,
         );
-        ensure!(T::contains(origin), ());
-        let mut iter = message.0.iter_mut();
+        ensure!(T::contains(origin), ProcessMessageError::Unsupported);
+        let mut iter = message.iter_mut();
         // Make sure the first instruction is DescendOrigin
         iter.next()
             .filter(|instruction| matches!(instruction, DescendOrigin(_)))
-            .ok_or(())?;
+            .ok_or(ProcessMessageError::Unsupported)?;
 
         // Then WithdrawAsset
         iter.next()
             .filter(|instruction| matches!(instruction, WithdrawAsset(_)))
-            .ok_or(())?;
+            .ok_or(ProcessMessageError::Unsupported)?;
 
         // Then BuyExecution
-        let i = iter.next().ok_or(())?;
+        let i = iter.next().ok_or(ProcessMessageError::Unsupported)?;
         match i {
             BuyExecution {
                 weight_limit: Limited(ref mut weight),
                 ..
-            } if *weight >= max_weight => {
+            } if weight.all_gte(max_weight) => {
                 *weight = max_weight;
             }
             BuyExecution {
@@ -523,14 +538,14 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionDes
                 *weight_limit = Limited(max_weight);
             }
             _ => {
-                return Err(());
+                return Err(ProcessMessageError::Unsupported);
             }
         }
 
         for next in iter {
             if let TransferReserveAsset { .. } = next {
                 // We've currently blocked transfers of MANTA on the instruction level
-                return Err(());
+                return Err(ProcessMessageError::Unsupported);
             }
         }
 

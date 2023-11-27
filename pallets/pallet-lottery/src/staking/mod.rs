@@ -19,6 +19,7 @@ mod withdraw_strategies;
 
 use super::*;
 use frame_support::{dispatch::RawOrigin, ensure, traits::EstimateCallFee};
+use frame_system::pallet_prelude::BlockNumberFor;
 use pallet_parachain_staking::BalanceOf;
 use sp_runtime::{
     traits::{Saturating, Zero},
@@ -93,7 +94,7 @@ impl<T: Config> Pallet<T> {
         if !deposits.is_empty() {
             if !remaining_deposit.is_zero() {
                 let deposit_per_collator =
-                    Percent::from_rational(1, deposits.len()).mul_ceil(remaining_deposit); // this overshoots the amount if there's a remainder
+                    Percent::from_rational(1, deposits.len() as u32).mul_ceil(remaining_deposit); // this overshoots the amount if there's a remainder
                 for deposit in &mut deposits {
                     let add = remaining_deposit.saturating_sub(deposit_per_collator); // we correct the overshoot here
                     deposit.1 += add;
@@ -248,7 +249,7 @@ impl<T: Config> Pallet<T> {
                     candidate_delegation_count: candidate_delegation_count + 1,
                     delegation_count: delegation_count + 1,
                 },
-                None::<u64>.into(),
+                None.into(),
             );
             ensure!(
                 Self::surplus_funds() > fee_estimate,
@@ -277,7 +278,7 @@ impl<T: Config> Pallet<T> {
                     candidate: collator.clone(),
                     more: amount,
                 },
-                None::<u64>.into(),
+                None.into(),
             );
             ensure!(
                 Self::surplus_funds() > fee_estimate,
@@ -306,7 +307,7 @@ impl<T: Config> Pallet<T> {
 
     #[named]
     pub(crate) fn do_unstake_collator(
-        now: T::BlockNumber,
+        now: BlockNumberFor<T>,
         some_collator: T::AccountId,
     ) -> DispatchResult {
         log::trace!(function_name!());
@@ -325,7 +326,7 @@ impl<T: Config> Pallet<T> {
             &pallet_parachain_staking::Call::schedule_revoke_delegation {
                 collator: some_collator.clone(),
             },
-            None::<u64>.into(),
+            None.into(),
         );
         ensure!(
             Self::surplus_funds() > fee_estimate,

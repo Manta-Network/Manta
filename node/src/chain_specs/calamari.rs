@@ -20,8 +20,8 @@ use super::*;
 use crate::command::CALAMARI_PARACHAIN_ID;
 #[allow(unused_imports)]
 use calamari_runtime::{
-    currency::KMA, opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig,
-    LotteryConfig, ParachainStakingConfig, TechnicalCommitteeConfig,
+    currency::KMA, opaque::SessionKeys, CouncilConfig, DemocracyConfig, LotteryConfig,
+    ParachainStakingConfig, RuntimeGenesisConfig, TechnicalCommitteeConfig,
 };
 use session_key_primitives::util::unchecked_account_id;
 /// Calamari Protocol Identifier
@@ -37,7 +37,7 @@ pub const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
 pub const CALAMARI_SAFE_XCM_VERSION: u32 = 2;
 
 /// Calamari Chain Spec
-pub type CalamariChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
+pub type CalamariChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig, Extensions>;
 
 /// Returns the [`Properties`] for the Calamari parachain.
 pub fn calamari_properties() -> Properties {
@@ -160,12 +160,13 @@ fn calamari_dev_genesis(
     invulnerables: Vec<(AccountId, SessionKeys)>,
     delegations: Vec<(AccountId, AccountId, Balance)>,
     endowed_accounts: Vec<AccountId>,
-) -> GenesisConfig {
-    GenesisConfig {
+) -> RuntimeGenesisConfig {
+    RuntimeGenesisConfig {
         system: calamari_runtime::SystemConfig {
             code: calamari_runtime::WASM_BINARY
                 .expect("WASM binary was not build, please build it!")
                 .to_vec(),
+            ..Default::default()
         },
         balances: calamari_runtime::BalancesConfig {
             balances: endowed_accounts[..endowed_accounts.len() / 2]
@@ -177,6 +178,7 @@ fn calamari_dev_genesis(
                     )
                 })
                 .collect(),
+            // ..Default::default()
         },
         // no need to pass anything to aura, in fact it will panic if we do. Session will take care
         // of this.
@@ -199,6 +201,7 @@ fn calamari_dev_genesis(
         },
         parachain_info: calamari_runtime::ParachainInfoConfig {
             parachain_id: CALAMARI_PARACHAIN_ID.into(),
+            ..Default::default()
         },
         collator_selection: calamari_runtime::CollatorSelectionConfig {
             invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
@@ -221,11 +224,11 @@ fn calamari_dev_genesis(
         democracy: DemocracyConfig::default(),
         council: CouncilConfig {
             members: endowed_accounts.iter().take(1).cloned().collect(),
-            phantom: Default::default(),
+            ..Default::default()
         },
         technical_committee: TechnicalCommitteeConfig {
             members: endowed_accounts.iter().take(1).cloned().collect(),
-            phantom: Default::default(),
+            ..Default::default()
         },
         council_membership: Default::default(),
         technical_membership: Default::default(),
@@ -233,6 +236,7 @@ fn calamari_dev_genesis(
         parachain_system: Default::default(),
         polkadot_xcm: calamari_runtime::PolkadotXcmConfig {
             safe_xcm_version: Some(CALAMARI_SAFE_XCM_VERSION),
+            ..Default::default()
         },
         lottery: LotteryConfig {
             min_deposit: 5_000 * KMA,

@@ -74,7 +74,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: MantaSbt Shards (r:0 w:1)
 	fn to_private() -> Weight {
 		// Minimum execution time: 39_355_971 nanoseconds.
-		Weight::from_ref_time(39_453_744_000)
+		Weight::from_parts(39_453_744_000, 0)
 			.saturating_add(T::DbWeight::get().reads(7))
 			.saturating_add(T::DbWeight::get().writes(5))
 	}
@@ -84,14 +84,14 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: MantaSbt NextSbtId (r:1 w:1)
 	fn reserve_sbt() -> Weight {
 		// Minimum execution time: 50_199 nanoseconds.
-		Weight::from_ref_time(55_043_000)
+		Weight::from_parts(55_043_000, 0)
 			.saturating_add(T::DbWeight::get().reads(4))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
 	// Storage: MantaSbt AllowlistAccount (r:0 w:1)
 	fn change_allowlist_account() -> Weight {
 		// Minimum execution time: 16_000 nanoseconds.
-		Weight::from_ref_time(16_280_000)
+		Weight::from_parts(16_280_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: MantaSbt MintIdRegistry (r:1 w:0)
@@ -101,7 +101,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: MantaSbt NextSbtId (r:1 w:1)
 	fn allowlist_evm_account() -> Weight {
 		// Minimum execution time: 30_138 nanoseconds.
-		Weight::from_ref_time(31_160_000)
+		Weight::from_parts(31_160_000, 0)
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -110,7 +110,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: MantaSbt MintIdRegistry (r:0 w:1)
 	fn new_mint_info() -> Weight {
 		// Minimum execution time: 18_710 nanoseconds.
-		Weight::from_ref_time(19_166_000)
+		Weight::from_parts(19_166_000, 0)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
@@ -118,7 +118,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: MantaSbt PublicMintList (r:0 w:1)
 	fn update_mint_info() -> Weight {
 		// Minimum execution time: 21_958 nanoseconds.
-		Weight::from_ref_time(22_914_000)
+		Weight::from_parts(22_914_000, 0)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -132,26 +132,26 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: MantaSbt Shards (r:0 w:1)
 	fn mint_sbt_eth() -> Weight {
 		// Minimum execution time: 39_468_616 nanoseconds.
-		Weight::from_ref_time(39_560_727_000)
+		Weight::from_parts(39_560_727_000, 0)
 			.saturating_add(T::DbWeight::get().reads(7))
 			.saturating_add(T::DbWeight::get().writes(5))
 	}
 	// Storage: MantaSbt AllowlistAccount (r:0 w:1)
 	fn change_free_reserve_account() -> Weight {
 		// Minimum execution time: 15_919 nanoseconds.
-		Weight::from_ref_time(16_287_000)
+		Weight::from_parts(16_287_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: MantaSbt EvmAccountAllowlist (r:0 w:1)
 	fn remove_allowlist_evm_account() -> Weight {
 		// Minimum execution time: 16_210 nanoseconds.
-		Weight::from_ref_time(17_519_000)
+		Weight::from_parts(17_519_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: MantaSbt NextSbtId (r:0 w:1)
 	fn set_next_sbt_id() -> Weight {
 		// Minimum execution time: 15_180 nanoseconds.
-		Weight::from_ref_time(15_479_000)
+		Weight::from_parts(15_479_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: MantaSbt ForceAccount (r:1 w:0)
@@ -162,7 +162,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: MantaSbt Shards (r:0 w:1)
 	fn force_to_private() -> Weight {
 		// Minimum execution time: 39_347_955 nanoseconds.
-		Weight::from_ref_time(39_386_564_000)
+		Weight::from_parts(39_386_564_000, 0)
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(4))
 	}
@@ -175,14 +175,14 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: MantaSbt Shards (r:0 w:1)
 	fn force_mint_sbt_eth() -> Weight {
 		// Minimum execution time: 39_354_533 nanoseconds.
-		Weight::from_ref_time(39_374_716_000)
+		Weight::from_parts(39_374_716_000, 0)
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(5))
 	}
 	// Storage: MantaSbt ForceAccount (r:0 w:1)
 	fn change_force_account() -> Weight {
 		// Minimum execution time: 15_851 nanoseconds.
-		Weight::from_ref_time(16_229_000)
+		Weight::from_parts(16_229_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 }
@@ -199,7 +199,7 @@ impl WeightInfo for () {
 	// Storage: MantaSbt Shards (r:0 w:1)
 	fn to_private() -> Weight {
 		// Minimum execution time: 39_355_971 nanoseconds.
-		Weight::from_ref_time(39_453_744_000)
+		Weight::from_parts(39_453_744_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(7))
 			.saturating_add(RocksDbWeight::get().writes(5))
 	}
@@ -209,14 +209,14 @@ impl WeightInfo for () {
 	// Storage: MantaSbt NextSbtId (r:1 w:1)
 	fn reserve_sbt() -> Weight {
 		// Minimum execution time: 50_199 nanoseconds.
-		Weight::from_ref_time(55_043_000)
+		Weight::from_parts(55_043_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(4))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
 	// Storage: MantaSbt AllowlistAccount (r:0 w:1)
 	fn change_allowlist_account() -> Weight {
 		// Minimum execution time: 16_000 nanoseconds.
-		Weight::from_ref_time(16_280_000)
+		Weight::from_parts(16_280_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: MantaSbt MintIdRegistry (r:1 w:0)
@@ -226,7 +226,7 @@ impl WeightInfo for () {
 	// Storage: MantaSbt NextSbtId (r:1 w:1)
 	fn allowlist_evm_account() -> Weight {
 		// Minimum execution time: 30_138 nanoseconds.
-		Weight::from_ref_time(31_160_000)
+		Weight::from_parts(31_160_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(5))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
@@ -235,7 +235,7 @@ impl WeightInfo for () {
 	// Storage: MantaSbt MintIdRegistry (r:0 w:1)
 	fn new_mint_info() -> Weight {
 		// Minimum execution time: 18_710 nanoseconds.
-		Weight::from_ref_time(19_166_000)
+		Weight::from_parts(19_166_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
@@ -243,7 +243,7 @@ impl WeightInfo for () {
 	// Storage: MantaSbt PublicMintList (r:0 w:1)
 	fn update_mint_info() -> Weight {
 		// Minimum execution time: 21_958 nanoseconds.
-		Weight::from_ref_time(22_914_000)
+		Weight::from_parts(22_914_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
@@ -257,26 +257,26 @@ impl WeightInfo for () {
 	// Storage: MantaSbt Shards (r:0 w:1)
 	fn mint_sbt_eth() -> Weight {
 		// Minimum execution time: 39_468_616 nanoseconds.
-		Weight::from_ref_time(39_560_727_000)
+		Weight::from_parts(39_560_727_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(7))
 			.saturating_add(RocksDbWeight::get().writes(5))
 	}
 	// Storage: MantaSbt AllowlistAccount (r:0 w:1)
 	fn change_free_reserve_account() -> Weight {
 		// Minimum execution time: 15_919 nanoseconds.
-		Weight::from_ref_time(16_287_000)
+		Weight::from_parts(16_287_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: MantaSbt EvmAccountAllowlist (r:0 w:1)
 	fn remove_allowlist_evm_account() -> Weight {
 		// Minimum execution time: 16_210 nanoseconds.
-		Weight::from_ref_time(17_519_000)
+		Weight::from_parts(17_519_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: MantaSbt NextSbtId (r:0 w:1)
 	fn set_next_sbt_id() -> Weight {
 		// Minimum execution time: 15_180 nanoseconds.
-		Weight::from_ref_time(15_479_000)
+		Weight::from_parts(15_479_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: MantaSbt ForceAccount (r:1 w:0)
@@ -287,7 +287,7 @@ impl WeightInfo for () {
 	// Storage: MantaSbt Shards (r:0 w:1)
 	fn force_to_private() -> Weight {
 		// Minimum execution time: 39_347_955 nanoseconds.
-		Weight::from_ref_time(39_386_564_000)
+		Weight::from_parts(39_386_564_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(5))
 			.saturating_add(RocksDbWeight::get().writes(4))
 	}
@@ -300,14 +300,14 @@ impl WeightInfo for () {
 	// Storage: MantaSbt Shards (r:0 w:1)
 	fn force_mint_sbt_eth() -> Weight {
 		// Minimum execution time: 39_354_533 nanoseconds.
-		Weight::from_ref_time(39_374_716_000)
+		Weight::from_parts(39_374_716_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(6))
 			.saturating_add(RocksDbWeight::get().writes(5))
 	}
 	// Storage: MantaSbt ForceAccount (r:0 w:1)
 	fn change_force_account() -> Weight {
 		// Minimum execution time: 15_851 nanoseconds.
-		Weight::from_ref_time(16_229_000)
+		Weight::from_parts(16_229_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 }

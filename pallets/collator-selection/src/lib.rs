@@ -62,6 +62,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
+
 pub use pallet::*;
 
 #[cfg(test)]
@@ -78,10 +80,10 @@ pub mod weights;
 #[frame_support::pallet]
 pub mod pallet {
     pub use crate::weights::WeightInfo;
+    use alloc::{collections::BTreeSet, vec::Vec};
     use core::ops::Div;
     use frame_support::{
         dispatch::{DispatchClass, DispatchResultWithPostInfo},
-        inherent::Vec,
         pallet_prelude::*,
         sp_runtime::{
             traits::{AccountIdConversion, CheckedSub, Convert, One, Zero},
@@ -91,7 +93,7 @@ pub mod pallet {
             Currency, EnsureOrigin, ExistenceRequirement::KeepAlive, ReservableCurrency,
             StorageVersion, ValidatorRegistration, ValidatorSet,
         },
-        PalletId,
+        DefaultNoBound, PalletId,
     };
     use frame_system::{pallet_prelude::*, Config as SystemConfig};
     use nimbus_primitives::{AccountLookup, CanAuthor, NimbusId};
@@ -178,7 +180,6 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::storage_version(STORAGE_VERSION)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
@@ -228,6 +229,7 @@ pub mod pallet {
     pub type CandidacyBond<T> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
     #[pallet::genesis_config]
+    #[derive(DefaultNoBound)]
     pub struct GenesisConfig<T: Config> {
         pub invulnerables: Vec<T::AccountId>,
         pub candidacy_bond: BalanceOf<T>,
@@ -236,26 +238,10 @@ pub mod pallet {
         pub desired_candidates: u32,
     }
 
-    #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
-        fn default() -> Self {
-            Self {
-                invulnerables: Default::default(),
-                candidacy_bond: Default::default(),
-                eviction_baseline: Percent::zero(), // Note: eviction disabled by default
-                eviction_tolerance: Percent::one(), // Note: eviction disabled by default
-                desired_candidates: Default::default(),
-            }
-        }
-    }
-
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
-            let duplicate_invulnerables = self
-                .invulnerables
-                .iter()
-                .collect::<std::collections::BTreeSet<_>>();
+            let duplicate_invulnerables = self.invulnerables.iter().collect::<BTreeSet<_>>();
             assert!(
                 duplicate_invulnerables.len() == self.invulnerables.len(),
                 "duplicate invulnerables in genesis."
@@ -751,7 +737,7 @@ pub mod pallet {
     /// Keep track of number of authored blocks per authority, uncles are counted as well since
     /// they're a valid proof of being online.
     impl<T: Config + pallet_authorship::Config>
-        pallet_authorship::EventHandler<T::AccountId, T::BlockNumber> for Pallet<T>
+        pallet_authorship::EventHandler<T::AccountId, BlockNumberFor<T>> for Pallet<T>
     {
         fn note_author(author: T::AccountId) {
             let pot = Self::account_id();
@@ -773,10 +759,6 @@ pub mod pallet {
                 T::WeightInfo::note_author(),
                 DispatchClass::Mandatory,
             );
-        }
-
-        fn note_uncle(_author: T::AccountId, _age: T::BlockNumber) {
-            //TODO can we ignore this?
         }
     }
 

@@ -20,10 +20,10 @@ use super::*;
 use crate::command::MANTA_PARACHAIN_ID;
 use manta_runtime::{
     opaque::SessionKeys, staking::NORMAL_COLLATOR_MINIMUM_STAKE, CouncilConfig, DemocracyConfig,
-    GenesisConfig, LotteryConfig, ParachainStakingConfig, PolkadotXcmConfig,
+    LotteryConfig, ParachainStakingConfig, PolkadotXcmConfig, RuntimeGenesisConfig,
     TechnicalCommitteeConfig,
 };
-use sc_network_common::config::MultiaddrWithPeerId;
+use sc_service::config::MultiaddrWithPeerId;
 
 mod local_testnets_geneses;
 mod public_testnet_genesis;
@@ -46,7 +46,8 @@ pub const POLKADOT_RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
 pub const MANTA_SAFE_XCM_VERSION: u32 = 2;
 
 /// Manta Chain Specification
-pub type MantaChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
+pub type MantaChainSpec =
+    sc_service::GenericChainSpec<manta_runtime::RuntimeGenesisConfig, Extensions>;
 
 #[derive(Clone)]
 struct Collator {
@@ -90,7 +91,7 @@ pub fn manta_development_config() -> MantaChainSpec {
 }
 
 // common helper to create the above configs
-fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
+fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> RuntimeGenesisConfig {
     let root_key = genesis_collators.first().unwrap().acc.clone();
 
     const INITIAL_COLLATOR_BALANCE: Balance = 1_000_000_000 * MANTA;
@@ -104,11 +105,12 @@ fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
         "won't be able to register collator, balance in account set too low"
     );
 
-    GenesisConfig {
+    RuntimeGenesisConfig {
         system: manta_runtime::SystemConfig {
             code: manta_runtime::WASM_BINARY
                 .expect("WASM binary was not build, please build it!")
                 .to_vec(),
+            ..Default::default()
         },
         balances: manta_runtime::BalancesConfig {
             balances: endowments.clone(),
@@ -134,6 +136,7 @@ fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
         },
         parachain_info: manta_runtime::ParachainInfoConfig {
             parachain_id: MANTA_PARACHAIN_ID.into(),
+            ..Default::default()
         },
         collator_selection: manta_runtime::CollatorSelectionConfig {
             invulnerables: vec![],
@@ -155,6 +158,7 @@ fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
         parachain_system: Default::default(),
         polkadot_xcm: PolkadotXcmConfig {
             safe_xcm_version: Some(MANTA_SAFE_XCM_VERSION),
+            ..Default::default()
         },
         asset_manager: Default::default(),
         democracy: DemocracyConfig::default(),

@@ -83,7 +83,6 @@ pub mod pallet {
     use super::*;
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
@@ -490,7 +489,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(6)]
-        #[pallet::weight(1000)]
+        #[pallet::weight(Weight::from_parts(1000, 0))]
         pub fn close_pool(origin: OriginFor<T>, pool_id: PoolId) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 
@@ -508,7 +507,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(7)]
-        #[pallet::weight(1000)]
+        #[pallet::weight(Weight::from_parts(1000, 0))]
         pub fn set_retire_limit(origin: OriginFor<T>, limit: u32) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 
@@ -521,7 +520,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(8)]
-        #[pallet::weight(1000)]
+        #[pallet::weight(Weight::from_parts(1000, 0))]
         pub fn retire_pool(origin: OriginFor<T>, pool_id: PoolId) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 
@@ -568,7 +567,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(9)]
-        #[pallet::weight(1000)]
+        #[pallet::weight(Weight::from_parts(1000, 0))]
         pub fn reset_pool(
             origin: OriginFor<T>,
             pool_id: PoolId,
@@ -634,7 +633,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(10)]
-        #[pallet::weight(1000)]
+        #[pallet::weight(Weight::from_parts(1000, 0))]
         pub fn kill_pool(origin: OriginFor<T>, pool_id: PoolId) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 
@@ -652,7 +651,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(11)]
-        #[pallet::weight(1000)]
+        #[pallet::weight(Weight::from_parts(1000, 0))]
         pub fn edit_pool(
             origin: OriginFor<T>,
             pool_id: PoolId,
@@ -748,7 +747,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(13)]
-        #[pallet::weight(1000)]
+        #[pallet::weight(Weight::from_parts(1000, 0))]
         pub fn force_gauge_claim(origin: OriginFor<T>, gid: PoolId) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
             let retire_limit = RetireLimit::<T>::get();

@@ -17,12 +17,13 @@
 #![cfg(test)]
 
 use super::{ALICE, ALICE_SESSION_KEYS, *};
-use frame_support::traits::{GenesisBuild, OnFinalize, OnInitialize};
+use frame_support::traits::{OnFinalize, OnInitialize};
 use manta_primitives::{
     assets::AssetConfig,
     types::{AccountId, Balance},
 };
 use sp_arithmetic::Perbill;
+use sp_runtime::BuildStorage;
 
 pub struct ExtBuilder {
     balances: Vec<(AccountId, Balance)>,
@@ -108,8 +109,8 @@ impl ExtBuilder {
     }
 
     pub fn build(self) -> sp_io::TestExternalities {
-        let mut t = frame_system::GenesisConfig::default()
-            .build_storage::<Runtime>()
+        let mut t = frame_system::GenesisConfig::<Runtime>::default()
+            .build_storage()
             .unwrap();
 
         pallet_balances::GenesisConfig::<Runtime> {
@@ -160,12 +161,11 @@ impl ExtBuilder {
         .assimilate_storage(&mut t)
         .unwrap();
 
-        <pallet_xcm::GenesisConfig as GenesisBuild<Runtime>>::assimilate_storage(
-            &pallet_xcm::GenesisConfig {
-                safe_xcm_version: self.safe_xcm_version,
-            },
-            &mut t,
-        )
+        pallet_xcm::GenesisConfig::<Runtime> {
+            safe_xcm_version: Some(2),
+            ..Default::default()
+        }
+        .assimilate_storage(&mut t)
         .unwrap();
 
         let mut ext = sp_io::TestExternalities::new(t);

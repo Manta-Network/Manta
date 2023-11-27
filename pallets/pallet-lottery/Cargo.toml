@@ -13,46 +13,46 @@ codec = { version = '3.4.0', default-features = false, features = ['derive'], pa
 function_name = "0.3"
 jsonrpsee = { version = "0.16.2", features = ["server", "macros"], optional = true }
 log = { version = "0.4.0", default-features = false }
-scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 serde = { version = "1.0.136", default-features = false, optional = true }
 
 # Substrate dependencies
-frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
-frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
-orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.37", default-features = false }
-sp-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
-sp-arithmetic = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
-sp-blockchain = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37", optional = true }
-sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
-sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
-sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
-sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
+frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v1.0.0" }
+frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v1.0.0" }
+orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", rev = "c00d1735efc629f6a44c024aecd0ef525069cf31", default-features = false }
+sp-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v1.0.0" }
+sp-arithmetic = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v1.0.0" }
+sp-blockchain = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v1.0.0", optional = true }
+sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v1.0.0" }
+sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v1.0.0" }
+sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v1.0.0" }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v1.0.0" }
 
 # Self dependencies
 manta-primitives = { path = "../../primitives/manta", default-features = false }
 pallet-farming = { path = '../farming', default-features = false }
 pallet-parachain-staking = { path = '../parachain-staking', default-features = false }
-runtime-common = { path = "../../runtime/common", default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
 
 # Benchmarking dependencies
-frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37", default-features = false, optional = true }
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v1.0.0", default-features = false, optional = true }
 rand = { version = "0.8.5", default-features = false, optional = true }
 
 [dev-dependencies]
-calamari-runtime = { path = "../../runtime/calamari", default-features = false }
-manta-collator-selection = { path = "../collator-selection", default-features = false }
+cumulus-primitives-core = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v1.0.0" }
+lazy_static = "1.4.0"
+manta-collator-selection = { path = "../collator-selection" }
 pallet-asset-manager = { path = "../asset-manager", default-features = false }
-pallet-assets = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-pallet-preimage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-pallet-randomness = { path = '../randomness', default-features = false }
-pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+pallet-assets = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-preimage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-randomness = { path = '../randomness' }
+pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 rand = "0.8"
 similar-asserts = "1.1.0"
-sp-staking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
-xcm = { git = "https://github.com/paritytech/polkadot.git", branch = "release-v0.9.37", default-features = false }
+sp-staking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v1.0.0" }
+xcm = { git = "https://github.com/paritytech/polkadot.git", branch = "release-v1.0.0" }
 
 [features]
 default = ["std"]
@@ -64,6 +64,8 @@ rpc = [
 runtime-benchmarks = [
   'frame-benchmarking/runtime-benchmarks',
   'frame-support/runtime-benchmarks',
+  'frame-system/runtime-benchmarks',
+  "manta-primitives/runtime-benchmarks",
   'pallet-parachain-staking/runtime-benchmarks',
   'rand/std_rng',
 ]
@@ -71,7 +73,6 @@ std = [
   "manta-primitives/std",
   "pallet-parachain-staking/std",
   "pallet-randomness/std",
-  "calamari-runtime/std",
   "session-key-primitives/std",
   "sp-core/std",
   "sp-std/std",

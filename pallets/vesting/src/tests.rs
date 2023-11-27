@@ -18,6 +18,7 @@ use super::{Event as PalletEvent, *};
 use chrono::prelude::*;
 use frame_support::{assert_noop, assert_ok};
 use mock::{RuntimeEvent as MockEvent, *};
+use sp_runtime::TokenError;
 
 #[test]
 fn alice_vesting_for_bob_should_work() {
@@ -94,7 +95,7 @@ fn alice_vesting_for_bob_should_work() {
 
             assert_noop!(
                 Balances::transfer(RuntimeOrigin::signed(BOB), ALICE, vested + 1),
-                pallet_balances::Error::<Test, _>::LiquidityRestrictions,
+                TokenError::Frozen,
             );
 
             assert_ok!(Balances::transfer(
@@ -180,7 +181,7 @@ fn alice_vesting_for_bob_claim_slowly_should_work() {
                 * unvested;
             assert_noop!(
                 Balances::transfer(RuntimeOrigin::signed(BOB), ALICE, vested + 1),
-                pallet_balances::Error::<Test, _>::LiquidityRestrictions,
+                TokenError::Frozen,
             );
 
             assert_ok!(Balances::transfer(
@@ -232,8 +233,8 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
             )));
 
             assert_noop!(
-                Balances::transfer(RuntimeOrigin::signed(BOB), ALICE, vested_1 + 1),
-                pallet_balances::Error::<Test, _>::LiquidityRestrictions,
+                Balances::transfer_keep_alive(RuntimeOrigin::signed(BOB), ALICE, vested_1 + 1),
+                TokenError::Frozen,
             );
 
             assert_ok!(Balances::transfer(
@@ -267,7 +268,7 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
                     ALICE,
                     vested_0_to_4 + 1 - vested_1
                 ),
-                pallet_balances::Error::<Test, _>::LiquidityRestrictions,
+                TokenError::Frozen,
             );
 
             // Vested only 6th round.
@@ -321,7 +322,7 @@ fn vesting_complete_should_work() {
             // Now Bob cannot transfer locked tokens.
             assert_noop!(
                 Balances::transfer(RuntimeOrigin::signed(BOB), ALICE, 1),
-                pallet_balances::Error::<Test, _>::LiquidityRestrictions,
+                TokenError::Frozen,
             );
 
             // Ensure current timestamp is bigger than the 6th round of schedule.

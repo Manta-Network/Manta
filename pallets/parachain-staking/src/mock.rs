@@ -21,31 +21,27 @@ use crate::{
 };
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Everything, GenesisBuild, LockIdentifier, OnFinalize, OnInitialize},
+    traits::{Everything, LockIdentifier, OnFinalize, OnInitialize},
 };
-use manta_primitives::types::{BlockNumber, Header};
+use manta_primitives::types::BlockNumber;
 use sp_core::H256;
 use sp_io;
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
-    Perbill, Percent,
+    BuildStorage, Perbill, Percent,
 };
 
 pub type AccountId = u64;
 pub type Balance = u128;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 // WHITELIST: Remove Session and CollatorSelection after end of whitelist-period
 construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub struct Test
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         ParachainStaking: pallet_parachain_staking::{Pallet, Call, Storage, Config<T>, Event<T>},
         BlockAuthor: block_author::{Pallet, Storage},
@@ -65,14 +61,13 @@ impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type DbWeight = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
+    type Block = Block;
     type RuntimeCall = RuntimeCall;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
@@ -100,6 +95,10 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<1>;
+    type MaxHolds = ConstU32<1>;
 }
 impl block_author::Config for Test {}
 parameter_types! {
@@ -314,8 +313,8 @@ impl ExtBuilder {
     }
 
     pub(crate) fn build(self) -> sp_io::TestExternalities {
-        let mut t = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
+        let mut t = frame_system::GenesisConfig::<Test>::default()
+            .build_storage()
             .expect("Frame system builds valid default genesis config");
 
         pallet_balances::GenesisConfig::<Test> {
@@ -345,15 +344,15 @@ pub(crate) fn roll_one_block() -> u32 {
     System::on_initialize(System::block_number());
     Balances::on_initialize(System::block_number());
     ParachainStaking::on_initialize(System::block_number());
-    System::block_number()
+    System::block_number() as u32
 }
 
 /// Rolls to the desired block. Returns the number of blocks played.
 pub(crate) fn roll_to(n: u32) -> u32 {
     let mut num_blocks = 0;
     let mut block = System::block_number();
-    while block < n {
-        block = roll_one_block();
+    while block < n as u64 {
+        block = roll_one_block() as u64;
         num_blocks += 1;
     }
     num_blocks
@@ -633,7 +632,6 @@ pub mod block_author {
     pub trait Config: frame_system::Config {}
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(_);
 
     #[pallet::storage]

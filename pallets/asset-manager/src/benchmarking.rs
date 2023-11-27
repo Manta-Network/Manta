@@ -51,16 +51,20 @@ benchmarks! {
             let location = T::Location::from(location.clone());
             let metadata = AssetRegistryMetadata::<Balance>::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
-            Pallet::<T>::set_units_per_second(RawOrigin::Root.into(), <T as Config>::AssetId::from(i), 0)?;
+            assert_eq!(Pallet::<T>::asset_id_location(crate::NextAssetId::<T>::get() - 1.into()), Some(location));
+            Pallet::<T>::set_units_per_second(RawOrigin::Root.into(), <T as Config>::AssetId::from(i), i.into())?;
         }
         // does not really matter what we register, as long as it is different than the previous
-        let location = T::Location::default();
+        let location = MultiLocation::new(0, X1(Parachain(assets_count + 8)));
         let metadata = AssetRegistryMetadata::<Balance>::testing_default();
         let amount = 10;
-        Pallet::<T>::register_asset(RawOrigin::Root.into(), location, metadata)?;
+        Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone().into(), metadata)?;
         let some_valid_asset_id = <T as Config>::AssetId::from(assets_count + 8);
+        assert_eq!(crate::NextAssetId::<T>::get() - 1.into(), (assets_count + 8).into());
+        assert_eq!(crate::AssetIdLocation::<T>::contains_key(some_valid_asset_id), true);
     }: _(RawOrigin::Root, some_valid_asset_id, amount)
     verify {
+        assert_eq!(crate::AssetIdLocation::<T>::contains_key(some_valid_asset_id), true);
         assert_eq!(Pallet::<T>::units_per_second(&some_valid_asset_id), Some(amount));
     }
 
