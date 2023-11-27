@@ -1211,7 +1211,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         let call =
             crate::RuntimeCall::AssetManager(pallet_asset_manager::Call::update_asset_metadata {
                 asset_id: 1,
-                metadata: AssetRegistryMetadata::testing_default().into(),
+                metadata: AssetRegistryMetadata::testing_default(),
             });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -2791,7 +2791,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
     {
         assert_eq!(
             crate::RuntimeCall::get_call_names("Lottery").len(),
-            12,
+            13,
             "Please update new extrinsic here."
         );
         t.execute_with(|| {
@@ -2912,6 +2912,20 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             calamari_runtime_calls.push((
                 "pallet_lottery",
                 "set_gas_reserve",
+                dispatch_info,
+                call_len,
+            ));
+
+            let call = crate::RuntimeCall::Lottery(pallet_lottery::Call::set_farming_params {
+                mint_farming_token: true,
+                burn_farming_token: true,
+                pool_id: 0,
+                currency_id: 1,
+            });
+            let (dispatch_info, call_len) = get_call_details(&call);
+            calamari_runtime_calls.push((
+                "pallet_lottery",
+                "set_farming_params",
                 dispatch_info,
                 call_len,
             ));

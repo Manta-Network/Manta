@@ -49,7 +49,7 @@ describe('Check Parachain_Lease_Expiration', () => {
     }).timeout(TEST_TIMEOUT);
 
     it('Check Calamari Parachain Lease', async () => {
-        const kusamaNode = 'wss://kusama.api.onfinality.io/public-ws';
+        const kusamaNode = 'wss://kusama-rpc.dwellir.com';
         const kusamaApi = await createPromiseApi(kusamaNode);
         const calamariParaId = 2084;
         const oneDay = 3600 * 24;

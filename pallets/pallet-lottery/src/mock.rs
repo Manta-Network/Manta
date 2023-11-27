@@ -18,20 +18,37 @@
 use core::marker::PhantomData;
 
 use crate as pallet_lottery;
-use crate::{pallet, Config};
+use crate::{pallet, Config, FarmingParamsOf};
 use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{ConstU128, ConstU32, Everything, OnFinalize, OnInitialize},
-    weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight},
+    assert_ok, construct_runtime, ord_parameter_types,
+    pallet_prelude::*,
+    parameter_types,
+    traits::{
+        AsEnsureOriginWithArg, ConstU128, ConstU32, EitherOfDiverse, Everything, GenesisBuild,
+    },
+    weights::Weight,
 };
-use frame_system::pallet_prelude::*;
-use manta_primitives::types::BlockNumber;
+use frame_system::{pallet_prelude::*, EnsureNever, EnsureSignedBy};
+use manta_primitives::{
+    assets::{
+        AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
+        AssetStorageMetadata, BalanceType, FungibleLedger, LocationType, NativeAndNonNative,
+    },
+    constants::{ASSET_MANAGER_PALLET_ID, WEIGHT_PER_SECOND},
+    currencies::Currencies,
+    types::{BlockNumber, CalamariAssetId, Header, PoolId},
+};
 use pallet_parachain_staking::{InflationInfo, Range};
 use sp_core::H256;
 
 use sp_runtime::{
     traits::{BlakeTwo256, Hash, IdentityLookup},
     BuildStorage, Perbill, Percent,
+};
+use xcm::{
+    prelude::{Junctions, Parachain, X1},
+    v3::MultiLocation,
+    VersionedMultiLocation,
 };
 
 pub type AccountId = u64;
@@ -42,9 +59,26 @@ const KMA: Balance = 1_000_000_000_000;
 const NORMAL_COLLATOR_MINIMUM_STAKE: Balance = 4_000_000 * KMA;
 const EARLY_COLLATOR_MINIMUM_STAKE: Balance = 400_000 * KMA;
 const MIN_BOND_TO_BE_CONSIDERED_COLLATOR: Balance = NORMAL_COLLATOR_MINIMUM_STAKE;
-const MAXIMUM_BLOCK_WEIGHT: Weight =
-    Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2), u64::MAX);
+pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(WEIGHT_PER_SECOND, 0)
+    .saturating_div(2)
+    .set_proof_size(cumulus_primitives_core::relay_chain::MAX_POV_SIZE as u64);
 
+pub const ALICE: AccountId = 1;
+pub const BOB: AccountId = 2;
+pub const CHARLIE: AccountId = 3;
+pub const DAVE: AccountId = 4;
+pub const EVE: AccountId = 5;
+pub const TREASURY_ACCOUNT: AccountId = 10;
+
+pub const JUMBO: Balance = 1_000_000_000_000;
+pub const INIT_JUMBO_AMOUNT: Balance = 100 * JUMBO;
+pub const INIT_V_MANTA_AMOUNT: Balance = JUMBO;
+pub const V_MANTA_ID: CalamariAssetId = 8;
+pub const JUMBO_ID: CalamariAssetId = 9;
+
+pub const POOL_ID: PoolId = 0;
+
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
@@ -59,6 +93,9 @@ construct_runtime!(
         CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Config<T>, Event<T>},
         Lottery: pallet_lottery::{Pallet, Call, Storage, Event<T>, Config<T>},
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>},
+        Assets: pallet_assets::{Pallet, Storage, Config<T>, Event<T>},
+        AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>},
+        Farming: pallet_farming::{Pallet, Call, Storage, Event<T>}
     }
 );
 
@@ -276,6 +313,179 @@ impl pallet_parachain_staking::Config for Test {
     type WeightInfo = (); // XXX: Maybe use the actual calamari weights?
 }
 
+parameter_types! {
+    // Does not really matter as this will be only called by root
+    pub const AssetDeposit: Balance = 0;
+    pub const AssetAccountDeposit: Balance = 0;
+    pub const ApprovalDeposit: Balance = 0;
+    pub const AssetsStringLimit: u32 = 50;
+    pub const MetadataDepositBase: Balance = 0;
+    pub const MetadataDepositPerByte: Balance = 0;
+}
+
+impl pallet_assets::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
+    type Balance = Balance;
+    type AssetId = CalamariAssetId;
+    type Currency = Balances;
+    type ForceOrigin = EnsureRoot<AccountId>;
+    type AssetDeposit = AssetDeposit;
+    type AssetAccountDeposit = AssetAccountDeposit;
+    type MetadataDepositBase = MetadataDepositBase;
+    type MetadataDepositPerByte = MetadataDepositPerByte;
+    type ApprovalDeposit = ApprovalDeposit;
+    type StringLimit = AssetsStringLimit;
+    type Freezer = ();
+    type Extra = ();
+    type WeightInfo = pallet_assets::weights::SubstrateWeight<Test>;
+    type RemoveItemsLimit = ConstU32<1000>;
+    type AssetIdParameter = CalamariAssetId;
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureNever<AccountId>>;
+    type CallbackHandle = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
+}
+
+pub struct MantaAssetRegistry;
+impl BalanceType for MantaAssetRegistry {
+    type Balance = Balance;
+}
+impl AssetIdType for MantaAssetRegistry {
+    type AssetId = CalamariAssetId;
+}
+impl AssetRegistry for MantaAssetRegistry {
+    type Metadata = AssetStorageMetadata;
+    type Error = sp_runtime::DispatchError;
+
+    fn create_asset(
+        asset_id: CalamariAssetId,
+        metadata: AssetStorageMetadata,
+        min_balance: Balance,
+        is_sufficient: bool,
+    ) -> DispatchResult {
+        Assets::force_create(
+            RuntimeOrigin::root(),
+            asset_id,
+            AssetManager::account_id(),
+            is_sufficient,
+            min_balance,
+        )?;
+
+        Assets::force_set_metadata(
+            RuntimeOrigin::root(),
+            asset_id,
+            metadata.name,
+            metadata.symbol,
+            metadata.decimals,
+            metadata.is_frozen,
+        )?;
+
+        Assets::force_asset_status(
+            RuntimeOrigin::root(),
+            asset_id,
+            AssetManager::account_id(),
+            AssetManager::account_id(),
+            AssetManager::account_id(),
+            AssetManager::account_id(),
+            min_balance,
+            is_sufficient,
+            metadata.is_frozen,
+        )
+    }
+
+    fn update_asset_metadata(
+        asset_id: &CalamariAssetId,
+        metadata: AssetStorageMetadata,
+    ) -> DispatchResult {
+        Assets::force_set_metadata(
+            RuntimeOrigin::root(),
+            *asset_id,
+            metadata.name,
+            metadata.symbol,
+            metadata.decimals,
+            metadata.is_frozen,
+        )
+    }
+}
+
+parameter_types! {
+    pub const DummyAssetId: CalamariAssetId = 0;
+    pub const NativeAssetId: CalamariAssetId = 1;
+    pub const StartNonNativeAssetId: CalamariAssetId = 8;
+    pub NativeAssetLocation: AssetLocation = AssetLocation(
+        VersionedMultiLocation::V3(MultiLocation::new(1, X1(Parachain(1024)))));
+    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
+        metadata: AssetStorageMetadata {
+            name: b"Calamari".to_vec(),
+            symbol: b"KMA".to_vec(),
+            decimals: 12,
+            is_frozen: false,
+        },
+        min_balance: 1u128,
+        is_sufficient: true,
+    };
+    pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
+}
+
+/// AssetConfig implementations for this runtime
+#[derive(Clone, Eq, PartialEq)]
+pub struct MantaAssetConfig;
+impl LocationType for MantaAssetConfig {
+    type Location = AssetLocation;
+}
+impl AssetIdType for MantaAssetConfig {
+    type AssetId = CalamariAssetId;
+}
+impl BalanceType for MantaAssetConfig {
+    type Balance = Balance;
+}
+impl AssetConfig<Test> for MantaAssetConfig {
+    type NativeAssetId = NativeAssetId;
+    type StartNonNativeAssetId = StartNonNativeAssetId;
+    type NativeAssetLocation = NativeAssetLocation;
+    type NativeAssetMetadata = NativeAssetMetadata;
+    type AssetRegistry = MantaAssetRegistry;
+    type FungibleLedger = NativeAndNonNative<Test, MantaAssetConfig, Balances, Assets>;
+}
+
+impl pallet_asset_manager::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
+    type AssetId = CalamariAssetId;
+    type Location = AssetLocation;
+    type AssetConfig = MantaAssetConfig;
+    type ModifierOrigin = EnsureRoot<AccountId>;
+    type SuspenderOrigin = EnsureRoot<AccountId>;
+    type PalletId = AssetManagerPalletId;
+    type WeightInfo = ();
+    type PermissionlessStartId = ConstU128<100>;
+    type TokenNameMaxLen = ConstU32<100>;
+    type TokenSymbolMaxLen = ConstU32<100>;
+    type PermissionlessAssetRegistryCost = ConstU128<1000>;
+}
+
+parameter_types! {
+    pub const FarmingKeeperPalletId: PalletId = PalletId(*b"bf/fmkpr");
+    pub const FarmingRewardIssuerPalletId: PalletId = PalletId(*b"bf/fmrir");
+    pub const TreasuryAccount: AccountId = TREASURY_ACCOUNT;
+}
+
+ord_parameter_types! {
+    pub const Alice: AccountId = ALICE;
+}
+
+type MantaCurrencies = Currencies<Test, MantaAssetConfig, Balances, Assets>;
+
+impl pallet_farming::Config for Test {
+    type RuntimeEvent = RuntimeEvent;
+    type CurrencyId = CalamariAssetId;
+    type MultiCurrency = MantaCurrencies;
+    type ControlOrigin = EitherOfDiverse<EnsureRoot<AccountId>, EnsureSignedBy<Alice, AccountId>>;
+    type TreasuryAccount = TreasuryAccount;
+    type Keeper = FarmingKeeperPalletId;
+    type RewardIssuer = FarmingRewardIssuerPalletId;
+    type WeightInfo = ();
+}
+
 impl block_author::Config for Test {}
 
 use frame_support::PalletId;
@@ -328,6 +538,7 @@ impl Config for Test {
     type DrawingInterval = DrawingInterval;
     type DrawingFreezeout = DrawingFreezeout;
     type UnstakeLockTime = UnstakeLockTime;
+    type BalanceConversion = Balance;
     type WeightInfo = ();
 }
 
@@ -342,6 +553,8 @@ pub(crate) struct ExtBuilder {
     delegations: Vec<(AccountId, AccountId, Balance)>,
     // inflation config
     inflation: InflationInfo<Balance>,
+    // enable farming
+    with_farming: bool,
 }
 
 impl Default for ExtBuilder {
@@ -369,6 +582,7 @@ impl Default for ExtBuilder {
                     max: Perbill::from_percent(5),
                 },
             },
+            with_farming: false,
         }
     }
 }
@@ -382,6 +596,11 @@ impl ExtBuilder {
 
     pub(crate) fn with_balances(mut self, balances: Vec<(AccountId, Balance)>) -> Self {
         self.balances = balances;
+        self
+    }
+
+    pub(crate) fn with_farming(mut self) -> Self {
+        self.with_farming = true;
         self
     }
 
@@ -413,17 +632,138 @@ impl ExtBuilder {
         }
         .assimilate_storage(&mut t)
         .expect("Parachain Staking's storage can be assimilated");
+
+        let farming_params = if self.with_farming {
+            FarmingParamsOf::<Test> {
+                mint_farming_token: true,
+                destroy_farming_token: true,
+                pool_id: 0,
+                currency_id: 8,
+            }
+        } else {
+            FarmingParamsOf::<Test>::default()
+        };
+
         pallet_lottery::GenesisConfig::<Test> {
             min_deposit: 5_000 * KMA,
             min_withdraw: 5_000 * KMA,
             gas_reserve: 10_000 * KMA,
+            farming_pool_params: farming_params,
         }
         .assimilate_storage(&mut t)
         .expect("pallet_lottery's storage can be assimilated");
+        pallet_asset_manager::GenesisConfig::<Test> {
+            start_id: <MantaAssetConfig as AssetConfig<Test>>::StartNonNativeAssetId::get(),
+        }
+        .assimilate_storage(&mut t)
+        .expect("pallet_asset_manager storage fails");
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
+
+        ext.execute_with(|| {
+            let v_manta_asset_metadata =
+                create_asset_metadata("vManta", "vMANTA", 12, 1u128, false, true);
+            let jumbo_asset_metadata =
+                create_asset_metadata("Jumbo", "JUMBO", 12, 1u128, false, true);
+            let v_manta_location = AssetLocation(VersionedMultiLocation::V3(MultiLocation::new(
+                1,
+                Junctions::Here,
+            )));
+            let native_location = AssetLocation(VersionedMultiLocation::V3(MultiLocation::new(
+                0,
+                Junctions::Here,
+            )));
+            // register vMANTA and JUMBO asset should work.
+            AssetManager::register_asset(
+                RuntimeOrigin::root(),
+                v_manta_location,
+                v_manta_asset_metadata,
+            )
+            .unwrap();
+            AssetManager::register_asset(
+                RuntimeOrigin::root(),
+                native_location,
+                jumbo_asset_metadata,
+            )
+            .unwrap();
+
+            assert_ok!(
+                <MantaAssetConfig as AssetConfig<Test>>::FungibleLedger::deposit_minting(
+                    JUMBO_ID,
+                    &ALICE,
+                    INIT_JUMBO_AMOUNT,
+                )
+            );
+
+            assert_ok!(
+                <MantaAssetConfig as AssetConfig<Test>>::FungibleLedger::deposit_minting(
+                    V_MANTA_ID,
+                    &ALICE,
+                    INIT_V_MANTA_AMOUNT
+                )
+            );
+
+            init_jumbo_farming();
+        });
+
         ext
+    }
+}
+
+fn init_jumbo_farming() {
+    let tokens_proportion = vec![(V_MANTA_ID, Perbill::from_percent(100))];
+    let tokens = JUMBO;
+    let basic_rewards = vec![(JUMBO_ID, JUMBO)];
+
+    assert_ok!(Farming::create_farming_pool(
+        RuntimeOrigin::signed(ALICE),
+        tokens_proportion,
+        basic_rewards,
+        None,
+        0, // min_deposit_to_start
+        0, // after_block_to_start
+        0, // withdraw_limit_time
+        0, // claim_limit_time
+        5  // withdraw_limit_count
+    ));
+
+    let pool_id = 0;
+    let charge_rewards = vec![(JUMBO_ID, 100 * JUMBO)];
+
+    assert_ok!(Farming::charge(
+        RuntimeOrigin::signed(ALICE),
+        pool_id,
+        charge_rewards
+    ));
+    assert_ok!(Farming::deposit(
+        RuntimeOrigin::signed(ALICE),
+        pool_id,
+        tokens,
+        None
+    ));
+
+    let share_info = Farming::shares_and_withdrawn_rewards(pool_id, ALICE).unwrap();
+    assert_eq!(share_info.share, tokens);
+}
+
+pub(crate) fn create_asset_metadata(
+    name: &str,
+    symbol: &str,
+    decimals: u8,
+    min_balance: u128,
+    is_frozen: bool,
+    is_sufficient: bool,
+) -> AssetRegistryMetadata<Balance> {
+    AssetRegistryMetadata {
+        metadata: AssetStorageMetadata {
+            name: name.as_bytes().to_vec(),
+            symbol: symbol.as_bytes().to_vec(),
+            decimals,
+            is_frozen,
+        },
+        min_balance,
+        is_sufficient,
     }
 }
 
@@ -510,7 +850,6 @@ macro_rules! assert_last_event {
 #[frame_support::pallet]
 pub mod block_author {
     use super::*;
-    use frame_support::{pallet_prelude::*, traits::Get};
 
     #[pallet::config]
     pub trait Config: frame_system::Config {}

@@ -143,10 +143,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 4400,
+    spec_version: 4500,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 15,
+    transaction_version: 17,
     state_version: 0,
 };
 
@@ -236,7 +236,34 @@ impl Contains<RuntimeCall> for BaseFilter {
         // keep CallFilter with explicit true/false for documentation
         match call {
             // Explicitly DISALLOWED calls ( Pallet user extrinsics we don't want used WITH REASONING )
-            | RuntimeCall::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
+            // Filter Assets. Assets should only be accessed by AssetManager.
+            | RuntimeCall::Assets(pallet_assets::Call::create {..}
+            | pallet_assets::Call::force_create {..}
+            | pallet_assets::Call::start_destroy {..}
+            | pallet_assets::Call::destroy_accounts {..}
+            | pallet_assets::Call::destroy_approvals {..}
+            | pallet_assets::Call::finish_destroy {..}
+            | pallet_assets::Call::mint {..}
+            | pallet_assets::Call::burn {..}
+            | pallet_assets::Call::force_transfer {..}
+            | pallet_assets::Call::freeze {..}
+            | pallet_assets::Call::thaw {..}
+            | pallet_assets::Call::freeze_asset {..}
+            | pallet_assets::Call::thaw_asset {..}
+            | pallet_assets::Call::transfer_ownership {..}
+            | pallet_assets::Call::set_team {..}
+            | pallet_assets::Call::set_metadata {..}
+            | pallet_assets::Call::clear_metadata {..}
+            | pallet_assets::Call::force_set_metadata {..}
+            | pallet_assets::Call::force_clear_metadata {..}
+            | pallet_assets::Call::force_asset_status {..}
+            | pallet_assets::Call::approve_transfer {..}
+            | pallet_assets::Call::cancel_approval {..}
+            | pallet_assets::Call::force_cancel_approval {..}
+            | pallet_assets::Call::transfer_approved {..}
+            | pallet_assets::Call::touch {..}
+            | pallet_assets::Call::refund {..}
+        )
             // It's a call only for vesting crowdloan contributors' token, normal user should not use it.
             | RuntimeCall::CalamariVesting(calamari_vesting::Call::vested_transfer {..})
             // For now disallow public proposal workflows, treasury workflows.
@@ -246,10 +273,6 @@ impl Contains<RuntimeCall> for BaseFilter {
                                 | pallet_democracy::Call::cancel_proposal {..}
                                 | pallet_democracy::Call::clear_public_proposals {..})
             | RuntimeCall::Treasury(_) // Treasury calls are filtered while it is accumulating funds.
-            // Everything except transfer() is filtered out until it is practically needed:
-            | RuntimeCall::XTokens(
-                                orml_xtokens::Call::transfer_with_fee {..}
-                                | orml_xtokens::Call::transfer_multiasset {..})
             // Filter callables from XCM pallets, we use XTokens exclusively
             | RuntimeCall::XcmpQueue(_) | RuntimeCall::DmpQueue(_) => false,
 
@@ -306,13 +329,14 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::MantaPay(_)
             | RuntimeCall::MantaSbt(_)
             | RuntimeCall::NameService(_)
-            | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..}
-                | orml_xtokens::Call::transfer_multicurrencies {..}
-                | orml_xtokens::Call::transfer_multiassets {..}
-                | orml_xtokens::Call::transfer_multiasset_with_fee {..})
+            | RuntimeCall::XTokens(_)
             | RuntimeCall::TransactionPause(_)
             | RuntimeCall::ZenlinkProtocol(_)
             | RuntimeCall::Farming(_)
+            | RuntimeCall::Assets(
+                pallet_assets::Call::transfer {..}
+                | pallet_assets::Call::transfer_keep_alive {..}
+            )
             | RuntimeCall::AssetManager(pallet_asset_manager::Call::update_outgoing_filtered_assets {..})
             | RuntimeCall::PolkadotXcm(pallet_xcm::Call::send {..})
             | RuntimeCall::Utility(_) => true,
@@ -435,6 +459,7 @@ impl pallet_lottery::Config for Runtime {
     type DrawingInterval = DrawingInterval;
     type DrawingFreezeout = DrawingFreezeout;
     type UnstakeLockTime = UnstakeLockTime;
+    type BalanceConversion = Balance;
     type WeightInfo = ();
 }
 impl pallet_authorship::Config for Runtime {

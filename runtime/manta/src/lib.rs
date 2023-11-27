@@ -145,10 +145,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("manta"),
     impl_name: create_runtime_str!("manta"),
     authoring_version: 1,
-    spec_version: 4400,
+    spec_version: 4500,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 4,
+    transaction_version: 6,
     state_version: 1,
 };
 
@@ -422,6 +422,7 @@ impl pallet_lottery::Config for Runtime {
     type DrawingInterval = DrawingInterval;
     type DrawingFreezeout = DrawingFreezeout;
     type UnstakeLockTime = UnstakeLockTime;
+    type BalanceConversion = Balance;
     type WeightInfo = ();
 }
 
