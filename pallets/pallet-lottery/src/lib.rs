@@ -1117,7 +1117,7 @@ pub mod pallet {
                             }
                     };
                     // Ensure the pallet has enough gas to pay for this. Should never run out as long as its's called from `draw_lottery`
-                    let fee_estimate : BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(&pallet_parachain_staking::Call::execute_delegation_request { delegator: Self::account_id() , candidate: collator.account.clone()  }, None::<u64>.into());
+                    let fee_estimate : BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(&pallet_parachain_staking::Call::execute_delegation_request { delegator: Self::account_id() , candidate: collator.account.clone()  }, None.into());
                     if Self::surplus_funds() <= fee_estimate{
                         log::warn!("could not finish unstaking delegation because the pallet is out of funds to pay TX fees. Skipping");
                         return true;

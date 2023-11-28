@@ -80,7 +80,7 @@ impl frame_system::Config for Test {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: u128 = 0;
+    pub const ExistentialDeposit: u128 = 1;
 }
 impl pallet_balances::Config for Test {
     type MaxReserves = ();
@@ -92,6 +92,10 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxFreezes = frame_support::traits::ConstU32<1>;
+    type MaxHolds = frame_support::traits::ConstU32<1>;
 }
 
 pub struct BabeDataGetter;

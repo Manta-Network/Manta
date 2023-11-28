@@ -45,7 +45,7 @@ frame_support::construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent},
+        Authorship: pallet_authorship::{Pallet, Storage},
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
         CollatorSelection: collator_selection::{Pallet, Call, Storage, Event<T>},
         Aura: pallet_aura::{Pallet, Storage, Config<T>},
@@ -90,6 +90,10 @@ impl pallet_balances::Config for Test {
     type MaxLocks = ();
     type MaxReserves = ConstU32<50>;
     type ReserveIdentifier = [u8; 8];
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<1>;
+    type MaxHolds = ConstU32<1>;
 }
 
 pub struct Author4;
@@ -104,8 +108,6 @@ impl FindAuthor<u64> for Author4 {
 
 impl pallet_authorship::Config for Test {
     type FindAuthor = Author4;
-    type UncleGenerations = ();
-    type FilterUncle = ();
     type EventHandler = CollatorSelection;
 }
 

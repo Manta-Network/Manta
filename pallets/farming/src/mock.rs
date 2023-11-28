@@ -43,7 +43,7 @@ use sp_runtime::{
 };
 use xcm::{
     prelude::{Parachain, X1},
-    v2::MultiLocation,
+    v3::MultiLocation,
     VersionedMultiLocation,
 };
 
@@ -120,6 +120,10 @@ impl pallet_balances::Config for Runtime {
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
     type WeightInfo = ();
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<1>;
+    type MaxHolds = ConstU32<1>;
 }
 
 parameter_types! {
@@ -222,7 +226,7 @@ parameter_types! {
     pub const NativeAssetId: CalamariAssetId = 1;
     pub const StartNonNativeAssetId: CalamariAssetId = 8;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
-        VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
+        VersionedMultiLocation::V3(MultiLocation::new(1, X1(Parachain(1024)))));
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
         metadata: AssetStorageMetadata {
             name: b"Calamari".to_vec(),

@@ -48,7 +48,7 @@ use sp_runtime::{
 };
 use xcm::{
     prelude::{Junctions, Parachain, X1},
-    v2::MultiLocation,
+    v3::MultiLocation,
     VersionedMultiLocation,
 };
 
@@ -159,6 +159,10 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<1>;
+    type MaxHolds = ConstU32<1>;
 }
 
 parameter_types! {
@@ -407,7 +411,7 @@ parameter_types! {
     pub const NativeAssetId: CalamariAssetId = 1;
     pub const StartNonNativeAssetId: CalamariAssetId = 8;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
-        VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
+        VersionedMultiLocation::V3(MultiLocation::new(1, X1(Parachain(1024)))));
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
         metadata: AssetStorageMetadata {
             name: b"Calamari".to_vec(),
@@ -660,11 +664,11 @@ impl ExtBuilder {
                 create_asset_metadata("vManta", "vMANTA", 12, 1u128, false, true);
             let jumbo_asset_metadata =
                 create_asset_metadata("Jumbo", "JUMBO", 12, 1u128, false, true);
-            let v_manta_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+            let v_manta_location = AssetLocation(VersionedMultiLocation::V3(MultiLocation::new(
                 1,
                 Junctions::Here,
             )));
-            let native_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+            let native_location = AssetLocation(VersionedMultiLocation::V3(MultiLocation::new(
                 0,
                 Junctions::Here,
             )));

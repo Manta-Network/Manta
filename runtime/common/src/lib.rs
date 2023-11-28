@@ -126,9 +126,10 @@ parameter_types! {
     ///   99th: 86_924
     ///   95th: 86_828
     ///   75th: 86_347
-    pub const ExtrinsicBaseWeight: Weight = Weight::from_ref_time(WEIGHT_PER_NANOS.saturating_mul(98_974));
+    pub const ExtrinsicBaseWeight: Weight = Weight::from_parts(WEIGHT_PER_NANOS.saturating_mul(98_974), 0);
 }
 
+// todo, failed
 #[cfg(test)]
 mod sanity_tests {
     use super::*;

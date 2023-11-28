@@ -61,7 +61,9 @@ use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use errors::{ReceiverLedgerError, SenderLedgerError, TransferLedgerError};
 use frame_support::{
-    pallet_prelude::*, traits::tokens::ExistenceRequirement, transactional, PalletId,
+    pallet_prelude::*,
+    traits::tokens::{ExistenceRequirement, Provenance},
+    transactional, PalletId,
 };
 use frame_system::pallet_prelude::*;
 use manta_pay::{
@@ -124,7 +126,6 @@ pub mod pallet {
 
     /// Pallet
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
@@ -1002,7 +1003,7 @@ where
                     })?,
                     &account_id.into(),
                     deposit,
-                    false,
+                    Provenance::Extant,
                 )
                 .map(|_| WrapPair(account_id, deposit))
                 .map_err(|_| InvalidSinkAccount {

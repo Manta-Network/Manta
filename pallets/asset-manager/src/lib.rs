@@ -46,8 +46,11 @@ pub mod pallet {
     use crate::weights::WeightInfo;
     use frame_support::{
         pallet_prelude::*,
-        traits::{tokens::ExistenceRequirement, Contains, StorageVersion},
-        transactional, PalletId,
+        traits::{
+            tokens::{ExistenceRequirement, Provenance},
+            Contains, StorageVersion,
+        },
+        transactional, DefaultNoBound, PalletId,
     };
     use frame_system::pallet_prelude::*;
     use manta_primitives::{
@@ -619,7 +622,7 @@ pub mod pallet {
                 asset_id,
                 &beneficiary,
                 amount,
-                true,
+                Provenance::Minted,
             )
             .map_err(|_| Error::<T>::MintError)?;
             Self::deposit_event(Event::<T>::AssetMinted {
@@ -783,7 +786,7 @@ pub mod pallet {
                 asset_id,
                 &who,
                 total_supply,
-                true,
+                Provenance::Minted,
             )
             .map_err(|_| Error::<T>::MintError)?;
 

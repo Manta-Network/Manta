@@ -25,14 +25,15 @@ use frame_support::{
     traits::tokens::{
         currency::Currency,
         fungible,
-        fungibles::{self, Mutate, Transfer},
-        DepositConsequence, ExistenceRequirement, WithdrawReasons,
+        fungibles::{self, Mutate},
+        DepositConsequence, ExistenceRequirement, Fortitude, Precision, Preservation, Provenance,
+        WithdrawReasons,
     },
 };
 use frame_system::Config;
 use scale_info::TypeInfo;
 use xcm::{
-    v1::{Junctions, MultiLocation},
+    v3::{Junctions, MultiLocation},
     VersionedMultiLocation,
 };
 use xcm_executor::traits::Convert;
@@ -241,7 +242,7 @@ pub struct AssetLocation(pub VersionedMultiLocation);
 impl Default for AssetLocation {
     #[inline]
     fn default() -> Self {
-        Self(VersionedMultiLocation::V1(MultiLocation {
+        Self(VersionedMultiLocation::V3(MultiLocation {
             parents: 0,
             interior: Junctions::Here,
         }))
@@ -257,7 +258,7 @@ impl From<MultiLocation> for AssetLocation {
     /// valid [`AssetId`].
     #[inline]
     fn from(location: MultiLocation) -> Self {
-        AssetLocation(VersionedMultiLocation::V1(location))
+        AssetLocation(VersionedMultiLocation::V3(location))
     }
 }
 
@@ -267,7 +268,7 @@ impl From<AssetLocation> for Option<MultiLocation> {
     #[inline]
     fn from(location: AssetLocation) -> Self {
         match location {
-            AssetLocation(VersionedMultiLocation::V1(location)) => Some(location),
+            AssetLocation(VersionedMultiLocation::V3(location)) => Some(location),
             _ => None,
         }
     }
@@ -357,6 +358,9 @@ pub enum FungibleLedgerError<I, B> {
 
     /// Encode Error
     EncodeError,
+
+    /// Account cannot receive the assets.
+    Blocked,
 }
 
 impl<I, B> FungibleLedgerError<I, B> {
@@ -369,6 +373,7 @@ impl<I, B> FungibleLedgerError<I, B> {
             DepositConsequence::CannotCreate => Self::CannotCreate,
             DepositConsequence::Overflow => Self::Overflow,
             DepositConsequence::UnknownAsset => Self::UnknownAsset,
+            DepositConsequence::Blocked => Self::Blocked,
             DepositConsequence::Success => return Ok(()),
         })
     }
@@ -408,7 +413,7 @@ pub trait FungibleLedger: AssetIdType + BalanceType {
         asset_id: Self::AssetId,
         account: &Self::AccountId,
         amount: Self::Balance,
-        can_increase_total_supply: bool,
+        provenance: Provenance,
     ) -> Result<Self::AssetId, FungibleLedgerError<Self::AssetId, Self::Balance>>;
 
     /// Deposit `amount` of an asset with the given `asset_id` to `account`.
@@ -424,7 +429,7 @@ pub trait FungibleLedger: AssetIdType + BalanceType {
         asset_id: Self::AssetId,
         account: &Self::AccountId,
         amount: Self::Balance,
-        can_increase_total_supply: bool,
+        provenance: Provenance,
     ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>>;
 
     /// Performs a transfer from `source` to `destination` of
@@ -487,8 +492,7 @@ where
     Native: fungible::Inspect<C::AccountId, Balance = A::Balance>
         + Currency<C::AccountId, Balance = A::Balance>,
     NonNative: fungibles::Inspect<C::AccountId, AssetId = A::AssetId, Balance = A::Balance>
-        + Mutate<C::AccountId>
-        + Transfer<C::AccountId>,
+        + Mutate<C::AccountId>, // + Transfer<C::AccountId>,
 {
     type AccountId = C::AccountId;
 
@@ -526,13 +530,13 @@ where
         asset_id: Self::AssetId,
         account: &C::AccountId,
         amount: Self::Balance,
-        can_increase_total_supply: bool,
+        provenance: Provenance,
     ) -> Result<Self::AssetId, FungibleLedgerError<Self::AssetId, Self::Balance>> {
         let asset_id = Self::ensure_valid(asset_id)?;
         FungibleLedgerError::from_deposit(if asset_id == A::NativeAssetId::get() {
-            Native::can_deposit(account, amount, false)
+            Native::can_deposit(account, amount, provenance)
         } else {
-            NonNative::can_deposit(asset_id.clone(), account, amount, can_increase_total_supply)
+            NonNative::can_deposit(asset_id.clone(), account, amount, provenance)
         })
         .map(|_| asset_id)
     }
@@ -559,18 +563,22 @@ where
         asset_id: Self::AssetId,
         account: &Self::AccountId,
         amount: Self::Balance,
-        can_increase_total_supply: bool,
+        provenance: Provenance,
     ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>> {
         let asset_id = Self::ensure_valid(asset_id)?;
         if asset_id == A::NativeAssetId::get() {
-            FungibleLedgerError::from_deposit(Native::can_deposit(account, amount.clone(), false))?;
+            FungibleLedgerError::from_deposit(Native::can_deposit(
+                account,
+                amount.clone(),
+                Provenance::Extant,
+            ))?;
             Native::deposit_creating(account, amount);
         } else {
             FungibleLedgerError::from_deposit(NonNative::can_deposit(
                 asset_id.clone(),
                 account,
                 amount.clone(),
-                can_increase_total_supply,
+                provenance,
             ))?;
             NonNative::mint_into(asset_id, account, amount)
                 .map_err(FungibleLedgerError::InvalidMint)?;
@@ -596,8 +604,8 @@ where
                 destination,
                 amount,
                 match existence_requirement {
-                    ExistenceRequirement::KeepAlive => true,
-                    ExistenceRequirement::AllowDeath => false,
+                    ExistenceRequirement::KeepAlive => Preservation::Preserve,
+                    ExistenceRequirement::AllowDeath => Preservation::Expendable,
                 },
             )
             .map(|_| ())
@@ -614,13 +622,13 @@ where
     ) -> Result<Self::AssetId, FungibleLedgerError<Self::AssetId, Self::Balance>> {
         let asset_id = Self::ensure_valid(asset_id)?;
         let keep_alive = match existence_requirement {
-            ExistenceRequirement::KeepAlive => true,
-            ExistenceRequirement::AllowDeath => false,
+            ExistenceRequirement::KeepAlive => Preservation::Preserve,
+            ExistenceRequirement::AllowDeath => Preservation::Expendable,
         };
         let reducible_amount = if asset_id == A::NativeAssetId::get() {
-            Native::reducible_balance(account, keep_alive)
+            Native::reducible_balance(account, keep_alive, Fortitude::Polite)
         } else {
-            NonNative::reducible_balance(asset_id.clone(), account, keep_alive)
+            NonNative::reducible_balance(asset_id.clone(), account, keep_alive, Fortitude::Polite)
         };
         if reducible_amount >= *amount {
             return Ok(asset_id);
@@ -656,7 +664,7 @@ where
             // NOTE: The `existence_requirement` is used in the `can_reduce_by_amount` checks,
             //       so it doesn't matter that `burn_from` uses `allow_death` by default in this
             //       implementation.
-            NonNative::burn_from(asset_id, who, amount)
+            NonNative::burn_from(asset_id, who, amount, Precision::Exact, Fortitude::Polite)
                 .map_err(FungibleLedgerError::InvalidBurn)?;
         }
         Ok(())

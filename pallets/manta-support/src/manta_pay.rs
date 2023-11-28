@@ -1078,7 +1078,7 @@ impl From<PullResponse> for DensePullResponse {
 }
 
 /// Raw Checkpoint for Encoding and Decoding
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Decode, Encode)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Decode, Encode, TypeInfo)]
 pub struct RawCheckpoint {
     /// Receiver Index
     pub receiver_index: [u64; MerkleTreeConfiguration::FOREST_WIDTH],
