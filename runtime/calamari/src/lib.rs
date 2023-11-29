@@ -52,7 +52,7 @@ use frame_support::{
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureRoot,
+    EnsureRoot, EnsureSigned,
 };
 use manta_primitives::{
     constants::{
@@ -481,6 +481,10 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = NativeTokenExistentialDeposit;
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ();
+    type HoldIdentifier = ();
+    type MaxHolds = ConstU32<50>;
 }
 
 parameter_types! {
@@ -581,12 +585,14 @@ impl pallet_democracy::Config for Runtime {
     type Preimages = Preimage;
     type MaxDeposits = ConstU32<100>;
     type MaxBlacklisted = ConstU32<100>;
+    type SubmitOrigin = EnsureSigned<AccountId>;
 }
 
 parameter_types! {
     /// The maximum amount of time (in blocks) for council members to vote on motions.
     /// Motions may end in fewer blocks if enough votes are cast to determine the result.
     pub const CouncilMotionDuration: BlockNumber = 3 * DAYS;
+    pub MaxProposalWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
 }
 
 type CouncilCollective = pallet_collective::Instance1;
@@ -598,6 +604,8 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
     type MaxProposals = ConstU32<100>;
     type MaxMembers = ConstU32<100>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
+    type SetMembersOrigin = EnsureRoot<AccountId>;
+    type MaxProposalWeight = MaxProposalWeight;
     type WeightInfo = weights::pallet_collective::SubstrateWeight<Runtime>;
 }
 
@@ -633,6 +641,8 @@ impl pallet_collective::Config<TechnicalCollective> for Runtime {
     type MaxProposals = ConstU32<100>;
     type MaxMembers = ConstU32<100>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
+    type SetMembersOrigin = EnsureRoot<AccountId>;
+    type MaxProposalWeight = MaxProposalWeight;
     type WeightInfo = weights::pallet_collective::SubstrateWeight<Runtime>;
 }
 
@@ -754,7 +764,9 @@ impl pallet_author_inherent::Config for Runtime {
     // We start a new slot each time we see a new relay block.
     type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
     type AccountLookup = CollatorSelection;
-    type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
+    type AuthorId = AccountId;
+    // PUT REAL WEIGHT
+    type WeightInfo = ();
     /// Nimbus filter pipeline step 1:
     /// Filters out NimbusIds not registered as SessionKeys of some AccountId
     type CanAuthor = AuraAuthorFilter;
@@ -1128,6 +1140,14 @@ impl_runtime_apis! {
         fn metadata() -> OpaqueMetadata {
             OpaqueMetadata::new(Runtime::metadata().into())
         }
+
+        fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+            Runtime::metadata_at_version(version)
+        }
+
+        fn metadata_versions() -> sp_std::vec::Vec<u32> {
+            Runtime::metadata_versions()
+        }
     }
 
     impl sp_block_builder::BlockBuilder<Block> for Runtime {
@@ -1198,6 +1218,12 @@ impl_runtime_apis! {
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_fee_details(uxt, len)
         }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
+        }
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
+        }
     }
 
     impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
@@ -1214,6 +1240,12 @@ impl_runtime_apis! {
             len: u32,
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_call_fee_details(call, len)
+        }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
+        }
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
         }
     }
 
