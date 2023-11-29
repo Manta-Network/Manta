@@ -72,8 +72,8 @@ where
     #[inline]
     fn not_in_drawing_freezeout(&self) -> RpcResult<bool> {
         let api = self.client.runtime_api();
-        let at: BlockId<_> = BlockId::hash(self.client.info().best_hash);
-        api.not_in_drawing_freezeout(&at).map_err(|err| {
+        let at = self.client.info().best_hash;
+        api.not_in_drawing_freezeout(at).map_err(|err| {
             CallError::Custom(ErrorObject::owned(
                 LOTTERY_ERROR,
                 "Unable to compute drawing freezeout",
@@ -86,8 +86,8 @@ where
     #[inline]
     fn current_prize_pool(&self) -> RpcResult<u128> {
         let api = self.client.runtime_api();
-        let at: BlockId<_> = BlockId::hash(self.client.info().best_hash);
-        api.current_prize_pool(&at).map_err(|err| {
+        let at = self.client.info().best_hash;
+        api.current_prize_pool(at).map_err(|err| {
             CallError::Custom(ErrorObject::owned(
                 LOTTERY_ERROR,
                 "Unable to compute current prize pool",
@@ -100,8 +100,8 @@ where
     #[inline]
     fn next_drawing_at(&self) -> RpcResult<Option<u128>> {
         let api = self.client.runtime_api();
-        let at: BlockId<_> = BlockId::hash(self.client.info().best_hash);
-        api.next_drawing_at(&at).map_err(|err| {
+        let at = self.client.info().best_hash;
+        api.next_drawing_at(at).map_err(|err| {
             CallError::Custom(ErrorObject::owned(
                 LOTTERY_ERROR,
                 "Unable to compute next drawing",

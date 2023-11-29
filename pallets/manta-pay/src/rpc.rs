@@ -109,8 +109,8 @@ where
         max_senders: u64,
     ) -> RpcResult<PullResponse> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(self.client.info().finalized_hash);
-        api.pull_ledger_diff(&at, checkpoint.into(), max_receivers, max_senders)
+        let at = self.client.info().finalized_hash;
+        api.pull_ledger_diff(at, checkpoint.into(), max_receivers, max_senders)
             .map_err(|err| {
                 CallError::Custom(ErrorObject::owned(
                     PULL_LEDGER_DIFF_ERROR,
@@ -129,8 +129,8 @@ where
         max_senders: u64,
     ) -> RpcResult<DensePullResponse> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(self.client.info().finalized_hash);
-        api.pull_ledger_diff(&at, checkpoint.into(), max_receivers, max_senders)
+        let at = self.client.info().finalized_hash;
+        api.pull_ledger_diff(at, checkpoint.into(), max_receivers, max_senders)
             .map(Into::into)
             .map_err(|err| {
                 CallError::Custom(ErrorObject::owned(
@@ -149,8 +149,8 @@ where
         max_receivers: u64,
     ) -> RpcResult<InitialSyncResponse> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(self.client.info().finalized_hash);
-        api.initial_pull(&at, checkpoint.into(), max_receivers)
+        let at = self.client.info().finalized_hash;
+        api.initial_pull(at, checkpoint.into(), max_receivers)
             .map_err(|err| {
                 CallError::Custom(ErrorObject::owned(
                     PULL_LEDGER_DIFF_ERROR,
@@ -168,8 +168,8 @@ where
         max_receivers: u64,
     ) -> RpcResult<DenseInitialSyncResponse> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(self.client.info().finalized_hash);
-        api.initial_pull(&at, checkpoint.into(), max_receivers)
+        let at = self.client.info().finalized_hash;
+        api.initial_pull(at, checkpoint.into(), max_receivers)
             .map(Into::into)
             .map_err(|err| {
                 CallError::Custom(ErrorObject::owned(
@@ -184,8 +184,8 @@ where
     #[inline]
     fn pull_ledger_total_count(&self) -> RpcResult<[u8; 16]> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(self.client.info().finalized_hash);
-        api.pull_ledger_total_count(&at).map_err(|err| {
+        let at = self.client.info().finalized_hash;
+        api.pull_ledger_total_count(at).map_err(|err| {
             CallError::Custom(ErrorObject::owned(
                 PULL_LEDGER_DIFF_ERROR,
                 "Unable to compute total count for pull",
