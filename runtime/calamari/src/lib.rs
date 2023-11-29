@@ -72,7 +72,8 @@ use runtime_common::{
     ExtrinsicBaseWeight,
 };
 use session_key_primitives::{AuraId, NimbusId, VrfId};
-use zenlink_protocol::{AssetBalance, AssetId as ZenlinkAssetId, MultiAssetsHandler, PairInfo};
+//use zenlink_protocol::{AssetBalance, AssetId as ZenlinkAssetId, MultiAssetsHandler, PairInfo};
+use cumulus_primitives_core::relay_chain::MAX_POV_SIZE;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -89,7 +90,7 @@ pub mod migrations;
 mod nimbus_session_adapter;
 pub mod staking;
 pub mod xcm_config;
-pub mod zenlink;
+//pub mod zenlink;
 
 use currency::*;
 use impls::DealWithFees;
@@ -168,7 +169,7 @@ pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(70);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
 pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_ref_time(WEIGHT_PER_SECOND)
     .saturating_div(2)
-    .set_proof_size(cumulus_primitives_core::relay_chain::v2::MAX_POV_SIZE as u64);
+    .set_proof_size(MAX_POV_SIZE as u64);
 
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
@@ -276,7 +277,6 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::XcmpQueue(_) | RuntimeCall::DmpQueue(_) => false,
 
             // Explicitly ALLOWED calls
-            | RuntimeCall::Authorship(_)
             | RuntimeCall::Multisig(_)
             | RuntimeCall::Democracy(pallet_democracy::Call::vote {..}
                                 | pallet_democracy::Call::emergency_cancel {..}
@@ -331,7 +331,7 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::NameService(_)
             | RuntimeCall::XTokens(_)
             | RuntimeCall::TransactionPause(_)
-            | RuntimeCall::ZenlinkProtocol(_)
+            //| RuntimeCall::ZenlinkProtocol(_)
             | RuntimeCall::Farming(_)
             | RuntimeCall::Assets(
                 pallet_assets::Call::transfer {..}
@@ -465,8 +465,6 @@ impl pallet_lottery::Config for Runtime {
 }
 impl pallet_authorship::Config for Runtime {
     type FindAuthor = AuthorInherent;
-    type UncleGenerations = ConstU32<0>;
-    type FilterUncle = ();
     type EventHandler = (CollatorSelection,);
 }
 
@@ -972,7 +970,7 @@ construct_runtime!(
         AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 60,
         AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage} = 63,
         // The order of the next 4 is important and shall not change.
-        Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
+        Authorship: pallet_authorship::{Pallet, Storage} = 20,
         CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
@@ -1008,7 +1006,7 @@ construct_runtime!(
         // Calamari stuff
         CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
 
-        ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 51,
+        //ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 51,
 
         Farming: pallet_farming::{Pallet, Call, Storage, Event<T>} = 54,
 
@@ -1088,7 +1086,7 @@ mod benches {
         [pallet_manta_sbt, MantaSbt]
         [pallet_name_service, NameService]
         // Dex
-        [zenlink_protocol, ZenlinkProtocol]
+        //[zenlink_protocol, ZenlinkProtocol]
         [pallet_farming, Farming]
         // XCM
         [cumulus_pallet_xcmp_queue, XcmpQueue]
@@ -1300,7 +1298,7 @@ impl_runtime_apis! {
     }
 
     // zenlink runtime outer apis
-    impl zenlink_protocol_runtime_api::ZenlinkProtocolApi<Block, AccountId, ZenlinkAssetId> for Runtime {
+    /*impl zenlink_protocol_runtime_api::ZenlinkProtocolApi<Block, AccountId, ZenlinkAssetId> for Runtime {
 
         fn get_balance(
             asset_id: ZenlinkAssetId,
@@ -1359,7 +1357,7 @@ impl_runtime_apis! {
                 amount
             )
         }
-    }
+    }*/
 
     impl pallet_farming_rpc_runtime_api::FarmingRuntimeApi<Block, AccountId, CalamariAssetId, PoolId> for Runtime {
         fn get_farming_rewards(who: AccountId, pid: PoolId) -> Vec<(CalamariAssetId, Balance)> {

@@ -111,8 +111,8 @@ session-key-primitives = { path = '../../primitives/session-keys', default-featu
 orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.43" }
 orml-xtokens = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.43" }
 
-zenlink-protocol = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.43", default-features = false }
-zenlink-protocol-runtime-api = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.43", default-features = false }
+#zenlink-protocol = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.43", default-features = false }
+#zenlink-protocol-runtime-api = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.43", default-features = false }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -178,7 +178,7 @@ runtime-benchmarks = [
   'pallet-xcm-benchmarks/runtime-benchmarks',
   'pallet-manta-sbt/runtime-benchmarks',
   'pallet-name-service/runtime-benchmarks',
-  "zenlink-protocol/runtime-benchmarks",
+  #"zenlink-protocol/runtime-benchmarks",
   'pallet-farming/runtime-benchmarks',
   "pallet-conviction-voting/runtime-benchmarks",
   "pallet-referenda/runtime-benchmarks",
@@ -222,7 +222,7 @@ try-runtime = [
   'calamari-vesting/try-runtime',
   'pallet-manta-sbt/try-runtime',
   'pallet-name-service/try-runtime',
-  "zenlink-protocol/try-runtime",
+  #"zenlink-protocol/try-runtime",
   'pallet-randomness/try-runtime',
   'pallet-lottery/try-runtime',
   "pallet-farming/try-runtime",
@@ -255,7 +255,6 @@ std = [
   'frame-system-rpc-runtime-api/std',
   'frame-try-runtime/std',
   'frame-benchmarking/std',
-  'frame-system-benchmarking/std',
   'pallet-authorship/std',
   'pallet-balances/std',
   'pallet-multisig/std',
@@ -304,8 +303,8 @@ std = [
   'pallet-manta-sbt/std',
   'pallet-name-service/std',
   'manta-support/std',
-  "zenlink-protocol/std",
-  "zenlink-protocol-runtime-api/std",
+  #"zenlink-protocol/std",
+  #"zenlink-protocol-runtime-api/std",
   "pallet-farming/std",
   "pallet-farming-rpc-runtime-api/std",
   "pallet-conviction-voting/std",

@@ -1176,8 +1176,6 @@ dependencies = [
  "xcm-builder",
  "xcm-executor",
  "xcm-simulator",
- "zenlink-protocol",
- "zenlink-protocol-runtime-api",
 ]
 
 [[package]]
@@ -7350,7 +7348,6 @@ version = "4.5.0"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "indoc",
