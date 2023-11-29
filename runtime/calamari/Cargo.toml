@@ -11,7 +11,7 @@ version = '4.5.0'
 codec = { package = "parity-scale-codec", version = '3.4.0', default-features = false, features = ["derive", "max-encoded-len"] }
 hex-literal = { version = '0.3.4', optional = true }
 log = { version = "0.4.16", default-features = false }
-scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 serde = { version = "1.0.163", features = ["alloc", "derive"], default-features = false }
 smallvec = "1.8.0"
 
@@ -128,6 +128,7 @@ serde_json = "1.0"
 version-compare = "0.1.1"
 
 # Substrate 3rd-party dependencies
+sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43" }
 cumulus-primitives-parachain-inherent = { git = "https://github.com/paritytech/cumulus.git", branch = "polkadot-v0.9.43" }
 cumulus-test-relay-sproof-builder = { git = "https://github.com/paritytech/cumulus.git", branch = "polkadot-v0.9.43" }
 polkadot-core-primitives = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.43" }
@@ -252,6 +253,7 @@ std = [
   'frame-system/std',
   'frame-system-rpc-runtime-api/std',
   'frame-try-runtime/std',
+  'frame-benchmarking/std',
   'frame-system-benchmarking/std',
   'pallet-authorship/std',
   'pallet-balances/std',

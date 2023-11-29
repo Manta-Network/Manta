@@ -9,7 +9,6 @@ version = '4.5.0'
 
 [dependencies]
 # Substrate dependencies
-cumulus-pallet-xcmp-queue = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.43" }
 frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43", default-features = false }
 pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43", default-features = false }
 sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43", default-features = false }
@@ -48,6 +47,7 @@ xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', branch = "r
 xcm-simulator = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.43" }
 
 # Cumulus dependencies
+cumulus-pallet-xcmp-queue = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.43" }
 cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.43" }
 cumulus-pallet-parachain-system = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.43" }
 cumulus-pallet-xcm = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.43" }
@@ -71,8 +71,6 @@ std = [
   "sp-runtime/std",
   "sp-std/std",
   "xcm/std",
-  "cumulus-pallet-xcmp-queue/std",
-  "polkadot-runtime-parachains/std",
 ]
 test-helpers = ["xcm"]
 try-runtime = [
