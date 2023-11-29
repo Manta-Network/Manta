@@ -21,4 +21,5 @@ std = [
   "codec/std",
   "sp-api/std",
   "manta-primitives/std",
+  "codec/std",
 ]

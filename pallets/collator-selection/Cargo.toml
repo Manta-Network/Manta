@@ -54,15 +54,17 @@ std = [
   'codec/std',
   'log/std',
   'scale-info/std',
+  'sp-arithmetic/std',
+  'serde/std',
   'sp-runtime/std',
   'sp-staking/std',
   'sp-std/std',
   'frame-support/std',
   'frame-system/std',
-  'frame-benchmarking/std',
   'nimbus-primitives/std',
   'pallet-authorship/std',
   'pallet-session/std',
+
 ]
 try-runtime = [
   'frame-support/try-runtime',

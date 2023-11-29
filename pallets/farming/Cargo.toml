@@ -52,6 +52,12 @@ std = [
   "pallet-assets/std",
   "pallet-asset-manager/std",
   "xcm/std",
+  "sp-core/std",
+  "sp-runtime/std",
+  "sp-arithmetic/std",
+  "sp-std/std",
+  "orml-traits/std",
+  "pallet-balances/std",
 ]
 
 runtime-benchmarks = [

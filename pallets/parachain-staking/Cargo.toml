@@ -45,7 +45,6 @@ runtime-benchmarks = [
   "frame-system/runtime-benchmarks",
 ]
 std = [
-  "frame-benchmarking/std",
   "frame-support/std",
   "frame-system/std",
   "log/std",
@@ -58,6 +57,7 @@ std = [
   "sp-arithmetic/std",
   "sp-runtime/std",
   "sp-std/std",
+  "sp-staking/std",
   'substrate-fixed/std',
 ]
 try-runtime = [

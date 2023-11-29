@@ -18,12 +18,13 @@ use sp_std::vec;
 use xcm::{
     latest::{
         prelude::{
-            All, Any, BuyExecution, ClearOrigin, Concrete, DepositAsset, InitiateReserveWithdraw,
+            All, BuyExecution, ClearOrigin, Concrete, DepositAsset, InitiateReserveWithdraw,
             Limited, MultiAssets, ReserveAssetDeposited, TransferReserveAsset, Wild, WithdrawAsset,
+            X1,
         },
         Xcm,
     },
-    v1::{
+    v3::{
         Fungibility::*,
         Junction::{AccountId32, Parachain},
         Junctions::*,
@@ -54,15 +55,14 @@ pub fn self_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
                 }),
                 fun: Fungible(10000000000000),
             },
-            weight_limit: Limited(3999999999),
+            weight_limit: Limited(3999999999.into()),
         },
         DepositAsset {
             assets: Wild(All),
-            max_assets: 1,
             beneficiary: MultiLocation {
                 parents: 0,
                 interior: X1(AccountId32 {
-                    network: Any,
+                    network: None,
                     id: [
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                         0, 0, 0, 0, 0, 0, 0,
@@ -92,15 +92,14 @@ pub fn to_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
                 }),
                 fun: Fungible(10000000000000),
             },
-            weight_limit: Limited(3999999999),
+            weight_limit: Limited(3999999999.into()),
         },
         DepositAsset {
             assets: Wild(All),
-            max_assets: 1,
             beneficiary: MultiLocation {
                 parents: 0,
                 interior: X1(AccountId32 {
-                    network: Any,
+                    network: None,
                     id: [
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                         0, 0, 0, 0, 0, 0, 0,
@@ -135,15 +134,14 @@ pub fn to_reserve_xcm_message_sender_side<T>() -> Xcm<T> {
                         id: Concrete(dummy_multi_location),
                         fun: Fungible(10000000000000),
                     },
-                    weight_limit: Limited(3999999999),
+                    weight_limit: Limited(3999999999.into()),
                 },
                 DepositAsset {
                     assets: Wild(All),
-                    max_assets: 1,
                     beneficiary: MultiLocation {
                         parents: 0,
                         interior: X1(AccountId32 {
-                            network: Any,
+                            network: None,
                             id: [
                                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -178,15 +176,14 @@ pub fn self_reserve_xcm_message_sender_side<T>() -> Xcm<T> {
                     id: Concrete(dummy_multi_location),
                     fun: Fungible(10000000000000),
                 },
-                weight_limit: Limited(3999999999),
+                weight_limit: Limited(3999999999.into()),
             },
             DepositAsset {
                 assets: Wild(All),
-                max_assets: 1,
                 beneficiary: MultiLocation {
                     parents: 0,
                     interior: X1(AccountId32 {
-                        network: Any,
+                        network: None,
                         id: [
                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                             0, 0, 0, 0, 0, 0, 0, 0,
