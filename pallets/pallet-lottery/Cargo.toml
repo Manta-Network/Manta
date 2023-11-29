@@ -40,19 +40,19 @@ frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', bran
 rand = { version = "0.8.5", default-features = false, optional = true }
 
 [dev-dependencies]
-calamari-runtime = { path = "../../runtime/calamari", default-features = false }
-manta-collator-selection = { path = "../collator-selection", default-features = false }
-pallet-asset-manager = { path = "../asset-manager", default-features = false }
+calamari-runtime = { path = "../../runtime/calamari" }
+manta-collator-selection = { path = "../collator-selection" }
+pallet-asset-manager = { path = "../asset-manager" }
 pallet-assets = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.43" }
 pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.43" }
 pallet-preimage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.43" }
-pallet-randomness = { path = '../randomness', default-features = false }
+pallet-randomness = { path = '../randomness' }
 pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.43" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.43" }
 rand = "0.8"
 similar-asserts = "1.1.0"
-sp-staking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-xcm = { git = "https://github.com/paritytech/polkadot.git", branch = "release-v0.9.43", default-features = false }
+sp-staking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43" }
+xcm = { git = "https://github.com/paritytech/polkadot.git", branch = "release-v0.9.43" }
 
 [features]
 default = ["std"]
