@@ -21,3 +21,5 @@ panic = "unwind"
 
 [profile.test]
 debug = true
+
+[workspace.dependencies]
