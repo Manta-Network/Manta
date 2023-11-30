@@ -39,6 +39,7 @@ use sp_std::{cmp::Ordering, prelude::*};
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+use cumulus_primitives_core::relay_chain::MAX_POV_SIZE;
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
@@ -73,7 +74,6 @@ use runtime_common::{
 };
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 use zenlink_protocol::{AssetBalance, AssetId as ZenlinkAssetId, MultiAssetsHandler, PairInfo};
-use cumulus_primitives_core::relay_chain::MAX_POV_SIZE;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;

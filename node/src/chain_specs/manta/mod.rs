@@ -23,7 +23,7 @@ use manta_runtime::{
     GenesisConfig, LotteryConfig, ParachainStakingConfig, PolkadotXcmConfig,
     TechnicalCommitteeConfig,
 };
-use sc_network_common::config::MultiaddrWithPeerId;
+use sc_service::config::MultiaddrWithPeerId;
 
 mod local_testnets_geneses;
 mod public_testnet_genesis;

@@ -34,11 +34,11 @@ use session_key_primitives::aura::AuraId;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::Result as ClientResult;
-use sp_consensus::{error::Error as ConsensusError, CacheKeyId};
-use sp_consensus_aura::AuraApi;
+use sp_consensus::error::Error as ConsensusError;
+use sp_consensus_aura::{sr25519::AuthorityPair, AuraApi};
 use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::{
-    app_crypto::AppKey,
+    app_crypto::AppCrypto,
     traits::{Block as BlockT, Header as HeaderT},
 };
 use std::sync::Arc;
@@ -51,7 +51,7 @@ const LOG_TARGET: &str = "aura-nimbus-consensus";
 struct AuraOrNimbusVerifier<Client, Block: BlockT, AuraCIDP, NimbusCIDP> {
     aura_verifier: sc_consensus_aura::AuraVerifier<
         Client,
-        <AuraId as AppKey>::Pair,
+        AuthorityPair,
         AuraCIDP,
         <<Block as BlockT>::Header as HeaderT>::Number,
     >,
@@ -81,10 +81,11 @@ where
                 telemetry,
                 compatibility_mode: CompatibilityMode::None,
             }),
-            nimbus_verifier: nimbus_consensus::Verifier::new(
+            nimbus_verifier: nimbus_consensus::Verifier {
                 client,
-                create_inherent_data_providers_nimbus,
-            ),
+                create_inherent_data_providers: create_inherent_data_providers_nimbus,
+                _marker: core::marker::PhantomData {},
+            },
         }
     }
 }
@@ -105,13 +106,7 @@ where
     async fn verify(
         &mut self,
         block_params: BlockImportParams<Block, ()>,
-    ) -> Result<
-        (
-            BlockImportParams<Block, ()>,
-            Option<Vec<(CacheKeyId, Vec<u8>)>>,
-        ),
-        String,
-    > {
+    ) -> Result<BlockImportParams<Block, ()>, String> {
         // We assume the outermost digest item is the block seal ( we have no two-step consensus )
         let seal = block_params
             .header
@@ -127,7 +122,7 @@ where
                 .verify(block_params)
                 .map_err(Into::into)
                 .await
-        } else if AuraDigestItem::<<AuraId as AppKey>::Signature>::as_aura_seal(seal).is_some() {
+        } else if AuraDigestItem::<<<AuraId as AppCrypto>::Pair as sp_core::Pair>::Signature>::as_aura_seal(seal).is_some() {
             debug!(target: LOG_TARGET, "Verifying block with Aura");
             self.aura_verifier
                 .verify(block_params)

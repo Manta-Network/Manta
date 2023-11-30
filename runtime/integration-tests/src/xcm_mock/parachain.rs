@@ -357,7 +357,6 @@ pub mod mock_msg_queue {
 
     // without storage info is a work around
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 

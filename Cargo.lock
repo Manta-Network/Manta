@@ -5527,7 +5527,6 @@ dependencies = [
  "sc-executor",
  "sc-keystore",
  "sc-network",
- "sc-network-common",
  "sc-rpc",
  "sc-rpc-api",
  "sc-service",
@@ -6282,7 +6281,7 @@ dependencies = [
 [[package]]
 name = "nimbus-consensus"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.43#1168c153f3113c7f32750c37c367675abaad62ec"
+source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.43#efd82b51207f991d10d7988cd3792cdd124d9eed"
 dependencies = [
  "async-trait",
  "cumulus-client-consensus-common",
@@ -6312,7 +6311,7 @@ dependencies = [
 [[package]]
 name = "nimbus-primitives"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.43#1168c153f3113c7f32750c37c367675abaad62ec"
+source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.43#efd82b51207f991d10d7988cd3792cdd124d9eed"
 dependencies = [
  "async-trait",
  "frame-benchmarking",
@@ -6777,7 +6776,7 @@ dependencies = [
 [[package]]
 name = "pallet-aura-style-filter"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.43#1168c153f3113c7f32750c37c367675abaad62ec"
+source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.43#efd82b51207f991d10d7988cd3792cdd124d9eed"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6793,7 +6792,7 @@ dependencies = [
 [[package]]
 name = "pallet-author-inherent"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.43#1168c153f3113c7f32750c37c367675abaad62ec"
+source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.43#efd82b51207f991d10d7988cd3792cdd124d9eed"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
