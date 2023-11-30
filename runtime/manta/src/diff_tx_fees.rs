@@ -565,7 +565,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
     {
         assert_eq!(
             crate::RuntimeCall::get_call_names("Democracy").len(),
-            18,
+            19,
             "Please update new extrinsic here."
         );
         // propose
@@ -747,7 +747,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
     {
         assert_eq!(
             crate::RuntimeCall::get_call_names("TechnicalCommittee").len(),
-            7,
+            6,
             "Please update new extrinsic here."
         );
         // set_members
@@ -823,7 +823,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         let call =
             crate::RuntimeCall::XcmpQueue(cumulus_pallet_xcmp_queue::Call::service_overweight {
                 index: 1,
-                weight_limit: 64,
+                weight_limit: 64.into(),
             });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -894,7 +894,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
 
         // update_threshold_weight
         let call = crate::RuntimeCall::XcmpQueue(
-            cumulus_pallet_xcmp_queue::Call::update_threshold_weight { new: 64 },
+            cumulus_pallet_xcmp_queue::Call::update_threshold_weight { new: 64.into() },
         );
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -906,7 +906,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
 
         // update_weight_restrict_decay
         let call = crate::RuntimeCall::XcmpQueue(
-            cumulus_pallet_xcmp_queue::Call::update_weight_restrict_decay { new: 64 },
+            cumulus_pallet_xcmp_queue::Call::update_weight_restrict_decay { new: 64.into() },
         );
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -918,7 +918,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
 
         // update_xcmp_max_individual_weight
         let call = crate::RuntimeCall::XcmpQueue(
-            cumulus_pallet_xcmp_queue::Call::update_xcmp_max_individual_weight { new: 64 },
+            cumulus_pallet_xcmp_queue::Call::update_xcmp_max_individual_weight { new: 64.into() },
         );
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -938,7 +938,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             "Please update new extrinsic here."
         );
         // transfer
-        let dest = VersionedMultiLocation::V1(Default::default());
+        let dest = VersionedMultiLocation::V3(Default::default());
         let call = crate::RuntimeCall::XTokens(orml_xtokens::Call::transfer {
             currency_id: crate::xcm_config::CurrencyId::MantaCurrency(1),
             amount: 10,
@@ -956,7 +956,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             }),
             fun: Fungible(10000000000000),
         };
-        let asset = xcm::VersionedMultiAsset::V1(_asset.clone());
+        let asset = xcm::VersionedMultiAsset::V3(_asset.clone());
         let call = crate::RuntimeCall::XTokens(orml_xtokens::Call::transfer_multiasset {
             asset: Box::new(asset.clone()),
             dest: Box::new(dest.clone()),
@@ -989,7 +989,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             }),
             fun: Fungible(5000000000000),
         };
-        let fee_asset = xcm::VersionedMultiAsset::V1(_fee_asset.clone());
+        let fee_asset = xcm::VersionedMultiAsset::V3(_fee_asset.clone());
         let call = crate::RuntimeCall::XTokens(orml_xtokens::Call::transfer_multiasset_with_fee {
             asset: Box::new(asset),
             fee: Box::new(fee_asset),
@@ -1023,7 +1023,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         ));
 
         // transfer_multiassets
-        let assets = xcm::VersionedMultiAssets::V1(MultiAssets::from(vec![_asset, _fee_asset]));
+        let assets = xcm::VersionedMultiAssets::V3(MultiAssets::from(vec![_asset, _fee_asset]));
         let call = crate::RuntimeCall::XTokens(orml_xtokens::Call::transfer_multiassets {
             assets: Box::new(assets),
             fee_item: 1,
@@ -1301,7 +1301,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
     {
         assert_eq!(
             crate::RuntimeCall::get_call_names("Assets").len(),
-            28,
+            32,
             "Please update new extrinsic here."
         );
         // create
@@ -1592,7 +1592,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
     {
         assert_eq!(
             crate::RuntimeCall::get_call_names("Balances").len(),
-            6,
+            9,
             "Please update new extrinsic here."
         );
         // transfer, 1 token
@@ -1617,10 +1617,9 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         ));
 
         // set_balance
-        let call = crate::RuntimeCall::Balances(pallet_balances::Call::set_balance {
+        let call = crate::RuntimeCall::Balances(pallet_balances::Call::force_set_balance {
             who: ALICE.into(),
             new_free: 1,
-            new_reserved: 1,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_balances", "set_balance", dispatch_info, call_len));
@@ -2929,7 +2928,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         );
         // set_fee_receiver
         let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::set_fee_receiver {
-            receiver: Some(ALICE.clone()),
+            send_to: Some(MultiAddress::Id(ALICE.clone())),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -2954,7 +2953,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         };
         let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::transfer {
             asset_id,
-            recipient: ALICE.clone(),
+            recipient: MultiAddress::Id(ALICE.clone()),
             amount: 10,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -2993,7 +2992,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             liquidity: 4,
             amount_0_min: 1,
             amount_1_min: 3,
-            recipient: ALICE.clone(),
+            recipient: MultiAddress::Id(ALICE.clone()),
             deadline: 20,
         });
         let (dispatch_info, call_len) = get_call_details(&call);
@@ -3015,7 +3014,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
                 amount_in: 1,
                 amount_out_min: 4,
                 path: vec![asset_id, asset_2, asset_1],
-                recipient: ALICE.clone(),
+                recipient: MultiAddress::Id(ALICE.clone()),
                 deadline: 20,
             },
         );
@@ -3033,7 +3032,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
                 amount_out: 1,
                 amount_in_max: 4,
                 path: vec![asset_id, asset_2, asset_1],
-                recipient: ALICE.clone(),
+                recipient: MultiAddress::Id(ALICE.clone()),
                 deadline: 20,
             },
         );
@@ -3084,7 +3083,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
 
         // bootstrap_claim
         let call = crate::RuntimeCall::ZenlinkProtocol(zenlink_protocol::Call::bootstrap_claim {
-            recipient: ALICE.clone(),
+            recipient: MultiAddress::Id(ALICE.clone()),
             asset_0: asset_id,
             asset_1,
             deadline: 20,
@@ -3158,7 +3157,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             zenlink_protocol::Call::bootstrap_withdraw_reward {
                 asset_0: asset_id,
                 asset_1,
-                recipient: ALICE.clone(),
+                recipient: MultiAddress::Id(ALICE.clone()),
             },
         );
         let (dispatch_info, call_len) = get_call_details(&call);
