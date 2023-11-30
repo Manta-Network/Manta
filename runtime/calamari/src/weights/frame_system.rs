@@ -46,12 +46,13 @@ use manta_primitives::constants::RocksDbWeight;
 
 /// Weight functions needed for frame_system.
 pub trait WeightInfo {
-    fn remark(b: u32, ) -> Weight;
-    fn remark_with_event(b: u32, ) -> Weight;
-    fn set_heap_pages() -> Weight;
-    fn set_storage(i: u32, ) -> Weight;
-    fn kill_storage(i: u32, ) -> Weight;
-    fn kill_prefix(p: u32, ) -> Weight;
+	fn remark(b: u32, ) -> Weight;
+	fn remark_with_event(b: u32, ) -> Weight;
+	fn set_heap_pages() -> Weight;
+	fn set_code() -> Weight;
+	fn set_storage(i: u32, ) -> Weight;
+	fn kill_storage(i: u32, ) -> Weight;
+	fn kill_prefix(p: u32, ) -> Weight;
 }
 
 /// Weights for frame_system using the Substrate node and recommended hardware.
@@ -78,6 +79,15 @@ impl<T: frame_system::Config> frame_system::WeightInfo for SubstrateWeight<T> {
 		Weight::from_ref_time(26_061_000)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(2))
+	}
+	fn set_code() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `156`
+		//  Estimated: `1641`
+		// Minimum execution time: 122_419_636_000 picoseconds.
+		Weight::from_parts(127_638_762_000, 1641)
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 	// Storage: Skipped Metadata (r:0 w:0)
 	/// The range of component `i` is `[0, 1000]`.
@@ -131,6 +141,15 @@ impl WeightInfo for () {
 		Weight::from_ref_time(26_061_000)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(2))
+	}
+	fn set_code() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `156`
+		//  Estimated: `1641`
+		// Minimum execution time: 122_419_636_000 picoseconds.
+		Weight::from_parts(127_638_762_000, 1641)
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 	// Storage: Skipped Metadata (r:0 w:0)
 	/// The range of component `i` is `[0, 1000]`.

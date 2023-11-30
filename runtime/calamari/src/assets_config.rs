@@ -133,7 +133,7 @@ parameter_types! {
     pub const StartNonNativeAssetId: CalamariAssetId = 8;
     pub const NativeAssetId: CalamariAssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
-        VersionedMultiLocation::V1(SelfReserve::get()));
+        VersionedMultiLocation::V3(SelfReserve::get()));
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
         metadata: AssetStorageMetadata {
             name: b"Calamari".to_vec(),

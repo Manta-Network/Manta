@@ -24,7 +24,7 @@ use core::marker::PhantomData;
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
     match_types, parameter_types,
-    traits::{Contains, Currency, Everything, Nothing},
+    traits::{ConstU32, Contains, Currency, Everything, Nothing},
     weights::Weight,
 };
 use frame_system::EnsureRoot;
@@ -45,11 +45,10 @@ use sp_runtime::traits::Convert;
 use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowUnpaidExecutionFrom, ConvertedConcreteAssetId, EnsureXcmOrigin, FixedRateOfFungible,
-    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit, WeightInfoBounds,
+    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, AllowSubscriptionsFrom,
+    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32, AllowKnownQueryResponses,
+    SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit, WeightInfoBounds, AccountId32Aliases, Account32Hash,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
@@ -185,6 +184,7 @@ pub type Barrier = (
 
 parameter_types! {
     pub XcmFeesAccount: AccountId = Treasury::account_id();
+    pub const MaxAssetsIntoHolding: u32 = 64;
 }
 
 /// Xcm fee of native token
@@ -248,6 +248,16 @@ impl Config for XcmExecutorConfig {
     type AssetClaims = PolkadotXcm;
     // This is needed for the version change notifier work
     type SubscriptionService = PolkadotXcm;
+    type UniversalLocation = UniversalLocation;
+    type AssetLocker = PolkadotXcm;
+    type AssetExchanger = ();
+    type PalletInstancesInfo = ();
+    type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
+    type MessageExporter = ();
+    type UniversalAliases = Nothing;
+    type CallDispatcher = RuntimeCall;
+    type SafeCallFilter = Everything;
+    type FeeManager = ();
 }
 
 /// Converts a Signed Local Origin into a MultiLocation
@@ -282,6 +292,18 @@ impl pallet_xcm::Config for Runtime {
         MaxInstructions,
     >;
     type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
+    type Currency = Balances;
+    type CurrencyMatcher = ();
+    type TrustedLockers = ();
+    type UniversalLocation = UniversalLocation;
+    type AdminOrigin = EnsureRoot<AccountId>;
+    type SovereignAccountOf = LocationToAccountId;
+    type MaxRemoteLockConsumers = ConstU32<0>;
+    type MaxLockers = ConstU32<8>;
+    type RemoteLockConsumerIdentifier = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type ReachableDest = ReachableDest;
+    type WeightInfo = crate::weights::pallet_xcm::SubstrateWeight<Runtime>;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
@@ -298,6 +320,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type ControllerOrigin = EnsureRootOrMoreThanHalfCouncil;
     type ControllerOriginConverter = XcmOriginToCallOrigin;
     type WeightInfo = crate::weights::cumulus_pallet_xcmp_queue::SubstrateWeight<Runtime>;
+    type PriceForSiblingDelivery = ();
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -332,8 +355,9 @@ where
 }
 
 parameter_types! {
-    pub const BaseXcmWeight: u64 = 100_000_000;
+    pub const BaseXcmWeight: Weight = Weight::from_ref_time(100_000_000u64);
     pub const MaxAssetsForTransfer: usize = 2;
+    pub UniversalLocation: InteriorMultiLocation = X2(GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into()));
 }
 
 impl Contains<CurrencyId> for AssetManager {
@@ -371,4 +395,5 @@ impl orml_xtokens::Config for Runtime {
     type MinXcmFee = AssetManager;
     type MultiLocationsFilter = AssetManager;
     type ReserveProvider = AbsoluteReserveProvider;
+    type UniversalLocation = UniversalLocation;
 }

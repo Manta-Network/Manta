@@ -1176,6 +1176,8 @@ dependencies = [
  "xcm-builder",
  "xcm-executor",
  "xcm-simulator",
+ "zenlink-protocol",
+ "zenlink-protocol-runtime-api",
 ]
 
 [[package]]
@@ -15549,7 +15551,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.43#fd597d3c04e2cb0b052a74e3da4575cf2234907f"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.43#8d8b2e49b79719139cd369c6442e88a3fce8bedd"
 dependencies = [
  "cumulus-primitives-core",
  "frame-benchmarking",
@@ -15573,7 +15575,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol-rpc"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.43#fd597d3c04e2cb0b052a74e3da4575cf2234907f"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.43#8d8b2e49b79719139cd369c6442e88a3fce8bedd"
 dependencies = [
  "jsonrpsee",
  "parity-scale-codec",
@@ -15588,7 +15590,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol-runtime-api"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.43#fd597d3c04e2cb0b052a74e3da4575cf2234907f"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.43#8d8b2e49b79719139cd369c6442e88a3fce8bedd"
 dependencies = [
  "parity-scale-codec",
  "sp-api",

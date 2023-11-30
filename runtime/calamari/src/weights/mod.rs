@@ -42,5 +42,6 @@ pub mod pallet_timestamp;
 pub mod pallet_treasury;
 pub mod pallet_tx_pause;
 pub mod pallet_utility;
+pub mod pallet_xcm;
 pub mod xcm;
-//pub mod zenlink_protocol;
+pub mod zenlink_protocol;

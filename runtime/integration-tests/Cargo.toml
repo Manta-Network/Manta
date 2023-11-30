@@ -13,7 +13,7 @@ cfg-if = "1.0"
 manta-runtime = { path = "../manta", optional = true }
 
 [dev-dependencies]
-codec = { package = "parity-scale-codec", version = '3.1.2', features = ["derive", "max-encoded-len"] }
+codec = { package = "parity-scale-codec", version = '3.4.0', features = ["derive", "max-encoded-len"] }
 frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43", default-features = false }
 frame-system = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43" }
 lazy_static = "1.4.0"

@@ -72,7 +72,7 @@ use runtime_common::{
     ExtrinsicBaseWeight,
 };
 use session_key_primitives::{AuraId, NimbusId, VrfId};
-//use zenlink_protocol::{AssetBalance, AssetId as ZenlinkAssetId, MultiAssetsHandler, PairInfo};
+use zenlink_protocol::{AssetBalance, AssetId as ZenlinkAssetId, MultiAssetsHandler, PairInfo};
 use cumulus_primitives_core::relay_chain::MAX_POV_SIZE;
 
 #[cfg(any(feature = "std", test))]
@@ -90,7 +90,7 @@ pub mod migrations;
 mod nimbus_session_adapter;
 pub mod staking;
 pub mod xcm_config;
-//pub mod zenlink;
+pub mod zenlink;
 
 use currency::*;
 use impls::DealWithFees;
@@ -1018,7 +1018,7 @@ construct_runtime!(
         // Calamari stuff
         CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
 
-        //ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 51,
+        ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 51,
 
         Farming: pallet_farming::{Pallet, Call, Storage, Event<T>} = 54,
 
@@ -1330,7 +1330,7 @@ impl_runtime_apis! {
     }
 
     // zenlink runtime outer apis
-    /*impl zenlink_protocol_runtime_api::ZenlinkProtocolApi<Block, AccountId, ZenlinkAssetId> for Runtime {
+    impl zenlink_protocol_runtime_api::ZenlinkProtocolApi<Block, AccountId, ZenlinkAssetId> for Runtime {
 
         fn get_balance(
             asset_id: ZenlinkAssetId,
@@ -1389,7 +1389,7 @@ impl_runtime_apis! {
                 amount
             )
         }
-    }*/
+    }
 
     impl pallet_farming_rpc_runtime_api::FarmingRuntimeApi<Block, AccountId, CalamariAssetId, PoolId> for Runtime {
         fn get_farming_rewards(who: AccountId, pid: PoolId) -> Vec<(CalamariAssetId, Balance)> {
