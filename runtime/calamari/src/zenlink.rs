@@ -208,7 +208,7 @@ mod mock_benchmark {
             min_balance: 1u128,
             is_sufficient: true,
         };
-        let location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+        let location = AssetLocation(VersionedMultiLocation::V3(MultiLocation::new(
             1,
             X3(
                 Parachain(SelfParaId::get()),

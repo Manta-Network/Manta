@@ -1458,7 +1458,7 @@ impl_runtime_apis! {
                     // Random amount for the benchmark.
                     MultiAsset { fun: Fungible(1_000_000_000_000), id: Concrete(KsmLocation::get()) },
                 ));
-                pub const CheckedAccount: Option<AccountId> = None;
+                pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
                 pub const KsmLocation: MultiLocation = MultiLocation::parent();
                 pub KmaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
             }
@@ -1471,12 +1471,12 @@ impl_runtime_apis! {
                  Ok(KsmLocation::get())
                 }
 
-                fn worst_case_holding() -> MultiAssets {
+                fn worst_case_holding(depositable_count: u32) -> MultiAssets {
                     // A mix of fungible, non-fungible, and concrete assets.
-                    const HOLDING_FUNGIBLES: u32 = 100;
-                    const HOLDING_NON_FUNGIBLES: u32 = 100;
+                    let holding_non_fungibles = crate::xcm_config::MaxAssetsIntoHolding::get() / 2 - depositable_count;
+                    let holding_fungibles = holding_non_fungibles.saturating_sub(1);
                     let fungibles_amount: u128 = 100;
-                    let mut assets = (0..HOLDING_FUNGIBLES)
+                    let mut assets = (0..holding_fungibles)
                         .map(|i| {
                             MultiAsset {
                                 id: Concrete(GeneralIndex(i as u128).into()),
@@ -1484,17 +1484,17 @@ impl_runtime_apis! {
                             }
                         })
                         .chain(core::iter::once(MultiAsset { id: Concrete(Here.into()), fun: Fungible(u128::MAX) }))
-                        .chain((0..HOLDING_NON_FUNGIBLES).map(|i| MultiAsset {
+                        .chain((0..holding_non_fungibles).map(|i| MultiAsset {
                             id: Concrete(GeneralIndex(i as u128).into()),
                             fun: NonFungible(asset_instance_from(i)),
                         }))
                         .collect::<Vec<_>>();
 
-                        assets.push(MultiAsset{
-                            id: Concrete(KmaLocation::get()),
-                            fun: Fungible(1_000_000 * KMA),
-                        });
-                        assets.into()
+                    assets.push(MultiAsset {
+                        id: Concrete(KsmLocation::get()),
+                        fun: Fungible(1_000_000 * KMA),
+                    });
+                    assets.into()
                 }
             }
 
@@ -1503,7 +1503,6 @@ impl_runtime_apis! {
 
                 type CheckedAccount = CheckedAccount;
                 type TrustedTeleporter = TrustedTeleporter;
-                type TrustedReserve = TrustedReserve;
 
                 fn get_multi_asset() -> MultiAsset {
                     MultiAsset {
@@ -1520,8 +1519,16 @@ impl_runtime_apis! {
                     (0u64, Response::Version(Default::default()))
                 }
 
-                fn transact_origin() -> Result<MultiLocation, BenchmarkError> {
-                    Ok(KsmLocation::get())
+                fn worst_case_asset_exchange() -> Result<(MultiAssets, MultiAssets), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+
+                fn universal_alias() -> Result<(MultiLocation, Junction), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+
+                fn transact_origin_and_runtime_call() -> Result<(MultiLocation, RuntimeCall), BenchmarkError> {
+                    Ok((KsmLocation::get(), frame_system::Call::remark_with_event { remark: vec![] }.into()))
                 }
 
                 fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
@@ -1529,10 +1536,19 @@ impl_runtime_apis! {
                 }
 
                 fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
-                    let origin = KmaLocation::get();
-                    let assets: MultiAssets = (Concrete(KmaLocation::get()), 1_000 * KMA).into();
+                    let origin = KsmLocation::get();
+                    let assets: MultiAssets = (Concrete(KsmLocation::get()), 1_000 * KMA).into();
                     let ticket = MultiLocation { parents: 0, interior: Here };
                     Ok((origin, ticket, assets))
+                }
+
+                fn unlockable_asset() -> Result<(MultiLocation, MultiLocation, MultiAsset), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+
+                fn export_message_origin_and_destination(
+                ) -> Result<(MultiLocation, NetworkId, InteriorMultiLocation), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
                 }
             }
 
