@@ -24,6 +24,7 @@ use frame_support::{
     pallet_prelude::Weight,
     traits::{Get, OnRuntimeUpgrade},
 };
+use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 
 pub struct RemoveSudo<T>(PhantomData<T>);
@@ -45,20 +46,20 @@ impl<T: frame_system::Config> OnRuntimeUpgrade for RemoveSudo<T> {
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, DispatchError> {
         if have_storage_value(b"Sudo", b"Key", b"") {
             log::info!(target: "OnRuntimeUpgrade", "✅ Sudo key will be removed soon.");
             log::info!(target: "OnRuntimeUpgrade", "✅ The pallet version will be removed soon.");
             Ok(Vec::new())
         } else {
-            Err("Sudo doesn't exist.")
+            Err(DispatchError::Other("Sudo doesn't exist."))
         }
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), DispatchError> {
         if have_storage_value(b"Sudo", b"Key", b"") {
-            Err("Failed to remove sudo module.")
+            Err(DispatchError::Other("Failed to remove sudo module."))
         } else {
             Ok(())
         }

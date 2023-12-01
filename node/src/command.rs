@@ -359,6 +359,7 @@ pub fn run_with(cli: Cli) -> Result {
         #[cfg(feature = "try-runtime")]
         Some(Subcommand::TryRuntime(cmd)) => {
             use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
+            use try_runtime_cli::block_building_info::timestamp_with_aura_info;
 
             // grab the task manager.
             let runner = cli.create_runner(cmd)?;
@@ -371,13 +372,15 @@ pub fn run_with(cli: Cli) -> Result {
                 sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
                     .map_err(|e| format!("Error: {e:?}"))?;
 
+            let info_provider = timestamp_with_aura_info(6000);
+
             if runner.config().chain_spec.is_manta() {
                 runner.async_run(|_config| {
                     Ok((
                         cmd.run::<Block, ExtendedHostFunctions<
                             sp_io::SubstrateHostFunctions,
                             <MantaRuntimeExecutor as NativeExecutionDispatch>::ExtendHostFunctions,
-                        >>(),
+                        >, _>(Some(info_provider)),
                         task_manager,
                     ))
                 })
@@ -387,7 +390,7 @@ pub fn run_with(cli: Cli) -> Result {
                         cmd.run::<Block, ExtendedHostFunctions<
 							sp_io::SubstrateHostFunctions,
 							<CalamariRuntimeExecutor as NativeExecutionDispatch>::ExtendHostFunctions,
-						>>(),
+						>, _>(Some(info_provider)),
                         task_manager,
                     ))
                 })

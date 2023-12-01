@@ -196,7 +196,7 @@ try-runtime = [
   'pallet-sudo/try-runtime',
   'cumulus-pallet-xcmp-queue/try-runtime',
   'cumulus-pallet-xcm/try-runtime',
-  'pallet-asset-manager/try-runtime',
+  'pallet-assets/try-runtime',
   'pallet-manta-pay/try-runtime',
   'orml-xtokens/try-runtime',
   'pallet-manta-sbt/try-runtime',
@@ -205,6 +205,7 @@ try-runtime = [
   'pallet-lottery/try-runtime',
   "zenlink-protocol/try-runtime",
   "pallet-farming/try-runtime",
+  "pallet-author-inherent/try-runtime",
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []

@@ -37,6 +37,7 @@ use manta_primitives::{
 use scale_info::TypeInfo;
 use sp_core::H160;
 use sp_runtime::BoundedVec;
+use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 
 pub type DepositBalanceOf<T, I = ()> = <<T as pallet_assets::Config<I>>::Currency as Currency<
@@ -370,17 +371,17 @@ where
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, DispatchError> {
         let asset_manager_storage_version =
             <pallet_asset_manager::Pallet<T> as GetStorageVersion>::on_chain_storage_version();
         if asset_manager_storage_version != INITIAL_PALLET_ASSETS_MANAGER_VERSION {
-            return Err("AssetManager storage version is not 1, the migration won't be executed.");
+            return Err(DispatchError::Other("AssetManager storage version is not 1, the migration won't be executed."));
         }
 
         let assets_storage_version =
             <pallet_assets::Pallet<T> as GetStorageVersion>::on_chain_storage_version();
         if assets_storage_version != INITIAL_PALLET_ASSETS_VERSION {
-            return Err("Assets storage version is not 0, the migration won't be executed.");
+            return Err(DispatchError::Other("Assets storage version is not 0, the migration won't be executed."));
         }
 
         // We want to test that:
@@ -555,17 +556,17 @@ where
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
+    fn post_upgrade(state: Vec<u8>) -> Result<(), DispatchError> {
         let asset_manager_storage_version =
             <pallet_asset_manager::Pallet<T> as GetStorageVersion>::on_chain_storage_version();
         if asset_manager_storage_version != INITIAL_PALLET_ASSETS_MANAGER_VERSION + 1 {
-            return Err("AssetManager storage version is not 2, the migration wasn't executed.");
+            return Err(DispatchError::Other("AssetManager storage version is not 2, the migration wasn't executed."));
         }
 
         let assets_storage_version =
             <pallet_assets::Pallet<T> as GetStorageVersion>::on_chain_storage_version();
         if assets_storage_version != INITIAL_PALLET_ASSETS_VERSION + 1 {
-            return Err("Assets storage version is not 1, the migration wasn't executed.");
+            return Err(DispatchError::Other("Assets storage version is not 1, the migration wasn't executed."));
         }
 
         // We want to test that:
