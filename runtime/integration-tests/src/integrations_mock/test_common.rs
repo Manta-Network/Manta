@@ -363,7 +363,7 @@ fn balances_operations_should_work() {
                     sp_runtime::MultiAddress::Id(CHARLIE.clone()),
                     INITIAL_BALANCE,
                 ),
-                pallet_balances::Error::<Runtime>::KeepAlive
+                pallet_balances::Error::<Runtime>::LowBalance
             );
 
             // Transfer all down to zero
@@ -616,7 +616,7 @@ fn concrete_fungible_ledger_transfers_work() {
                 is_sufficient: true,
             };
             let source_location =
-                AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+                AssetLocation(VersionedMultiLocation::V3(MultiLocation::parent()));
             assert_ok!(AssetManager::register_asset(
                 root_origin(),
                 source_location,
@@ -939,7 +939,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                 is_sufficient: true,
             };
             let source_location =
-                AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+                AssetLocation(VersionedMultiLocation::V3(MultiLocation::parent()));
             assert_ok!(AssetManager::register_asset(
                 root_origin(),
                 source_location,
@@ -997,7 +997,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                 is_sufficient: false,
             };
 
-            let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+            let source_location = AssetLocation(VersionedMultiLocation::V3(MultiLocation::new(
                 1,
                 X2(Parachain(1), PalletInstance(1)),
             )));
@@ -1086,7 +1086,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
                 is_sufficient: true,
             };
             let source_location =
-                AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+                AssetLocation(VersionedMultiLocation::V3(MultiLocation::parent()));
             assert_ok!(AssetManager::register_asset(
                 root_origin(),
                 source_location,

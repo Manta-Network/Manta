@@ -59,7 +59,7 @@ use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, Ver
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowUnpaidExecutionFrom, ConvertedConcreteAssetId, EnsureXcmOrigin, FixedRateOfFungible,
-    LocationInverter, ParentIsPreset, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    ParentIsPreset, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeRevenue,
     TakeWeightCredit, WeightInfoBounds,
 };
@@ -124,6 +124,10 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
+    type FreezeIdentifier = ();
+    type MaxFreezes = ();
+    type HoldIdentifier = ();
+    type MaxHolds = ConstU32<50>;
 }
 
 parameter_types! {
@@ -208,7 +212,7 @@ parameter_types! {
     // Used in native traders
     // This might be able to skipped.
     // We have to use `here()` because of reanchoring logic
-    pub ParaTokenPerSecond: (xcm::v2::AssetId, u128) = (Concrete(MultiLocation::here()), 1_000_000_000);
+    pub ParaTokenPerSecond: (cumulus_primitives_core::AssetId, u128, u128) = (Concrete(MultiLocation::here()), 1_000_000_000, 0);
     pub const MaxInstructions: u32 = 100;
 }
 
@@ -267,6 +271,8 @@ pub type Barrier = (
 parameter_types! {
     /// Xcm fees will go to the asset manager (we don't implement treasury yet for mock parachain)
     pub XcmFeesAccount: AccountId = AssetManager::account_id();
+    pub const MaxAssetsIntoHolding: u32 = 64;
+    pub UniversalLocation: InteriorMultiLocation = X2(GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into()));
 }
 
 /// Xcm fee of native token
@@ -310,7 +316,6 @@ impl Config for XcmExecutorConfig {
     // Combinations of (Location, Asset) pairs which we trust as reserves.
     type IsReserve = MultiNativeAsset;
     type IsTeleporter = ();
-    type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = Barrier;
     type Weigher = WeightInfoBounds<RuntimeXcmWeight, RuntimeCall, MaxInstructions>;
     // Trader is the means to purchasing weight credit for XCM execution.
@@ -328,6 +333,16 @@ impl Config for XcmExecutorConfig {
     type AssetClaims = PolkadotXcm;
     // This is needed for the version change notifier work
     type SubscriptionService = PolkadotXcm;
+    type UniversalLocation = UniversalLocation;
+    type AssetLocker = PolkadotXcm;
+    type AssetExchanger = ();
+    type PalletInstancesInfo = ();
+    type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
+    type MessageExporter = ();
+    type UniversalAliases = Nothing;
+    type CallDispatcher = RuntimeCall;
+    type SafeCallFilter = Everything;
+    type FeeManager = ();
 }
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
@@ -339,6 +354,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToCallOrigin;
     type WeightInfo = ();
+    type PriceForSiblingDelivery = ();
 }
 
 #[frame_support::pallet]
@@ -414,16 +430,12 @@ pub mod mock_msg_queue {
             let (result, event) = match Xcm::<T::RuntimeCall>::try_from(xcm) {
                 Ok(xcm) => {
                     let location = (1, Parachain(sender.into()));
-                    match T::XcmExecutor::execute_xcm(location, xcm, max_weight.ref_time()) {
+                    match T::XcmExecutor::execute_xcm(location, xcm, max_weight) {
                         Outcome::Error(e) => (Err(e), Event::Fail(Some(hash), e)),
-                        Outcome::Complete(w) => {
-                            (Ok(Weight::from_ref_time(w)), Event::Success(Some(hash)))
-                        }
+                        Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
                         // As far as the caller is concerned, this was dispatched without error, so
                         // we just report the weight used.
-                        Outcome::Incomplete(w, e) => {
-                            (Ok(Weight::from_ref_time(w)), Event::Fail(Some(hash), e))
-                        }
+                        Outcome::Incomplete(w, e) => (Ok(w), Event::Fail(Some(hash), e)),
                     }
                 }
                 Err(()) => (
@@ -478,8 +490,7 @@ pub mod mock_msg_queue {
                         Self::deposit_event(Event::UnsupportedVersion(id));
                     }
                     Ok(Ok(x)) => {
-                        let outcome =
-                            T::XcmExecutor::execute_xcm(Parent, x.clone(), limit.ref_time());
+                        let outcome = T::XcmExecutor::execute_xcm(Parent, x.clone(), limit);
                         <ReceivedDmp<T>>::append(x);
                         Self::deposit_event(Event::ExecutedDownward(id, outcome));
                     }
@@ -520,11 +531,23 @@ impl pallet_xcm::Config for Runtime {
     type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Nothing;
     type Weigher = WeightInfoBounds<RuntimeXcmWeight, RuntimeCall, MaxInstructions>;
-    type LocationInverter = LocationInverter<Ancestry>;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
     type AdvertisedXcmVersion = CurrentXcmVersion;
+    type Currency = Balances;
+    type CurrencyMatcher = ();
+    type TrustedLockers = ();
+    type UniversalLocation = UniversalLocation;
+    type AdminOrigin = EnsureRoot<AccountId>;
+    type SovereignAccountOf = LocationToAccountId;
+    type MaxRemoteLockConsumers = ConstU32<0>;
+    type MaxLockers = ConstU32<8>;
+    type RemoteLockConsumerIdentifier = ();
+    #[cfg(feature = "calamari")]
+    type WeightInfo = calamari_runtime::weights::pallet_xcm::SubstrateWeight<Runtime>;
+    #[cfg(feature = "manta")]
+    type WeightInfo = manta_runtime::weights::pallet_xcm::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -591,7 +614,7 @@ parameter_types! {
     pub const StartNonNativeAssetId: CalamariAssetId = 8;
     pub const NativeAssetId: CalamariAssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
-        VersionedMultiLocation::V1(SelfReserve::get()));
+        VersionedMultiLocation::V3(SelfReserve::get()));
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
         metadata: AssetStorageMetadata {
             name: b"ParaAToken".to_vec(),
@@ -670,7 +693,7 @@ where
 }
 
 parameter_types! {
-    pub const BaseXcmWeight: u64 = 100_000_000;
+    pub const BaseXcmWeight: Weight = Weight::from_ref_time(100_000_000_u64);
     pub const MaxAssetsForTransfer: usize = 3;
 }
 
@@ -693,12 +716,11 @@ impl orml_xtokens::Config for Runtime {
     type SelfLocation = SelfReserve;
     type Weigher = WeightInfoBounds<RuntimeXcmWeight, RuntimeCall, MaxInstructions>;
     type BaseXcmWeight = BaseXcmWeight;
-    type LocationInverter = LocationInverter<Ancestry>;
     type MaxAssetsForTransfer = MaxAssetsForTransfer;
     type MinXcmFee = AssetManager;
     type MultiLocationsFilter = AssetManager;
-    type OutgoingAssetsFilter = AssetManager;
     type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
+    type UniversalLocation = UniversalLocation;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -774,7 +796,7 @@ pub(crate) fn create_asset_metadata(
 }
 
 pub(crate) fn create_asset_location(parents: u8, para_id: u32) -> AssetLocation {
-    AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+    AssetLocation(VersionedMultiLocation::V3(MultiLocation::new(
         parents,
         X1(Parachain(para_id)),
     )))
@@ -810,7 +832,7 @@ where
 {
     let mut asset_id = 0;
     let mut dummy_mult_loc = match source_location.0.clone() {
-        VersionedMultiLocation::V1(some_location) => some_location,
+        VersionedMultiLocation::V3(some_location) => some_location,
         _ => MultiLocation::default(),
     };
     // Use some fake location as dummy to fill in gaps between Native and Non-Native assets
