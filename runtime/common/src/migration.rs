@@ -50,7 +50,7 @@ where
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::DispatchError> {
         let storage_version = StorageVersion::get::<T>();
         frame_support::debug(&"----PreUpgrade----");
         frame_support::debug(&T::module_name());
@@ -60,7 +60,7 @@ where
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), sp_runtime::DispatchError> {
         let storage_version = StorageVersion::get::<T>();
         frame_support::debug(&"----PostUpgrade----");
         frame_support::debug(&T::module_name());

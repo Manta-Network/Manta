@@ -164,7 +164,7 @@ runtime-benchmarks = [
   'pallet-farming/runtime-benchmarks',
 ]
 try-runtime = [
-  'frame-try-runtime',
+  'frame-try-runtime/try-runtime',
   'frame-executive/try-runtime',
   'pallet-collective/try-runtime',
   'frame-system/try-runtime',
