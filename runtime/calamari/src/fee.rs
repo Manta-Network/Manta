@@ -71,7 +71,7 @@ mod multiplier_tests {
             (target_daily_congestion_cost_usd as f32 / kma_price * KMA as f32) as u128;
 
         // assume the multiplier is initially set to its minimum and that each block
-        // will be full with a single user extrinsic, which will minimize then length and base fees
+        // will be full with a single user extrinsic, which will minimize the length and base fees
         let mut multiplier = MinimumMultiplier::get();
         let block_weight = BlockWeights::get()
             .get(DispatchClass::Normal)
