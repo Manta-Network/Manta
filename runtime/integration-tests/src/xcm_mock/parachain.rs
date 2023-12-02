@@ -197,7 +197,7 @@ pub type XcmOriginToCallOrigin = (
     // or `RelayNetwork`, convert it to a Native 32 byte account.
     SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
     // Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
-    // recognised.
+    //recognized.
     SiblingParachainAsNative<cumulus_pallet_xcm::Origin, RuntimeOrigin>,
     // Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
     XcmPassthrough<RuntimeOrigin>,
