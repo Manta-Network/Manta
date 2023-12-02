@@ -103,7 +103,7 @@ where
         StorageVersion::new(INITIAL_PALLET_ASSETS_MANAGER_VERSION + 1)
             .put::<pallet_asset_manager::Pallet<T>>();
 
-        log::info!(target: "asset-manager", "✅ Storage migration for AssetManager has been executed successfully and storage version has been update to: {:?}.", INITIAL_PALLET_ASSETS_MANAGER_VERSION + 1);
+        log::info!(target: "asset-manager", "✅ Storage migration for AssetManager has been executed successfully and storage version has been updated to: {:?}.", INITIAL_PALLET_ASSETS_MANAGER_VERSION + 1);
 
         log::info!(target: "assets", "Starting migration for pallet-assets...");
 
@@ -113,7 +113,7 @@ where
         let _ = clear_storage_prefix(pallet_prefix, b"Account", b"", None, None);
         let _ = clear_storage_prefix(pallet_prefix, b"Approval", b"", None, None);
 
-        log::info!(target: "assets", "✅ Storage migration for Assets has been executed successfully and storage version has been update to: {:?}.", INITIAL_PALLET_ASSETS_MANAGER_VERSION + 1);
+        log::info!(target: "assets", "✅ Storage migration for Assets has been executed successfully and storage version has been updated to: {:?}.", INITIAL_PALLET_ASSETS_MANAGER_VERSION + 1);
 
         StorageVersion::new(INITIAL_PALLET_ASSETS_VERSION + 1).put::<pallet_assets::Pallet<T>>();
 
