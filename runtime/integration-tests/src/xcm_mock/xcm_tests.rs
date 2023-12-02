@@ -32,7 +32,7 @@ use runtime_common::test_helpers::{
     to_reserve_xcm_message_receiver_side, to_reserve_xcm_message_sender_side,
     ADVERTISED_DEST_WEIGHT,
 };
-use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
+use xcm::{latest::prelude::*, VersionedMultiLocation, WrapVersion};
 use xcm_executor::traits::{Convert, WeightBounds};
 use xcm_simulator::TestExt;
 
@@ -52,12 +52,12 @@ use super::{
 //  3. BuyExecution { fees, weight_limit: Limited(0) },
 //  4. DepositAsset { assets: Wild(All), max_assets, beneficiary },
 //  each instruction's weight is 1_000, thus, the total weight is 4_000
-const RESERVE_TRANSFER_WEIGHT_ON_RELAY: u64 = 4_000;
+const RESERVE_TRANSFER_WEIGHT_ON_RELAY: Weight = Weight::from_ref_time(4_000);
 
-const REQUIRE_WEIGHT: Weight = Weight::from_ref_time(INITIAL_BALANCE);
+const REQUIRE_WEIGHT: Weight = Weight::from_ref_time(INITIAL_BALANCE as u64);
 
 fn calculate_fee(units_per_seconds: u128, weight: Weight) -> u128 {
-    units_per_seconds * (weight as u128) / (WEIGHT_PER_SECOND as u128)
+    units_per_seconds * (((weight.ref_time()) / WEIGHT_PER_SECOND) as u128)
 }
 
 fn self_reserve_xtokens_weight_on_receiver() -> Weight {
@@ -92,7 +92,7 @@ fn dmp() {
             Here,
             Parachain(1),
             Xcm(vec![Transact {
-                origin_type: OriginKind::SovereignAccount,
+                origin_kind: OriginKind::SovereignAccount,
                 require_weight_at_most: REQUIRE_WEIGHT,
                 call: remark.encode().into(),
             }]),
@@ -122,7 +122,7 @@ fn dmp_transact_from_parent_should_pass_barrier() {
             Here,
             Parachain(1),
             Xcm(vec![Transact {
-                origin_type: OriginKind::SovereignAccount,
+                origin_kind: OriginKind::SovereignAccount,
                 require_weight_at_most: REQUIRE_WEIGHT,
                 call: remark.encode().into(),
             }]),
@@ -206,12 +206,14 @@ fn xcmp_transact_from_sibling_tests() {
         .unwrap();
 
     ParaB::execute_with(|| {
-        assert_ok!(pallet_balances::Pallet::<parachain::Runtime>::set_balance(
-            parachain::RuntimeOrigin::root(),
-            alice_derived_account_on_b.clone(),
-            amount,
-            0
-        ));
+        assert_ok!(
+            pallet_balances::Pallet::<parachain::Runtime>::force_set_balance(
+                parachain::RuntimeOrigin::root(),
+                alice_derived_account_on_b.clone(),
+                amount,
+                0
+            )
+        );
     });
 
     ParaA::execute_with(|| {
@@ -231,7 +233,7 @@ fn xcmp_transact_from_sibling_tests() {
                     weight_limit: Unlimited,
                 },
                 Transact {
-                    origin_type: OriginKind::SovereignAccount,
+                    origin_kind: OriginKind::SovereignAccount,
                     require_weight_at_most: REQUIRE_WEIGHT,
                     call: remark.encode().into(),
                 }
@@ -252,7 +254,7 @@ fn xcmp_transact_from_sibling_tests() {
             Here,
             (Parent, Parachain(PARA_B_ID)),
             Xcm(vec![Transact {
-                origin_type: OriginKind::SovereignAccount,
+                origin_kind: OriginKind::SovereignAccount,
                 require_weight_at_most: REQUIRE_WEIGHT,
                 call: remark.encode().into(),
             }]),
@@ -286,7 +288,7 @@ fn ump() {
             Here,
             Parent,
             Xcm(vec![Transact {
-                origin_type: OriginKind::SovereignAccount,
+                origin_kind: OriginKind::SovereignAccount,
                 require_weight_at_most: REQUIRE_WEIGHT,
                 call: remark.encode().into(),
             }]),
@@ -316,7 +318,7 @@ fn xcmp_transact_from_sibling_parachain_blocked_by_barrier() {
             Here,
             (Parent, Parachain(2)),
             Xcm(vec![Transact {
-                origin_type: OriginKind::SovereignAccount,
+                origin_kind: OriginKind::SovereignAccount,
                 require_weight_at_most: REQUIRE_WEIGHT,
                 call: remark.encode().into(),
             }]),
@@ -635,8 +637,8 @@ fn send_para_a_native_asset_to_para_b_barriers_should_work() {
     };
 
     // AllowTopLevelPaidExecutionFrom<Everything> should fail because weight is not enough
-    let weight = self_reserve_xtokens_weight_on_receiver() - 1;
-    assert!(weight <= ADVERTISED_DEST_WEIGHT);
+    let weight = Weight::from_ref_time(self_reserve_xtokens_weight_on_receiver().ref_time() - 1);
+    assert!(weight.ref_time() <= ADVERTISED_DEST_WEIGHT.ref_time());
     ParaA::execute_with(|| {
         assert_ok!(parachain::XTokens::transfer(
             parachain::RuntimeOrigin::signed(ALICE),
@@ -758,12 +760,14 @@ fn send_insufficient_asset_from_para_a_to_para_b() {
     // Setting the balance will in effect create the account
     // incrementing its providers counter to from 0 to 1
     ParaB::execute_with(|| {
-        assert_ok!(pallet_balances::Pallet::<parachain::Runtime>::set_balance(
-            parachain::RuntimeOrigin::root(),
-            XcmFeesAccount::get(),
-            1000000000000000,
-            1000000000000000
-        ));
+        assert_ok!(
+            pallet_balances::Pallet::<parachain::Runtime>::force_set_balance(
+                parachain::RuntimeOrigin::root(),
+                XcmFeesAccount::get(),
+                1000000000000000,
+                1000000000000000
+            )
+        );
     });
 
     ParaA::execute_with(|| {
@@ -1872,7 +1876,7 @@ fn send_para_a_asset_to_para_b_with_insufficient_fee() {
 
     let amount = 15u128;
     let units_per_second = 20_000_000u128;
-    let dest_weight = 800_000u64;
+    let dest_weight = Weight::from_ref_time(800_000);
     let fee = calculate_fee(units_per_second, dest_weight);
     assert!(fee > amount);
 
@@ -1949,7 +1953,7 @@ fn send_para_a_asset_to_para_b_without_specifying_units_per_second() {
     let para_b_source_location = create_asset_location(1, PARA_B_ID);
 
     let amount = 567u128;
-    let dest_weight = 800_000u64;
+    let dest_weight = Weight::from_ref_time(800_000);
 
     let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
     let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
@@ -2174,7 +2178,6 @@ fn withdraw_and_deposit() {
             buy_execution((Here, send_amount)),
             DepositAsset {
                 assets: All.into(),
-                max_assets: 1,
                 beneficiary: Parachain(2).into(),
             },
         ]);
@@ -2213,7 +2216,6 @@ fn query_holding() {
             buy_execution((Here, send_amount)),
             DepositAsset {
                 assets: All.into(),
-                max_assets: 1,
                 beneficiary: Parachain(2).into(),
             },
             QueryHolding {
@@ -2248,8 +2250,9 @@ fn query_holding() {
             parachain::MsgQueue::received_dmp(),
             vec![Xcm(vec![QueryResponse {
                 query_id: query_id_set,
+                querier: Some(Here.into())
                 response: Response::Assets(MultiAssets::new()),
-                max_weight: 1_000_000_000,
+                max_weight: Weight::from_ref_time(1_000_000_000),
             }])],
         );
     });
@@ -2283,14 +2286,15 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
         None,
     );
 
-    let response = Response::Version(2);
+    let response = Response::Version(3);
 
     // This is irrelevant, nothing will be done with this message,
     // but we need to pass a message as an argument to trigger the storage change
     let mock_message: Xcm<()> = Xcm(vec![QueryResponse {
         query_id: 0,
         response,
-        max_weight: 0,
+        querier: Some(Here.into()),
+        max_weight: Weight::from_ref_time(0),
     }]);
 
     let dest: MultiLocation = AccountId32 {
@@ -2303,7 +2307,7 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
         // This sets the default version, for not known destinations
         assert_ok!(RelayChainPalletXcm::force_default_xcm_version(
             relay_chain::RuntimeOrigin::root(),
-            Some(2)
+            Some(3)
         ));
 
         // Wrap version, which sets VersionedStorage
@@ -2353,7 +2357,8 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
                 parents: 1,
                 interior: Here,
             },
-            2,
+            3,
+            MultiAssets::default(),
         )
         .into();
 
@@ -2403,7 +2408,8 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
     let mock_message: Xcm<()> = Xcm(vec![QueryResponse {
         query_id: 0,
         response,
-        max_weight: 0,
+        querier: Some(Here.into()),
+        max_weight: Weight::from_ref_time(0),
     }]);
 
     ParaA::execute_with(|| {
@@ -2601,7 +2607,7 @@ fn filtered_multilocation_should_not_work() {
                 parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
                 100,
                 Box::new(VersionedMultiLocation::V3(dest)),
-                WeightLimit::Limited(80)
+                WeightLimit::Limited(Weight::from_ref_time(80))
             ),
             orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
         );
@@ -2626,7 +2632,7 @@ fn filtered_multilocation_should_not_work() {
                 parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
                 100,
                 Box::new(VersionedMultiLocation::V3(x3_dest)),
-                WeightLimit::Limited(80)
+                WeightLimit::Limited(Weight::from_ref_time(80))
             ),
             orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
         );
@@ -2647,7 +2653,7 @@ fn filtered_multilocation_should_not_work() {
                 parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
                 100,
                 Box::new(VersionedMultiLocation::V3(parents_as_2_relay_dest)),
-                WeightLimit::Limited(80)
+                WeightLimit::Limited(Weight::from_ref_time(80))
             ),
             orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
         );
@@ -2671,7 +2677,7 @@ fn filtered_multilocation_should_not_work() {
                 parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
                 100,
                 Box::new(VersionedMultiLocation::V3(parents_as_2_dest)),
-                WeightLimit::Limited(80)
+                WeightLimit::Limited(Weight::from_ref_time(80))
             ),
             orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
         );
@@ -2689,7 +2695,7 @@ fn filtered_multilocation_should_not_work() {
                 parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
                 100,
                 Box::new(VersionedMultiLocation::V3(here_dest)),
-                WeightLimit::Limited(80)
+                WeightLimit::Limited(Weight::from_ref_time(80))
             ),
             orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
         );
@@ -2709,7 +2715,7 @@ fn filtered_multilocation_should_not_work() {
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             100,
             Box::new(VersionedMultiLocation::V3(relay_dest)),
-            WeightLimit::Limited(80)
+            WeightLimit::Limited(Weight::from_ref_time(80))
         ));
     });
 
@@ -2730,7 +2736,7 @@ fn filtered_multilocation_should_not_work() {
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             100,
             Box::new(VersionedMultiLocation::V3(sibling_chain_dest)),
-            WeightLimit::Limited(80)
+            WeightLimit::Limited(Weight::from_ref_time(80))
         ));
     });
 }
@@ -2750,7 +2756,7 @@ fn less_than_min_xcm_fee_should_not_work() {
             Parachain(PARA_B_ID),
             GeneralKey {
                 data,
-                length: bytes.len().into(),
+                length: bytes.len() as u8,
             },
         ),
     )));
@@ -2853,7 +2859,7 @@ fn less_than_min_xcm_fee_should_not_work() {
                 ],
                 1,
                 Box::new(VersionedMultiLocation::V3(dest.clone())),
-                WeightLimit::Limited(40),
+                WeightLimit::Limited(Weight::from_ref_time(40)),
             ),
             orml_xtokens::Error::<parachain::Runtime>::MinXcmFeeNotDefined
         );
@@ -2886,7 +2892,7 @@ fn less_than_min_xcm_fee_should_not_work() {
                 ],
                 1,
                 Box::new(VersionedMultiLocation::V3(dest.clone())),
-                WeightLimit::Limited(40),
+                WeightLimit::Limited(Weight::from_ref_time(40)),
             ),
             orml_xtokens::Error::<parachain::Runtime>::FeeNotEnough
         );
@@ -2908,7 +2914,7 @@ fn less_than_min_xcm_fee_should_not_work() {
             ],
             1,
             Box::new(VersionedMultiLocation::V3(dest.clone())),
-            WeightLimit::Limited(40),
+            WeightLimit::Limited(Weight::from_ref_time(40)),
         ));
     });
 }
@@ -3473,13 +3479,13 @@ fn test_receiver_side_weight() {
         &mut self_reserve_xcm_message_receiver_side::<parachain::RuntimeCall>(),
     )
     .unwrap();
-    assert!(weight <= ADVERTISED_DEST_WEIGHT);
+    assert!(weight.ref_time() <= ADVERTISED_DEST_WEIGHT.ref_time());
 
     let weight = <ParaXcmExecutorConfig as xcm_executor::Config>::Weigher::weight(
         &mut to_reserve_xcm_message_receiver_side::<parachain::RuntimeCall>(),
     )
     .unwrap();
-    assert!(weight <= ADVERTISED_DEST_WEIGHT);
+    assert!(weight.ref_time() <= ADVERTISED_DEST_WEIGHT.ref_time());
 }
 
 #[test]
@@ -3487,12 +3493,12 @@ fn test_sender_side_xcm_weight() {
     let mut msg = self_reserve_xcm_message_sender_side::<parachain::RuntimeCall>();
     let weight =
         <ParaXcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
-    assert!(weight < ADVERTISED_DEST_WEIGHT);
+    assert!(weight.ref_time() < ADVERTISED_DEST_WEIGHT.ref_time());
 
     let mut msg = to_reserve_xcm_message_sender_side::<parachain::RuntimeCall>();
     let weight =
         <ParaXcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
-    assert!(weight < ADVERTISED_DEST_WEIGHT);
+    assert!(weight.ref_time() < ADVERTISED_DEST_WEIGHT.ref_time());
 }
 
 #[test]

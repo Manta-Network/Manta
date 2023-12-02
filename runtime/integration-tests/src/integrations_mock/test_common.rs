@@ -23,7 +23,10 @@ use super::{mock::*, *};
 use frame_support::{
     assert_err, assert_noop, assert_ok,
     error::BadOrigin,
-    traits::{tokens::ExistenceRequirement, Get, PalletInfo, PalletsInfoAccess},
+    traits::{
+        tokens::{ExistenceRequirement, Provenance},
+        Get, PalletInfo, PalletsInfoAccess,
+    },
 };
 use runtime_common::test_helpers::{
     self_reserve_xcm_message_receiver_side, self_reserve_xcm_message_sender_side,
@@ -920,7 +923,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
                     &new_account,
                     NativeTokenExistentialDeposit::get() - 1,
-                    true,
+                    Provenance::Minted,
                 ),
                 FungibleLedgerError::BelowMinimum
             );
@@ -951,7 +954,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     &ALICE.clone(),
                     0,
-                    true,
+                    Provenance::Minted,
                 ),
                 FungibleLedgerError::BelowMinimum
             );
@@ -960,7 +963,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get() + 1,
                     &ALICE.clone(),
                     11,
-                    true,
+                    Provenance::Minted,
                 ),
                 FungibleLedgerError::UnknownAsset
             );
@@ -981,7 +984,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     &ALICE.clone(),
                     1,
-                    true,
+                    Provenance::Minted,
                 ),
                 FungibleLedgerError::Overflow
             );
@@ -1011,7 +1014,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get() + 1,
                     &XcmFeesAccount::get(),
                     11,
-                    true,
+                    Provenance::Minted,
                 ),
                 FungibleLedgerError::CannotCreate
             );
@@ -1174,24 +1177,24 @@ fn test_receiver_side_weights() {
         &mut self_reserve_xcm_message_receiver_side::<RuntimeCall>(),
     )
     .unwrap();
-    assert!(weight <= ADVERTISED_DEST_WEIGHT);
+    assert!(weight.ref_time() <= ADVERTISED_DEST_WEIGHT.ref_time());
 
     let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(
         &mut to_reserve_xcm_message_receiver_side::<RuntimeCall>(),
     )
     .unwrap();
-    assert!(weight <= ADVERTISED_DEST_WEIGHT);
+    assert!(weight.ref_time() <= ADVERTISED_DEST_WEIGHT.ref_time());
 }
 
 #[test]
 fn test_sender_side_xcm_weights() {
     let mut msg = self_reserve_xcm_message_sender_side::<RuntimeCall>();
     let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
-    assert!(weight < ADVERTISED_DEST_WEIGHT);
+    assert!(weight.ref_time() < ADVERTISED_DEST_WEIGHT.ref_time());
 
     let mut msg = to_reserve_xcm_message_sender_side::<RuntimeCall>();
     let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
-    assert!(weight < ADVERTISED_DEST_WEIGHT);
+    assert!(weight.ref_time() < ADVERTISED_DEST_WEIGHT.ref_time());
 }
 
 mod governance_tests {
