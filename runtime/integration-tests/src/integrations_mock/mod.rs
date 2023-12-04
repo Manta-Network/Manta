@@ -122,7 +122,7 @@ pub fn initialize_collators_through_whitelist(collators: Vec<AccountId>) {
         candidate_count
     ));
     for aid in collators.clone() {
-        dbg!(&aid);
+        System::inc_providers(&aid);
         assert_ok!(CollatorSelection::register_candidate(root_origin(), aid));
     }
     assert_eq!(
