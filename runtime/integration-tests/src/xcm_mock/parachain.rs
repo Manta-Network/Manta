@@ -427,10 +427,11 @@ pub mod mock_msg_queue {
             max_weight: Weight,
         ) -> Result<Weight, XcmError> {
             let hash = Encode::using_encoded(&xcm, T::Hashing::hash);
+            let message_hash = Encode::using_encoded(&xcm, sp_io::hashing::blake2_256);
             let (result, event) = match Xcm::<T::RuntimeCall>::try_from(xcm) {
                 Ok(xcm) => {
-                    let location = (1, Parachain(sender.into()));
-                    match T::XcmExecutor::execute_xcm(location, xcm, max_weight) {
+                    let location = (Parent, Parachain(sender.into()));
+                    match T::XcmExecutor::execute_xcm(location, xcm, message_hash, max_weight) {
                         Outcome::Error(e) => (Err(e), Event::Fail(Some(hash), e)),
                         Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
                         // As far as the caller is concerned, this was dispatched without error, so
@@ -490,7 +491,7 @@ pub mod mock_msg_queue {
                         Self::deposit_event(Event::UnsupportedVersion(id));
                     }
                     Ok(Ok(x)) => {
-                        let outcome = T::XcmExecutor::execute_xcm(Parent, x.clone(), limit);
+                        let outcome = T::XcmExecutor::execute_xcm(Parent, x.clone(), id, limit);
                         <ReceivedDmp<T>>::append(x);
                         Self::deposit_event(Event::ExecutedDownward(id, outcome));
                     }
@@ -721,6 +722,7 @@ impl orml_xtokens::Config for Runtime {
     type MultiLocationsFilter = AssetManager;
     type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
     type UniversalLocation = UniversalLocation;
+    type OutgoingAssetsFilter = AssetManager;
 }
 
 impl parachain_info::Config for Runtime {}

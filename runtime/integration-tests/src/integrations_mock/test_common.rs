@@ -24,6 +24,7 @@ use frame_support::{
     assert_err, assert_noop, assert_ok,
     error::BadOrigin,
     traits::{
+        fungibles::{self, Inspect, InspectEnumerable},
         tokens::{ExistenceRequirement, Provenance},
         Get, PalletInfo, PalletsInfoAccess,
     },
@@ -56,7 +57,7 @@ use xcm_executor::traits::WeightBounds;
 
 use super::{ALICE, ALICE_SESSION_KEYS};
 use sp_core::sr25519;
-use sp_runtime::{DispatchError, ModuleError};
+use sp_runtime::{DispatchError, ModuleError, TokenError};
 
 mod parachain_staking_tests {
     use super::*;
@@ -366,7 +367,7 @@ fn balances_operations_should_work() {
                     sp_runtime::MultiAddress::Id(CHARLIE.clone()),
                     INITIAL_BALANCE,
                 ),
-                pallet_balances::Error::<Runtime>::LowBalance
+                TokenError::Frozen,
             );
 
             // Transfer all down to zero
@@ -493,12 +494,9 @@ fn concrete_fungible_ledger_transfers_work() {
                     INITIAL_BALANCE + 1,
                     ExistenceRequirement::KeepAlive
                 ),
-                FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
-                    index: <Runtime as frame_system::Config>::PalletInfo::index::<Balances>()
-                        .unwrap() as u8,
-                    error: [2, 0, 0, 0],
-                    message: Some("InsufficientBalance")
-                }))
+                FungibleLedgerError::InvalidTransfer(DispatchError::Token(
+                    TokenError::FundsUnavailable
+                ))
             );
             assert_eq!(Balances::free_balance(ALICE.clone()), current_balance_alice);
             assert_eq!(
@@ -515,12 +513,7 @@ fn concrete_fungible_ledger_transfers_work() {
                     INITIAL_BALANCE,
                     ExistenceRequirement::KeepAlive
                 ),
-                FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
-                    index: <Runtime as frame_system::Config>::PalletInfo::index::<Balances>()
-                        .unwrap() as u8,
-                    error: [4, 0, 0, 0],
-                    message: Some("KeepAlive")
-                }))
+                FungibleLedgerError::InvalidTransfer(DispatchError::Token(TokenError::Frozen))
             );
             assert_eq!(Balances::free_balance(ALICE.clone()), current_balance_alice);
             assert_eq!(
@@ -554,12 +547,9 @@ fn concrete_fungible_ledger_transfers_work() {
                     NativeTokenExistentialDeposit::get() - 1,
                     ExistenceRequirement::KeepAlive
                 ),
-                FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
-                    index: <Runtime as frame_system::Config>::PalletInfo::index::<Balances>()
-                        .unwrap() as u8,
-                    error: [3, 0, 0, 0],
-                    message: Some("ExistentialDeposit")
-                }))
+                FungibleLedgerError::InvalidTransfer(DispatchError::Token(
+                    TokenError::BelowMinimum
+                ))
             );
 
             // Should be able to create new account with enough balance
@@ -627,11 +617,11 @@ fn concrete_fungible_ledger_transfers_work() {
             ),);
 
             // Register and mint for testing.
-            let amount = Balance::MAX;
+            let amount = INITIAL_BALANCE;
             assert_ok!(RuntimeConcreteFungibleLedger::deposit_minting(
                 <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &ALICE.clone(),
-                amount,
+                INITIAL_BALANCE,
             ),);
             assert_eq!(
                 Assets::balance(
@@ -650,12 +640,9 @@ fn concrete_fungible_ledger_transfers_work() {
                     amount,
                     ExistenceRequirement::KeepAlive
                 ),
-                FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
-                    index: <Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
-                        as u8,
-                    error: [0, 0, 0, 0],
-                    message: Some("BalanceLow")
-                }))
+                FungibleLedgerError::InvalidTransfer(DispatchError::Token(
+                    TokenError::NotExpendable
+                ))
             );
             assert_eq!(
                 Assets::balance(
@@ -685,6 +672,12 @@ fn concrete_fungible_ledger_transfers_work() {
                 amount
             );
 
+            assert_ok!(RuntimeConcreteFungibleLedger::deposit_minting(
+                <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+                &BOB.clone(),
+                min_balance,
+            ),);
+
             // Transferring normal amounts should work.
             assert_ok!(RuntimeConcreteFungibleLedger::transfer(
                 <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
@@ -698,14 +691,14 @@ fn concrete_fungible_ledger_transfers_work() {
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     ALICE.clone()
                 ),
-                u128::MAX - transfer_amount
+                amount - transfer_amount
             );
             assert_eq!(
-                Assets::balance(
+                Assets::total_balance(
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    BOB.clone()
+                    &BOB.clone()
                 ),
-                transfer_amount
+                min_balance + transfer_amount
             );
 
             // Transferring all of the balance of an account should work.
@@ -721,7 +714,7 @@ fn concrete_fungible_ledger_transfers_work() {
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     BOB.clone()
                 ),
-                0
+                min_balance
             );
 
             // Transferring unregistered asset ID should not work.
@@ -733,12 +726,9 @@ fn concrete_fungible_ledger_transfers_work() {
                     transfer_amount,
                     ExistenceRequirement::KeepAlive
                 ),
-                FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
-                    index: <Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
-                        as u8,
-                    error: [3, 0, 0, 0],
-                    message: Some("Unknown")
-                }))
+                FungibleLedgerError::InvalidTransfer(DispatchError::Token(
+                    TokenError::UnknownAsset
+                ))
             );
         });
 }

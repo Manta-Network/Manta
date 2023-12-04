@@ -19,10 +19,9 @@
 #![cfg(test)]
 
 use frame_support::{
-    construct_runtime,
-    pallet_prelude::Weight,
-    parameter_types,
-    traits::{ConstU32, Everything, Nothing},
+    construct_runtime, parameter_types,
+    traits::{ConstU32, Everything, Nothing, ProcessMessage, ProcessMessageError},
+    weights::{Weight, WeightMeter},
 };
 use frame_system::EnsureRoot;
 use sp_core::H256;
@@ -36,7 +35,11 @@ use manta_primitives::{
     xcm::AllowTopLevelPaidExecutionFrom,
 };
 use polkadot_parachain::primitives::Id as ParaId;
-use polkadot_runtime_parachains::{configuration, origin, shared};
+use polkadot_runtime_parachains::{
+    configuration,
+    inclusion::{AggregateMessageOrigin, UmpQueueId},
+    origin, shared,
+};
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
@@ -217,6 +220,46 @@ impl pallet_xcm::Config for Runtime {
 }
 
 parameter_types! {
+    /// Amount of weight that can be spent per block to service messages.
+    pub MessageQueueServiceWeight: Weight = Weight::from_parts(1_000_000_000, 1_000_000);
+    pub const MessageQueueHeapSize: u32 = 65_536;
+    pub const MessageQueueMaxStale: u32 = 16;
+}
+
+impl pallet_message_queue::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Size = u32;
+    type HeapSize = MessageQueueHeapSize;
+    type MaxStale = MessageQueueMaxStale;
+    type ServiceWeight = MessageQueueServiceWeight;
+    type MessageProcessor = MessageProcessor;
+    type QueueChangeHandler = ();
+    type WeightInfo = ();
+}
+
+/// Message processor to handle any messages that were enqueued into the `MessageQueue` pallet.
+pub struct MessageProcessor;
+impl ProcessMessage for MessageProcessor {
+    type Origin = AggregateMessageOrigin;
+
+    fn process_message(
+        message: &[u8],
+        origin: Self::Origin,
+        meter: &mut WeightMeter,
+        id: &mut [u8; 32],
+    ) -> Result<bool, ProcessMessageError> {
+        let para = match origin {
+            AggregateMessageOrigin::Ump(UmpQueueId::Para(para)) => para,
+        };
+        xcm_builder::ProcessXcmMessage::<
+            Junction,
+            xcm_executor::XcmExecutor<XcmExecutorConfig>,
+            RuntimeCall,
+        >::process_message(message, Junction::Parachain(para.into()), meter, id)
+    }
+}
+
+parameter_types! {
     pub const FirstMessageFactorPercent: u64 = 100;
 }
 
@@ -236,6 +279,7 @@ construct_runtime!(
         ParasOrigin: origin::{Pallet, Origin},
         XcmPallet: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
         Utility: pallet_utility::{Pallet, Call, Event},
+        MessageQueue: pallet_message_queue::{Pallet, Event<T>},
     }
 );
 

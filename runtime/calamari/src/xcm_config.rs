@@ -402,4 +402,5 @@ impl orml_xtokens::Config for Runtime {
     type MultiLocationsFilter = AssetManager;
     type ReserveProvider = AbsoluteReserveProvider;
     type UniversalLocation = UniversalLocation;
+    type OutgoingAssetsFilter = ();
 }
