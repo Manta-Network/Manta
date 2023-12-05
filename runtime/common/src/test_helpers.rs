@@ -29,7 +29,7 @@ use xcm::{
         Fungibility::*,
         Junction::{AccountId32, Parachain},
         Junctions::*,
-        MultiAsset, MultiLocation,
+        MultiAsset, MultiLocation, Parent,
     },
 };
 
@@ -101,10 +101,7 @@ pub fn to_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
                 parents: 0,
                 interior: X1(AccountId32 {
                     network: None,
-                    id: [
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0,
-                    ],
+                    id: [0; 32],
                 }),
             },
         },
@@ -143,10 +140,7 @@ pub fn to_reserve_xcm_message_sender_side<T>() -> Xcm<T> {
                         parents: 0,
                         interior: X1(AccountId32 {
                             network: None,
-                            id: [
-                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                            ],
+                            id: [0; 32],
                         }),
                     },
                 },

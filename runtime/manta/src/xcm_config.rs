@@ -49,7 +49,7 @@ use xcm_builder::{
     AllowUnpaidExecutionFrom, ConvertedConcreteAssetId, EnsureXcmOrigin, FixedRateOfFungible,
     ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
     SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit, WeightInfoBounds,
+    SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit, WeightInfoBounds, FixedWeightBounds,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
@@ -175,6 +175,7 @@ pub type Barrier = (
 parameter_types! {
     pub XcmFeesAccount: AccountId = Treasury::account_id();
     pub const MaxAssetsIntoHolding: u32 = 64;
+    pub const RuntimeXcmWeight: Weight = Weight::from_parts(10, 10);
 }
 /// Xcm fee of native token
 pub struct XcmNativeFeeToTreasury;
@@ -212,6 +213,7 @@ impl Config for XcmExecutorConfig {
     type Barrier = Barrier;
     type Weigher = WeightInfoBounds<
         crate::weights::xcm::MantaXcmWeight<RuntimeCall>,
+        // RuntimeXcmWeight,
         RuntimeCall,
         MaxInstructions,
     >;
