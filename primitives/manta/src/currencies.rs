@@ -195,8 +195,8 @@ where
         if currency_id == A::NativeAssetId::get() {
             <Native as Currency<C::AccountId>>::slash(who, amount).1
         } else {
-            // NonNative::slash(currency_id, who, amount).expect("slash should not failed")
-            todo!()
+            // we don't use slash now, so returning default value should be fine
+            Default::default()
         }
     }
 }
