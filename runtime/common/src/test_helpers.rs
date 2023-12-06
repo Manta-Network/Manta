@@ -35,7 +35,8 @@ use xcm::{
 
 // 4_000_000_000 is a typical configuration value provided to dApp developers for `dest_weight`
 // argument when sending xcm message to Manta. ie moonbeam, sub-wallet, phala, etc
-pub const ADVERTISED_DEST_WEIGHT: Weight = Weight::from_ref_time(4_000_000_000_u64);
+pub const ADVERTISED_DEST_WEIGHT: Weight =
+    Weight::from_parts(100_000_000_000u64, 100_000_000_000u64);
 
 // Composition of self_reserve message composed by xTokens on the sender side
 pub fn self_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
@@ -132,7 +133,7 @@ pub fn to_reserve_xcm_message_sender_side<T>() -> Xcm<T> {
                         id: Concrete(dummy_multi_location),
                         fun: Fungible(10000000000000),
                     },
-                    weight_limit: Limited(3999999999.into()),
+                    weight_limit: Limited(Weight::from_parts(30, 30)),
                 },
                 DepositAsset {
                     assets: Wild(All),
@@ -179,10 +180,7 @@ pub fn self_reserve_xcm_message_sender_side<T>() -> Xcm<T> {
                     parents: 0,
                     interior: X1(AccountId32 {
                         network: None,
-                        id: [
-                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                            0, 0, 0, 0, 0, 0, 0, 0,
-                        ],
+                        id: [0; 32],
                     }),
                 },
             },

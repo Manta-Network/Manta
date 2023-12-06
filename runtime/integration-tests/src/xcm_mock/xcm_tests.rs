@@ -1338,6 +1338,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
     let amount = 222u128;
     let units_per_second = 1_250_000u128;
     let fee = calculate_fee(units_per_second, self_reserve_xtokens_weight_on_receiver());
+    let fee = 50;
 
     let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
     let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
@@ -1403,6 +1404,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
     });
 }
 
+// b asset(para a, alice) -> b asset(para b, alice)
 #[test]
 fn send_para_b_asset_to_para_b_with_trader_and_fee() {
     MockNet::reset();
@@ -1416,6 +1418,7 @@ fn send_para_b_asset_to_para_b_with_trader_and_fee() {
         units_per_second,
         non_self_reserve_xtokens_weight_on_receiver(),
     );
+    let fee = 50;
 
     let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
     let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
@@ -1512,6 +1515,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back_with_trader_and_fee() {
     let amount = 5000000u128;
     let units_per_second = 1_250_000u128;
     let fee = calculate_fee(units_per_second, self_reserve_xtokens_weight_on_receiver());
+    let fee = 50;
 
     let weight = non_self_reserve_xtokens_weight_on_receiver();
     let fee_on_b_when_send_back = calculate_fee(ParaTokenPerSecond::get().1, weight);
@@ -2251,7 +2255,7 @@ fn query_holding() {
                 query_id: query_id_set,
                 querier: Some(Here.into()),
                 response: Response::Assets(MultiAssets::new()),
-                max_weight: Weight::from_ref_time(1_000_000_000),
+                max_weight: Weight::from_parts(1_000_000_000, 1024 * 1024),
             }])],
         );
     });
@@ -2356,7 +2360,7 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
                 parents: 1,
                 interior: Here,
             },
-            3,
+            2,
             MultiAssets::default(),
         )
         .into();
@@ -2513,29 +2517,29 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
         assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), 100);
     });
 
-    // let expected_version_notified: parachain::RuntimeEvent =
-    //     pallet_xcm::Event::VersionChangeNotified(
-    //         MultiLocation {
-    //             parents: 1,
-    //             interior: X1(Parachain(PARA_A_ID)),
-    //         },
-    //         2,
-    //         cost
-    //     )
-    //     .into();
+    let expected_version_notified: parachain::RuntimeEvent =
+        pallet_xcm::Event::VersionChangeNotified(
+            MultiLocation {
+                parents: 1,
+                interior: X1(Parachain(PARA_A_ID)),
+            },
+            2,
+            MultiAssets::default(),
+        )
+        .into();
 
     // ParaB changes version to 2, and calls on_runtime_upgrade. This should notify the targets
     // of the new version change
-    // ParaB::execute_with(|| {
-    //     // Set version
-    //     parachain::set_current_xcm_version(2);
-    //     // Do runtime upgrade
-    //     parachain::on_runtime_upgrade();
-    //     // Initialize block, to call on_initialize and notify targets
-    //     parachain::para_roll_to(2);
-    //     // Expect the event in the parachain
-    //     assert!(parachain::para_events().contains(&expected_version_notified));
-    // });
+    ParaB::execute_with(|| {
+        // Set version
+        parachain::set_current_xcm_version(2);
+        // Do runtime upgrade
+        parachain::on_runtime_upgrade();
+        // Initialize block, to call on_initialize and notify targets
+        parachain::para_roll_to(2);
+        // Expect the event in the parachain
+        assert!(parachain::para_events().contains(&expected_version_notified));
+    });
 
     // This event should have been seen in para A
     let expected_supported_version_2: parachain::RuntimeEvent =

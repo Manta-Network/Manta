@@ -47,64 +47,110 @@ use sp_std::marker::PhantomData;
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: System Account (r:1 w:1)
-	pub(crate) fn withdraw_asset() -> Weight {
-		Weight::from_parts(20_308_000 as u64, 0)
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	pub fn withdraw_asset() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `101`
+		//  Estimated: `3593`
+		// Minimum execution time: 25_619_000 picoseconds.
+		Weight::from_parts(26_283_000, 3593)
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: System Account (r:2 w:2)
-	pub(crate) fn transfer_asset() -> Weight {
-		Weight::from_parts(32_193_000 as u64, 0)
-			.saturating_add(T::DbWeight::get().reads(2 as u64))
-			.saturating_add(T::DbWeight::get().writes(2 as u64))
+	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	pub fn transfer_asset() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `101`
+		//  Estimated: `6196`
+		// Minimum execution time: 48_538_000 picoseconds.
+		Weight::from_parts(49_245_000, 6196)
+			.saturating_add(T::DbWeight::get().reads(2))
+			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	// Storage: System Account (r:2 w:2)
-	// Storage: XcmPallet SupportedVersion (r:1 w:0)
-	// Storage: XcmPallet VersionDiscoveryQueue (r:1 w:1)
-	// Storage: XcmPallet SafeXcmVersion (r:1 w:0)
-	// Storage: Dmp DownwardMessageQueueHeads (r:1 w:1)
-	// Storage: Dmp DownwardMessageQueues (r:1 w:1)
-	pub(crate) fn transfer_reserve_asset() -> Weight {
-		Weight::from_parts(50_731_000 as u64, 0)
-			.saturating_add(T::DbWeight::get().reads(7 as u64))
-			.saturating_add(T::DbWeight::get().writes(5 as u64))
+	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	// Storage: ParachainInfo ParachainId (r:1 w:0)
+	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
+	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
+	// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
+	// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
+	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
+	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
+	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	pub fn transfer_reserve_asset() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `176`
+		//  Estimated: `6196`
+		// Minimum execution time: 70_133_000 picoseconds.
+		Weight::from_parts(70_675_000, 6196)
+			.saturating_add(T::DbWeight::get().reads(8))
+			.saturating_add(T::DbWeight::get().writes(4))
 	}
-	// Storage: Benchmark Override (r:0 w:0)
-	pub(crate) fn reserve_asset_deposited() -> Weight {
-		Weight::from_parts(2_000_000_000_000 as u64, 0)
-	}
-	// Storage: System Account (r:1 w:1)
-	pub(crate) fn receive_teleported_asset() -> Weight {
-		Weight::from_parts(19_622_000 as u64, 0)
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
-	}
-	// Storage: System Account (r:1 w:1)
-	pub(crate) fn deposit_asset() -> Weight {
-		Weight::from_parts(22_433_000 as u64, 0)
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
-	}
-	// Storage: System Account (r:1 w:1)
-	// Storage: XcmPallet SupportedVersion (r:1 w:0)
-	// Storage: XcmPallet VersionDiscoveryQueue (r:1 w:1)
-	// Storage: XcmPallet SafeXcmVersion (r:1 w:0)
-	// Storage: Dmp DownwardMessageQueueHeads (r:1 w:1)
-	// Storage: Dmp DownwardMessageQueues (r:1 w:1)
-	pub(crate) fn deposit_reserve_asset() -> Weight {
-		Weight::from_parts(41_765_000 as u64, 0)
-			.saturating_add(T::DbWeight::get().reads(6 as u64))
-			.saturating_add(T::DbWeight::get().writes(4 as u64))
+	pub fn receive_teleported_asset() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 3_765_000 picoseconds.
+		Weight::from_parts(3_860_000, 0)
 	}
 	// Storage: System Account (r:1 w:1)
-	// Storage: XcmPallet SupportedVersion (r:1 w:0)
-	// Storage: XcmPallet VersionDiscoveryQueue (r:1 w:1)
-	// Storage: XcmPallet SafeXcmVersion (r:1 w:0)
-	// Storage: Dmp DownwardMessageQueueHeads (r:1 w:1)
-	// Storage: Dmp DownwardMessageQueues (r:1 w:1)
-	pub(crate) fn initiate_teleport() -> Weight {
-		Weight::from_parts(41_204_000 as u64, 0)
-			.saturating_add(T::DbWeight::get().reads(6 as u64))
-			.saturating_add(T::DbWeight::get().writes(4 as u64))
+	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	pub fn deposit_asset() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `3593`
+		// Minimum execution time: 26_210_000 picoseconds.
+		Weight::from_parts(26_602_000, 3593)
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
+	// Storage: System Account (r:1 w:1)
+	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	// Storage: ParachainInfo ParachainId (r:1 w:0)
+	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
+	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
+	// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
+	// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
+	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
+	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
+	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	pub fn deposit_reserve_asset() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `75`
+		//  Estimated: `3593`
+		// Minimum execution time: 50_179_000 picoseconds.
+		Weight::from_parts(50_814_000, 3593)
+			.saturating_add(T::DbWeight::get().reads(7))
+			.saturating_add(T::DbWeight::get().writes(3))
+	}
+	// Storage: ParachainInfo ParachainId (r:1 w:0)
+	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
+	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
+	// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
+	// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
+	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
+	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
+	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	pub fn initiate_teleport() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `75`
+		//  Estimated: `3540`
+		// Minimum execution time: 29_986_000 picoseconds.
+		Weight::from_parts(30_384_000, 3540)
+			.saturating_add(T::DbWeight::get().reads(6))
+			.saturating_add(T::DbWeight::get().writes(2))
 	}
 }

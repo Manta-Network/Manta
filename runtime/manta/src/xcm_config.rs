@@ -47,9 +47,10 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowUnpaidExecutionFrom, ConvertedConcreteAssetId, EnsureXcmOrigin, FixedRateOfFungible,
-    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit, WeightInfoBounds, FixedWeightBounds,
+    FixedWeightBounds, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+    SignedToAccountId32, SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit,
+    WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
@@ -122,7 +123,7 @@ parameter_types! {
     /// Used in native traders
     /// This might be able to skipped.
     /// We have to use `here()` because of reanchoring logic
-    pub ParaTokenPerSecond: (cumulus_primitives_core::AssetId, u128, u128) = (Concrete(MultiLocation::here()), 1_000_000_000, 0);
+    pub ParaTokenPerSecond: (cumulus_primitives_core::AssetId, u128, u128) = (Concrete(MultiLocation::here()), 1_000_000_000, 1_000_000_000);
     pub const MaxInstructions: u32 = 100;
 }
 
