@@ -57,7 +57,7 @@ const RESERVE_TRANSFER_WEIGHT_ON_RELAY: Weight = Weight::from_ref_time(4_000);
 const REQUIRE_WEIGHT: Weight = Weight::from_ref_time(INITIAL_BALANCE as u64);
 
 fn calculate_fee(units_per_seconds: u128, weight: Weight) -> u128 {
-    units_per_seconds * (((weight.ref_time()) / WEIGHT_PER_SECOND) as u128)
+    (units_per_seconds * weight.ref_time() as u128) / (WEIGHT_PER_SECOND as u128)
 }
 
 fn self_reserve_xtokens_weight_on_receiver() -> Weight {
