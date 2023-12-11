@@ -137,6 +137,8 @@ runtime-benchmarks = [
   'nimbus-primitives/runtime-benchmarks',
   'pallet-author-inherent/runtime-benchmarks',
   'pallet-balances/runtime-benchmarks',
+  'pallet-sudo/runtime-benchmarks',
+  'pallet-aura-style-filter/runtime-benchmarks',
   'pallet-collective/runtime-benchmarks',
   'pallet-democracy/runtime-benchmarks',
   'pallet-membership/runtime-benchmarks',

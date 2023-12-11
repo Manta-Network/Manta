@@ -45,7 +45,7 @@ use xcm::VersionedMultiLocation;
 parameter_types! {
     // Does not really matter as this will be only called by root
     pub const AssetDeposit: Balance = 0;
-    pub const AssetAccountDeposit: Balance = 0;
+    pub const AssetAccountDeposit: Balance = 1;
     pub const ApprovalDeposit: Balance = 0;
     pub const MetadataDepositBase: Balance = 0;
     pub const MetadataDepositPerByte: Balance = 0;
@@ -70,9 +70,6 @@ impl pallet_assets::Config for Runtime {
     type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = CalamariAssetId;
-    #[cfg(feature = "runtime-benchmarks")]
-    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
-    #[cfg(not(feature = "runtime-benchmarks"))]
     type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureNever<AccountId>>;
     type CallbackHandle = ();
     #[cfg(feature = "runtime-benchmarks")]

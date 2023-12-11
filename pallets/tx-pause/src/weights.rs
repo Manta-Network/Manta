@@ -21,63 +21,82 @@
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("calamari-dev"), DB CACHE: 1024
 
 // Executed Command:
-// ./target/production/manta
+// ./target/release/manta
 // benchmark
 // pallet
 // --chain=calamari-dev
 // --steps=50
-// --repeat=20
+// --repeat=40
 // --pallet=pallet_tx_pause
 // --extrinsic=*
-// --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
-// --output=./scripts/benchmarking/frame-weights-output/pallet_tx_pause.rs
+// --output=/home/jamie/my-repo/Manta/runtime/calamari/src/weights/pallet_tx_pause.rs
 // --template=.github/resources/frame-weight-template.hbs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
 #![allow(unused_imports)]
-#![allow(clippy::unnecessary_cast)]
+#![allow(missing_docs)]
 
 use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
-use sp_std::marker::PhantomData;
+use core::marker::PhantomData;
 
 /// Weight functions needed for pallet_tx_pause.
 pub trait WeightInfo {
-    fn pause_transaction() -> Weight;
-    fn unpause_transaction() -> Weight;
+	fn pause_transaction() -> Weight;
+	fn unpause_transaction() -> Weight;
 }
 
 /// Weights for pallet_tx_pause using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-    // Storage: TransactionPause PausedTransactions (r:1 w:1)
-    fn pause_transaction() -> Weight {
-        Weight::from_ref_time(50_640_000)
-            .saturating_add(T::DbWeight::get().reads(1_u64))
-            .saturating_add(T::DbWeight::get().writes(1_u64))
-    }
-    // Storage: TransactionPause PausedTransactions (r:1 w:1)
-    fn unpause_transaction() -> Weight {
-        Weight::from_ref_time(22_839_000)
-            .saturating_add(T::DbWeight::get().reads(1_u64))
-            .saturating_add(T::DbWeight::get().writes(1_u64))
-    }
+	/// Storage: TransactionPause PausedTransactions (r:1 w:1)
+	/// Proof Skipped: TransactionPause PausedTransactions (max_values: None, max_size: None, mode: Measured)
+	fn pause_transaction() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `76`
+		//  Estimated: `3541`
+		// Minimum execution time: 6_001_000 picoseconds.
+		Weight::from_parts(6_322_000, 3541)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: TransactionPause PausedTransactions (r:1 w:1)
+	/// Proof Skipped: TransactionPause PausedTransactions (max_values: None, max_size: None, mode: Measured)
+	fn unpause_transaction() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `123`
+		//  Estimated: `3588`
+		// Minimum execution time: 7_224_000 picoseconds.
+		Weight::from_parts(12_293_000, 3588)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-    // Storage: TransactionPause PausedTransactions (r:1 w:1)
-    fn pause_transaction() -> Weight {
-        Weight::from_ref_time(50_640_000)
-            .saturating_add(RocksDbWeight::get().reads(1_u64))
-            .saturating_add(RocksDbWeight::get().writes(1_u64))
-    }
-    // Storage: TransactionPause PausedTransactions (r:1 w:1)
-    fn unpause_transaction() -> Weight {
-        Weight::from_ref_time(22_839_000)
-            .saturating_add(RocksDbWeight::get().reads(1_u64))
-            .saturating_add(RocksDbWeight::get().writes(1_u64))
-    }
+	/// Storage: TransactionPause PausedTransactions (r:1 w:1)
+	/// Proof Skipped: TransactionPause PausedTransactions (max_values: None, max_size: None, mode: Measured)
+	fn pause_transaction() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `76`
+		//  Estimated: `3541`
+		// Minimum execution time: 6_001_000 picoseconds.
+		Weight::from_parts(6_322_000, 3541)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: TransactionPause PausedTransactions (r:1 w:1)
+	/// Proof Skipped: TransactionPause PausedTransactions (max_values: None, max_size: None, mode: Measured)
+	fn unpause_transaction() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `123`
+		//  Estimated: `3588`
+		// Minimum execution time: 7_224_000 picoseconds.
+		Weight::from_parts(12_293_000, 3588)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
 }

@@ -55,6 +55,7 @@ parachain-info = { git = 'https://github.com/paritytech/cumulus.git', branch = "
 
 # Orml dependencies
 orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.43" }
+orml-xcm-support = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.43" }
 orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.43" }
 
 # Self dependencies

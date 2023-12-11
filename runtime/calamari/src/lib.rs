@@ -369,7 +369,7 @@ impl frame_system::Config for Runtime {
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type AccountData = pallet_balances::AccountData<Balance>;
-    type SystemWeightInfo = weights::frame_system::SubstrateWeight<Runtime>;
+    type SystemWeightInfo = ();
     type SS58Prefix = SS58Prefix;
     type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
     type MaxConsumers = ConstU32<16>;
@@ -762,7 +762,7 @@ impl pallet_parachain_staking::Config for Runtime {
 
 impl pallet_author_inherent::Config for Runtime {
     // We start a new slot each time we see a new relay block.
-    type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
+    type SlotBeacon = cumulus_pallet_parachain_system::RelaychainDataProvider<Self>;
     type AccountLookup = CollatorSelection;
     type AuthorId = AccountId;
     // PUT REAL WEIGHT
@@ -1098,9 +1098,10 @@ mod benches {
         [pallet_manta_sbt, MantaSbt]
         [pallet_name_service, NameService]
         // Dex
-        //[zenlink_protocol, ZenlinkProtocol]
+        [zenlink_protocol, ZenlinkProtocol]
         [pallet_farming, Farming]
         // XCM
+        [pallet_xcm, PolkadotXcm]
         [cumulus_pallet_xcmp_queue, XcmpQueue]
         [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
         [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
@@ -1491,7 +1492,7 @@ impl_runtime_apis! {
                         .collect::<Vec<_>>();
 
                     assets.push(MultiAsset {
-                        id: Concrete(KsmLocation::get()),
+                        id: Concrete(KmaLocation::get()),
                         fun: Fungible(1_000_000 * KMA),
                     });
                     assets.into()
@@ -1536,8 +1537,8 @@ impl_runtime_apis! {
                 }
 
                 fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
-                    let origin = KsmLocation::get();
-                    let assets: MultiAssets = (Concrete(KsmLocation::get()), 1_000 * KMA).into();
+                    let origin = KmaLocation::get();
+                    let assets: MultiAssets = (Concrete(KmaLocation::get()), 1_000 * KMA).into();
                     let ticket = MultiLocation { parents: 0, interior: Here };
                     Ok((origin, ticket, assets))
                 }

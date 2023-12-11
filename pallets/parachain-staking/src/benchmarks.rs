@@ -416,7 +416,6 @@ benchmarks! {
             caller.clone()
         )?;
     } verify {
-        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller, Preservation::Preserve, Fortitude::Polite);
         let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller, Preservation::Preserve, Fortitude::Polite);
         assert!(usable_balance_after > usable_balance_before);
     }

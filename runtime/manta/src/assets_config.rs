@@ -42,7 +42,7 @@ use xcm::VersionedMultiLocation;
 parameter_types! {
     // Does not really matter as this will be only called by root
     pub const AssetDeposit: Balance = 0;
-    pub const AssetAccountDeposit: Balance = 0;
+    pub const AssetAccountDeposit: Balance = 1;
     pub const ApprovalDeposit: Balance = 0;
     pub const MetadataDepositBase: Balance = 0;
     pub const MetadataDepositPerByte: Balance = 0;

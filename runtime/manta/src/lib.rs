@@ -42,7 +42,7 @@ use sp_version::RuntimeVersion;
 
 use cumulus_pallet_parachain_system::{
     register_validate_block, CheckInherents, ParachainSetCode, RelayChainStateProof,
-    RelaychainBlockNumberProvider,
+    RelaychainDataProvider,
 };
 use frame_support::{
     construct_runtime,
@@ -557,7 +557,7 @@ impl pallet_parachain_staking::Config for Runtime {
 
 impl pallet_author_inherent::Config for Runtime {
     // We start a new slot each time we see a new relay block.
-    type SlotBeacon = RelaychainBlockNumberProvider<Self>;
+    type SlotBeacon = RelaychainDataProvider<Self>;
     type AccountLookup = CollatorSelection;
     type AuthorId = AccountId;
     type WeightInfo = ();
@@ -1028,10 +1028,11 @@ mod benches {
         [pallet_assets, Assets]
         [pallet_asset_manager, AssetManager]
         [pallet_scheduler, Scheduler]
+        [pallet_sudo, Sudo]
         // XCM
         [cumulus_pallet_xcmp_queue, XcmpQueue]
-        [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
-        [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
+        [pallet_xcm_benchmarks::fungible, XcmBalances]
+        [pallet_xcm_benchmarks::generic, XcmGeneric]
         [pallet_session, SessionBench::<Runtime>]
         // Manta pallets
         [pallet_tx_pause, TransactionPause]
@@ -1377,6 +1378,9 @@ impl_runtime_apis! {
             use frame_system_benchmarking::Pallet as SystemBench;
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 
+            type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+            type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
+
             let mut list = Vec::<BenchmarkList>::new();
             list_benchmarks!(list, extra);
 
@@ -1421,7 +1425,7 @@ impl_runtime_apis! {
                 fn worst_case_holding(depositable_count: u32) -> MultiAssets {
                     // A mix of fungible, non-fungible, and concrete assets.
                     let holding_non_fungibles = crate::xcm_config::MaxAssetsIntoHolding::get() / 2 - depositable_count;
-                    let holding_fungibles = holding_non_fungibles.saturating_sub(1);
+                    let holding_fungibles = holding_non_fungibles - 1;
                     let fungibles_amount: u128 = 100;
                     let mut assets = (0..holding_fungibles)
                         .map(|i| {
@@ -1453,7 +1457,7 @@ impl_runtime_apis! {
 
                 fn get_multi_asset() -> MultiAsset {
                     MultiAsset {
-                        id: Concrete(DotLocation::get()),
+                        id: Concrete(MantaLocation::get()),
                         fun: Fungible(1 * MANTA),
                     }
                 }
@@ -1483,8 +1487,8 @@ impl_runtime_apis! {
                 }
 
                 fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
-                    let origin = DotLocation::get();
-                    let assets: MultiAssets = (Concrete(DotLocation::get()), 1_000 * MANTA).into();
+                    let origin = MantaLocation::get();
+                    let assets: MultiAssets = (Concrete(MantaLocation::get()), 1_000 * MANTA).into();
                     let ticket = MultiLocation { parents: 0, interior: Here };
                     Ok((origin, ticket, assets))
                 }
@@ -1498,6 +1502,9 @@ impl_runtime_apis! {
                     Err(BenchmarkError::Skip)
                 }
             }
+
+            type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+            type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
             let whitelist: Vec<TrackedStorageKey> = vec![
                 // Block Number

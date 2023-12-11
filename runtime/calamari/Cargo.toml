@@ -153,6 +153,7 @@ runtime-benchmarks = [
   'manta-collator-selection/runtime-benchmarks',
   'nimbus-primitives/runtime-benchmarks',
   'pallet-author-inherent/runtime-benchmarks',
+  'pallet-aura-style-filter/runtime-benchmarks',
   'pallet-balances/runtime-benchmarks',
   'pallet-multisig/runtime-benchmarks',
   'pallet-scheduler/runtime-benchmarks',
