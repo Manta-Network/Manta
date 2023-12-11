@@ -20,86 +20,199 @@
 //! DATE: 2021-10-15, STEPS: `1`, REPEAT: 10, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: None, DB CACHE: 128
 
+#![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
 #![allow(unused_imports)]
-#![allow(clippy::unnecessary_cast)]
+#![allow(missing_docs)]
 
+use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use core::marker::PhantomData;
-use frame_support::{
-    traits::Get,
-    weights::{constants::RocksDbWeight, Weight},
-};
-use frame_system::Config;
 
 /// Weight functions needed for pallet_manta_pay.
 pub trait WeightInfo {
-    /// Returns the [`Weight`] of the [`crate::Pallet::to_private`] extrinsic.
-    fn to_private() -> Weight;
-
-    /// Returns the [`Weight`] of the [`crate::Pallet::to_public`] extrinsic.
-    fn to_public() -> Weight;
-
-    /// Returns the [`Weight`] of the [`crate::Pallet::private_transfer`] extrinsic.
-    fn private_transfer() -> Weight;
-
-    /// Returns the [`Weight`] of the [`crate::Pallet::public_transfer`] extrinsic.
-    fn public_transfer() -> Weight;
+	fn to_private() -> Weight;
+	fn to_public() -> Weight;
+	fn private_transfer() -> Weight;
+	fn public_transfer() -> Weight;
 }
 
-/// Concrete Weight Functions
+/// Weights for pallet_manta_pay using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
+impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
+	/// Storage: Assets Asset (r:1 w:1)
+	/// Proof: Assets Asset (max_values: None, max_size: Some(222), added: 2697, mode: MaxEncodedLen)
+	/// Storage: Assets Account (r:2 w:2)
+	/// Proof: Assets Account (max_values: None, max_size: Some(146), added: 2621, mode: MaxEncodedLen)
+	/// Storage: MantaPay UtxoSet (r:1 w:1)
+	/// Proof: MantaPay UtxoSet (max_values: None, max_size: Some(89), added: 2564, mode: MaxEncodedLen)
+	/// Storage: MantaPay NullifierSetSize (r:1 w:0)
+	/// Proof: MantaPay NullifierSetSize (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
+	/// Storage: MantaPay ShardTrees (r:1 w:1)
+	/// Proof: MantaPay ShardTrees (max_values: None, max_size: Some(654), added: 3129, mode: MaxEncodedLen)
+	/// Storage: MantaPay UtxoAccumulatorOutputs (r:0 w:1)
+	/// Proof: MantaPay UtxoAccumulatorOutputs (max_values: None, max_size: Some(40), added: 2515, mode: MaxEncodedLen)
+	/// Storage: MantaPay Shards (r:0 w:1)
+	/// Proof: MantaPay Shards (max_values: None, max_size: Some(395), added: 2870, mode: MaxEncodedLen)
+	fn to_private() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `4338`
+		//  Estimated: `6232`
+		// Minimum execution time: 5_143_563_000 picoseconds.
+		Weight::from_parts(5_192_986_000, 6232)
+			.saturating_add(T::DbWeight::get().reads(6_u64))
+			.saturating_add(T::DbWeight::get().writes(7_u64))
+	}
+	/// Storage: Assets Asset (r:1 w:1)
+	/// Proof: Assets Asset (max_values: None, max_size: Some(222), added: 2697, mode: MaxEncodedLen)
+	/// Storage: Assets Account (r:2 w:2)
+	/// Proof: Assets Account (max_values: None, max_size: Some(146), added: 2621, mode: MaxEncodedLen)
+	/// Storage: MantaPay UtxoAccumulatorOutputs (r:2 w:1)
+	/// Proof: MantaPay UtxoAccumulatorOutputs (max_values: None, max_size: Some(40), added: 2515, mode: MaxEncodedLen)
+	/// Storage: MantaPay NullifierCommitmentSet (r:2 w:2)
+	/// Proof: MantaPay NullifierCommitmentSet (max_values: None, max_size: Some(40), added: 2515, mode: MaxEncodedLen)
+	/// Storage: MantaPay UtxoSet (r:1 w:1)
+	/// Proof: MantaPay UtxoSet (max_values: None, max_size: Some(89), added: 2564, mode: MaxEncodedLen)
+	/// Storage: MantaPay NullifierSetSize (r:1 w:1)
+	/// Proof: MantaPay NullifierSetSize (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
+	/// Storage: MantaPay ShardTrees (r:1 w:1)
+	/// Proof: MantaPay ShardTrees (max_values: None, max_size: Some(654), added: 3129, mode: MaxEncodedLen)
+	/// Storage: MantaPay NullifierSetInsertionOrder (r:0 w:2)
+	/// Proof: MantaPay NullifierSetInsertionOrder (max_values: None, max_size: Some(144), added: 2619, mode: MaxEncodedLen)
+	/// Storage: MantaPay Shards (r:0 w:1)
+	/// Proof: MantaPay Shards (max_values: None, max_size: Some(395), added: 2870, mode: MaxEncodedLen)
+	fn to_public() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `11190`
+		//  Estimated: `6232`
+		// Minimum execution time: 6_663_218_000 picoseconds.
+		Weight::from_parts(6_708_503_000, 6232)
+			.saturating_add(T::DbWeight::get().reads(10_u64))
+			.saturating_add(T::DbWeight::get().writes(12_u64))
+	}
+	/// Storage: MantaPay UtxoAccumulatorOutputs (r:2 w:2)
+	/// Proof: MantaPay UtxoAccumulatorOutputs (max_values: None, max_size: Some(40), added: 2515, mode: MaxEncodedLen)
+	/// Storage: MantaPay NullifierCommitmentSet (r:2 w:2)
+	/// Proof: MantaPay NullifierCommitmentSet (max_values: None, max_size: Some(40), added: 2515, mode: MaxEncodedLen)
+	/// Storage: MantaPay UtxoSet (r:2 w:2)
+	/// Proof: MantaPay UtxoSet (max_values: None, max_size: Some(89), added: 2564, mode: MaxEncodedLen)
+	/// Storage: MantaPay NullifierSetSize (r:1 w:1)
+	/// Proof: MantaPay NullifierSetSize (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
+	/// Storage: MantaPay ShardTrees (r:2 w:2)
+	/// Proof: MantaPay ShardTrees (max_values: None, max_size: Some(654), added: 3129, mode: MaxEncodedLen)
+	/// Storage: MantaPay NullifierSetInsertionOrder (r:0 w:2)
+	/// Proof: MantaPay NullifierSetInsertionOrder (max_values: None, max_size: Some(144), added: 2619, mode: MaxEncodedLen)
+	/// Storage: MantaPay Shards (r:0 w:2)
+	/// Proof: MantaPay Shards (max_values: None, max_size: Some(395), added: 2870, mode: MaxEncodedLen)
+	fn private_transfer() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `12105`
+		//  Estimated: `7248`
+		// Minimum execution time: 8_790_114_000 picoseconds.
+		Weight::from_parts(8_856_298_000, 7248)
+			.saturating_add(T::DbWeight::get().reads(9_u64))
+			.saturating_add(T::DbWeight::get().writes(13_u64))
+	}
+	/// Storage: Assets Asset (r:1 w:1)
+	/// Proof: Assets Asset (max_values: None, max_size: Some(222), added: 2697, mode: MaxEncodedLen)
+	/// Storage: Assets Account (r:2 w:2)
+	/// Proof: Assets Account (max_values: None, max_size: Some(146), added: 2621, mode: MaxEncodedLen)
+	fn public_transfer() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `969`
+		//  Estimated: `6232`
+		// Minimum execution time: 22_702_000 picoseconds.
+		Weight::from_parts(23_234_000, 6232)
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
+	}
+}
 
-impl<T> WeightInfo for SubstrateWeight<T>
-where
-    T: Config,
-{
-    /// ```text
-    /// Storage: MantaPay Balances (r:1 w:1)
-    /// Storage: MantaPay UtxoSet (r:1 w:1)
-    /// Storage: MantaPay ShardTrees (r:1 w:1)
-    /// Storage: MantaPay UtxoSetOutputs (r:0 w:1)
-    /// Storage: MantaPay Shards (r:0 w:1)
-    /// ```
-    fn to_private() -> Weight {
-        Weight::from_ref_time(36_400_000_000)
-            .saturating_add(T::DbWeight::get().reads(6_u64))
-            .saturating_add(T::DbWeight::get().writes(7_u64))
-    }
-
-    /// ```text
-    /// Storage: MantaPay UtxoSetOutputs (r:2 w:1)
-    /// Storage: MantaPay VoidNumberSet (r:2 w:2)
-    /// Storage: MantaPay UtxoSet (r:1 w:1)
-    /// Storage: MantaPay VoidNumberSetSize (r:1 w:1)
-    /// Storage: MantaPay ShardTrees (r:1 w:1)
-    /// Storage: MantaPay Balances (r:1 w:1)
-    /// Storage: MantaPay VoidNumberSetInsertionOrder (r:0 w:2)
-    /// Storage: MantaPay Shards (r:0 w:1)
-    /// ```
-    fn to_public() -> Weight {
-        Weight::from_ref_time(44_100_000_000)
-            .saturating_add(T::DbWeight::get().reads(10_u64))
-            .saturating_add(T::DbWeight::get().writes(12_u64))
-    }
-
-    /// ```text
-    /// Storage: MantaPay UtxoSetOutputs (r:2 w:2)
-    /// Storage: MantaPay VoidNumberSet (r:2 w:2)
-    /// Storage: MantaPay UtxoSet (r:2 w:2)
-    /// Storage: MantaPay VoidNumberSetSize (r:1 w:1)
-    /// Storage: MantaPay ShardTrees (r:2 w:2)
-    /// Storage: MantaPay VoidNumberSetInsertionOrder (r:0 w:2)
-    /// Storage: MantaPay Shards (r:0 w:2)
-    /// ```
-    fn private_transfer() -> Weight {
-        Weight::from_ref_time(51_500_000_000)
-            .saturating_add(T::DbWeight::get().reads(9_u64))
-            .saturating_add(T::DbWeight::get().writes(13_u64))
-    }
-
-    // Storage: Assets Asset (r:1 w:1)
-    // Storage: Assets Account (r:2 w:2)
-    fn public_transfer() -> Weight {
-        Weight::from_ref_time(46_629_000)
-    }
+// For backwards compatibility and tests
+impl WeightInfo for () {
+	/// Storage: Assets Asset (r:1 w:1)
+	/// Proof: Assets Asset (max_values: None, max_size: Some(222), added: 2697, mode: MaxEncodedLen)
+	/// Storage: Assets Account (r:2 w:2)
+	/// Proof: Assets Account (max_values: None, max_size: Some(146), added: 2621, mode: MaxEncodedLen)
+	/// Storage: MantaPay UtxoSet (r:1 w:1)
+	/// Proof: MantaPay UtxoSet (max_values: None, max_size: Some(89), added: 2564, mode: MaxEncodedLen)
+	/// Storage: MantaPay NullifierSetSize (r:1 w:0)
+	/// Proof: MantaPay NullifierSetSize (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
+	/// Storage: MantaPay ShardTrees (r:1 w:1)
+	/// Proof: MantaPay ShardTrees (max_values: None, max_size: Some(654), added: 3129, mode: MaxEncodedLen)
+	/// Storage: MantaPay UtxoAccumulatorOutputs (r:0 w:1)
+	/// Proof: MantaPay UtxoAccumulatorOutputs (max_values: None, max_size: Some(40), added: 2515, mode: MaxEncodedLen)
+	/// Storage: MantaPay Shards (r:0 w:1)
+	/// Proof: MantaPay Shards (max_values: None, max_size: Some(395), added: 2870, mode: MaxEncodedLen)
+	fn to_private() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `4338`
+		//  Estimated: `6232`
+		// Minimum execution time: 5_143_563_000 picoseconds.
+		Weight::from_parts(5_192_986_000, 6232)
+			.saturating_add(RocksDbWeight::get().reads(6_u64))
+			.saturating_add(RocksDbWeight::get().writes(7_u64))
+	}
+	/// Storage: Assets Asset (r:1 w:1)
+	/// Proof: Assets Asset (max_values: None, max_size: Some(222), added: 2697, mode: MaxEncodedLen)
+	/// Storage: Assets Account (r:2 w:2)
+	/// Proof: Assets Account (max_values: None, max_size: Some(146), added: 2621, mode: MaxEncodedLen)
+	/// Storage: MantaPay UtxoAccumulatorOutputs (r:2 w:1)
+	/// Proof: MantaPay UtxoAccumulatorOutputs (max_values: None, max_size: Some(40), added: 2515, mode: MaxEncodedLen)
+	/// Storage: MantaPay NullifierCommitmentSet (r:2 w:2)
+	/// Proof: MantaPay NullifierCommitmentSet (max_values: None, max_size: Some(40), added: 2515, mode: MaxEncodedLen)
+	/// Storage: MantaPay UtxoSet (r:1 w:1)
+	/// Proof: MantaPay UtxoSet (max_values: None, max_size: Some(89), added: 2564, mode: MaxEncodedLen)
+	/// Storage: MantaPay NullifierSetSize (r:1 w:1)
+	/// Proof: MantaPay NullifierSetSize (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
+	/// Storage: MantaPay ShardTrees (r:1 w:1)
+	/// Proof: MantaPay ShardTrees (max_values: None, max_size: Some(654), added: 3129, mode: MaxEncodedLen)
+	/// Storage: MantaPay NullifierSetInsertionOrder (r:0 w:2)
+	/// Proof: MantaPay NullifierSetInsertionOrder (max_values: None, max_size: Some(144), added: 2619, mode: MaxEncodedLen)
+	/// Storage: MantaPay Shards (r:0 w:1)
+	/// Proof: MantaPay Shards (max_values: None, max_size: Some(395), added: 2870, mode: MaxEncodedLen)
+	fn to_public() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `11190`
+		//  Estimated: `6232`
+		// Minimum execution time: 6_663_218_000 picoseconds.
+		Weight::from_parts(6_708_503_000, 6232)
+			.saturating_add(RocksDbWeight::get().reads(10_u64))
+			.saturating_add(RocksDbWeight::get().writes(12_u64))
+	}
+	/// Storage: MantaPay UtxoAccumulatorOutputs (r:2 w:2)
+	/// Proof: MantaPay UtxoAccumulatorOutputs (max_values: None, max_size: Some(40), added: 2515, mode: MaxEncodedLen)
+	/// Storage: MantaPay NullifierCommitmentSet (r:2 w:2)
+	/// Proof: MantaPay NullifierCommitmentSet (max_values: None, max_size: Some(40), added: 2515, mode: MaxEncodedLen)
+	/// Storage: MantaPay UtxoSet (r:2 w:2)
+	/// Proof: MantaPay UtxoSet (max_values: None, max_size: Some(89), added: 2564, mode: MaxEncodedLen)
+	/// Storage: MantaPay NullifierSetSize (r:1 w:1)
+	/// Proof: MantaPay NullifierSetSize (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
+	/// Storage: MantaPay ShardTrees (r:2 w:2)
+	/// Proof: MantaPay ShardTrees (max_values: None, max_size: Some(654), added: 3129, mode: MaxEncodedLen)
+	/// Storage: MantaPay NullifierSetInsertionOrder (r:0 w:2)
+	/// Proof: MantaPay NullifierSetInsertionOrder (max_values: None, max_size: Some(144), added: 2619, mode: MaxEncodedLen)
+	/// Storage: MantaPay Shards (r:0 w:2)
+	/// Proof: MantaPay Shards (max_values: None, max_size: Some(395), added: 2870, mode: MaxEncodedLen)
+	fn private_transfer() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `12105`
+		//  Estimated: `7248`
+		// Minimum execution time: 8_790_114_000 picoseconds.
+		Weight::from_parts(8_856_298_000, 7248)
+			.saturating_add(RocksDbWeight::get().reads(9_u64))
+			.saturating_add(RocksDbWeight::get().writes(13_u64))
+	}
+	/// Storage: Assets Asset (r:1 w:1)
+	/// Proof: Assets Asset (max_values: None, max_size: Some(222), added: 2697, mode: MaxEncodedLen)
+	/// Storage: Assets Account (r:2 w:2)
+	/// Proof: Assets Account (max_values: None, max_size: Some(146), added: 2621, mode: MaxEncodedLen)
+	fn public_transfer() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `969`
+		//  Estimated: `6232`
+		// Minimum execution time: 22_702_000 picoseconds.
+		Weight::from_parts(23_234_000, 6232)
+			.saturating_add(RocksDbWeight::get().reads(3_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
+	}
 }

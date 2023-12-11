@@ -38,276 +38,449 @@
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
 #![allow(unused_imports)]
-#![allow(clippy::unnecessary_cast)]
+#![allow(missing_docs)]
 
-use frame_support::{traits::Get, weights::Weight};
-use sp_std::marker::PhantomData;
-use manta_primitives::constants::RocksDbWeight;
+use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
+use core::marker::PhantomData;
 
 /// Weight functions needed for pallet_manta_sbt.
 pub trait WeightInfo {
-    fn to_private() -> Weight;
-    fn reserve_sbt() -> Weight;
-    fn change_allowlist_account() -> Weight;
-    fn allowlist_evm_account() -> Weight;
-    fn new_mint_info() -> Weight;
-    fn update_mint_info() -> Weight;
-    fn mint_sbt_eth() -> Weight;
-    fn change_free_reserve_account() -> Weight;
-    fn remove_allowlist_evm_account() -> Weight;
-    fn set_next_sbt_id() -> Weight;
-    fn force_to_private() -> Weight;
-    fn force_mint_sbt_eth() -> Weight;
-    fn change_force_account() -> Weight;
+	fn to_private() -> Weight;
+	fn reserve_sbt() -> Weight;
+	fn change_allowlist_account() -> Weight;
+	fn allowlist_evm_account() -> Weight;
+	fn new_mint_info() -> Weight;
+	fn update_mint_info() -> Weight;
+	fn mint_sbt_eth() -> Weight;
+	fn change_free_reserve_account() -> Weight;
+	fn remove_allowlist_evm_account() -> Weight;
+	fn set_next_sbt_id() -> Weight;
+	fn force_to_private() -> Weight;
+	fn force_mint_sbt_eth() -> Weight;
+	fn change_force_account() -> Weight;
 }
 
 /// Weights for pallet_manta_sbt using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-	// Storage: MantaSbt MintIdRegistry (r:1 w:0)
-	// Storage: Timestamp Now (r:1 w:0)
-	// Storage: MantaSbt PublicMintList (r:1 w:0)
-	// Storage: MantaSbt ReservedIds (r:1 w:1)
-	// Storage: MantaSbt SbtMetadataV2 (r:1 w:1)
-	// Storage: MantaSbt UtxoSet (r:1 w:1)
-	// Storage: MantaSbt ShardTrees (r:1 w:1)
-	// Storage: MantaSbt Shards (r:0 w:1)
+	/// Storage: MantaSbt MintIdRegistry (r:1 w:0)
+	/// Proof: MantaSbt MintIdRegistry (max_values: None, max_size: Some(339), added: 2814, mode: MaxEncodedLen)
+	/// Storage: Timestamp Now (r:1 w:0)
+	/// Proof: Timestamp Now (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
+	/// Storage: MantaSbt PublicMintList (r:1 w:0)
+	/// Proof: MantaSbt PublicMintList (max_values: None, max_size: Some(20), added: 2495, mode: MaxEncodedLen)
+	/// Storage: MantaSbt ReservedIds (r:1 w:1)
+	/// Proof: MantaSbt ReservedIds (max_values: None, max_size: Some(80), added: 2555, mode: MaxEncodedLen)
+	/// Storage: MantaSbt SbtMetadataV2 (r:1 w:1)
+	/// Proof: MantaSbt SbtMetadataV2 (max_values: None, max_size: Some(373), added: 2848, mode: MaxEncodedLen)
+	/// Storage: MantaSbt UtxoSet (r:1 w:1)
+	/// Proof: MantaSbt UtxoSet (max_values: None, max_size: Some(89), added: 2564, mode: MaxEncodedLen)
+	/// Storage: MantaSbt ShardTrees (r:1 w:1)
+	/// Proof: MantaSbt ShardTrees (max_values: None, max_size: Some(654), added: 3129, mode: MaxEncodedLen)
+	/// Storage: MantaSbt Shards (r:0 w:1)
+	/// Proof: MantaSbt Shards (max_values: None, max_size: Some(395), added: 2870, mode: MaxEncodedLen)
 	fn to_private() -> Weight {
-		// Minimum execution time: 39_355_971 nanoseconds.
-		Weight::from_ref_time(39_453_744_000)
-			.saturating_add(T::DbWeight::get().reads(7))
-			.saturating_add(T::DbWeight::get().writes(5))
+		// Proof Size summary in bytes:
+		//  Measured:  `473`
+		//  Estimated: `4119`
+		// Minimum execution time: 5_134_020_000 picoseconds.
+		Weight::from_parts(5_163_023_000, 4119)
+			.saturating_add(T::DbWeight::get().reads(7_u64))
+			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
-	// Storage: MantaSbt ReservedIds (r:1 w:1)
-	// Storage: MantaSbt FreeReserveAccount (r:1 w:0)
-	// Storage: System Account (r:1 w:1)
-	// Storage: MantaSbt NextSbtId (r:1 w:1)
+	/// Storage: MantaSbt ReservedIds (r:1 w:1)
+	/// Proof: MantaSbt ReservedIds (max_values: None, max_size: Some(80), added: 2555, mode: MaxEncodedLen)
+	/// Storage: MantaSbt FreeReserveAccount (r:1 w:0)
+	/// Proof: MantaSbt FreeReserveAccount (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
+	/// Storage: System Account (r:1 w:1)
+	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	/// Storage: MantaSbt NextSbtId (r:1 w:1)
+	/// Proof: MantaSbt NextSbtId (max_values: Some(1), max_size: Some(16), added: 511, mode: MaxEncodedLen)
 	fn reserve_sbt() -> Weight {
-		// Minimum execution time: 50_199 nanoseconds.
-		Weight::from_ref_time(55_043_000)
-			.saturating_add(T::DbWeight::get().reads(4))
-			.saturating_add(T::DbWeight::get().writes(3))
+		// Proof Size summary in bytes:
+		//  Measured:  `142`
+		//  Estimated: `3593`
+		// Minimum execution time: 23_104_000 picoseconds.
+		Weight::from_parts(24_035_000, 3593)
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
-	// Storage: MantaSbt AllowlistAccount (r:0 w:1)
+	/// Storage: MantaSbt AllowlistAccount (r:0 w:1)
+	/// Proof: MantaSbt AllowlistAccount (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
 	fn change_allowlist_account() -> Weight {
-		// Minimum execution time: 16_000 nanoseconds.
-		Weight::from_ref_time(16_280_000)
-			.saturating_add(T::DbWeight::get().writes(1))
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 3_768_000 picoseconds.
+		Weight::from_parts(3_968_000, 0)
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	// Storage: MantaSbt MintIdRegistry (r:1 w:0)
-	// Storage: Timestamp Now (r:1 w:0)
-	// Storage: MantaSbt AllowlistAccount (r:1 w:0)
-	// Storage: MantaSbt EvmAccountAllowlist (r:1 w:1)
-	// Storage: MantaSbt NextSbtId (r:1 w:1)
+	/// Storage: MantaSbt MintIdRegistry (r:1 w:0)
+	/// Proof: MantaSbt MintIdRegistry (max_values: None, max_size: Some(339), added: 2814, mode: MaxEncodedLen)
+	/// Storage: Timestamp Now (r:1 w:0)
+	/// Proof: Timestamp Now (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
+	/// Storage: MantaSbt AllowlistAccount (r:1 w:0)
+	/// Proof: MantaSbt AllowlistAccount (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
+	/// Storage: MantaSbt EvmAccountAllowlist (r:1 w:1)
+	/// Proof: MantaSbt EvmAccountAllowlist (max_values: None, max_size: Some(73), added: 2548, mode: MaxEncodedLen)
+	/// Storage: MantaSbt NextSbtId (r:1 w:1)
+	/// Proof: MantaSbt NextSbtId (max_values: Some(1), max_size: Some(16), added: 511, mode: MaxEncodedLen)
 	fn allowlist_evm_account() -> Weight {
-		// Minimum execution time: 30_138 nanoseconds.
-		Weight::from_ref_time(31_160_000)
-			.saturating_add(T::DbWeight::get().reads(5))
-			.saturating_add(T::DbWeight::get().writes(2))
+		// Proof Size summary in bytes:
+		//  Measured:  `382`
+		//  Estimated: `3804`
+		// Minimum execution time: 12_915_000 picoseconds.
+		Weight::from_parts(13_435_000, 3804)
+			.saturating_add(T::DbWeight::get().reads(5_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
-	// Storage: MantaSbt NextMintId (r:1 w:1)
-	// Storage: MantaSbt PublicMintList (r:0 w:1)
-	// Storage: MantaSbt MintIdRegistry (r:0 w:1)
+	/// Storage: MantaSbt NextMintId (r:1 w:1)
+	/// Proof: MantaSbt NextMintId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
+	/// Storage: MantaSbt PublicMintList (r:0 w:1)
+	/// Proof: MantaSbt PublicMintList (max_values: None, max_size: Some(20), added: 2495, mode: MaxEncodedLen)
+	/// Storage: MantaSbt MintIdRegistry (r:0 w:1)
+	/// Proof: MantaSbt MintIdRegistry (max_values: None, max_size: Some(339), added: 2814, mode: MaxEncodedLen)
 	fn new_mint_info() -> Weight {
-		// Minimum execution time: 18_710 nanoseconds.
-		Weight::from_ref_time(19_166_000)
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(3))
+		// Proof Size summary in bytes:
+		//  Measured:  `142`
+		//  Estimated: `1489`
+		// Minimum execution time: 6_101_000 picoseconds.
+		Weight::from_parts(6_492_000, 1489)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
-	// Storage: MantaSbt MintIdRegistry (r:1 w:1)
-	// Storage: MantaSbt PublicMintList (r:0 w:1)
+	/// Storage: MantaSbt MintIdRegistry (r:1 w:1)
+	/// Proof: MantaSbt MintIdRegistry (max_values: None, max_size: Some(339), added: 2814, mode: MaxEncodedLen)
+	/// Storage: MantaSbt PublicMintList (r:0 w:1)
+	/// Proof: MantaSbt PublicMintList (max_values: None, max_size: Some(20), added: 2495, mode: MaxEncodedLen)
 	fn update_mint_info() -> Weight {
-		// Minimum execution time: 21_958 nanoseconds.
-		Weight::from_ref_time(22_914_000)
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(2))
+		// Proof Size summary in bytes:
+		//  Measured:  `254`
+		//  Estimated: `3804`
+		// Minimum execution time: 8_366_000 picoseconds.
+		Weight::from_parts(8_917_000, 3804)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
-	// Storage: MantaSbt MintIdRegistry (r:1 w:0)
-	// Storage: Timestamp Now (r:1 w:0)
-	// Storage: System BlockHash (r:1 w:0)
-	// Storage: MantaSbt EvmAccountAllowlist (r:1 w:1)
-	// Storage: MantaSbt SbtMetadataV2 (r:1 w:1)
-	// Storage: MantaSbt UtxoSet (r:1 w:1)
-	// Storage: MantaSbt ShardTrees (r:1 w:1)
-	// Storage: MantaSbt Shards (r:0 w:1)
+	/// Storage: MantaSbt MintIdRegistry (r:1 w:0)
+	/// Proof: MantaSbt MintIdRegistry (max_values: None, max_size: Some(339), added: 2814, mode: MaxEncodedLen)
+	/// Storage: Timestamp Now (r:1 w:0)
+	/// Proof: Timestamp Now (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
+	/// Storage: System BlockHash (r:1 w:0)
+	/// Proof: System BlockHash (max_values: None, max_size: Some(44), added: 2519, mode: MaxEncodedLen)
+	/// Storage: MantaSbt EvmAccountAllowlist (r:1 w:1)
+	/// Proof: MantaSbt EvmAccountAllowlist (max_values: None, max_size: Some(73), added: 2548, mode: MaxEncodedLen)
+	/// Storage: MantaSbt SbtMetadataV2 (r:1 w:1)
+	/// Proof: MantaSbt SbtMetadataV2 (max_values: None, max_size: Some(373), added: 2848, mode: MaxEncodedLen)
+	/// Storage: MantaSbt UtxoSet (r:1 w:1)
+	/// Proof: MantaSbt UtxoSet (max_values: None, max_size: Some(89), added: 2564, mode: MaxEncodedLen)
+	/// Storage: MantaSbt ShardTrees (r:1 w:1)
+	/// Proof: MantaSbt ShardTrees (max_values: None, max_size: Some(654), added: 3129, mode: MaxEncodedLen)
+	/// Storage: MantaSbt Shards (r:0 w:1)
+	/// Proof: MantaSbt Shards (max_values: None, max_size: Some(395), added: 2870, mode: MaxEncodedLen)
 	fn mint_sbt_eth() -> Weight {
-		// Minimum execution time: 39_468_616 nanoseconds.
-		Weight::from_ref_time(39_560_727_000)
-			.saturating_add(T::DbWeight::get().reads(7))
-			.saturating_add(T::DbWeight::get().writes(5))
+		// Proof Size summary in bytes:
+		//  Measured:  `545`
+		//  Estimated: `4119`
+		// Minimum execution time: 5_173_945_000 picoseconds.
+		Weight::from_parts(5_186_347_000, 4119)
+			.saturating_add(T::DbWeight::get().reads(7_u64))
+			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
-	// Storage: MantaSbt AllowlistAccount (r:0 w:1)
+	/// Storage: MantaSbt AllowlistAccount (r:0 w:1)
+	/// Proof: MantaSbt AllowlistAccount (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
 	fn change_free_reserve_account() -> Weight {
-		// Minimum execution time: 15_919 nanoseconds.
-		Weight::from_ref_time(16_287_000)
-			.saturating_add(T::DbWeight::get().writes(1))
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 3_667_000 picoseconds.
+		Weight::from_parts(3_888_000, 0)
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	// Storage: MantaSbt EvmAccountAllowlist (r:0 w:1)
+	/// Storage: MantaSbt EvmAccountAllowlist (r:0 w:1)
+	/// Proof: MantaSbt EvmAccountAllowlist (max_values: None, max_size: Some(73), added: 2548, mode: MaxEncodedLen)
 	fn remove_allowlist_evm_account() -> Weight {
-		// Minimum execution time: 16_210 nanoseconds.
-		Weight::from_ref_time(17_519_000)
-			.saturating_add(T::DbWeight::get().writes(1))
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 4_468_000 picoseconds.
+		Weight::from_parts(4_619_000, 0)
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	// Storage: MantaSbt NextSbtId (r:0 w:1)
+	/// Storage: MantaSbt NextSbtId (r:0 w:1)
+	/// Proof: MantaSbt NextSbtId (max_values: Some(1), max_size: Some(16), added: 511, mode: MaxEncodedLen)
 	fn set_next_sbt_id() -> Weight {
-		// Minimum execution time: 15_180 nanoseconds.
-		Weight::from_ref_time(15_479_000)
-			.saturating_add(T::DbWeight::get().writes(1))
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 3_667_000 picoseconds.
+		Weight::from_parts(3_787_000, 0)
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	// Storage: MantaSbt ForceAccount (r:1 w:0)
-	// Storage: MantaSbt NextSbtId (r:1 w:0)
-	// Storage: MantaSbt SbtMetadataV2 (r:1 w:1)
-	// Storage: MantaSbt UtxoSet (r:1 w:1)
-	// Storage: MantaSbt ShardTrees (r:1 w:1)
-	// Storage: MantaSbt Shards (r:0 w:1)
+	/// Storage: MantaSbt ForceAccount (r:1 w:0)
+	/// Proof: MantaSbt ForceAccount (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
+	/// Storage: MantaSbt NextSbtId (r:1 w:0)
+	/// Proof: MantaSbt NextSbtId (max_values: Some(1), max_size: Some(16), added: 511, mode: MaxEncodedLen)
+	/// Storage: MantaSbt SbtMetadataV2 (r:1 w:1)
+	/// Proof: MantaSbt SbtMetadataV2 (max_values: None, max_size: Some(373), added: 2848, mode: MaxEncodedLen)
+	/// Storage: MantaSbt UtxoSet (r:1 w:1)
+	/// Proof: MantaSbt UtxoSet (max_values: None, max_size: Some(89), added: 2564, mode: MaxEncodedLen)
+	/// Storage: MantaSbt ShardTrees (r:1 w:1)
+	/// Proof: MantaSbt ShardTrees (max_values: None, max_size: Some(654), added: 3129, mode: MaxEncodedLen)
+	/// Storage: MantaSbt Shards (r:0 w:1)
+	/// Proof: MantaSbt Shards (max_values: None, max_size: Some(395), added: 2870, mode: MaxEncodedLen)
 	fn force_to_private() -> Weight {
-		// Minimum execution time: 39_347_955 nanoseconds.
-		Weight::from_ref_time(39_386_564_000)
-			.saturating_add(T::DbWeight::get().reads(5))
-			.saturating_add(T::DbWeight::get().writes(4))
+		// Proof Size summary in bytes:
+		//  Measured:  `234`
+		//  Estimated: `4119`
+		// Minimum execution time: 5_119_863_000 picoseconds.
+		Weight::from_parts(5_152_403_000, 4119)
+			.saturating_add(T::DbWeight::get().reads(5_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
-	// Storage: MantaSbt ForceAccount (r:1 w:0)
-	// Storage: MantaSbt NextSbtId (r:1 w:0)
-	// Storage: MantaSbt SbtMetadataV2 (r:1 w:1)
-	// Storage: MantaSbt EvmAccountAllowlist (r:1 w:1)
-	// Storage: MantaSbt UtxoSet (r:1 w:1)
-	// Storage: MantaSbt ShardTrees (r:1 w:1)
-	// Storage: MantaSbt Shards (r:0 w:1)
+	/// Storage: MantaSbt ForceAccount (r:1 w:0)
+	/// Proof: MantaSbt ForceAccount (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
+	/// Storage: MantaSbt NextSbtId (r:1 w:0)
+	/// Proof: MantaSbt NextSbtId (max_values: Some(1), max_size: Some(16), added: 511, mode: MaxEncodedLen)
+	/// Storage: MantaSbt SbtMetadataV2 (r:1 w:1)
+	/// Proof: MantaSbt SbtMetadataV2 (max_values: None, max_size: Some(373), added: 2848, mode: MaxEncodedLen)
+	/// Storage: MantaSbt EvmAccountAllowlist (r:1 w:1)
+	/// Proof: MantaSbt EvmAccountAllowlist (max_values: None, max_size: Some(73), added: 2548, mode: MaxEncodedLen)
+	/// Storage: MantaSbt UtxoSet (r:1 w:1)
+	/// Proof: MantaSbt UtxoSet (max_values: None, max_size: Some(89), added: 2564, mode: MaxEncodedLen)
+	/// Storage: MantaSbt ShardTrees (r:1 w:1)
+	/// Proof: MantaSbt ShardTrees (max_values: None, max_size: Some(654), added: 3129, mode: MaxEncodedLen)
+	/// Storage: MantaSbt Shards (r:0 w:1)
+	/// Proof: MantaSbt Shards (max_values: None, max_size: Some(395), added: 2870, mode: MaxEncodedLen)
 	fn force_mint_sbt_eth() -> Weight {
-		// Minimum execution time: 39_354_533 nanoseconds.
-		Weight::from_ref_time(39_374_716_000)
-			.saturating_add(T::DbWeight::get().reads(6))
-			.saturating_add(T::DbWeight::get().writes(5))
+		// Proof Size summary in bytes:
+		//  Measured:  `234`
+		//  Estimated: `4119`
+		// Minimum execution time: 5_122_136_000 picoseconds.
+		Weight::from_parts(5_135_282_000, 4119)
+			.saturating_add(T::DbWeight::get().reads(6_u64))
+			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
-	// Storage: MantaSbt ForceAccount (r:0 w:1)
+	/// Storage: MantaSbt ForceAccount (r:0 w:1)
+	/// Proof: MantaSbt ForceAccount (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
 	fn change_force_account() -> Weight {
-		// Minimum execution time: 15_851 nanoseconds.
-		Weight::from_ref_time(16_229_000)
-			.saturating_add(T::DbWeight::get().writes(1))
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 3_767_000 picoseconds.
+		Weight::from_parts(3_897_000, 0)
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-	// Storage: MantaSbt MintIdRegistry (r:1 w:0)
-	// Storage: Timestamp Now (r:1 w:0)
-	// Storage: MantaSbt PublicMintList (r:1 w:0)
-	// Storage: MantaSbt ReservedIds (r:1 w:1)
-	// Storage: MantaSbt SbtMetadataV2 (r:1 w:1)
-	// Storage: MantaSbt UtxoSet (r:1 w:1)
-	// Storage: MantaSbt ShardTrees (r:1 w:1)
-	// Storage: MantaSbt Shards (r:0 w:1)
+	/// Storage: MantaSbt MintIdRegistry (r:1 w:0)
+	/// Proof: MantaSbt MintIdRegistry (max_values: None, max_size: Some(339), added: 2814, mode: MaxEncodedLen)
+	/// Storage: Timestamp Now (r:1 w:0)
+	/// Proof: Timestamp Now (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
+	/// Storage: MantaSbt PublicMintList (r:1 w:0)
+	/// Proof: MantaSbt PublicMintList (max_values: None, max_size: Some(20), added: 2495, mode: MaxEncodedLen)
+	/// Storage: MantaSbt ReservedIds (r:1 w:1)
+	/// Proof: MantaSbt ReservedIds (max_values: None, max_size: Some(80), added: 2555, mode: MaxEncodedLen)
+	/// Storage: MantaSbt SbtMetadataV2 (r:1 w:1)
+	/// Proof: MantaSbt SbtMetadataV2 (max_values: None, max_size: Some(373), added: 2848, mode: MaxEncodedLen)
+	/// Storage: MantaSbt UtxoSet (r:1 w:1)
+	/// Proof: MantaSbt UtxoSet (max_values: None, max_size: Some(89), added: 2564, mode: MaxEncodedLen)
+	/// Storage: MantaSbt ShardTrees (r:1 w:1)
+	/// Proof: MantaSbt ShardTrees (max_values: None, max_size: Some(654), added: 3129, mode: MaxEncodedLen)
+	/// Storage: MantaSbt Shards (r:0 w:1)
+	/// Proof: MantaSbt Shards (max_values: None, max_size: Some(395), added: 2870, mode: MaxEncodedLen)
 	fn to_private() -> Weight {
-		// Minimum execution time: 39_355_971 nanoseconds.
-		Weight::from_ref_time(39_453_744_000)
-			.saturating_add(RocksDbWeight::get().reads(7))
-			.saturating_add(RocksDbWeight::get().writes(5))
+		// Proof Size summary in bytes:
+		//  Measured:  `473`
+		//  Estimated: `4119`
+		// Minimum execution time: 5_134_020_000 picoseconds.
+		Weight::from_parts(5_163_023_000, 4119)
+			.saturating_add(RocksDbWeight::get().reads(7_u64))
+			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
-	// Storage: MantaSbt ReservedIds (r:1 w:1)
-	// Storage: MantaSbt FreeReserveAccount (r:1 w:0)
-	// Storage: System Account (r:1 w:1)
-	// Storage: MantaSbt NextSbtId (r:1 w:1)
+	/// Storage: MantaSbt ReservedIds (r:1 w:1)
+	/// Proof: MantaSbt ReservedIds (max_values: None, max_size: Some(80), added: 2555, mode: MaxEncodedLen)
+	/// Storage: MantaSbt FreeReserveAccount (r:1 w:0)
+	/// Proof: MantaSbt FreeReserveAccount (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
+	/// Storage: System Account (r:1 w:1)
+	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	/// Storage: MantaSbt NextSbtId (r:1 w:1)
+	/// Proof: MantaSbt NextSbtId (max_values: Some(1), max_size: Some(16), added: 511, mode: MaxEncodedLen)
 	fn reserve_sbt() -> Weight {
-		// Minimum execution time: 50_199 nanoseconds.
-		Weight::from_ref_time(55_043_000)
-			.saturating_add(RocksDbWeight::get().reads(4))
-			.saturating_add(RocksDbWeight::get().writes(3))
+		// Proof Size summary in bytes:
+		//  Measured:  `142`
+		//  Estimated: `3593`
+		// Minimum execution time: 23_104_000 picoseconds.
+		Weight::from_parts(24_035_000, 3593)
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
-	// Storage: MantaSbt AllowlistAccount (r:0 w:1)
+	/// Storage: MantaSbt AllowlistAccount (r:0 w:1)
+	/// Proof: MantaSbt AllowlistAccount (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
 	fn change_allowlist_account() -> Weight {
-		// Minimum execution time: 16_000 nanoseconds.
-		Weight::from_ref_time(16_280_000)
-			.saturating_add(RocksDbWeight::get().writes(1))
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 3_768_000 picoseconds.
+		Weight::from_parts(3_968_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
-	// Storage: MantaSbt MintIdRegistry (r:1 w:0)
-	// Storage: Timestamp Now (r:1 w:0)
-	// Storage: MantaSbt AllowlistAccount (r:1 w:0)
-	// Storage: MantaSbt EvmAccountAllowlist (r:1 w:1)
-	// Storage: MantaSbt NextSbtId (r:1 w:1)
+	/// Storage: MantaSbt MintIdRegistry (r:1 w:0)
+	/// Proof: MantaSbt MintIdRegistry (max_values: None, max_size: Some(339), added: 2814, mode: MaxEncodedLen)
+	/// Storage: Timestamp Now (r:1 w:0)
+	/// Proof: Timestamp Now (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
+	/// Storage: MantaSbt AllowlistAccount (r:1 w:0)
+	/// Proof: MantaSbt AllowlistAccount (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
+	/// Storage: MantaSbt EvmAccountAllowlist (r:1 w:1)
+	/// Proof: MantaSbt EvmAccountAllowlist (max_values: None, max_size: Some(73), added: 2548, mode: MaxEncodedLen)
+	/// Storage: MantaSbt NextSbtId (r:1 w:1)
+	/// Proof: MantaSbt NextSbtId (max_values: Some(1), max_size: Some(16), added: 511, mode: MaxEncodedLen)
 	fn allowlist_evm_account() -> Weight {
-		// Minimum execution time: 30_138 nanoseconds.
-		Weight::from_ref_time(31_160_000)
-			.saturating_add(RocksDbWeight::get().reads(5))
-			.saturating_add(RocksDbWeight::get().writes(2))
+		// Proof Size summary in bytes:
+		//  Measured:  `382`
+		//  Estimated: `3804`
+		// Minimum execution time: 12_915_000 picoseconds.
+		Weight::from_parts(13_435_000, 3804)
+			.saturating_add(RocksDbWeight::get().reads(5_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
-	// Storage: MantaSbt NextMintId (r:1 w:1)
-	// Storage: MantaSbt PublicMintList (r:0 w:1)
-	// Storage: MantaSbt MintIdRegistry (r:0 w:1)
+	/// Storage: MantaSbt NextMintId (r:1 w:1)
+	/// Proof: MantaSbt NextMintId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
+	/// Storage: MantaSbt PublicMintList (r:0 w:1)
+	/// Proof: MantaSbt PublicMintList (max_values: None, max_size: Some(20), added: 2495, mode: MaxEncodedLen)
+	/// Storage: MantaSbt MintIdRegistry (r:0 w:1)
+	/// Proof: MantaSbt MintIdRegistry (max_values: None, max_size: Some(339), added: 2814, mode: MaxEncodedLen)
 	fn new_mint_info() -> Weight {
-		// Minimum execution time: 18_710 nanoseconds.
-		Weight::from_ref_time(19_166_000)
-			.saturating_add(RocksDbWeight::get().reads(1))
-			.saturating_add(RocksDbWeight::get().writes(3))
+		// Proof Size summary in bytes:
+		//  Measured:  `142`
+		//  Estimated: `1489`
+		// Minimum execution time: 6_101_000 picoseconds.
+		Weight::from_parts(6_492_000, 1489)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
-	// Storage: MantaSbt MintIdRegistry (r:1 w:1)
-	// Storage: MantaSbt PublicMintList (r:0 w:1)
+	/// Storage: MantaSbt MintIdRegistry (r:1 w:1)
+	/// Proof: MantaSbt MintIdRegistry (max_values: None, max_size: Some(339), added: 2814, mode: MaxEncodedLen)
+	/// Storage: MantaSbt PublicMintList (r:0 w:1)
+	/// Proof: MantaSbt PublicMintList (max_values: None, max_size: Some(20), added: 2495, mode: MaxEncodedLen)
 	fn update_mint_info() -> Weight {
-		// Minimum execution time: 21_958 nanoseconds.
-		Weight::from_ref_time(22_914_000)
-			.saturating_add(RocksDbWeight::get().reads(1))
-			.saturating_add(RocksDbWeight::get().writes(2))
+		// Proof Size summary in bytes:
+		//  Measured:  `254`
+		//  Estimated: `3804`
+		// Minimum execution time: 8_366_000 picoseconds.
+		Weight::from_parts(8_917_000, 3804)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
-	// Storage: MantaSbt MintIdRegistry (r:1 w:0)
-	// Storage: Timestamp Now (r:1 w:0)
-	// Storage: System BlockHash (r:1 w:0)
-	// Storage: MantaSbt EvmAccountAllowlist (r:1 w:1)
-	// Storage: MantaSbt SbtMetadataV2 (r:1 w:1)
-	// Storage: MantaSbt UtxoSet (r:1 w:1)
-	// Storage: MantaSbt ShardTrees (r:1 w:1)
-	// Storage: MantaSbt Shards (r:0 w:1)
+	/// Storage: MantaSbt MintIdRegistry (r:1 w:0)
+	/// Proof: MantaSbt MintIdRegistry (max_values: None, max_size: Some(339), added: 2814, mode: MaxEncodedLen)
+	/// Storage: Timestamp Now (r:1 w:0)
+	/// Proof: Timestamp Now (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
+	/// Storage: System BlockHash (r:1 w:0)
+	/// Proof: System BlockHash (max_values: None, max_size: Some(44), added: 2519, mode: MaxEncodedLen)
+	/// Storage: MantaSbt EvmAccountAllowlist (r:1 w:1)
+	/// Proof: MantaSbt EvmAccountAllowlist (max_values: None, max_size: Some(73), added: 2548, mode: MaxEncodedLen)
+	/// Storage: MantaSbt SbtMetadataV2 (r:1 w:1)
+	/// Proof: MantaSbt SbtMetadataV2 (max_values: None, max_size: Some(373), added: 2848, mode: MaxEncodedLen)
+	/// Storage: MantaSbt UtxoSet (r:1 w:1)
+	/// Proof: MantaSbt UtxoSet (max_values: None, max_size: Some(89), added: 2564, mode: MaxEncodedLen)
+	/// Storage: MantaSbt ShardTrees (r:1 w:1)
+	/// Proof: MantaSbt ShardTrees (max_values: None, max_size: Some(654), added: 3129, mode: MaxEncodedLen)
+	/// Storage: MantaSbt Shards (r:0 w:1)
+	/// Proof: MantaSbt Shards (max_values: None, max_size: Some(395), added: 2870, mode: MaxEncodedLen)
 	fn mint_sbt_eth() -> Weight {
-		// Minimum execution time: 39_468_616 nanoseconds.
-		Weight::from_ref_time(39_560_727_000)
-			.saturating_add(RocksDbWeight::get().reads(7))
-			.saturating_add(RocksDbWeight::get().writes(5))
+		// Proof Size summary in bytes:
+		//  Measured:  `545`
+		//  Estimated: `4119`
+		// Minimum execution time: 5_173_945_000 picoseconds.
+		Weight::from_parts(5_186_347_000, 4119)
+			.saturating_add(RocksDbWeight::get().reads(7_u64))
+			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
-	// Storage: MantaSbt AllowlistAccount (r:0 w:1)
+	/// Storage: MantaSbt AllowlistAccount (r:0 w:1)
+	/// Proof: MantaSbt AllowlistAccount (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
 	fn change_free_reserve_account() -> Weight {
-		// Minimum execution time: 15_919 nanoseconds.
-		Weight::from_ref_time(16_287_000)
-			.saturating_add(RocksDbWeight::get().writes(1))
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 3_667_000 picoseconds.
+		Weight::from_parts(3_888_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
-	// Storage: MantaSbt EvmAccountAllowlist (r:0 w:1)
+	/// Storage: MantaSbt EvmAccountAllowlist (r:0 w:1)
+	/// Proof: MantaSbt EvmAccountAllowlist (max_values: None, max_size: Some(73), added: 2548, mode: MaxEncodedLen)
 	fn remove_allowlist_evm_account() -> Weight {
-		// Minimum execution time: 16_210 nanoseconds.
-		Weight::from_ref_time(17_519_000)
-			.saturating_add(RocksDbWeight::get().writes(1))
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 4_468_000 picoseconds.
+		Weight::from_parts(4_619_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
-	// Storage: MantaSbt NextSbtId (r:0 w:1)
+	/// Storage: MantaSbt NextSbtId (r:0 w:1)
+	/// Proof: MantaSbt NextSbtId (max_values: Some(1), max_size: Some(16), added: 511, mode: MaxEncodedLen)
 	fn set_next_sbt_id() -> Weight {
-		// Minimum execution time: 15_180 nanoseconds.
-		Weight::from_ref_time(15_479_000)
-			.saturating_add(RocksDbWeight::get().writes(1))
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 3_667_000 picoseconds.
+		Weight::from_parts(3_787_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
-	// Storage: MantaSbt ForceAccount (r:1 w:0)
-	// Storage: MantaSbt NextSbtId (r:1 w:0)
-	// Storage: MantaSbt SbtMetadataV2 (r:1 w:1)
-	// Storage: MantaSbt UtxoSet (r:1 w:1)
-	// Storage: MantaSbt ShardTrees (r:1 w:1)
-	// Storage: MantaSbt Shards (r:0 w:1)
+	/// Storage: MantaSbt ForceAccount (r:1 w:0)
+	/// Proof: MantaSbt ForceAccount (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
+	/// Storage: MantaSbt NextSbtId (r:1 w:0)
+	/// Proof: MantaSbt NextSbtId (max_values: Some(1), max_size: Some(16), added: 511, mode: MaxEncodedLen)
+	/// Storage: MantaSbt SbtMetadataV2 (r:1 w:1)
+	/// Proof: MantaSbt SbtMetadataV2 (max_values: None, max_size: Some(373), added: 2848, mode: MaxEncodedLen)
+	/// Storage: MantaSbt UtxoSet (r:1 w:1)
+	/// Proof: MantaSbt UtxoSet (max_values: None, max_size: Some(89), added: 2564, mode: MaxEncodedLen)
+	/// Storage: MantaSbt ShardTrees (r:1 w:1)
+	/// Proof: MantaSbt ShardTrees (max_values: None, max_size: Some(654), added: 3129, mode: MaxEncodedLen)
+	/// Storage: MantaSbt Shards (r:0 w:1)
+	/// Proof: MantaSbt Shards (max_values: None, max_size: Some(395), added: 2870, mode: MaxEncodedLen)
 	fn force_to_private() -> Weight {
-		// Minimum execution time: 39_347_955 nanoseconds.
-		Weight::from_ref_time(39_386_564_000)
-			.saturating_add(RocksDbWeight::get().reads(5))
-			.saturating_add(RocksDbWeight::get().writes(4))
+		// Proof Size summary in bytes:
+		//  Measured:  `234`
+		//  Estimated: `4119`
+		// Minimum execution time: 5_119_863_000 picoseconds.
+		Weight::from_parts(5_152_403_000, 4119)
+			.saturating_add(RocksDbWeight::get().reads(5_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
-	// Storage: MantaSbt ForceAccount (r:1 w:0)
-	// Storage: MantaSbt NextSbtId (r:1 w:0)
-	// Storage: MantaSbt SbtMetadataV2 (r:1 w:1)
-	// Storage: MantaSbt EvmAccountAllowlist (r:1 w:1)
-	// Storage: MantaSbt UtxoSet (r:1 w:1)
-	// Storage: MantaSbt ShardTrees (r:1 w:1)
-	// Storage: MantaSbt Shards (r:0 w:1)
+	/// Storage: MantaSbt ForceAccount (r:1 w:0)
+	/// Proof: MantaSbt ForceAccount (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
+	/// Storage: MantaSbt NextSbtId (r:1 w:0)
+	/// Proof: MantaSbt NextSbtId (max_values: Some(1), max_size: Some(16), added: 511, mode: MaxEncodedLen)
+	/// Storage: MantaSbt SbtMetadataV2 (r:1 w:1)
+	/// Proof: MantaSbt SbtMetadataV2 (max_values: None, max_size: Some(373), added: 2848, mode: MaxEncodedLen)
+	/// Storage: MantaSbt EvmAccountAllowlist (r:1 w:1)
+	/// Proof: MantaSbt EvmAccountAllowlist (max_values: None, max_size: Some(73), added: 2548, mode: MaxEncodedLen)
+	/// Storage: MantaSbt UtxoSet (r:1 w:1)
+	/// Proof: MantaSbt UtxoSet (max_values: None, max_size: Some(89), added: 2564, mode: MaxEncodedLen)
+	/// Storage: MantaSbt ShardTrees (r:1 w:1)
+	/// Proof: MantaSbt ShardTrees (max_values: None, max_size: Some(654), added: 3129, mode: MaxEncodedLen)
+	/// Storage: MantaSbt Shards (r:0 w:1)
+	/// Proof: MantaSbt Shards (max_values: None, max_size: Some(395), added: 2870, mode: MaxEncodedLen)
 	fn force_mint_sbt_eth() -> Weight {
-		// Minimum execution time: 39_354_533 nanoseconds.
-		Weight::from_ref_time(39_374_716_000)
-			.saturating_add(RocksDbWeight::get().reads(6))
-			.saturating_add(RocksDbWeight::get().writes(5))
+		// Proof Size summary in bytes:
+		//  Measured:  `234`
+		//  Estimated: `4119`
+		// Minimum execution time: 5_122_136_000 picoseconds.
+		Weight::from_parts(5_135_282_000, 4119)
+			.saturating_add(RocksDbWeight::get().reads(6_u64))
+			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
-	// Storage: MantaSbt ForceAccount (r:0 w:1)
+	/// Storage: MantaSbt ForceAccount (r:0 w:1)
+	/// Proof: MantaSbt ForceAccount (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
 	fn change_force_account() -> Weight {
-		// Minimum execution time: 15_851 nanoseconds.
-		Weight::from_ref_time(16_229_000)
-			.saturating_add(RocksDbWeight::get().writes(1))
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 3_767_000 picoseconds.
+		Weight::from_parts(3_897_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

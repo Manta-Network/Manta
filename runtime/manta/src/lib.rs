@@ -1442,7 +1442,7 @@ impl_runtime_apis! {
                         .collect::<Vec<_>>();
 
                     assets.push(MultiAsset {
-                        id: Concrete(DotLocation::get()),
+                        id: Concrete(MantaLocation::get()),
                         fun: Fungible(1_000_000 * MANTA),
                     });
                     assets.into()
