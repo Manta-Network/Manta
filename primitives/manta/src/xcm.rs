@@ -172,8 +172,7 @@ where
         // Check the first asset
         match (first_asset.id, first_asset.fun) {
             (XcmAssetId::Concrete(id), Fungibility::Fungible(_)) => {
-                let id_2 = id.clone().into();
-                let asset_id = match M::asset_id(&id_2) {
+                let asset_id = match M::asset_id(&id.clone().into()) {
                     Some(id) => id,
                     None => {
                         log::debug!(
