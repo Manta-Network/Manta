@@ -55,13 +55,10 @@ use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain::primitives::{
     DmpMessageHandler, Id as ParaId, Sibling, XcmpMessageFormat, XcmpMessageHandler,
 };
-use xcm::{
-    latest::prelude::*, v3::Weight as XcmWeight, Version as XcmVersion, VersionedMultiLocation,
-    VersionedXcm,
-};
+use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, VersionedXcm};
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowUnpaidExecutionFrom, ConvertedConcreteAssetId, EnsureXcmOrigin, FixedRateOfFungible,
+    AllowUnpaidExecutionFrom, ConvertedConcreteId, EnsureXcmOrigin, FixedRateOfFungible,
     ParentIsPreset, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeRevenue,
     TakeWeightCredit, WeightInfoBounds,
@@ -77,6 +74,14 @@ cfg_if::cfg_if! {
         type RuntimeXcmWeight = calamari_runtime::weights::xcm::CalamariXcmWeight<RuntimeCall>;
     } else {
         type RuntimeXcmWeight = manta_runtime::weights::xcm::MantaXcmWeight<RuntimeCall>;
+    }
+}
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "calamari")] {
+        type PalletXcmWeightInfo = calamari_runtime::weights::pallet_xcm::SubstrateWeight<Runtime>;
+    } else {
+        type PalletXcmWeightInfo = manta_runtime::weights::pallet_xcm::SubstrateWeight<Runtime>;
     }
 }
 
@@ -230,12 +235,7 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
     // Used when the incoming asset is a fungible concrete asset matching the given location or name:
     IsNativeConcrete<SelfReserve>,
     // Used to match incoming assets which are not the native asset.
-    ConvertedConcreteAssetId<
-        CalamariAssetId,
-        Balance,
-        AssetIdLocationConvert<AssetManager>,
-        JustTry,
-    >,
+    ConvertedConcreteId<CalamariAssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
 >;
 
 pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
@@ -300,12 +300,7 @@ impl TakeRevenue for XcmNativeFeeToTreasury {
 pub type CalamariXcmFeesToAccount = XcmFeesToAccount<
     AccountId,
     Assets,
-    ConvertedConcreteAssetId<
-        CalamariAssetId,
-        Balance,
-        AssetIdLocationConvert<AssetManager>,
-        JustTry,
-    >,
+    ConvertedConcreteId<CalamariAssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
     XcmFeesAccount,
 >;
 
@@ -548,10 +543,7 @@ impl pallet_xcm::Config for Runtime {
     type MaxRemoteLockConsumers = ConstU32<0>;
     type MaxLockers = ConstU32<8>;
     type RemoteLockConsumerIdentifier = ();
-    #[cfg(feature = "calamari")]
-    type WeightInfo = calamari_runtime::weights::pallet_xcm::SubstrateWeight<Runtime>;
-    #[cfg(feature = "manta")]
-    type WeightInfo = manta_runtime::weights::pallet_xcm::SubstrateWeight<Runtime>;
+    type WeightInfo = PalletXcmWeightInfo;
 }
 
 parameter_types! {

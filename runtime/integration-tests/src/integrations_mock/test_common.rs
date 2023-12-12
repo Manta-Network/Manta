@@ -24,9 +24,9 @@ use frame_support::{
     assert_err, assert_noop, assert_ok,
     error::BadOrigin,
     traits::{
-        fungibles::{self, Inspect, InspectEnumerable},
+        fungibles::Inspect,
         tokens::{ExistenceRequirement, Provenance},
-        Get, PalletInfo, PalletsInfoAccess,
+        Get, PalletsInfoAccess,
     },
 };
 use runtime_common::test_helpers::{
@@ -41,7 +41,7 @@ use manta_primitives::{
         FungibleLedgerError,
     },
     constants::time::{DAYS, HOURS},
-    types::{AccountId, Balance, CalamariAssetId},
+    types::{AccountId, CalamariAssetId},
 };
 use manta_support::manta_pay::{asset_value_encode, field_from_id, Asset};
 use session_key_primitives::util::unchecked_account_id;

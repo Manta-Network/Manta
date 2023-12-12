@@ -22,7 +22,6 @@ use crate::xcm_mock::parachain::XcmFeesAccount;
 use codec::Encode;
 use frame_support::{
     assert_err, assert_noop, assert_ok, traits::tokens::fungibles::Mutate, weights::Weight,
-    WeakBoundedVec,
 };
 use parachain::{RuntimeEvent, System};
 

@@ -50,7 +50,7 @@ pub mod pallet {
             tokens::{ExistenceRequirement, Provenance},
             Contains, StorageVersion,
         },
-        transactional, DefaultNoBound, PalletId,
+        transactional, PalletId,
     };
     use frame_system::pallet_prelude::*;
     use manta_primitives::{

@@ -52,6 +52,14 @@ use xcm_executor::{Config, XcmExecutor};
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 
+cfg_if::cfg_if! {
+    if #[cfg(feature = "calamari")] {
+        type PalletXcmWeightInfo = calamari_runtime::weights::pallet_xcm::SubstrateWeight<Runtime>;
+    } else {
+        type PalletXcmWeightInfo = manta_runtime::weights::pallet_xcm::SubstrateWeight<Runtime>;
+    }
+}
+
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
 }
@@ -213,10 +221,7 @@ impl pallet_xcm::Config for Runtime {
     type MaxRemoteLockConsumers = ConstU32<0>;
     type MaxLockers = ConstU32<8>;
     type RemoteLockConsumerIdentifier = ();
-    #[cfg(feature = "calamari")]
-    type WeightInfo = calamari_runtime::weights::pallet_xcm::SubstrateWeight<Runtime>;
-    #[cfg(feature = "manta")]
-    type WeightInfo = manta_runtime::weights::pallet_xcm::SubstrateWeight<Runtime>;
+    type WeightInfo = PalletXcmWeightInfo;
 }
 
 parameter_types! {

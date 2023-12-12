@@ -28,8 +28,7 @@ use xcm::{
     v3::{
         Fungibility::*,
         Junction::{AccountId32, Parachain},
-        Junctions::*,
-        MultiAsset, MultiLocation, Parent,
+        MultiAsset, MultiLocation,
     },
 };
 
