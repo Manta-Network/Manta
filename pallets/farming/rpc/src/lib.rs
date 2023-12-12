@@ -27,7 +27,7 @@ pub use pallet_farming_rpc_runtime_api::{self as runtime_api, FarmingRuntimeApi}
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_rpc::number::NumberOrHex;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 
 #[rpc(client, server)]
 pub trait FarmingRpcApi<BlockHash, AccountId, CurrencyId, PoolId>

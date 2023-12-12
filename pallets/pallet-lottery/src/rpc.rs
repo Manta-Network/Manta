@@ -25,7 +25,7 @@ use jsonrpsee::{
 };
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block};
+use sp_runtime::traits::Block;
 use sp_std::sync::Arc;
 
 pub const LOTTERY_ERROR: i32 = 777;

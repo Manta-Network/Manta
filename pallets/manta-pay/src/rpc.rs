@@ -29,7 +29,7 @@ use manta_support::manta_pay::{
 };
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block};
+use sp_runtime::traits::Block;
 
 /// Pull Ledger Diff Error Code
 pub const PULL_LEDGER_DIFF_ERROR: i32 = 1;
