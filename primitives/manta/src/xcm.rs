@@ -491,13 +491,6 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionFro
             }
         }
 
-        for next in iter {
-            if let TransferReserveAsset { .. } = next {
-                // We've currently blocked transfers of MANTA on the instruction level
-                return Err(ProcessMessageError::Unsupported);
-            }
-        }
-
         Ok(())
     }
 }
