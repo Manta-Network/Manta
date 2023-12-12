@@ -27,6 +27,7 @@ use crate::{
 
 use frame_support::{assert_noop, assert_ok, traits::Currency};
 use frame_system::RawOrigin;
+use sp_runtime::TokenError;
 
 const UNIT: Balance = 1_000_000_000_000;
 const HIGH_BALANCE: Balance = 1_000_000_000 * UNIT;
@@ -515,11 +516,9 @@ fn winner_distribution_should_be_equality_with_equal_deposits() {
                 // advance block number to reseed RNG
                 System::set_block_number(NUMBER_OF_USERS + x);
                 // simulate accrued staking rewards
-                assert_ok!(Balances::mutate_account(
+                assert_ok!(Balances::deposit_into_existing(
                     &Lottery::account_id(),
-                    |acc| {
-                        acc.free = acc.free.saturating_add(WINNING_AMT.into());
-                    }
+                    WINNING_AMT.into(),
                 ));
                 // draw lottery
                 assert_ok!(Lottery::draw_lottery(RawOrigin::Root.into()));
@@ -893,8 +892,8 @@ fn many_deposit_withdrawals_work() {
             reward_collators_for_round(round_count - 1, all_collators);
             roll_to_round_end(1);
             assert_ok!(Lottery::start_lottery(RawOrigin::Root.into()));
+            const USER_SEED: u32 = 696_969;
             for user in 0..500 {
-                const USER_SEED: u32 = 696_969;
                 let (depositor, _) = crate::mock::from_bench::create_funded_user::<Test>(
                     "depositor",
                     USER_SEED - user,
@@ -1125,7 +1124,7 @@ fn fails_withdrawing_more_than_vmanta() {
             ));
             assert_noop!(
                 Lottery::request_withdraw(Origin::signed(CHARLIE), balance),
-                pallet_assets::Error::<Test>::BalanceLow
+                TokenError::FundsUnavailable
             );
             assert_eq!(0, Assets::balance(V_MANTA_ID, CHARLIE));
 

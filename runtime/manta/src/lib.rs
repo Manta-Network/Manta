@@ -1487,8 +1487,8 @@ impl_runtime_apis! {
                 }
 
                 fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
-                    let origin = MantaLocation::get();
-                    let assets: MultiAssets = (Concrete(MantaLocation::get()), 1_000 * MANTA).into();
+                    let origin = DotLocation::get();
+                    let assets: MultiAssets = (Concrete(DotLocation::get()), 1_000 * MANTA).into();
                     let ticket = MultiLocation { parents: 0, interior: Here };
                     Ok((origin, ticket, assets))
                 }
