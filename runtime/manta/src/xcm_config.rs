@@ -123,7 +123,7 @@ parameter_types! {
     /// Used in native traders
     /// This might be able to skipped.
     /// We have to use `here()` because of reanchoring logic
-    pub ParaTokenPerSecond: (cumulus_primitives_core::AssetId, u128, u128) = (Concrete(MultiLocation::here()), 1_000_000_000, 1_000_000_000);
+    pub ParaTokenPerSecond: (cumulus_primitives_core::AssetId, u128, u128) = (Concrete(MultiLocation::here()), 1_000_000_000, 0);
     pub const MaxInstructions: u32 = 100;
 }
 

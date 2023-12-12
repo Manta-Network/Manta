@@ -1338,7 +1338,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
     let amount = 222u128;
     let units_per_second = 1_250_000u128;
     let fee = calculate_fee(units_per_second, self_reserve_xtokens_weight_on_receiver());
-    let fee = 50;
+    //let fee = 500;
 
     let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
     let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
@@ -1346,13 +1346,13 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
         &para_a_asset_metadata,
-        Some(0u128),
+        Some(units_per_second),
         None,
     );
     let _ = register_assets_on_parachain::<ParaA>(
         &para_b_source_location,
         &para_b_asset_metadata,
-        Some(0u128),
+        Some(units_per_second),
         None,
     );
 
@@ -1379,6 +1379,10 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
             },
         ),
     };
+
+    ParaB::execute_with(|| {
+        assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), 0);
+    });
 
     ParaA::execute_with(|| {
         assert_ok!(parachain::XTokens::transfer_with_fee(
@@ -1418,7 +1422,7 @@ fn send_para_b_asset_to_para_b_with_trader_and_fee() {
         units_per_second,
         non_self_reserve_xtokens_weight_on_receiver(),
     );
-    let fee = 50;
+    //let fee = 50;
 
     let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
     let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
@@ -1515,7 +1519,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back_with_trader_and_fee() {
     let amount = 5000000u128;
     let units_per_second = 1_250_000u128;
     let fee = calculate_fee(units_per_second, self_reserve_xtokens_weight_on_receiver());
-    let fee = 50;
+    //let fee = 50;
 
     let weight = non_self_reserve_xtokens_weight_on_receiver();
     let fee_on_b_when_send_back = calculate_fee(ParaTokenPerSecond::get().1, weight);

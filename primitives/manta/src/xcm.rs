@@ -172,22 +172,29 @@ where
         // Check the first asset
         match (first_asset.id, first_asset.fun) {
             (XcmAssetId::Concrete(id), Fungibility::Fungible(_)) => {
-                let asset_id = M::asset_id(&id.clone().into()).ok_or({
-                    log::debug!(
-                        target: "FirstAssetTrader::buy_weight",
-                        "asset_id missing for asset location with id: {:?}",
-                        id,
-                    );
-                    XcmError::TooExpensive
-                })?;
-                let units_per_second = M::units_per_second(&asset_id).ok_or({
-                    log::debug!(
-                        target: "FirstAssetTrader::buy_weight",
-                        "units_per_second missing for asset with id: {:?}",
-                        id,
-                    );
-                    XcmError::TooExpensive
-                })?;
+                let id_2 = id.clone().into();
+                let asset_id = match M::asset_id(&id_2) {
+                    Some(id) => id,
+                    None => {
+                        log::debug!(
+                            target: "FirstAssetTrader::buy_weight",
+                            "asset_id missing for asset location with id: {:?}",
+                            id,
+                        );
+                        return Err(XcmError::TooExpensive);
+                    }
+                };
+                let units_per_second = match M::units_per_second(&asset_id) {
+                    Some(units) => units,
+                    None => {
+                        log::debug!(
+                            target: "FirstAssetTrader::buy_weight",
+                            "units_per_second missing for asset with id: {:?}",
+                            id,
+                        );
+                        return Err(XcmError::TooExpensive);
+                    }
+                };
 
                 let amount = (units_per_second.saturating_mul(weight.ref_time() as u128))
                     / (WEIGHT_PER_SECOND as u128);
@@ -538,13 +545,6 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionDes
                 *weight_limit = Limited(max_weight);
             }
             _ => {
-                return Err(ProcessMessageError::Unsupported);
-            }
-        }
-
-        for next in iter {
-            if let TransferReserveAsset { .. } = next {
-                // We've currently blocked transfers of MANTA on the instruction level
                 return Err(ProcessMessageError::Unsupported);
             }
         }
