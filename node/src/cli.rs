@@ -15,6 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Command Line Interfaces
+#![allow(clippy::large_enum_variant)]
 
 use crate::chain_specs;
 use clap::Parser;

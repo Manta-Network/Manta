@@ -309,7 +309,7 @@ where
 {
     #[inline]
     fn convert_ref(location: impl Borrow<MultiLocation>) -> Result<M::AssetId, ()> {
-        M::asset_id(&location.borrow().clone().into()).ok_or(())
+        M::asset_id(&(*location.borrow()).into()).ok_or(())
     }
 
     #[inline]

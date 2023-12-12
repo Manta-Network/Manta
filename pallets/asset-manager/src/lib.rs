@@ -948,7 +948,7 @@ pub mod pallet {
     {
         #[inline]
         fn get(location: &MultiLocation) -> Option<u128> {
-            MinXcmFee::<T>::get(&T::Location::from(location.clone()))
+            MinXcmFee::<T>::get(&T::Location::from(*location))
         }
     }
 }

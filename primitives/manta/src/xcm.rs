@@ -172,7 +172,7 @@ where
         // Check the first asset
         match (first_asset.id, first_asset.fun) {
             (XcmAssetId::Concrete(id), Fungibility::Fungible(_)) => {
-                let asset_id = match M::asset_id(&id.clone().into()) {
+                let asset_id = match M::asset_id(&id.into()) {
                     Some(id) => id,
                     None => {
                         log::debug!(
@@ -205,7 +205,7 @@ where
                 }
                 let required = MultiAsset {
                     fun: Fungibility::Fungible(amount),
-                    id: XcmAssetId::Concrete(id.clone()),
+                    id: XcmAssetId::Concrete(id),
                 };
 
                 log::debug!(
@@ -271,7 +271,7 @@ where
             *prev_amount = prev_amount.saturating_sub(amount);
             Some(MultiAsset {
                 fun: Fungibility::Fungible(amount),
-                id: XcmAssetId::Concrete(id.clone()),
+                id: XcmAssetId::Concrete(*id),
             })
         } else {
             None
@@ -287,7 +287,7 @@ where
     #[inline]
     fn drop(&mut self) {
         if let Some((id, amount, _)) = &self.refund_cache {
-            R::take_revenue((id.clone(), *amount).into());
+            R::take_revenue((*id, *amount).into());
         }
     }
 }

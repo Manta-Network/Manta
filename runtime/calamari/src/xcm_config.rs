@@ -46,7 +46,7 @@ use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowUnpaidExecutionFrom, ConvertedConcreteAssetId, EnsureXcmOrigin, FixedRateOfFungible,
+    AllowUnpaidExecutionFrom, ConvertedConcreteId, EnsureXcmOrigin, FixedRateOfFungible,
     ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
     SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
     SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit, WeightInfoBounds,
@@ -143,12 +143,7 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
     // Used when the incoming asset is a fungible concrete asset matching the given location or name:
     IsNativeConcrete<SelfReserve>,
     // Used to match incoming assets which are not the native asset.
-    ConvertedConcreteAssetId<
-        CalamariAssetId,
-        Balance,
-        AssetIdLocationConvert<AssetManager>,
-        JustTry,
-    >,
+    ConvertedConcreteId<CalamariAssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
 >;
 
 match_types! {
@@ -209,12 +204,7 @@ impl TakeRevenue for XcmNativeFeeToTreasury {
 pub type CalamariXcmFeesToAccount = XcmFeesToAccount<
     AccountId,
     Assets,
-    ConvertedConcreteAssetId<
-        CalamariAssetId,
-        Balance,
-        AssetIdLocationConvert<AssetManager>,
-        JustTry,
-    >,
+    ConvertedConcreteId<CalamariAssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
     XcmFeesAccount,
 >;
 

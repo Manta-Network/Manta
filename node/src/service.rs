@@ -262,7 +262,7 @@ where
             let target_block = warp_sync_get::<Block, _>(
                 id,
                 relay_chain_interface.clone(),
-                task_manager.spawn_handle().clone(),
+                task_manager.spawn_handle(),
             );
             Some(WarpSyncParams::WaitForTarget(target_block))
         }
@@ -579,7 +579,7 @@ where
         system_rpc_tx,
         tx_handler_controller,
         telemetry: None,
-        sync_service: sync_service.clone(),
+        sync_service,
     })?;
 
     network_starter.start_network();
