@@ -30,6 +30,7 @@ use sp_runtime::{
     AccountId32,
 };
 
+use super::ReachableDest;
 use manta_primitives::{
     types::{BlockNumber, Header},
     xcm::AllowTopLevelPaidExecutionFrom,
@@ -222,6 +223,8 @@ impl pallet_xcm::Config for Runtime {
     type MaxLockers = ConstU32<8>;
     type RemoteLockConsumerIdentifier = ();
     type WeightInfo = PalletXcmWeightInfo;
+    #[cfg(feature = "runtime-benchmarks")]
+    type ReachableDest = ReachableDest;
 }
 
 parameter_types! {

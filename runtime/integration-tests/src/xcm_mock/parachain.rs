@@ -37,6 +37,7 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
+use super::ReachableDest;
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdLocationConvert, AssetIdType, AssetLocation, AssetRegistry,
@@ -544,6 +545,8 @@ impl pallet_xcm::Config for Runtime {
     type MaxLockers = ConstU32<8>;
     type RemoteLockConsumerIdentifier = ();
     type WeightInfo = PalletXcmWeightInfo;
+    #[cfg(feature = "runtime-benchmarks")]
+    type ReachableDest = ReachableDest;
 }
 
 parameter_types! {

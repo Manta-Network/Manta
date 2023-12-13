@@ -517,6 +517,9 @@ pub mod pallet {
 
         /// Marker Error, this error exists for `PhantomData` should never happen
         Marker,
+
+        /// Account cannot receive the assets.
+        Blocked,
     }
 
     impl<T> Pallet<T>
