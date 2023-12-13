@@ -1403,7 +1403,10 @@ impl_runtime_apis! {
             use xcm_config::{LocationToAccountId, XcmExecutorConfig};
 
             parameter_types! {
-                pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = None;
+                pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = Some((
+                    DotLocation::get(),
+                    MultiAsset { fun: Fungible(1 * MANTA), id: Concrete(DotLocation::get()) },
+                ));
                 pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = Some((
                     DotLocation::get(),
                     // Random amount for the benchmark.
@@ -1419,7 +1422,7 @@ impl_runtime_apis! {
                 type AccountIdConverter = LocationToAccountId;
 
                 fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
-                 Ok(DotLocation::get())
+                    Ok(DotLocation::get())
                 }
 
                 fn worst_case_holding(depositable_count: u32) -> MultiAssets {
@@ -1442,7 +1445,7 @@ impl_runtime_apis! {
                         .collect::<Vec<_>>();
 
                     assets.push(MultiAsset {
-                        id: Concrete(MantaLocation::get()),
+                        id: Concrete(DotLocation::get()),
                         fun: Fungible(1_000_000 * MANTA),
                     });
                     assets.into()

@@ -235,7 +235,7 @@ impl Config for XcmExecutorConfig {
     type UniversalLocation = UniversalLocation;
     type AssetLocker = PolkadotXcm;
     type AssetExchanger = ();
-    type PalletInstancesInfo = ();
+    type PalletInstancesInfo = crate::AllPalletsWithSystem;
     type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
     type MessageExporter = ();
     type UniversalAliases = Nothing;

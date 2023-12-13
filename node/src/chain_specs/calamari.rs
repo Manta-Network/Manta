@@ -34,7 +34,7 @@ pub const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
 pub const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
 
 /// The default XCM version to set in genesis config.
-pub const CALAMARI_SAFE_XCM_VERSION: u32 = 2;
+pub const CALAMARI_SAFE_XCM_VERSION: u32 = 3;
 
 /// Calamari Chain Spec
 pub type CalamariChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
