@@ -99,7 +99,6 @@ pallet-asset-manager = { path = '../../pallets/asset-manager', default-features 
 pallet-farming = { path = '../../pallets/farming', default-features = false }
 pallet-farming-rpc-runtime-api = { path = '../../pallets/farming/rpc/runtime-api', default-features = false }
 pallet-lottery = { path = '../../pallets/pallet-lottery', default-features = false }
-pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
 pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
 pallet-name-service = { path = '../../pallets/name-service', default-features = false }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
@@ -158,7 +157,6 @@ runtime-benchmarks = [
   'cumulus-pallet-parachain-system/runtime-benchmarks',
   'pallet-randomness/runtime-benchmarks',
   'pallet-lottery/runtime-benchmarks',
-  'pallet-manta-pay/runtime-benchmarks',
   'pallet-xcm-benchmarks/runtime-benchmarks',
   'pallet-manta-sbt/runtime-benchmarks',
   'pallet-name-service/runtime-benchmarks',
@@ -199,7 +197,6 @@ try-runtime = [
   'cumulus-pallet-xcmp-queue/try-runtime',
   'cumulus-pallet-xcm/try-runtime',
   'pallet-assets/try-runtime',
-  'pallet-manta-pay/try-runtime',
   'orml-xtokens/try-runtime',
   'pallet-manta-sbt/try-runtime',
   'pallet-name-service/try-runtime',
@@ -281,7 +278,6 @@ std = [
   'pallet-treasury/std',
   'pallet-assets/std',
   'pallet-asset-manager/std',
-  'pallet-manta-pay/std',
   'manta-support/std',
   'orml-traits/std',
   'orml-xtokens/std',

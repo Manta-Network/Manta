@@ -12,6 +12,7 @@ let prefixes = [
 const mantaSbtPrefix = ['0xee3a0abfdb3bbd4914c7ac9d04e5f843'];
 
 async function main() {
+  const args = process.argv;
   let storagePath = './data/storage.json';
   let mantaSbtStoragePath = './data/mantaSbtStorage.json';
   let forkPath = './data/fork.json';
@@ -20,9 +21,13 @@ async function main() {
   let forkedSpec = JSON.parse(fs.readFileSync(forkPath, 'utf8'));
   
   // Grab the items to be moved, then iterate through and insert into storage
-  storage
-  .filter((i) => prefixes.some((prefix) => i[0].startsWith(prefix)))
-  .forEach(([key, value]) => (forkedSpec.genesis.raw.top[key] = value));
+  // mantapay has been remove, so no need to insert utxos for manta runtime
+  if (args[2] || args[2] === 'calamari') {
+    console.log(`mantapay's storages will be insert to calamari runtime.`)
+    storage
+    .filter((i) => prefixes.some((prefix) => i[0].startsWith(prefix)))
+    .forEach(([key, value]) => (forkedSpec.genesis.raw.top[key] = value));
+  }
   
   // insert mantasbt's storages into chain spec
   if (fs.existsSync(mantaSbtStoragePath)) {

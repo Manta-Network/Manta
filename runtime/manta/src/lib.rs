@@ -273,7 +273,6 @@ impl Contains<RuntimeCall> for MantaFilter {
                 | orml_xtokens::Call::transfer_multiasset_with_fee {..})
             | RuntimeCall::Balances(_)
             | RuntimeCall::Preimage(_)
-            | RuntimeCall::MantaPay(_)
             | RuntimeCall::MantaSbt(_)
             | RuntimeCall::NameService(_)
             | RuntimeCall::TransactionPause(_)
@@ -956,7 +955,7 @@ construct_runtime!(
         // Assets management
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
-        MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
+        // 47 was occupied by mantapay
         MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
         NameService: pallet_name_service::{Pallet, Call, Storage, Event<T>} = 52,
 
@@ -1040,7 +1039,6 @@ mod benches {
         [pallet_parachain_staking, ParachainStaking]
         [pallet_randomness, Randomness]
         [pallet_lottery, Lottery]
-        [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
         [pallet_name_service, NameService]
         [zenlink_protocol, ZenlinkProtocol]
@@ -1206,22 +1204,6 @@ impl_runtime_apis! {
     impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
         fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
             ParachainSystem::collect_collation_info(header)
-        }
-    }
-
-    impl pallet_manta_pay::runtime::PullLedgerDiffApi<Block> for Runtime {
-        fn pull_ledger_diff(
-            checkpoint: RawCheckpoint,
-            max_receiver: u64,
-            max_sender: u64
-        ) -> PullResponse {
-            MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
-        }
-        fn pull_ledger_total_count() -> [u8; 16] {
-            MantaPay::pull_ledger_total_count()
-        }
-        fn initial_pull(checkpoint: RawCheckpoint, max_receiver: u64) -> InitialSyncResponse {
-            MantaPay::initial_pull(checkpoint.into(), max_receiver)
         }
     }
 

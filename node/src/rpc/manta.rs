@@ -24,10 +24,6 @@ use pallet_lottery::{
     rpc::{Lottery, LotteryRpcServer},
     runtime::LotteryApi,
 };
-use pallet_manta_pay::{
-    rpc::{Pull, PullApiServer},
-    runtime::PullLedgerDiffApi,
-};
 use pallet_manta_sbt::{
     rpc::{SBTPull, SBTPullApiServer},
     runtime::SBTPullLedgerDiffApi,
@@ -49,7 +45,6 @@ where
     C::Api: frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
     C::Api: BlockBuilder<Block>,
-    C::Api: PullLedgerDiffApi<Block>,
     C::Api: SBTPullLedgerDiffApi<Block>,
     C::Api: LotteryApi<Block>,
     C::Api: FarmingRuntimeApi<Block, AccountId, MantaAssetId, PoolId>,
@@ -71,11 +66,6 @@ where
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
     module
         .merge(TransactionPayment::new(client.clone()).into_rpc())
-        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
-
-    let manta_pay_rpc: jsonrpsee::RpcModule<Pull<Block, C>> = Pull::new(client.clone()).into_rpc();
-    module
-        .merge(manta_pay_rpc)
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
     let manta_sbt_rpc: jsonrpsee::RpcModule<SBTPull<Block, C>> =

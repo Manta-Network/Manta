@@ -318,7 +318,7 @@ jobs:
           cd $GITHUB_WORKSPACE/Manta/tests
           yarn install
           yarn
-          node append_storage.js
+          node append_storage.js calamari
           cd ../../
           mv $GITHUB_WORKSPACE/Manta/tests/data/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
           $HOME/dasel put -t string -v $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json -r toml \

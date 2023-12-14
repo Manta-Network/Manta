@@ -79,7 +79,7 @@ jobs:
           cd $GITHUB_WORKSPACE/tests
           yarn install
           yarn
-          node append_storage.js
+          node append_storage.js calamari
       - name: Run live benchmarks test
         env:
           RUST_BACKTRACE: full
