@@ -1682,61 +1682,6 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         ));
     }
 
-    // pallet_manta_pay
-    {
-        assert_eq!(
-            crate::RuntimeCall::get_call_names("MantaPay").len(),
-            4,
-            "Please update new extrinsic here."
-        );
-
-        let to_private_proof = [0u8; 552];
-        let private_transfer_proof = [0u8; 1290];
-        let to_public_proof = [0u8; 1000];
-        // to_private
-        let to_private_post = TransferPost::decode(&mut to_private_proof.as_slice()).unwrap();
-        let call = crate::RuntimeCall::MantaPay(pallet_manta_pay::Call::to_private {
-            post: to_private_post,
-        });
-        let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("pallet_manta_pay", "to_private", dispatch_info, call_len));
-
-        // private_transfer
-        let private_transfer_post =
-            TransferPost::decode(&mut private_transfer_proof.as_slice()).unwrap();
-        let call = crate::RuntimeCall::MantaPay(pallet_manta_pay::Call::private_transfer {
-            post: private_transfer_post,
-        });
-        let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push((
-            "pallet_manta_pay",
-            "private_transfer",
-            dispatch_info,
-            call_len,
-        ));
-
-        // to_public
-        let to_public_post = TransferPost::decode(&mut to_public_proof.as_slice()).unwrap();
-        let call = crate::RuntimeCall::MantaPay(pallet_manta_pay::Call::to_public {
-            post: to_public_post,
-        });
-        let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push(("pallet_manta_pay", "to_public", dispatch_info, call_len));
-
-        // public_transfer
-        let call = crate::RuntimeCall::MantaPay(pallet_manta_pay::Call::public_transfer {
-            asset: Default::default(),
-            sink: ALICE,
-        });
-        let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push((
-            "pallet_manta_pay",
-            "public_transfer",
-            dispatch_info,
-            call_len,
-        ));
-    }
-
     // pallet_manta_sbt
     {
         assert_eq!(
