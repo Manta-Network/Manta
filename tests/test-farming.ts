@@ -20,6 +20,12 @@ const test_config = {
 }
 
 function local_asset(parachainId: number, generalKey: string) {
+    let key = new Array(32);
+    key.fill(0);
+    const buffer = Buffer.from(generalKey, 'utf8');
+    for (let i = 0; i < buffer.length; ++i) {
+        key[i] = buffer[i];
+    }
     let location = {
         V3: {
             parents: 1,
@@ -29,7 +35,10 @@ function local_asset(parachainId: number, generalKey: string) {
                         Parachain: parachainId
                     },
                     {
-                        GeneralKey: generalKey
+                        GeneralKey: {
+                            length: generalKey.length,
+                            data: key
+                        }
                     }
                 ]
             }
