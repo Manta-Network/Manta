@@ -20,9 +20,10 @@ use super::{mock::ExtBuilder, *};
 use frame_support::{
     assert_ok,
     dispatch::Dispatchable,
-    traits::{PalletInfo, StorageInfo, StorageInfoTrait},
+    traits::{Get, PalletInfo, StorageInfo, StorageInfoTrait},
     StorageHasher, Twox128,
 };
+use manta_support::manta_pay::{asset_value_encode, field_from_id, Asset};
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_runtime::{
     traits::{Header as HeaderT, SignedExtension},
@@ -195,6 +196,55 @@ fn verify_pallet_prefixes() {
             },
         ]
     );
+}
+
+#[test]
+fn asset_manager_permissionless_manta_pay() {
+    ExtBuilder::default()
+        .with_balances(vec![(ALICE.clone(), INITIAL_BALANCE)])
+        .build()
+        .execute_with(|| {
+            let asset_id = <Runtime as pallet_asset_manager::Config>::PermissionlessStartId::get();
+            let init_supply = 1_000_000_000_000_000_000_u128;
+            assert_ok!(AssetManager::permissionless_register_asset(
+                RuntimeOrigin::signed(ALICE.clone()),
+                "dog token".as_bytes().to_vec().try_into().unwrap(),
+                "dog".as_bytes().to_vec().try_into().unwrap(),
+                12,
+                init_supply,
+            ));
+            // asset created gives alice the token
+            assert_eq!(Assets::balance(asset_id, ALICE.clone()), init_supply);
+
+            let amount = 1_000_000_000_000;
+            let dog_token = Asset {
+                id: field_from_id(asset_id),
+                value: asset_value_encode(amount),
+            };
+            let under_ed = Asset {
+                id: field_from_id(asset_id),
+                value: asset_value_encode(1),
+            };
+
+            frame_support::assert_noop!(
+                MantaPay::public_transfer(
+                    RuntimeOrigin::signed(ALICE.clone()),
+                    under_ed,
+                    BOB.clone(),
+                ),
+                pallet_manta_pay::Error::<Runtime>::PublicUpdateInvalidTransfer
+            );
+            assert_ok!(MantaPay::public_transfer(
+                RuntimeOrigin::signed(ALICE.clone()),
+                dog_token,
+                BOB.clone(),
+            ));
+
+            assert_eq!(
+                Assets::balance(asset_id, ALICE.clone()),
+                init_supply - amount
+            );
+        })
 }
 
 #[test]
