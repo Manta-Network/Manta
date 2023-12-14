@@ -57,7 +57,7 @@ pub fn self_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
                 }),
                 fun: Fungible(10000000000000),
             },
-            weight_limit: Limited(Weight::from_ref_time(100000000000u64)),
+            weight_limit: Limited(Weight::from_parts(100000000000u64, 0)),
         },
         DepositAsset {
             assets: Definite(assets),
@@ -95,7 +95,7 @@ pub fn to_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
                 }),
                 fun: Fungible(10000000000000),
             },
-            weight_limit: Limited(Weight::from_ref_time(100000000000u64)),
+            weight_limit: Limited(Weight::from_parts(100000000000u64, 0)),
         },
         DepositAsset {
             assets: Definite(assets),
@@ -134,7 +134,7 @@ pub fn to_reserve_xcm_message_sender_side<T>() -> Xcm<T> {
         WithdrawAsset(dummy_assets),
         InitiateReserveWithdraw {
             assets: Definite(assets),
-            reserve: dummy_multi_location.clone(),
+            reserve: dummy_multi_location,
             xcm: Xcm(vec![
                 BuyExecution {
                     fees: MultiAsset {
@@ -173,7 +173,7 @@ pub fn self_reserve_xcm_message_sender_side<T>() -> Xcm<T> {
     }]);
     Xcm(vec![TransferReserveAsset {
         assets: dummy_assets,
-        dest: dummy_multi_location.clone(),
+        dest: dummy_multi_location,
         xcm: Xcm(vec![
             BuyExecution {
                 fees: MultiAsset {
@@ -215,7 +215,7 @@ pub fn to_non_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
                 }),
                 fun: Fungible(10000000000000),
             },
-            weight_limit: Limited(Weight::from_ref_time(100000000000u64)),
+            weight_limit: Limited(Weight::from_parts(100000000000u64, 0)),
         },
         DepositReserveAsset {
             assets: AllCounted(1u32).into(),
@@ -232,7 +232,7 @@ pub fn to_non_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
                         }),
                         fun: Fungible(10000000000000),
                     },
-                    weight_limit: Limited(Weight::from_ref_time(100000000000u64)),
+                    weight_limit: Limited(Weight::from_parts(100000000000u64, 0)),
                 },
                 DepositAsset {
                     assets: Definite(assets),

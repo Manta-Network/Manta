@@ -21,7 +21,7 @@ const test_config = {
 
 function local_asset(parachainId: number, generalKey: string) {
     let location = {
-        V1: {
+        V3: {
             parents: 1,
             interior: {
                 X2: [

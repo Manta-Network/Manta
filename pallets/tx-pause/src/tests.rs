@@ -35,7 +35,7 @@ const SETCODE_CALL: &<Runtime as frame_system::Config>::RuntimeCall =
 
 #[test]
 fn pause_transaction_work() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         assert!(<Runtime as frame_system::Config>::BaseCallFilter::contains(
             REMARK_CALL
         ));
@@ -115,7 +115,7 @@ fn pause_transaction_work() {
 
 #[test]
 fn unpause_transaction_work() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         assert!(<Runtime as frame_system::Config>::BaseCallFilter::contains(
             REMARK_CALL
         ));
@@ -165,7 +165,7 @@ fn unpause_transaction_work() {
 
 #[test]
 fn pause_unpause_transactions_work() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         assert!(<Runtime as frame_system::Config>::BaseCallFilter::contains(
             REMARK_CALL
         ));
@@ -237,7 +237,7 @@ fn pause_unpause_transactions_work() {
 
 #[test]
 fn pause_unpause_pallets_work() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         System::set_block_number(1);
         assert_noop!(
             TransactionPause::pause_pallets(RuntimeOrigin::signed(1), vec![b"Balances".to_vec()]),
@@ -308,7 +308,7 @@ fn pause_unpause_pallets_work() {
 
 #[test]
 fn pause_pallets_weight_works() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         let ps: DispatchResultWithPostInfo =
             TransactionPause::pause_pallets(RawOrigin::Root.into(), vec![b"System".to_vec()]);
         let size: u32 = PausedTransactions::<Runtime>::iter().map(|_x| 1).sum();
@@ -333,7 +333,7 @@ fn pause_pallets_weight_works() {
 
 #[test]
 fn paused_transaction_filter_work() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         assert!(!PausedTransactionFilter::<Runtime>::contains(REMARK_CALL));
         assert!(!PausedTransactionFilter::<Runtime>::contains(SETCODE_CALL));
         // pause one transaction

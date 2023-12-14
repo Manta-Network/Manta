@@ -109,7 +109,7 @@ parameter_types! {
     ///   99th: 5_489_273
     ///   95th: 5_433_314
     ///   75th: 5_354_812
-    pub const BlockExecutionWeight: Weight = Weight::from_ref_time(WEIGHT_PER_NANOS.saturating_mul(5_346_284));
+    pub const BlockExecutionWeight: Weight = Weight::from_parts(WEIGHT_PER_NANOS.saturating_mul(5_346_284), 0);
 }
 
 parameter_types! {

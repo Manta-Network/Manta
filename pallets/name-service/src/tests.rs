@@ -42,7 +42,7 @@ fn initialize_test() {
 
 #[test]
 fn register_should_work() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         initialize_test();
         assert_ok!(NameService::register(
             MockOrigin::signed(ALICE),
@@ -60,7 +60,7 @@ fn register_should_work() {
 
 #[test]
 fn re_register_should_work() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         initialize_test();
         assert_ok!(NameService::register(
             MockOrigin::signed(ALICE),
@@ -114,7 +114,7 @@ fn re_register_should_work() {
 
 #[test]
 fn set_primary_should_work() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         initialize_test();
         assert_ok!(NameService::register(
             MockOrigin::signed(ALICE),
@@ -137,7 +137,7 @@ fn set_primary_should_work() {
 
 #[test]
 fn cancel_register_should_work() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         initialize_test();
         assert_ok!(NameService::register(
             MockOrigin::signed(ALICE),
@@ -154,7 +154,7 @@ fn cancel_register_should_work() {
 
 #[test]
 fn remove_register_should_work() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         initialize_test();
         assert_ok!(NameService::register(
             MockOrigin::signed(ALICE),
@@ -177,7 +177,7 @@ fn remove_register_should_work() {
 
 #[test]
 fn register_should_fail() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         initialize_test();
         assert_ok!(NameService::register(
             MockOrigin::signed(ALICE),
@@ -213,7 +213,7 @@ fn register_should_fail() {
 
 #[test]
 fn register_time_should_fail() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         initialize_test();
         assert_ok!(NameService::register(
             MockOrigin::signed(ALICE),
@@ -233,7 +233,7 @@ fn register_time_should_fail() {
 
 #[test]
 fn register_accept_should_fail() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         initialize_test();
         assert_ok!(NameService::register(
             MockOrigin::signed(ALICE),
@@ -254,7 +254,7 @@ fn register_accept_should_fail() {
 
 #[test]
 fn set_primary_should_fail() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         initialize_test();
         assert_ok!(NameService::register(
             MockOrigin::signed(ALICE),
@@ -288,7 +288,7 @@ fn set_primary_should_fail() {
 
 #[test]
 fn cancel_register_should_fail() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         initialize_test();
         assert_ok!(NameService::register(
             MockOrigin::signed(ALICE),
@@ -316,7 +316,7 @@ fn cancel_register_should_fail() {
 
 #[test]
 fn remove_register_should_fail() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         initialize_test();
         assert_ok!(NameService::register(
             MockOrigin::signed(ALICE),
@@ -350,7 +350,7 @@ fn remove_register_should_fail() {
 
 #[test]
 fn username_format_test() {
-    ExtBuilder::default().build().execute_with(|| {
+    ExtBuilder.build().execute_with(|| {
         initialize_test();
         // 3 char test
         assert_ok!(NameService::register(

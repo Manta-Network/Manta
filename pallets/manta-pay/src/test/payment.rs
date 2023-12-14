@@ -53,6 +53,10 @@ use manta_primitives::{
 };
 use std::{env, path::Path};
 
+// if we use u128::MAX, some of test cases might get `PublicUpdateInvalidTransfer` error.
+// so we use 1B MANTA, it's safe enough for testing.
+const TOTAL_SUPPLY: u128 = 1_000_000_000_000_000_000_000_000_000;
+
 /// UTXO Accumulator for Building Circuits
 type UtxoAccumulator =
     TreeArrayMerkleForest<MerkleTreeConfiguration, Full<MerkleTreeConfiguration>, 256>;
@@ -540,7 +544,7 @@ fn double_spend_in_private_transfer_should_not_work() {
 fn reclaim_should_work() {
     let mut rng = OsRng;
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
-        new_test_ext().execute_with(|| reclaim_test(10, rng.gen(), None, &mut rng));
+        new_test_ext().execute_with(|| reclaim_test(10, TOTAL_SUPPLY, None, &mut rng));
     }
 }
 
@@ -550,7 +554,7 @@ fn reclaim_native_should_work() {
     let mut rng = OsRng;
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext()
-            .execute_with(|| reclaim_test(10, rng.gen(), Some(NATIVE_ASSET_ID), &mut rng));
+            .execute_with(|| reclaim_test(10, TOTAL_SUPPLY, Some(NATIVE_ASSET_ID), &mut rng));
     }
 }
 
@@ -559,7 +563,7 @@ fn reclaim_native_should_work() {
 fn reclaim_10_times_should_work() {
     let mut rng = OsRng;
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
-        new_test_ext().execute_with(|| reclaim_test(10, rng.gen(), None, &mut rng));
+        new_test_ext().execute_with(|| reclaim_test(10, TOTAL_SUPPLY, None, &mut rng));
     }
 }
 
@@ -576,7 +580,7 @@ fn double_spend_in_reclaim_should_not_work() {
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
             let mut rng = OsRng;
-            let total_supply: u128 = rng.gen();
+            let total_supply: u128 = TOTAL_SUPPLY;
             for reclaim in reclaim_test(10, total_supply / 2, None, &mut rng) {
                 assert_noop!(
                     MantaPay::to_public(MockOrigin::signed(ALICE), reclaim),
@@ -786,7 +790,7 @@ fn pull_ledger_diff_should_work() {
 fn unrestricted_public_asset_not_allowed() {
     new_test_ext().execute_with(|| {
         let mut rng = OsRng;
-        let total_supply: u128 = rng.gen();
+        let total_supply: u128 = TOTAL_SUPPLY;
         let unrestricted_asset_id = crate::Asset {
             id: [1u8; 32],
             ..Zero::zero()

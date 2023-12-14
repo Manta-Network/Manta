@@ -17,9 +17,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@polkadot/api": "^10.9.1",
-    "@polkadot/api-augment": "^10.9.1",
-    "@polkadot/types": "^10.9.1",
+    "@polkadot/api": "^10.11.1",
+    "@polkadot/api-augment": "^10.11.1",
+    "@polkadot/types": "^10.11.1",
     "@types/minimist": "^1.2.2",
     "@types/yargs": "^17.0.0",
     "big-json": "^3.2.0",

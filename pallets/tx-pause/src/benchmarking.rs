@@ -61,6 +61,6 @@ benchmarks! {
 
 impl_benchmark_test_suite!(
     TransactionPause,
-    crate::mock::ExtBuilder::default().build(),
+    crate::mock::ExtBuilder.build(),
     crate::mock::Runtime,
 );

@@ -149,7 +149,7 @@ mod test {
                 StorageVersion::new(0)
             );
             let weight = MigratePalletPv2Sv::<MockForMigrationTesting>::on_runtime_upgrade();
-            assert_eq!(Weight::from_ref_time(100_000 * 1000 * 2), weight);
+            assert_eq!(Weight::from_parts(100_000 * 1000 * 2, 0), weight);
             assert!(
                 sp_io::storage::get(&pallet_version_key(MockForMigrationTesting::name())).is_none()
             );
