@@ -381,16 +381,14 @@ pub mod pallet {
     /// This is mostly useful when sending an asset to a foreign location.
     #[pallet::storage]
     #[pallet::getter(fn asset_id_location)]
-    pub(super) type AssetIdLocation<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AssetId, T::Location>;
+    pub type AssetIdLocation<T: Config> = StorageMap<_, Blake2_128Concat, T::AssetId, T::Location>;
 
     /// [`MultiLocation`] to [`AssetId`](AssetConfig::AssetId) Map
     ///
     /// This is mostly useful when receiving an asset from a foreign location.
     #[pallet::storage]
     #[pallet::getter(fn location_asset_id)]
-    pub(super) type LocationAssetId<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::Location, T::AssetId>;
+    pub type LocationAssetId<T: Config> = StorageMap<_, Blake2_128Concat, T::Location, T::AssetId>;
 
     /// AssetId to AssetRegistry Map.
     #[pallet::storage]
