@@ -689,7 +689,7 @@ pub mod pallet {
         /// * BadOrigin: Caller is not ManageOrigin
         /// * TODO: Amount of tokens to be rebalanced would be too low.
         #[pallet::call_index(3)]
-        #[pallet::weight(0)]
+        #[pallet::weight(T::DbWeight::get().write)]
         pub fn rebalance_stake(origin: OriginFor<T>) -> DispatchResult {
             T::ManageOrigin::ensure_origin(origin.clone())?;
             Err(crate::pallet::DispatchError::Other(
@@ -867,7 +867,7 @@ pub mod pallet {
         /// * BadOrigin: Caller is not ManageOrigin
         /// * Fails if a lottery has not been stopped and a drawing is ongoing
         #[pallet::call_index(8)]
-        #[pallet::weight(0)]
+        #[pallet::weight(T::DbWeight::get().write)]
         pub fn liquidate_lottery(origin: OriginFor<T>) -> DispatchResult {
             T::ManageOrigin::ensure_origin(origin.clone())?;
 

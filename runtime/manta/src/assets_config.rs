@@ -25,7 +25,7 @@ use manta_primitives::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
         AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
-    constants::{ASSET_MANAGER_PALLET_ID, MANTA_DECIMAL, MANTA_PAY_PALLET_ID, MANTA_SBT_PALLET_ID},
+    constants::{ASSET_MANAGER_PALLET_ID, MANTA_DECIMAL, MANTA_SBT_PALLET_ID},
     types::{AccountId, Balance, MantaAssetId, Signature, Signer},
 };
 

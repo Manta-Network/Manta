@@ -67,7 +67,7 @@ use manta_primitives::{
     },
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, PoolId, Signature},
 };
-use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
+use manta_support::manta_pay::{PullResponse, RawCheckpoint};
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use pallet_session::ShouldEndSession;
 use runtime_common::{
@@ -896,6 +896,30 @@ impl pallet_name_service::Config for Runtime {
     type WeightInfo = weights::pallet_name_service::SubstrateWeight<Runtime>;
 }
 
+impl parachain_info::Config for Runtime {}
+
+struct CheckInherentsStruct;
+impl CheckInherents<Block> for CheckInherentsStruct {
+    fn check_inherents(
+        block: &Block,
+        relay_state_proof: &RelayChainStateProof,
+    ) -> sp_inherents::CheckInherentsResult {
+        let relay_chain_slot = relay_state_proof
+            .read_slot()
+            .expect("Could not read the relay chain slot from the proof");
+
+        let inherent_data =
+            cumulus_primitives_timestamp::InherentDataProvider::from_relay_chain_slot_and_duration(
+                relay_chain_slot,
+                sp_std::time::Duration::from_secs(6),
+            )
+            .create_inherent_data()
+            .expect("Could not create the timestamp inherent data");
+
+        inherent_data.check_extrinsics(block)
+    }
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -1517,32 +1541,8 @@ impl_runtime_apis! {
     }
 }
 
-struct CheckInherentsStruct;
-impl CheckInherents<Block> for CheckInherentsStruct {
-    fn check_inherents(
-        block: &Block,
-        relay_state_proof: &RelayChainStateProof,
-    ) -> sp_inherents::CheckInherentsResult {
-        let relay_chain_slot = relay_state_proof
-            .read_slot()
-            .expect("Could not read the relay chain slot from the proof");
-
-        let inherent_data =
-            cumulus_primitives_timestamp::InherentDataProvider::from_relay_chain_slot_and_duration(
-                relay_chain_slot,
-                sp_std::time::Duration::from_secs(6),
-            )
-            .create_inherent_data()
-            .expect("Could not create the timestamp inherent data");
-
-        inherent_data.check_extrinsics(block)
-    }
-}
-
 register_validate_block! {
     Runtime = Runtime,
     BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
     CheckInherents = CheckInherentsStruct,
 }
-
-impl parachain_info::Config for Runtime {}
