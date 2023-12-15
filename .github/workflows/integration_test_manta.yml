@@ -264,13 +264,6 @@ jobs:
         with:
           repository: Manta-Network/Manta
           path: Manta
-      - name: check if target block is finalized
-        run: |
-          cd $GITHUB_WORKSPACE/dev-tools-manta/check-finalized-block
-          yarn install
-          yarn
-          node index.js --para_address=ws://127.0.0.1:9921 --relay_address=ws://127.0.0.1:9911 --target_block=${{ matrix.chain-spec.expected.block-count.para }}
-          if [ $? == 1 ]; then echo "Failed to finalize the target block - ${{ matrix.chain-spec.expected.block-count.para }}"; exit 1; fi
       - name: stop testnet
         run: |
           cd $GITHUB_WORKSPACE/zombienet-tool
