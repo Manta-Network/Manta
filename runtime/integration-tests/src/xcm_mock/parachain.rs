@@ -37,6 +37,7 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
+#[cfg(feature = "runtime-benchmarks")]
 use super::ReachableDest;
 use manta_primitives::{
     assets::{
@@ -140,8 +141,8 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    pub const ReservedXcmpWeight: Weight = Weight::from_ref_time(WEIGHT_PER_SECOND.saturating_div(4));
-    pub const ReservedDmpWeight: Weight = Weight::from_ref_time(WEIGHT_PER_SECOND.saturating_div(4));
+    pub const ReservedXcmpWeight: Weight = Weight::from_parts(WEIGHT_PER_SECOND.saturating_div(4), 0);
+    pub const ReservedDmpWeight: Weight = Weight::from_parts(WEIGHT_PER_SECOND.saturating_div(4), 0);
 }
 
 parameter_types! {
@@ -692,7 +693,7 @@ where
 }
 
 parameter_types! {
-    pub const BaseXcmWeight: Weight = Weight::from_ref_time(100_000_000_u64);
+    pub const BaseXcmWeight: Weight = Weight::from_parts(100_000_000_u64, 0);
     pub const MaxAssetsForTransfer: usize = 3;
 }
 
@@ -813,7 +814,7 @@ fn insert_dummy_data(
     while next_asset_id < insert_until {
         assert_ok!(AssetManager::register_asset(
             self::RuntimeOrigin::root(),
-            AssetLocation::from(next_dummy_mult_loc.clone()),
+            AssetLocation::from(next_dummy_mult_loc),
             dummy_asset_metadata.clone()
         ));
         next_dummy_mult_loc.parents += 1;

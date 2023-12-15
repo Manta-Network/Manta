@@ -51,9 +51,9 @@ use super::{
 //  3. BuyExecution { fees, weight_limit: Limited(0) },
 //  4. DepositAsset { assets: Wild(All), max_assets, beneficiary },
 //  each instruction's weight is 1_000, thus, the total weight is 4_000
-const RESERVE_TRANSFER_WEIGHT_ON_RELAY: Weight = Weight::from_ref_time(4_000);
+const RESERVE_TRANSFER_WEIGHT_ON_RELAY: Weight = Weight::from_parts(4_000, 0);
 
-const REQUIRE_WEIGHT: Weight = Weight::from_ref_time(INITIAL_BALANCE as u64);
+const REQUIRE_WEIGHT: Weight = Weight::from_parts(INITIAL_BALANCE as u64, 0);
 
 fn calculate_fee(units_per_seconds: u128, weight: Weight) -> u128 {
     (units_per_seconds * weight.ref_time() as u128) / (WEIGHT_PER_SECOND as u128)
@@ -363,7 +363,7 @@ fn reserve_transfer_relaychain_to_parachain_a_then_back() {
     );
 
     let amount = 123;
-    let weight_at_most = Weight::from_ref_time(40000);
+    let weight_at_most = Weight::from_parts(40000, 0);
 
     Relay::execute_with(|| {
         assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
@@ -639,7 +639,7 @@ fn send_para_a_native_asset_to_para_b_barriers_should_work() {
     };
 
     // AllowTopLevelPaidExecutionFrom<Everything> should fail because weight is not enough
-    let weight = Weight::from_ref_time(self_reserve_xtokens_weight_on_receiver().ref_time() - 1);
+    let weight = Weight::from_parts(self_reserve_xtokens_weight_on_receiver().ref_time() - 1, 0);
     assert!(weight.ref_time() <= ADVERTISED_DEST_WEIGHT.ref_time());
     ParaA::execute_with(|| {
         assert_ok!(parachain::XTokens::transfer(
@@ -736,7 +736,7 @@ fn send_insufficient_asset_from_para_a_to_para_b() {
             parachain::RuntimeOrigin::signed(ALICE),
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             amount,
-            Box::new(VersionedMultiLocation::V3(dest.clone())),
+            Box::new(VersionedMultiLocation::V3(dest)),
             WeightLimit::Limited(ADVERTISED_DEST_WEIGHT)
         ));
         assert_eq!(
@@ -776,7 +776,7 @@ fn send_insufficient_asset_from_para_a_to_para_b() {
             parachain::RuntimeOrigin::signed(ALICE),
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             amount,
-            Box::new(VersionedMultiLocation::V3(dest.clone())),
+            Box::new(VersionedMultiLocation::V3(dest)),
             WeightLimit::Limited(ADVERTISED_DEST_WEIGHT)
         ));
         assert_eq!(
@@ -861,7 +861,7 @@ fn send_para_a_native_asset_to_para_b_must_fail_cases() {
                 parachain::RuntimeOrigin::signed(ALICE),
                 parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
                 amount + INITIAL_BALANCE,
-                Box::new(VersionedMultiLocation::V3(dest.clone())),
+                Box::new(VersionedMultiLocation::V3(dest)),
                 WeightLimit::Limited(weight)
             ),
             orml_xtokens::Error::<parachain::Runtime>::XcmExecutionFailed
@@ -1214,7 +1214,7 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
             parachain::RuntimeOrigin::signed(ALICE),
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             amount,
-            Box::new(VersionedMultiLocation::V3(alice_on_b.clone())),
+            Box::new(VersionedMultiLocation::V3(alice_on_b)),
             WeightLimit::Limited(ADVERTISED_DEST_WEIGHT)
         ));
         assert_eq!(
@@ -1707,7 +1707,7 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
             parachain::RuntimeOrigin::signed(ALICE),
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             amount,
-            Box::new(VersionedMultiLocation::V3(alice_on_b.clone())),
+            Box::new(VersionedMultiLocation::V3(alice_on_b)),
             WeightLimit::Limited(ADVERTISED_DEST_WEIGHT)
         ));
         assert_eq!(
@@ -1882,7 +1882,7 @@ fn send_para_a_asset_to_para_b_with_insufficient_fee() {
 
     let amount = 15u128;
     let units_per_second = 20_000_000u128;
-    let dest_weight = Weight::from_ref_time(800_000);
+    let dest_weight = Weight::from_parts(800_000, 0);
     let fee = calculate_fee(units_per_second, dest_weight);
     assert!(fee > amount);
 
@@ -1959,7 +1959,7 @@ fn send_para_a_asset_to_para_b_without_specifying_units_per_second() {
     let para_b_source_location = create_asset_location(1, PARA_B_ID);
 
     let amount = 567u128;
-    let dest_weight = Weight::from_ref_time(800_000);
+    let dest_weight = Weight::from_parts(800_000, 0);
 
     let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
     let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
@@ -2060,7 +2060,7 @@ fn receive_insufficient_relay_asset_on_parachain() {
         assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
             relay_chain::RuntimeOrigin::signed(ALICE),
             Box::new(X1(Parachain(1)).into()),
-            Box::new(VersionedMultiLocation::V3(dest.clone())),
+            Box::new(VersionedMultiLocation::V3(dest)),
             Box::new((Here, amount).into()),
             0,
         ));
@@ -2302,7 +2302,7 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
         query_id: 0,
         response,
         querier: Some(Here.into()),
-        max_weight: Weight::from_ref_time(0),
+        max_weight: Weight::from_parts(0, 0),
     }]);
 
     let dest: MultiLocation = AccountId32 {
@@ -2417,7 +2417,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
         query_id: 0,
         response,
         querier: Some(Here.into()),
-        max_weight: Weight::from_ref_time(0),
+        max_weight: Weight::from_parts(0, 0),
     }]);
 
     ParaA::execute_with(|| {
@@ -2616,7 +2616,7 @@ fn filtered_multilocation_should_not_work() {
                 parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
                 100,
                 Box::new(VersionedMultiLocation::V3(dest)),
-                WeightLimit::Limited(Weight::from_ref_time(80))
+                WeightLimit::Limited(Weight::from_parts(80, 0))
             ),
             orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
         );
@@ -2641,7 +2641,7 @@ fn filtered_multilocation_should_not_work() {
                 parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
                 100,
                 Box::new(VersionedMultiLocation::V3(x3_dest)),
-                WeightLimit::Limited(Weight::from_ref_time(80))
+                WeightLimit::Limited(Weight::from_parts(80, 0))
             ),
             orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
         );
@@ -2662,7 +2662,7 @@ fn filtered_multilocation_should_not_work() {
                 parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
                 100,
                 Box::new(VersionedMultiLocation::V3(parents_as_2_relay_dest)),
-                WeightLimit::Limited(Weight::from_ref_time(80))
+                WeightLimit::Limited(Weight::from_parts(80, 0))
             ),
             orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
         );
@@ -2686,7 +2686,7 @@ fn filtered_multilocation_should_not_work() {
                 parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
                 100,
                 Box::new(VersionedMultiLocation::V3(parents_as_2_dest)),
-                WeightLimit::Limited(Weight::from_ref_time(80))
+                WeightLimit::Limited(Weight::from_parts(80, 0))
             ),
             orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
         );
@@ -2704,7 +2704,7 @@ fn filtered_multilocation_should_not_work() {
                 parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
                 100,
                 Box::new(VersionedMultiLocation::V3(here_dest)),
-                WeightLimit::Limited(Weight::from_ref_time(80))
+                WeightLimit::Limited(Weight::from_parts(80, 0))
             ),
             orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
         );
@@ -2724,7 +2724,7 @@ fn filtered_multilocation_should_not_work() {
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             100,
             Box::new(VersionedMultiLocation::V3(relay_dest)),
-            WeightLimit::Limited(Weight::from_ref_time(80))
+            WeightLimit::Limited(Weight::from_parts(80, 0))
         ));
     });
 
@@ -2745,7 +2745,7 @@ fn filtered_multilocation_should_not_work() {
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             100,
             Box::new(VersionedMultiLocation::V3(sibling_chain_dest)),
-            WeightLimit::Limited(Weight::from_ref_time(80))
+            WeightLimit::Limited(Weight::from_parts(80, 0))
         ));
     });
 }
@@ -2867,8 +2867,8 @@ fn less_than_min_xcm_fee_should_not_work() {
                     )
                 ],
                 1,
-                Box::new(VersionedMultiLocation::V3(dest.clone())),
-                WeightLimit::Limited(Weight::from_ref_time(40)),
+                Box::new(VersionedMultiLocation::V3(dest)),
+                WeightLimit::Limited(Weight::from_parts(40, 0)),
             ),
             orml_xtokens::Error::<parachain::Runtime>::MinXcmFeeNotDefined
         );
@@ -2900,8 +2900,8 @@ fn less_than_min_xcm_fee_should_not_work() {
                     )
                 ],
                 1,
-                Box::new(VersionedMultiLocation::V3(dest.clone())),
-                WeightLimit::Limited(Weight::from_ref_time(40)),
+                Box::new(VersionedMultiLocation::V3(dest)),
+                WeightLimit::Limited(Weight::from_parts(40, 0)),
             ),
             orml_xtokens::Error::<parachain::Runtime>::FeeNotEnough
         );
@@ -2922,8 +2922,8 @@ fn less_than_min_xcm_fee_should_not_work() {
                 )
             ],
             1,
-            Box::new(VersionedMultiLocation::V3(dest.clone())),
-            WeightLimit::Limited(Weight::from_ref_time(40)),
+            Box::new(VersionedMultiLocation::V3(dest)),
+            WeightLimit::Limited(Weight::from_parts(40, 0)),
         ));
     });
 }
@@ -3017,7 +3017,7 @@ fn transfer_multicurrencies_should_work_scenarios() {
             Some(ALICE).into(),
             parachain::CurrencyId::MantaCurrency(b_asset_id_on_b),
             amount_to_a,
-            Box::new(VersionedMultiLocation::V3(dest.clone())),
+            Box::new(VersionedMultiLocation::V3(dest)),
             WeightLimit::Limited(ADVERTISED_DEST_WEIGHT),
         ));
     });
@@ -3057,7 +3057,7 @@ fn transfer_multicurrencies_should_work_scenarios() {
                 )
             ],
             1,
-            Box::new(VersionedMultiLocation::V3(dest.clone())),
+            Box::new(VersionedMultiLocation::V3(dest)),
             WeightLimit::Limited(ADVERTISED_DEST_WEIGHT),
         ));
 
@@ -3240,7 +3240,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
             Some(ALICE).into(),
             parachain::CurrencyId::MantaCurrency(c_asset_id_on_c),
             amount,
-            Box::new(VersionedMultiLocation::V3(dest.clone())),
+            Box::new(VersionedMultiLocation::V3(dest)),
             WeightLimit::Limited(ADVERTISED_DEST_WEIGHT),
         ));
     });
@@ -3299,7 +3299,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
                     )
                 ],
                 2,
-                Box::new(VersionedMultiLocation::V3(dest.clone())),
+                Box::new(VersionedMultiLocation::V3(dest)),
                 WeightLimit::Limited(ADVERTISED_DEST_WEIGHT),
             ),
             // Assets and fee must have the same reserve
@@ -3328,7 +3328,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
                     )
                 ],
                 2,
-                Box::new(VersionedMultiLocation::V3(dest.clone())),
+                Box::new(VersionedMultiLocation::V3(dest)),
                 WeightLimit::Limited(ADVERTISED_DEST_WEIGHT),
             ),
             // MaxAssetsForTransfer is set to 3 in the mock
@@ -3349,7 +3349,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
                     )
                 ],
                 2,
-                Box::new(VersionedMultiLocation::V3(dest.clone())),
+                Box::new(VersionedMultiLocation::V3(dest)),
                 WeightLimit::Limited(ADVERTISED_DEST_WEIGHT),
             ),
             orml_xtokens::Error::<parachain::Runtime>::AssetIndexNonExistent
@@ -3366,7 +3366,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
                     (parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a), 0)
                 ],
                 1,
-                Box::new(VersionedMultiLocation::V3(dest.clone())),
+                Box::new(VersionedMultiLocation::V3(dest)),
                 WeightLimit::Limited(ADVERTISED_DEST_WEIGHT),
             ),
             // 0 fees should not work
@@ -3384,7 +3384,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
                     )
                 ],
                 1,
-                Box::new(VersionedMultiLocation::V3(dest.clone())),
+                Box::new(VersionedMultiLocation::V3(dest)),
                 WeightLimit::Limited(ADVERTISED_DEST_WEIGHT),
             ),
             // 0 assets should not work
@@ -3424,7 +3424,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
                 )
             ],
             1,
-            Box::new(VersionedMultiLocation::V3(dest.clone())),
+            Box::new(VersionedMultiLocation::V3(dest)),
             WeightLimit::Limited(ADVERTISED_DEST_WEIGHT),
         ));
 
@@ -3566,7 +3566,7 @@ fn send_disabled_asset_should_fail() {
                 parachain::RuntimeOrigin::signed(ALICE),
                 parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
                 amount,
-                Box::new(VersionedMultiLocation::V3(dest.clone())),
+                Box::new(VersionedMultiLocation::V3(dest)),
                 xcm_simulator::Limited(ADVERTISED_DEST_WEIGHT)
             ),
             orml_xtokens::Error::<parachain::Runtime>::AssetDisabledForOutgoingTransfers
@@ -3575,7 +3575,7 @@ fn send_disabled_asset_should_fail() {
             parachain::RuntimeOrigin::signed(ALICE),
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             10,
-            Box::new(VersionedMultiLocation::V3(dest.clone())),
+            Box::new(VersionedMultiLocation::V3(dest)),
             xcm_simulator::Limited(ADVERTISED_DEST_WEIGHT)
         ));
         assert_err!(
@@ -3589,7 +3589,7 @@ fn send_disabled_asset_should_fail() {
                     (parachain::CurrencyId::MantaCurrency(b_asset_id_on_a), fee)
                 ],
                 1,
-                Box::new(VersionedMultiLocation::V3(dest.clone())),
+                Box::new(VersionedMultiLocation::V3(dest)),
                 xcm_simulator::Limited(ADVERTISED_DEST_WEIGHT),
             ),
             orml_xtokens::Error::<parachain::Runtime>::AssetDisabledForOutgoingTransfers
@@ -3605,7 +3605,7 @@ fn send_disabled_asset_should_fail() {
                     (parachain::CurrencyId::MantaCurrency(a_asset_id_on_a), fee)
                 ],
                 1,
-                Box::new(VersionedMultiLocation::V3(dest.clone())),
+                Box::new(VersionedMultiLocation::V3(dest)),
                 xcm_simulator::Limited(ADVERTISED_DEST_WEIGHT),
             ),
             orml_xtokens::Error::<parachain::Runtime>::AssetDisabledForOutgoingTransfers
@@ -3617,7 +3617,7 @@ fn send_disabled_asset_should_fail() {
                 (parachain::CurrencyId::MantaCurrency(a_asset_id_on_a), fee)
             ],
             1,
-            Box::new(VersionedMultiLocation::V3(dest.clone())),
+            Box::new(VersionedMultiLocation::V3(dest)),
             xcm_simulator::Limited(ADVERTISED_DEST_WEIGHT),
         ));
         assert_ok!(parachain::AssetManager::update_outgoing_filtered_assets(

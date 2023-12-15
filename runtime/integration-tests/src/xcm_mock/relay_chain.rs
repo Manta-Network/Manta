@@ -30,6 +30,7 @@ use sp_runtime::{
     AccountId32,
 };
 
+#[cfg(feature = "runtime-benchmarks")]
 use super::ReachableDest;
 use manta_primitives::{
     types::{BlockNumber, Header},
@@ -151,7 +152,7 @@ type LocalOriginConverter = (
 );
 
 parameter_types! {
-    pub const BaseXcmWeight: Weight = Weight::from_ref_time(1_000_u64);
+    pub const BaseXcmWeight: Weight = Weight::from_parts(1_000_u64, 0);
     pub KsmPerSecond: (AssetId, u128, u128) = (Concrete(KsmLocation::get()), 1, 0);
     pub const MaxInstructions: u32 = 100;
     pub const MaxAssetsIntoHolding: u32 = 64;

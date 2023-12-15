@@ -343,7 +343,7 @@ where
 }
 
 parameter_types! {
-    pub const BaseXcmWeight: Weight = Weight::from_ref_time(100_000_000u64);
+    pub const BaseXcmWeight: Weight = Weight::from_parts(100_000_000u64, 0);
     pub const MaxAssetsForTransfer: usize = 2;
     pub UniversalLocation: InteriorMultiLocation = X2(GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into()));
 }
