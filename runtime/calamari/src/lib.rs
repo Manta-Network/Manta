@@ -331,7 +331,7 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::NameService(_)
             | RuntimeCall::XTokens(_)
             | RuntimeCall::TransactionPause(_)
-            //| RuntimeCall::ZenlinkProtocol(_)
+            | RuntimeCall::ZenlinkProtocol(_)
             | RuntimeCall::Farming(_)
             | RuntimeCall::Assets(
                 pallet_assets::Call::transfer {..}
