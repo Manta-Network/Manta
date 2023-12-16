@@ -192,7 +192,7 @@ mod parachain_staking_tests {
                     FERDIE.clone(),
                 ]);
                 // Increase self-bond for everyone but ALICE
-                for collator in vec![
+                for collator in [
                     BOB.clone(),
                     CHARLIE.clone(),
                     DAVE.clone(),
@@ -206,7 +206,7 @@ mod parachain_staking_tests {
                 }
 
                 // Delegate a large amount of tokens to EVE and ALICE
-                for collator in vec![EVE.clone(), ALICE.clone()] {
+                for collator in [EVE.clone(), ALICE.clone()] {
                     assert_ok!(ParachainStaking::delegate(
                         RuntimeOrigin::signed(USER.clone()),
                         collator,
@@ -296,7 +296,7 @@ mod parachain_staking_tests {
                     FERDIE.clone(),
                 ]);
                 // Increase bond for everyone but FERDIE
-                for collator in vec![
+                for collator in [
                     BOB.clone(),
                     CHARLIE.clone(),
                     DAVE.clone(),

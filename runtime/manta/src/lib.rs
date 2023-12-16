@@ -1352,11 +1352,11 @@ impl_runtime_apis! {
 
     impl pallet_farming_rpc_runtime_api::FarmingRuntimeApi<Block, AccountId, MantaAssetId, PoolId> for Runtime {
         fn get_farming_rewards(who: AccountId, pid: PoolId) -> Vec<(MantaAssetId, Balance)> {
-            Farming::get_farming_rewards(&who, pid).unwrap_or(Vec::new())
+            Farming::get_farming_rewards(&who, pid).unwrap_or_default()
         }
 
         fn get_gauge_rewards(who: AccountId, pid: PoolId) -> Vec<(MantaAssetId, Balance)> {
-            Farming::get_gauge_rewards(&who, pid).unwrap_or(Vec::new())
+            Farming::get_gauge_rewards(&who, pid).unwrap_or_default()
         }
     }
 
@@ -1385,7 +1385,6 @@ impl_runtime_apis! {
         ) {
             use frame_benchmarking::{Benchmarking, BenchmarkList};
             use frame_support::traits::StorageInfoTrait;
-            use frame_system_benchmarking::Pallet as SystemBench;
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 
             type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
@@ -1403,7 +1402,6 @@ impl_runtime_apis! {
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
             use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey, BenchmarkError};
 
-            use frame_system_benchmarking::Pallet as SystemBench;
             impl frame_system_benchmarking::Config for Runtime {}
 
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
