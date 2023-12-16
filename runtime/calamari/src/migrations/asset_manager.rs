@@ -17,11 +17,9 @@
 #![allow(clippy::unnecessary_cast)]
 
 use core::marker::PhantomData;
-#[allow(deprecated)]
-use frame_support::migration::remove_storage_prefix;
 use frame_support::{
     dispatch::GetStorageVersion,
-    migration::{have_storage_value, put_storage_value, storage_key_iter},
+    migration::{put_storage_value, storage_key_iter},
     pallet_prelude::{StorageVersion, Weight},
     traits::{Get, OnRuntimeUpgrade},
     Blake2_128Concat, StorageHasher,
@@ -29,7 +27,10 @@ use frame_support::{
 use sp_runtime::DispatchError;
 use sp_runtime::{traits::ConstU32, WeakBoundedVec};
 use sp_std::vec::Vec;
-use xcm::{v3::*, VersionedMultiLocation};
+use xcm::{
+    v3::{Junction, Junctions, MultiLocation},
+    VersionedMultiLocation,
+};
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use manta_primitives::types::CalamariAssetId;
@@ -341,7 +342,7 @@ pub mod xcm_v1 {
         }
     }
 
-    #[derive(Encode, Decode, TypeInfo)]
+    #[derive(Encode, Debug, Decode, TypeInfo)]
     #[codec(encode_bound())]
     #[codec(decode_bound())]
     pub enum VersionedMultiLocation {
@@ -350,7 +351,7 @@ pub mod xcm_v1 {
     }
 
     /// Asset Location
-    #[derive(Decode, Encode, TypeInfo)]
+    #[derive(Decode, Debug, Encode, TypeInfo)]
     pub struct AssetLocation(pub VersionedMultiLocation);
 }
 
@@ -693,7 +694,7 @@ impl<T: frame_system::Config + pallet_asset_manager::Config> OnRuntimeUpgrade fo
         .collect();
         log::info!(target: "AssetIdLocation", "storage items count: {}.", asset_id_location.len());
         for (asset_id, v1_location) in asset_id_location {
-            log::info!(target: "AssetIdLocation", "asset id: {asset_id}, location: {v1_location}.");
+            log::info!(target: "AssetIdLocation", "asset id: {asset_id}, location: {v1_location:?}.");
         }
 
         // LocationAssetId
@@ -708,7 +709,7 @@ impl<T: frame_system::Config + pallet_asset_manager::Config> OnRuntimeUpgrade fo
         .collect();
         log::info!(target: "LocationAssetId", "storage items count: {}.", location_asset_id.len());
         for (v1_location, asset_id) in location_asset_id {
-            log::info!(target: "LocationAssetId", "location: {v1_location}, asset id: {asset_id}.");
+            log::info!(target: "LocationAssetId", "location: {v1_location:?}, asset id: {asset_id}.");
         }
 
         let pallet_prefix: &[u8] = b"AssetManager";
@@ -722,17 +723,17 @@ impl<T: frame_system::Config + pallet_asset_manager::Config> OnRuntimeUpgrade fo
         .collect();
         log::info!(target: "MinXcmFee", "storage items count: {}.", min_xcm_fee.len());
         for (v1_location, fees) in min_xcm_fee {
-            log::info!(target: "MinXcmFee", "location: {v1_location}, min xcm fees: {fees}.");
+            log::info!(target: "MinXcmFee", "location: {v1_location:?}, min xcm fees: {fees}.");
         }
 
         let version = crate::AssetManager::on_chain_storage_version();
-        log::info!(target: "StorageVersion", "version: {version}.");
+        log::info!(target: "StorageVersion", "version: {version:?}.");
 
         Ok(Vec::new())
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade(state: Vec<u8>) -> Result<(), DispatchError> {
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), DispatchError> {
         use manta_primitives::assets::AssetLocation;
 
         if crate::AssetManager::on_chain_storage_version() != 3 {
@@ -751,10 +752,8 @@ impl<T: frame_system::Config + pallet_asset_manager::Config> OnRuntimeUpgrade fo
         .drain()
         .collect();
         log::info!(target: "AssetIdLocation", "storage items count: {}.", asset_id_location.len());
-        for (index, (asset_id, v3_location)) in asset_id_location.iter().enumerate() {
-            if let AssetLocation(VersionedMultiLocation::V3(MultiLocation { parents, interior })) =
-                v3_location
-            {
+        for (index, (_asset_id, v3_location)) in asset_id_location.iter().enumerate() {
+            if let AssetLocation(VersionedMultiLocation::V3(MultiLocation { .. })) = v3_location {
                 log::info!(target: "AssetIdLocation", "storage item: {index} has been updated to xcm v3.");
             }
         }
@@ -769,10 +768,8 @@ impl<T: frame_system::Config + pallet_asset_manager::Config> OnRuntimeUpgrade fo
         .drain()
         .collect();
         log::info!(target: "LocationAssetId", "storage items count: {}.", location_asset_id.len());
-        for (index, (v3_location, asset_id)) in location_asset_id.iter().enumerate() {
-            if let AssetLocation(VersionedMultiLocation::V3(MultiLocation { parents, interior })) =
-                v3_location
-            {
+        for (index, (v3_location, _asset_id)) in location_asset_id.iter().enumerate() {
+            if let AssetLocation(VersionedMultiLocation::V3(MultiLocation { .. })) = v3_location {
                 log::info!(target: "LocationAssetId", "storage item: {index} has been updated to xcm v3.");
             }
         }
@@ -787,10 +784,8 @@ impl<T: frame_system::Config + pallet_asset_manager::Config> OnRuntimeUpgrade fo
         .drain()
         .collect();
         log::info!(target: "MinXcmFee", "storage items count: {}.", min_xcm_fee.len());
-        for (index, (v3_location, asset_id)) in asset_id_location.iter().enumerate() {
-            if let AssetLocation(VersionedMultiLocation::V3(MultiLocation { parents, interior })) =
-                v3_location
-            {
+        for (index, (v3_location, _asset_id)) in min_xcm_fee.iter().enumerate() {
+            if let AssetLocation(VersionedMultiLocation::V3(MultiLocation { .. })) = v3_location {
                 log::info!(target: "MinXcmFee", "storage item: {index} has been updated to xcm v3.");
             }
         }
