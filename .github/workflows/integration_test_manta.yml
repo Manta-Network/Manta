@@ -332,25 +332,6 @@ jobs:
         with:
           name: measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
           path: $GITHUB_WORKSPACE/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
-      - name: append manta-pay storage
-        shell: bash
-        run: |
-          wget -P $GITHUB_WORKSPACE/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
-          mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json $GITHUB_WORKSPACE/Manta/tests/data/fork.json
-          cd $GITHUB_WORKSPACE/Manta/tests
-          yarn install
-          yarn
-          node append_storage.js
-          cd ../../
-          mv $GITHUB_WORKSPACE/Manta/tests/data/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
-          $HOME/dasel put -t string -v $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json -r toml \
-            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
-            '.parachains.[0].chain_spec_path'
-          $HOME/dasel delete -r toml \
-            -f $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml \
-            '.parachains.[0].chain'
-          cat $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml
-          head -20 $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
       - name: launch testnet
         shell: bash
         run: |

@@ -1097,7 +1097,9 @@ mod benches {
         // Substrate pallets
         [pallet_balances, Balances]
         [pallet_multisig, Multisig]
-        [frame_system, SystemBench::<Runtime>]
+        // always get this error ValidationDataNotAvailable while benchmarking
+        // we disable frame_system in this release, and will fix it in next release
+        // [frame_system, SystemBench::<Runtime>]
         [pallet_timestamp, Timestamp]
         [pallet_utility, Utility]
         [pallet_democracy, Democracy]
@@ -1120,7 +1122,9 @@ mod benches {
         [pallet_manta_sbt, MantaSbt]
         [pallet_name_service, NameService]
         // Dex
-        [zenlink_protocol, ZenlinkProtocol]
+        // always get this error Other("deposit lp asset error") while benchmarking
+        // we disable zenlink in this release, and will fix it in next release
+        // [zenlink_protocol, ZenlinkProtocol]
         [pallet_farming, Farming]
         // XCM
         [pallet_xcm, PolkadotXcm]
