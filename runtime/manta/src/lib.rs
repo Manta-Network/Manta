@@ -1056,7 +1056,9 @@ mod benches {
         [pallet_sudo, Sudo]
         // XCM
         [cumulus_pallet_xcmp_queue, XcmpQueue]
-        [pallet_xcm_benchmarks::fungible, XcmBalances]
+        // always get this error(Unimplemented) while benchmarking pallet_xcm_benchmarks::fungible::initiate_teleport
+        // so this time we will use statemint's fungible weights
+        // [pallet_xcm_benchmarks::fungible, XcmBalances]
         [pallet_xcm_benchmarks::generic, XcmGeneric]
         [pallet_session, SessionBench::<Runtime>]
         // Manta pallets
@@ -1387,7 +1389,7 @@ impl_runtime_apis! {
             use frame_support::traits::StorageInfoTrait;
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 
-            type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+            // type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
             type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
             let mut list = Vec::<BenchmarkList>::new();
@@ -1514,7 +1516,7 @@ impl_runtime_apis! {
                 }
             }
 
-            type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+            // type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
             type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
             let whitelist: Vec<TrackedStorageKey> = vec![
