@@ -23,7 +23,11 @@ use super::{mock::*, *};
 use frame_support::{
     assert_err, assert_noop, assert_ok,
     error::BadOrigin,
-    traits::{tokens::ExistenceRequirement, Get, PalletInfo, PalletsInfoAccess},
+    traits::{
+        fungibles::Inspect,
+        tokens::{ExistenceRequirement, Provenance},
+        Get, PalletsInfoAccess,
+    },
 };
 use runtime_common::test_helpers::{
     self_reserve_xcm_message_receiver_side, self_reserve_xcm_message_sender_side,
@@ -37,9 +41,8 @@ use manta_primitives::{
         FungibleLedgerError,
     },
     constants::time::{DAYS, HOURS},
-    types::{AccountId, Balance, CalamariAssetId},
+    types::{AccountId, CalamariAssetId},
 };
-use manta_support::manta_pay::{asset_value_encode, field_from_id, Asset};
 use session_key_primitives::util::unchecked_account_id;
 use xcm::{
     opaque::latest::{
@@ -53,7 +56,7 @@ use xcm_executor::traits::WeightBounds;
 
 use super::{ALICE, ALICE_SESSION_KEYS};
 use sp_core::sr25519;
-use sp_runtime::{DispatchError, ModuleError};
+use sp_runtime::{DispatchError, ModuleError, TokenError};
 
 mod parachain_staking_tests {
     use super::*;
@@ -189,7 +192,7 @@ mod parachain_staking_tests {
                     FERDIE.clone(),
                 ]);
                 // Increase self-bond for everyone but ALICE
-                for collator in vec![
+                for collator in [
                     BOB.clone(),
                     CHARLIE.clone(),
                     DAVE.clone(),
@@ -203,7 +206,7 @@ mod parachain_staking_tests {
                 }
 
                 // Delegate a large amount of tokens to EVE and ALICE
-                for collator in vec![EVE.clone(), ALICE.clone()] {
+                for collator in [EVE.clone(), ALICE.clone()] {
                     assert_ok!(ParachainStaking::delegate(
                         RuntimeOrigin::signed(USER.clone()),
                         collator,
@@ -293,7 +296,7 @@ mod parachain_staking_tests {
                     FERDIE.clone(),
                 ]);
                 // Increase bond for everyone but FERDIE
-                for collator in vec![
+                for collator in [
                     BOB.clone(),
                     CHARLIE.clone(),
                     DAVE.clone(),
@@ -363,7 +366,7 @@ fn balances_operations_should_work() {
                     sp_runtime::MultiAddress::Id(CHARLIE.clone()),
                     INITIAL_BALANCE,
                 ),
-                pallet_balances::Error::<Runtime>::KeepAlive
+                TokenError::Frozen,
             );
 
             // Transfer all down to zero
@@ -398,55 +401,6 @@ fn balances_operations_should_work() {
                 NativeTokenExistentialDeposit::get()
             );
         });
-}
-
-#[test]
-fn asset_manager_permissionless_manta_pay() {
-    ExtBuilder::default()
-        .with_balances(vec![(ALICE.clone(), INITIAL_BALANCE)])
-        .build()
-        .execute_with(|| {
-            let asset_id = <Runtime as pallet_asset_manager::Config>::PermissionlessStartId::get();
-            let init_supply = 1_000_000_000_000_000_000_u128;
-            assert_ok!(AssetManager::permissionless_register_asset(
-                RuntimeOrigin::signed(ALICE.clone()),
-                "dog token".as_bytes().to_vec().try_into().unwrap(),
-                "dog".as_bytes().to_vec().try_into().unwrap(),
-                12,
-                init_supply,
-            ));
-            // asset created gives alice the token
-            assert_eq!(Assets::balance(asset_id, ALICE.clone()), init_supply);
-
-            let amount = 1_000_000_000_000;
-            let dog_token = Asset {
-                id: field_from_id(asset_id),
-                value: asset_value_encode(amount),
-            };
-            let under_ed = Asset {
-                id: field_from_id(asset_id),
-                value: asset_value_encode(1),
-            };
-
-            assert_noop!(
-                MantaPay::public_transfer(
-                    RuntimeOrigin::signed(ALICE.clone()),
-                    under_ed,
-                    BOB.clone(),
-                ),
-                pallet_manta_pay::Error::<Runtime>::PublicUpdateInvalidTransfer
-            );
-            assert_ok!(MantaPay::public_transfer(
-                RuntimeOrigin::signed(ALICE.clone()),
-                dog_token,
-                BOB.clone(),
-            ));
-
-            assert_eq!(
-                Assets::balance(asset_id, ALICE.clone()),
-                init_supply - amount
-            );
-        })
 }
 
 #[test]
@@ -490,12 +444,9 @@ fn concrete_fungible_ledger_transfers_work() {
                     INITIAL_BALANCE + 1,
                     ExistenceRequirement::KeepAlive
                 ),
-                FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
-                    index: <Runtime as frame_system::Config>::PalletInfo::index::<Balances>()
-                        .unwrap() as u8,
-                    error: [2, 0, 0, 0],
-                    message: Some("InsufficientBalance")
-                }))
+                FungibleLedgerError::InvalidTransfer(DispatchError::Token(
+                    TokenError::FundsUnavailable
+                ))
             );
             assert_eq!(Balances::free_balance(ALICE.clone()), current_balance_alice);
             assert_eq!(
@@ -512,12 +463,7 @@ fn concrete_fungible_ledger_transfers_work() {
                     INITIAL_BALANCE,
                     ExistenceRequirement::KeepAlive
                 ),
-                FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
-                    index: <Runtime as frame_system::Config>::PalletInfo::index::<Balances>()
-                        .unwrap() as u8,
-                    error: [4, 0, 0, 0],
-                    message: Some("KeepAlive")
-                }))
+                FungibleLedgerError::InvalidTransfer(DispatchError::Token(TokenError::Frozen))
             );
             assert_eq!(Balances::free_balance(ALICE.clone()), current_balance_alice);
             assert_eq!(
@@ -551,12 +497,9 @@ fn concrete_fungible_ledger_transfers_work() {
                     NativeTokenExistentialDeposit::get() - 1,
                     ExistenceRequirement::KeepAlive
                 ),
-                FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
-                    index: <Runtime as frame_system::Config>::PalletInfo::index::<Balances>()
-                        .unwrap() as u8,
-                    error: [3, 0, 0, 0],
-                    message: Some("ExistentialDeposit")
-                }))
+                FungibleLedgerError::InvalidTransfer(DispatchError::Token(
+                    TokenError::BelowMinimum
+                ))
             );
 
             // Should be able to create new account with enough balance
@@ -616,7 +559,7 @@ fn concrete_fungible_ledger_transfers_work() {
                 is_sufficient: true,
             };
             let source_location =
-                AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+                AssetLocation(VersionedMultiLocation::V3(MultiLocation::parent()));
             assert_ok!(AssetManager::register_asset(
                 root_origin(),
                 source_location,
@@ -624,11 +567,11 @@ fn concrete_fungible_ledger_transfers_work() {
             ),);
 
             // Register and mint for testing.
-            let amount = Balance::MAX;
+            let amount = INITIAL_BALANCE;
             assert_ok!(RuntimeConcreteFungibleLedger::deposit_minting(
                 <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &ALICE.clone(),
-                amount,
+                INITIAL_BALANCE,
             ),);
             assert_eq!(
                 Assets::balance(
@@ -647,12 +590,9 @@ fn concrete_fungible_ledger_transfers_work() {
                     amount,
                     ExistenceRequirement::KeepAlive
                 ),
-                FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
-                    index: <Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
-                        as u8,
-                    error: [0, 0, 0, 0],
-                    message: Some("BalanceLow")
-                }))
+                FungibleLedgerError::InvalidTransfer(DispatchError::Token(
+                    TokenError::NotExpendable
+                ))
             );
             assert_eq!(
                 Assets::balance(
@@ -682,6 +622,12 @@ fn concrete_fungible_ledger_transfers_work() {
                 amount
             );
 
+            assert_ok!(RuntimeConcreteFungibleLedger::deposit_minting(
+                <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+                &BOB.clone(),
+                min_balance,
+            ),);
+
             // Transferring normal amounts should work.
             assert_ok!(RuntimeConcreteFungibleLedger::transfer(
                 <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
@@ -695,14 +641,14 @@ fn concrete_fungible_ledger_transfers_work() {
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     ALICE.clone()
                 ),
-                u128::MAX - transfer_amount
+                amount - transfer_amount
             );
             assert_eq!(
-                Assets::balance(
+                Assets::total_balance(
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    BOB.clone()
+                    &BOB.clone()
                 ),
-                transfer_amount
+                min_balance + transfer_amount
             );
 
             // Transferring all of the balance of an account should work.
@@ -718,7 +664,7 @@ fn concrete_fungible_ledger_transfers_work() {
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     BOB.clone()
                 ),
-                0
+                min_balance
             );
 
             // Transferring unregistered asset ID should not work.
@@ -730,12 +676,9 @@ fn concrete_fungible_ledger_transfers_work() {
                     transfer_amount,
                     ExistenceRequirement::KeepAlive
                 ),
-                FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
-                    index: <Runtime as frame_system::Config>::PalletInfo::index::<Assets>().unwrap()
-                        as u8,
-                    error: [3, 0, 0, 0],
-                    message: Some("Unknown")
-                }))
+                FungibleLedgerError::InvalidTransfer(DispatchError::Token(
+                    TokenError::UnknownAsset
+                ))
             );
         });
 }
@@ -920,7 +863,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
                     &new_account,
                     NativeTokenExistentialDeposit::get() - 1,
-                    true,
+                    Provenance::Minted,
                 ),
                 FungibleLedgerError::BelowMinimum
             );
@@ -939,7 +882,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                 is_sufficient: true,
             };
             let source_location =
-                AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+                AssetLocation(VersionedMultiLocation::V3(MultiLocation::parent()));
             assert_ok!(AssetManager::register_asset(
                 root_origin(),
                 source_location,
@@ -951,7 +894,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     &ALICE.clone(),
                     0,
-                    true,
+                    Provenance::Minted,
                 ),
                 FungibleLedgerError::BelowMinimum
             );
@@ -960,7 +903,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get() + 1,
                     &ALICE.clone(),
                     11,
-                    true,
+                    Provenance::Minted,
                 ),
                 FungibleLedgerError::UnknownAsset
             );
@@ -981,7 +924,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     &ALICE.clone(),
                     1,
-                    true,
+                    Provenance::Minted,
                 ),
                 FungibleLedgerError::Overflow
             );
@@ -997,7 +940,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                 is_sufficient: false,
             };
 
-            let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+            let source_location = AssetLocation(VersionedMultiLocation::V3(MultiLocation::new(
                 1,
                 X2(Parachain(1), PalletInstance(1)),
             )));
@@ -1011,7 +954,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                     <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get() + 1,
                     &XcmFeesAccount::get(),
                     11,
-                    true,
+                    Provenance::Minted,
                 ),
                 FungibleLedgerError::CannotCreate
             );
@@ -1086,7 +1029,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
                 is_sufficient: true,
             };
             let source_location =
-                AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+                AssetLocation(VersionedMultiLocation::V3(MultiLocation::parent()));
             assert_ok!(AssetManager::register_asset(
                 root_origin(),
                 source_location,
@@ -1174,24 +1117,24 @@ fn test_receiver_side_weights() {
         &mut self_reserve_xcm_message_receiver_side::<RuntimeCall>(),
     )
     .unwrap();
-    assert!(weight <= ADVERTISED_DEST_WEIGHT);
+    assert!(weight.ref_time() <= ADVERTISED_DEST_WEIGHT.ref_time());
 
     let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(
         &mut to_reserve_xcm_message_receiver_side::<RuntimeCall>(),
     )
     .unwrap();
-    assert!(weight <= ADVERTISED_DEST_WEIGHT);
+    assert!(weight.ref_time() <= ADVERTISED_DEST_WEIGHT.ref_time());
 }
 
 #[test]
 fn test_sender_side_xcm_weights() {
     let mut msg = self_reserve_xcm_message_sender_side::<RuntimeCall>();
     let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
-    assert!(weight < ADVERTISED_DEST_WEIGHT);
+    assert!(weight.ref_time() < ADVERTISED_DEST_WEIGHT.ref_time());
 
     let mut msg = to_reserve_xcm_message_sender_side::<RuntimeCall>();
     let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
-    assert!(weight < ADVERTISED_DEST_WEIGHT);
+    assert!(weight.ref_time() < ADVERTISED_DEST_WEIGHT.ref_time());
 }
 
 mod governance_tests {

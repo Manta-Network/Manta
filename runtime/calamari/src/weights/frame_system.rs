@@ -46,12 +46,13 @@ use manta_primitives::constants::RocksDbWeight;
 
 /// Weight functions needed for frame_system.
 pub trait WeightInfo {
-    fn remark(b: u32, ) -> Weight;
-    fn remark_with_event(b: u32, ) -> Weight;
-    fn set_heap_pages() -> Weight;
-    fn set_storage(i: u32, ) -> Weight;
-    fn kill_storage(i: u32, ) -> Weight;
-    fn kill_prefix(p: u32, ) -> Weight;
+	fn remark(b: u32, ) -> Weight;
+	fn remark_with_event(b: u32, ) -> Weight;
+	fn set_heap_pages() -> Weight;
+	fn set_code() -> Weight;
+	fn set_storage(i: u32, ) -> Weight;
+	fn kill_storage(i: u32, ) -> Weight;
+	fn kill_prefix(p: u32, ) -> Weight;
 }
 
 /// Weights for frame_system using the Substrate node and recommended hardware.
@@ -60,50 +61,59 @@ impl<T: frame_system::Config> frame_system::WeightInfo for SubstrateWeight<T> {
 	/// The range of component `b` is `[0, 3670016]`.
 	fn remark(b: u32, ) -> Weight {
 		// Minimum execution time: 6_992 nanoseconds.
-		Weight::from_ref_time(16_569_447)
+		Weight::from_parts(16_569_447, 0)
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(458).saturating_mul(b.into()))
+			.saturating_add(Weight::from_parts(458, 0).saturating_mul(b.into()))
 	}
 	/// The range of component `b` is `[0, 3670016]`.
 	fn remark_with_event(b: u32, ) -> Weight {
 		// Minimum execution time: 13_480 nanoseconds.
-		Weight::from_ref_time(13_649_000)
+		Weight::from_parts(13_649_000, 0)
 			// Standard Error: 1
-			.saturating_add(Weight::from_ref_time(2_037).saturating_mul(b.into()))
+			.saturating_add(Weight::from_parts(2_037, 0).saturating_mul(b.into()))
 	}
 	// Storage: System Digest (r:1 w:1)
 	// Storage: unknown [0x3a686561707061676573] (r:0 w:1)
 	fn set_heap_pages() -> Weight {
 		// Minimum execution time: 16_008 nanoseconds.
-		Weight::from_ref_time(26_061_000)
+		Weight::from_parts(26_061_000, 0)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(2))
+	}
+	fn set_code() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `156`
+		//  Estimated: `1641`
+		// Minimum execution time: 122_419_636_000 picoseconds.
+		Weight::from_parts(127_638_762_000, 1641)
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 	// Storage: Skipped Metadata (r:0 w:0)
 	/// The range of component `i` is `[0, 1000]`.
 	fn set_storage(i: u32, ) -> Weight {
 		// Minimum execution time: 7_523 nanoseconds.
-		Weight::from_ref_time(7_618_000)
+		Weight::from_parts(7_618_000, 0)
 			// Standard Error: 1_503
-			.saturating_add(Weight::from_ref_time(723_581).saturating_mul(i.into()))
+			.saturating_add(Weight::from_parts(723_581, 0).saturating_mul(i.into()))
 			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(i.into())))
 	}
 	// Storage: Skipped Metadata (r:0 w:0)
 	/// The range of component `i` is `[0, 1000]`.
 	fn kill_storage(i: u32, ) -> Weight {
 		// Minimum execution time: 4_056 nanoseconds.
-		Weight::from_ref_time(4_144_000)
+		Weight::from_parts(4_144_000, 0)
 			// Standard Error: 546
-			.saturating_add(Weight::from_ref_time(521_515).saturating_mul(i.into()))
+			.saturating_add(Weight::from_parts(521_515, 0).saturating_mul(i.into()))
 			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(i.into())))
 	}
 	// Storage: Skipped Metadata (r:0 w:0)
 	/// The range of component `p` is `[0, 1000]`.
 	fn kill_prefix(p: u32, ) -> Weight {
 		// Minimum execution time: 17_856 nanoseconds.
-		Weight::from_ref_time(18_373_000)
+		Weight::from_parts(18_373_000, 0)
 			// Standard Error: 1_613
-			.saturating_add(Weight::from_ref_time(1_158_786).saturating_mul(p.into()))
+			.saturating_add(Weight::from_parts(1_158_786, 0).saturating_mul(p.into()))
 			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(p.into())))
 	}
 }
@@ -113,50 +123,59 @@ impl WeightInfo for () {
 	/// The range of component `b` is `[0, 3670016]`.
 	fn remark(b: u32, ) -> Weight {
 		// Minimum execution time: 6_992 nanoseconds.
-		Weight::from_ref_time(16_569_447)
+		Weight::from_parts(16_569_447, 0)
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(458).saturating_mul(b.into()))
+			.saturating_add(Weight::from_parts(458, 0).saturating_mul(b.into()))
 	}
 	/// The range of component `b` is `[0, 3670016]`.
 	fn remark_with_event(b: u32, ) -> Weight {
 		// Minimum execution time: 13_480 nanoseconds.
-		Weight::from_ref_time(13_649_000)
+		Weight::from_parts(13_649_000, 0)
 			// Standard Error: 1
-			.saturating_add(Weight::from_ref_time(2_037).saturating_mul(b.into()))
+			.saturating_add(Weight::from_parts(2_037, 0).saturating_mul(b.into()))
 	}
 	// Storage: System Digest (r:1 w:1)
 	// Storage: unknown [0x3a686561707061676573] (r:0 w:1)
 	fn set_heap_pages() -> Weight {
 		// Minimum execution time: 16_008 nanoseconds.
-		Weight::from_ref_time(26_061_000)
+		Weight::from_parts(26_061_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(2))
+	}
+	fn set_code() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `156`
+		//  Estimated: `1641`
+		// Minimum execution time: 122_419_636_000 picoseconds.
+		Weight::from_parts(127_638_762_000, 1641)
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 	// Storage: Skipped Metadata (r:0 w:0)
 	/// The range of component `i` is `[0, 1000]`.
 	fn set_storage(i: u32, ) -> Weight {
 		// Minimum execution time: 7_523 nanoseconds.
-		Weight::from_ref_time(7_618_000)
+		Weight::from_parts(7_618_000, 0)
 			// Standard Error: 1_503
-			.saturating_add(Weight::from_ref_time(723_581).saturating_mul(i.into()))
+			.saturating_add(Weight::from_parts(723_581, 0).saturating_mul(i.into()))
 			.saturating_add(RocksDbWeight::get().writes((1_u64).saturating_mul(i.into())))
 	}
 	// Storage: Skipped Metadata (r:0 w:0)
 	/// The range of component `i` is `[0, 1000]`.
 	fn kill_storage(i: u32, ) -> Weight {
 		// Minimum execution time: 4_056 nanoseconds.
-		Weight::from_ref_time(4_144_000)
+		Weight::from_parts(4_144_000, 0)
 			// Standard Error: 546
-			.saturating_add(Weight::from_ref_time(521_515).saturating_mul(i.into()))
+			.saturating_add(Weight::from_parts(521_515, 0).saturating_mul(i.into()))
 			.saturating_add(RocksDbWeight::get().writes((1_u64).saturating_mul(i.into())))
 	}
 	// Storage: Skipped Metadata (r:0 w:0)
 	/// The range of component `p` is `[0, 1000]`.
 	fn kill_prefix(p: u32, ) -> Weight {
 		// Minimum execution time: 17_856 nanoseconds.
-		Weight::from_ref_time(18_373_000)
+		Weight::from_parts(18_373_000, 0)
 			// Standard Error: 1_613
-			.saturating_add(Weight::from_ref_time(1_158_786).saturating_mul(p.into()))
+			.saturating_add(Weight::from_parts(1_158_786, 0).saturating_mul(p.into()))
 			.saturating_add(RocksDbWeight::get().writes((1_u64).saturating_mul(p.into())))
 	}
 }

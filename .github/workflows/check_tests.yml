@@ -52,8 +52,8 @@ jobs:
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup update
-          rustup toolchain install nightly-2023-03-03
-          rustup default nightly-2023-03-03
+          rustup toolchain install 1.71.0
+          rustup default 1.71.0
           rustup target add wasm32-unknown-unknown
       - name: cache cargo
         uses: Swatinem/rust-cache@v2
@@ -93,8 +93,8 @@ jobs:
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup update
-          rustup toolchain install nightly-2023-03-03
-          rustup default nightly-2023-03-03
+          rustup toolchain install 1.71.0
+          rustup default 1.71.0
           rustup target add wasm32-unknown-unknown
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH

@@ -24,6 +24,7 @@ use frame_support::{
     pallet_prelude::Weight,
     traits::{Get, OnRuntimeUpgrade, PalletInfoAccess, StorageVersion},
 };
+use sp_runtime::DispatchError;
 use sp_std::vec::Vec;
 
 /// Storage migration to populate the existing assets'
@@ -67,19 +68,23 @@ where
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, DispatchError> {
         let storage_version = <T as GetStorageVersion>::on_chain_storage_version();
         if storage_version >= 1 {
-            return Err("Storage version is >= 1, the migration won't be executed.");
+            return Err(DispatchError::Other(
+                "Storage version is >= 1, the migration won't be executed.",
+            ));
         }
         Ok(Vec::new())
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), DispatchError> {
         let storage_version = <T as GetStorageVersion>::on_chain_storage_version();
         if storage_version < 1 {
-            return Err("Storage version is >= 1, the migration won't be executed.");
+            return Err(DispatchError::Other(
+                "Storage version is >= 1, the migration won't be executed.",
+            ));
         }
         let acala = (2000, 3); // karura has 3 asset locations on calamari.
         let moonbeam = (2023, 1); // moonbean has 1 asset location on calamari.
@@ -91,7 +96,9 @@ where
             log::info!("✅ Storage migration for asset-manager has been executed successfully.");
             Ok(())
         } else {
-            Err("Failed to executed storage migration for asset-manager.")
+            Err(DispatchError::Other(
+                "Failed to executed storage migration for asset-manager.",
+            ))
         }
     }
 }

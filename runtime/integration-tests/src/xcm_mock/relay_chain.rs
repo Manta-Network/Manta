@@ -20,32 +20,47 @@
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU32, Everything, Nothing},
+    traits::{ConstU32, Everything, Nothing, ProcessMessage, ProcessMessageError},
+    weights::{Weight, WeightMeter},
 };
+use frame_system::EnsureRoot;
 use sp_core::H256;
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
     AccountId32,
 };
 
+#[cfg(feature = "runtime-benchmarks")]
+use super::ReachableDest;
 use manta_primitives::{
     types::{BlockNumber, Header},
     xcm::AllowTopLevelPaidExecutionFrom,
 };
 use polkadot_parachain::primitives::Id as ParaId;
-use polkadot_runtime_parachains::{configuration, origin, shared, ump};
+use polkadot_runtime_parachains::{
+    configuration,
+    inclusion::{AggregateMessageOrigin, UmpQueueId},
+    origin, shared,
+};
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
     ChildParachainAsNative, ChildParachainConvertsVia, ChildSystemParachainAsSuperuser,
     CurrencyAdapter as XcmCurrencyAdapter, FixedRateOfFungible, FixedWeightBounds, IsConcrete,
-    LocationInverter, SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation,
-    TakeWeightCredit,
+    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::{Config, XcmExecutor};
 
 pub type AccountId = AccountId32;
 pub type Balance = u128;
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "calamari")] {
+        type PalletXcmWeightInfo = calamari_runtime::weights::pallet_xcm::SubstrateWeight<Runtime>;
+    } else {
+        type PalletXcmWeightInfo = manta_runtime::weights::pallet_xcm::SubstrateWeight<Runtime>;
+    }
+}
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
@@ -94,6 +109,10 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
+    type FreezeIdentifier = ();
+    type MaxFreezes = ();
+    type HoldIdentifier = ();
+    type MaxHolds = ConstU32<50>;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -110,9 +129,9 @@ impl configuration::Config for Runtime {
 }
 
 parameter_types! {
-    pub const KsmLocation: MultiLocation = Here.into();
+    pub const KsmLocation: MultiLocation = Here.into_location();
     pub const KusamaNetwork: NetworkId = NetworkId::Kusama;
-    pub const AnyNetwork: NetworkId = NetworkId::Any;
+    pub UniversalLocation: InteriorMultiLocation = KusamaNetwork::get().into();
     pub Ancestry: MultiLocation = Here.into();
     pub UnitWeightCost: u64 = 1_000;
 }
@@ -133,9 +152,10 @@ type LocalOriginConverter = (
 );
 
 parameter_types! {
-    pub const BaseXcmWeight: u64 = 1_000;
-    pub KsmPerSecond: (AssetId, u128) = (Concrete(KsmLocation::get()), 1);
+    pub const BaseXcmWeight: Weight = Weight::from_parts(1_000_u64, 0);
+    pub KsmPerSecond: (AssetId, u128, u128) = (Concrete(KsmLocation::get()), 1, 0);
     pub const MaxInstructions: u32 = 100;
+    pub const MaxAssetsIntoHolding: u32 = 64;
 }
 
 pub type XcmRouter = super::RelayChainXcmRouter;
@@ -158,7 +178,6 @@ impl Config for XcmExecutorConfig {
     type OriginConverter = LocalOriginConverter;
     type IsReserve = ();
     type IsTeleporter = ();
-    type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = Barrier;
     type Weigher = FixedWeightBounds<BaseXcmWeight, RuntimeCall, MaxInstructions>;
     type Trader = FixedRateOfFungible<KsmPerSecond, ()>;
@@ -166,6 +185,16 @@ impl Config for XcmExecutorConfig {
     type AssetTrap = XcmPallet;
     type AssetClaims = XcmPallet;
     type SubscriptionService = XcmPallet;
+    type UniversalLocation = UniversalLocation;
+    type AssetLocker = XcmPallet;
+    type AssetExchanger = ();
+    type PalletInstancesInfo = ();
+    type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
+    type MessageExporter = ();
+    type UniversalAliases = Nothing;
+    type CallDispatcher = RuntimeCall;
+    type SafeCallFilter = Everything;
+    type FeeManager = ();
 }
 
 pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, KusamaNetwork>;
@@ -181,23 +210,66 @@ impl pallet_xcm::Config for Runtime {
     type XcmTeleportFilter = Everything;
     type XcmReserveTransferFilter = Everything;
     type Weigher = FixedWeightBounds<BaseXcmWeight, RuntimeCall, MaxInstructions>;
-    type LocationInverter = LocationInverter<Ancestry>;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
     type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
+    type Currency = Balances;
+    type CurrencyMatcher = ();
+    type TrustedLockers = ();
+    type UniversalLocation = UniversalLocation;
+    type AdminOrigin = EnsureRoot<AccountId>;
+    type SovereignAccountOf = SovereignAccountOf;
+    type MaxRemoteLockConsumers = ConstU32<0>;
+    type MaxLockers = ConstU32<8>;
+    type RemoteLockConsumerIdentifier = ();
+    type WeightInfo = PalletXcmWeightInfo;
+    #[cfg(feature = "runtime-benchmarks")]
+    type ReachableDest = ReachableDest;
+}
+
+parameter_types! {
+    /// Amount of weight that can be spent per block to service messages.
+    pub MessageQueueServiceWeight: Weight = Weight::from_parts(1_000_000_000, 1_000_000);
+    pub const MessageQueueHeapSize: u32 = 65_536;
+    pub const MessageQueueMaxStale: u32 = 16;
+}
+
+impl pallet_message_queue::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Size = u32;
+    type HeapSize = MessageQueueHeapSize;
+    type MaxStale = MessageQueueMaxStale;
+    type ServiceWeight = MessageQueueServiceWeight;
+    type MessageProcessor = MessageProcessor;
+    type QueueChangeHandler = ();
+    type WeightInfo = ();
+}
+
+/// Message processor to handle any messages that were enqueued into the `MessageQueue` pallet.
+pub struct MessageProcessor;
+impl ProcessMessage for MessageProcessor {
+    type Origin = AggregateMessageOrigin;
+
+    fn process_message(
+        message: &[u8],
+        origin: Self::Origin,
+        meter: &mut WeightMeter,
+        id: &mut [u8; 32],
+    ) -> Result<bool, ProcessMessageError> {
+        let para = match origin {
+            AggregateMessageOrigin::Ump(UmpQueueId::Para(para)) => para,
+        };
+        xcm_builder::ProcessXcmMessage::<
+            Junction,
+            xcm_executor::XcmExecutor<XcmExecutorConfig>,
+            RuntimeCall,
+        >::process_message(message, Junction::Parachain(para.into()), meter, id)
+    }
 }
 
 parameter_types! {
     pub const FirstMessageFactorPercent: u64 = 100;
-}
-
-impl ump::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type UmpSink = ump::XcmSink<XcmExecutor<XcmExecutorConfig>, Runtime>;
-    type FirstMessageFactorPercent = FirstMessageFactorPercent;
-    type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
-    type WeightInfo = polkadot_runtime_parachains::ump::TestWeightInfo;
 }
 
 impl origin::Config for Runtime {}
@@ -214,9 +286,9 @@ construct_runtime!(
         System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         ParasOrigin: origin::{Pallet, Origin},
-        ParasUmp: ump::{Pallet, Call, Storage, Event},
         XcmPallet: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
         Utility: pallet_utility::{Pallet, Call, Event},
+        MessageQueue: pallet_message_queue::{Pallet, Event<T>},
     }
 );
 

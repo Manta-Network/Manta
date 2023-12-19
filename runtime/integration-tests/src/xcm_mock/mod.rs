@@ -23,7 +23,8 @@ pub mod xcm_tests;
 use frame_support::traits::GenesisBuild;
 use polkadot_parachain::primitives::Id as ParaId;
 use sp_runtime::traits::AccountIdConversion;
-use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
+use xcm::latest::prelude::*;
+use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain, TestExt};
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
 pub const INITIAL_BALANCE: u128 = 10_000_000_000_000_000;
 pub const PARA_A_ID: u32 = 1;
@@ -60,7 +61,11 @@ decl_test_parachain! {
 decl_test_relay_chain! {
     pub struct Relay {
         Runtime = relay_chain::Runtime,
+        RuntimeCall = relay_chain::RuntimeCall,
+        RuntimeEvent = relay_chain::RuntimeEvent,
         XcmConfig = relay_chain::XcmExecutorConfig,
+        MessageQueue = relay_chain::MessageQueue,
+        System = relay_chain::System,
         new_ext = relay_ext(),
     }
 }
@@ -134,3 +139,7 @@ pub fn relay_ext() -> sp_io::TestExternalities {
 pub type RelayChainPalletXcm = pallet_xcm::Pallet<relay_chain::Runtime>;
 pub type RelayBalances = pallet_balances::Pallet<relay_chain::Runtime>;
 pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
+
+frame_support::parameter_types! {
+    pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
+}

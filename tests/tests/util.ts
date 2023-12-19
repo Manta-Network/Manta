@@ -25,9 +25,8 @@ export const SPAWNING_TIME = 120000;
 export async function startMantaNode(): Promise<{ binary: ChildProcess; } & TestContext> {
     const P2P_PORT = await getPort({ port: getPort.makeRange(19931, 22000) });
     const RPC_PORT = await getPort({ port: getPort.makeRange(19931, 22000) });
-    const WS_PORT = await getPort({ port: getPort.makeRange(19931, 22000) });
 
-    console.log(`P2P: ${P2P_PORT}, RPC: ${RPC_PORT}, WS: ${WS_PORT}`);
+    console.log(`P2P: ${P2P_PORT}, RPC: ${RPC_PORT}`);
 
     const cmd = BINARY_PATH;
     const args = [
@@ -40,8 +39,6 @@ export async function startMantaNode(): Promise<{ binary: ChildProcess; } & Test
         `--port=${P2P_PORT}`,
         `--rpc-port=${RPC_PORT}`,
         `--rpc-external`,
-        `--ws-port=${WS_PORT}`,
-        `--ws-external`,
         `--rpc-cors=all`,
         `--rpc-methods=unsafe`,
         `--pruning=archive`,
@@ -78,7 +75,7 @@ export async function startMantaNode(): Promise<{ binary: ChildProcess; } & Test
             binaryLogs.push(chunk);
             if (chunk.toString().match(/best: #0/)) {
                 try {
-                    const { api, alice, bob } = await getTestUtils(`ws://127.0.0.1:${WS_PORT}`);
+                    const { api, alice, bob } = await getTestUtils(`ws://127.0.0.1:${RPC_PORT}`);
 
                     clearTimeout(timer);
                     if (!DISPLAY_LOG) {

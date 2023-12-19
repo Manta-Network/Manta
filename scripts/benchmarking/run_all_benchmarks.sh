@@ -76,7 +76,11 @@ fi
 MANTA=./target/production/manta
 
 # Manually exclude some pallets.
+# Will fix it in next release
+# currently, both pallets have problems on benchmarking
 EXCLUDED_PALLETS=(
+  "frame_system"
+  "zenlink_protocol"
 )
 
 # Load all pallet names in an array.

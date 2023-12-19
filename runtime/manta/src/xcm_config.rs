@@ -24,7 +24,7 @@ use codec::{Decode, Encode};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
     match_types, parameter_types,
-    traits::{Contains, Currency, Everything, Nothing},
+    traits::{ConstU32, Contains, Currency, Everything, Nothing},
     weights::Weight,
 };
 use frame_system::EnsureRoot;
@@ -46,10 +46,10 @@ use sp_std::marker::PhantomData;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
-    ConvertedConcreteAssetId, EnsureXcmOrigin, FixedRateOfFungible, LocationInverter,
-    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit, WeightInfoBounds,
+    ConvertedConcreteId, EnsureXcmOrigin, FixedRateOfFungible, ParentAsSuperuser, ParentIsPreset,
+    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeRevenue,
+    TakeWeightCredit, WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
@@ -122,7 +122,7 @@ parameter_types! {
     /// Used in native traders
     /// This might be able to skipped.
     /// We have to use `here()` because of reanchoring logic
-    pub ParaTokenPerSecond: (AssetId, u128) = (Concrete(MultiLocation::here()), 1_000_000_000);
+    pub ParaTokenPerSecond: (cumulus_primitives_core::AssetId, u128, u128) = (Concrete(MultiLocation::here()), 1_000_000_000, 0);
     pub const MaxInstructions: u32 = 100;
 }
 
@@ -137,7 +137,7 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
     // Used when the incoming asset is a fungible concrete asset matching the given location or name:
     IsNativeConcrete<SelfReserve>,
     // Used to match incoming assets which are not the native asset.
-    ConvertedConcreteAssetId<MantaAssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
+    ConvertedConcreteId<MantaAssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
 >;
 
 match_types! {
@@ -174,6 +174,8 @@ pub type Barrier = (
 
 parameter_types! {
     pub XcmFeesAccount: AccountId = Treasury::account_id();
+    pub const MaxAssetsIntoHolding: u32 = 64;
+    pub const RuntimeXcmWeight: Weight = Weight::from_parts(10, 10);
 }
 /// Xcm fee of native token
 pub struct XcmNativeFeeToTreasury;
@@ -194,7 +196,7 @@ impl TakeRevenue for XcmNativeFeeToTreasury {
 pub type MantaXcmFeesToAccount = XcmFeesToAccount<
     AccountId,
     Assets,
-    ConvertedConcreteAssetId<MantaAssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
+    ConvertedConcreteId<MantaAssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
     XcmFeesAccount,
 >;
 
@@ -208,10 +210,10 @@ impl Config for XcmExecutorConfig {
     // Combinations of (Location, Asset) pairs which we trust as reserves.
     type IsReserve = MultiNativeAsset;
     type IsTeleporter = ();
-    type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = Barrier;
     type Weigher = WeightInfoBounds<
         crate::weights::xcm::MantaXcmWeight<RuntimeCall>,
+        // RuntimeXcmWeight,
         RuntimeCall,
         MaxInstructions,
     >;
@@ -230,6 +232,16 @@ impl Config for XcmExecutorConfig {
     type AssetClaims = PolkadotXcm;
     // This is needed for the version change notifier work
     type SubscriptionService = PolkadotXcm;
+    type UniversalLocation = UniversalLocation;
+    type AssetLocker = PolkadotXcm;
+    type AssetExchanger = ();
+    type PalletInstancesInfo = crate::AllPalletsWithSystem;
+    type MaxAssetsIntoHolding = MaxAssetsIntoHolding;
+    type MessageExporter = ();
+    type UniversalAliases = Nothing;
+    type CallDispatcher = RuntimeCall;
+    type SafeCallFilter = Everything;
+    type FeeManager = ();
 }
 
 /// Converts a Signed Local Origin into a MultiLocation
@@ -239,10 +251,15 @@ pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, R
 /// queues.
 pub type XcmRouter = (
     // Two routers - use UMP to communicate with the relay chain:
-    cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm>,
+    cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, ()>,
     // ..and XCMP to communicate with the sibling chains.
     XcmpQueue,
 );
+
+#[cfg(feature = "runtime-benchmarks")]
+parameter_types! {
+    pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
+}
 
 impl pallet_xcm::Config for Runtime {
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
@@ -262,8 +279,19 @@ impl pallet_xcm::Config for Runtime {
         RuntimeCall,
         MaxInstructions,
     >;
-    type LocationInverter = LocationInverter<Ancestry>;
     type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
+    type Currency = Balances;
+    type CurrencyMatcher = ();
+    type TrustedLockers = ();
+    type UniversalLocation = UniversalLocation;
+    type AdminOrigin = EnsureRoot<AccountId>;
+    type SovereignAccountOf = LocationToAccountId;
+    type MaxRemoteLockConsumers = ConstU32<0>;
+    type MaxLockers = ConstU32<8>;
+    type RemoteLockConsumerIdentifier = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type ReachableDest = ReachableDest;
+    type WeightInfo = crate::weights::pallet_xcm::SubstrateWeight<Runtime>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -286,6 +314,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToCallOrigin;
     type WeightInfo = crate::weights::cumulus_pallet_xcmp_queue::SubstrateWeight<Runtime>;
+    type PriceForSiblingDelivery = ();
 }
 
 /// We wrap AssetId for XToken
@@ -314,8 +343,9 @@ where
 }
 
 parameter_types! {
-    pub const BaseXcmWeight: u64 = 100_000_000;
+    pub const BaseXcmWeight: Weight = Weight::from_parts(100_000_000u64, 0);
     pub const MaxAssetsForTransfer: usize = 2;
+    pub UniversalLocation: InteriorMultiLocation = X2(GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into()));
 }
 
 impl Contains<CurrencyId> for AssetManager {
@@ -347,10 +377,10 @@ impl orml_xtokens::Config for Runtime {
         MaxInstructions,
     >;
     type BaseXcmWeight = BaseXcmWeight;
-    type LocationInverter = LocationInverter<Ancestry>;
     type MaxAssetsForTransfer = MaxAssetsForTransfer;
     type MinXcmFee = AssetManager;
     type MultiLocationsFilter = AssetManager;
     type OutgoingAssetsFilter = AssetManager;
     type ReserveProvider = AbsoluteReserveProvider;
+    type UniversalLocation = UniversalLocation;
 }

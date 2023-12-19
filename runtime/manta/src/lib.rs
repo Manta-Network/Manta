@@ -42,7 +42,7 @@ use sp_version::RuntimeVersion;
 
 use cumulus_pallet_parachain_system::{
     register_validate_block, CheckInherents, ParachainSetCode, RelayChainStateProof,
-    RelaychainBlockNumberProvider,
+    RelaychainDataProvider,
 };
 use frame_support::{
     construct_runtime,
@@ -58,7 +58,7 @@ use frame_support::{
 
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureRoot,
+    EnsureRoot, EnsureSigned,
 };
 use manta_primitives::{
     constants::{
@@ -67,7 +67,7 @@ use manta_primitives::{
     },
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, PoolId, Signature},
 };
-use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
+use manta_support::manta_pay::{PullResponse, RawCheckpoint};
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use pallet_session::ShouldEndSession;
 use runtime_common::{
@@ -168,9 +168,9 @@ pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(70);
 
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
-pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_ref_time(WEIGHT_PER_SECOND)
+pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(WEIGHT_PER_SECOND, 0)
     .saturating_div(2)
-    .set_proof_size(cumulus_primitives_core::relay_chain::v2::MAX_POV_SIZE as u64);
+    .set_proof_size(cumulus_primitives_core::relay_chain::MAX_POV_SIZE as u64);
 
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
@@ -220,7 +220,6 @@ impl Contains<RuntimeCall> for MantaFilter {
         match call {
             // Explicitly DISALLOWED calls ( Pallet user extrinsics we don't want used WITH REASONING )
             // Explicitly ALLOWED calls
-            | RuntimeCall::Authorship(_)
             | RuntimeCall::Democracy(pallet_democracy::Call::vote {..}
                 | pallet_democracy::Call::emergency_cancel {..}
                 | pallet_democracy::Call::external_propose_default {..}
@@ -274,7 +273,6 @@ impl Contains<RuntimeCall> for MantaFilter {
                 | orml_xtokens::Call::transfer_multiasset_with_fee {..})
             | RuntimeCall::Balances(_)
             | RuntimeCall::Preimage(_)
-            | RuntimeCall::MantaPay(_)
             | RuntimeCall::MantaSbt(_)
             | RuntimeCall::NameService(_)
             | RuntimeCall::TransactionPause(_)
@@ -312,7 +310,7 @@ impl frame_system::Config for Runtime {
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type AccountData = pallet_balances::AccountData<Balance>;
-    type SystemWeightInfo = weights::frame_system::SubstrateWeight<Runtime>;
+    type SystemWeightInfo = ();
     type SS58Prefix = SS58Prefix;
     type OnSetCode = ParachainSetCode<Self>;
     type MaxConsumers = ConstU32<16>;
@@ -429,8 +427,6 @@ impl pallet_lottery::Config for Runtime {
 
 impl pallet_authorship::Config for Runtime {
     type FindAuthor = AuthorInherent;
-    type UncleGenerations = ConstU32<0>;
-    type FilterUncle = ();
     type EventHandler = (CollatorSelection,);
 }
 
@@ -448,6 +444,10 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = NativeTokenExistentialDeposit;
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ();
+    type HoldIdentifier = ();
+    type MaxHolds = ConstU32<50>;
 }
 
 parameter_types! {
@@ -491,6 +491,7 @@ impl pallet_utility::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
+    type WeightInfo = weights::pallet_sudo::SubstrateWeight<Runtime>;
 }
 
 impl pallet_aura_style_filter::Config for Runtime {
@@ -555,9 +556,10 @@ impl pallet_parachain_staking::Config for Runtime {
 
 impl pallet_author_inherent::Config for Runtime {
     // We start a new slot each time we see a new relay block.
-    type SlotBeacon = RelaychainBlockNumberProvider<Self>;
+    type SlotBeacon = RelaychainDataProvider<Self>;
     type AccountLookup = CollatorSelection;
-    type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
+    type AuthorId = AccountId;
+    type WeightInfo = ();
     /// Nimbus filter pipeline step 1:
     /// Filters out NimbusIds not registered as SessionKeys of some AccountId
     type CanAuthor = AuraAuthorFilter;
@@ -742,12 +744,14 @@ impl pallet_democracy::Config for Runtime {
     type Preimages = Preimage;
     type MaxDeposits = ConstU32<100>;
     type MaxBlacklisted = ConstU32<100>;
+    type SubmitOrigin = EnsureSigned<AccountId>;
 }
 
 parameter_types! {
     /// The maximum amount of time (in blocks) for council members to vote on motions.
     /// Motions may end in fewer blocks if enough votes are cast to determine the result.
     pub const CouncilMotionDuration: BlockNumber = 3 * DAYS;
+    pub MaxProposalWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
 }
 
 type CouncilCollective = pallet_collective::Instance1;
@@ -759,6 +763,8 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
     type MaxProposals = ConstU32<100>;
     type MaxMembers = ConstU32<100>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
+    type SetMembersOrigin = EnsureRoot<AccountId>;
+    type MaxProposalWeight = MaxProposalWeight;
     type WeightInfo = weights::pallet_collective::SubstrateWeight<Runtime>;
 }
 
@@ -794,6 +800,8 @@ impl pallet_collective::Config<TechnicalCollective> for Runtime {
     type MaxProposals = ConstU32<100>;
     type MaxMembers = ConstU32<100>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
+    type SetMembersOrigin = EnsureRoot<AccountId>;
+    type MaxProposalWeight = MaxProposalWeight;
     type WeightInfo = weights::pallet_collective::SubstrateWeight<Runtime>;
 }
 
@@ -888,6 +896,30 @@ impl pallet_name_service::Config for Runtime {
     type WeightInfo = weights::pallet_name_service::SubstrateWeight<Runtime>;
 }
 
+impl parachain_info::Config for Runtime {}
+
+struct CheckInherentsStruct;
+impl CheckInherents<Block> for CheckInherentsStruct {
+    fn check_inherents(
+        block: &Block,
+        relay_state_proof: &RelayChainStateProof,
+    ) -> sp_inherents::CheckInherentsResult {
+        let relay_chain_slot = relay_state_proof
+            .read_slot()
+            .expect("Could not read the relay chain slot from the proof");
+
+        let inherent_data =
+            cumulus_primitives_timestamp::InherentDataProvider::from_relay_chain_slot_and_duration(
+                relay_chain_slot,
+                sp_std::time::Duration::from_secs(6),
+            )
+            .create_inherent_data()
+            .expect("Could not create the timestamp inherent data");
+
+        inherent_data.check_extrinsics(block)
+    }
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -920,7 +952,7 @@ construct_runtime!(
         AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 60,
         AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage} = 63,
         // The order of the next 4 is important and shall not change.
-        Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
+        Authorship: pallet_authorship::{Pallet, Storage} = 20,
         CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
@@ -947,7 +979,7 @@ construct_runtime!(
         // Assets management
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
-        MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
+        // 47 was occupied by mantapay
         MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
         NameService: pallet_name_service::{Pallet, Call, Storage, Event<T>} = 52,
 
@@ -987,7 +1019,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, Si
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = ();
+pub type OnRuntimeUpgradeHooks = (migrations::asset_manager::XcmV1ToV3<Runtime>,);
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
@@ -1011,7 +1043,9 @@ mod benches {
         [pallet_collective, Council]
         [pallet_membership, CouncilMembership]
         [pallet_multisig, Multisig]
-        [frame_system, SystemBench::<Runtime>]
+        // always get this error ValidationDataNotAvailable while benchmarking
+        // we disable frame_system in this release, and will fix it in next release
+        // [frame_system, SystemBench::<Runtime>]
         [pallet_timestamp, Timestamp]
         [pallet_utility, Utility]
         [pallet_preimage, Preimage]
@@ -1019,10 +1053,13 @@ mod benches {
         [pallet_assets, Assets]
         [pallet_asset_manager, AssetManager]
         [pallet_scheduler, Scheduler]
+        [pallet_sudo, Sudo]
         // XCM
         [cumulus_pallet_xcmp_queue, XcmpQueue]
-        [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
-        [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
+        // always get this error(Unimplemented) while benchmarking pallet_xcm_benchmarks::fungible::initiate_teleport
+        // so this time we will use statemint's fungible weights
+        // [pallet_xcm_benchmarks::fungible, XcmBalances]
+        [pallet_xcm_benchmarks::generic, XcmGeneric]
         [pallet_session, SessionBench::<Runtime>]
         // Manta pallets
         [pallet_tx_pause, TransactionPause]
@@ -1030,10 +1067,11 @@ mod benches {
         [pallet_parachain_staking, ParachainStaking]
         [pallet_randomness, Randomness]
         [pallet_lottery, Lottery]
-        [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
         [pallet_name_service, NameService]
-        [zenlink_protocol, ZenlinkProtocol]
+        // always get this error Other("deposit lp asset error") while benchmarking
+        // we disable zenlink in this release, and will fix it in next release
+        // [zenlink_protocol, ZenlinkProtocol]
         [pallet_farming, Farming]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
@@ -1070,6 +1108,14 @@ impl_runtime_apis! {
     impl sp_api::Metadata<Block> for Runtime {
         fn metadata() -> OpaqueMetadata {
             OpaqueMetadata::new(Runtime::metadata().into())
+        }
+
+        fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+            Runtime::metadata_at_version(version)
+        }
+
+        fn metadata_versions() -> sp_std::vec::Vec<u32> {
+            Runtime::metadata_versions()
         }
     }
 
@@ -1141,6 +1187,12 @@ impl_runtime_apis! {
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_fee_details(uxt, len)
         }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
+        }
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
+        }
     }
 
     impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
@@ -1158,7 +1210,14 @@ impl_runtime_apis! {
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_call_fee_details(call, len)
         }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
+        }
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
+        }
     }
+
     impl pallet_lottery::runtime::LotteryApi<Block> for Runtime {
         fn not_in_drawing_freezeout(
         ) -> bool {
@@ -1175,22 +1234,6 @@ impl_runtime_apis! {
     impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
         fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
             ParachainSystem::collect_collation_info(header)
-        }
-    }
-
-    impl pallet_manta_pay::runtime::PullLedgerDiffApi<Block> for Runtime {
-        fn pull_ledger_diff(
-            checkpoint: RawCheckpoint,
-            max_receiver: u64,
-            max_sender: u64
-        ) -> PullResponse {
-            MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
-        }
-        fn pull_ledger_total_count() -> [u8; 16] {
-            MantaPay::pull_ledger_total_count()
-        }
-        fn initial_pull(checkpoint: RawCheckpoint, max_receiver: u64) -> InitialSyncResponse {
-            MantaPay::initial_pull(checkpoint.into(), max_receiver)
         }
     }
 
@@ -1311,11 +1354,11 @@ impl_runtime_apis! {
 
     impl pallet_farming_rpc_runtime_api::FarmingRuntimeApi<Block, AccountId, MantaAssetId, PoolId> for Runtime {
         fn get_farming_rewards(who: AccountId, pid: PoolId) -> Vec<(MantaAssetId, Balance)> {
-            Farming::get_farming_rewards(&who, pid).unwrap_or(Vec::new())
+            Farming::get_farming_rewards(&who, pid).unwrap_or_default()
         }
 
         fn get_gauge_rewards(who: AccountId, pid: PoolId) -> Vec<(MantaAssetId, Balance)> {
-            Farming::get_gauge_rewards(&who, pid).unwrap_or(Vec::new())
+            Farming::get_gauge_rewards(&who, pid).unwrap_or_default()
         }
     }
 
@@ -1344,8 +1387,10 @@ impl_runtime_apis! {
         ) {
             use frame_benchmarking::{Benchmarking, BenchmarkList};
             use frame_support::traits::StorageInfoTrait;
-            use frame_system_benchmarking::Pallet as SystemBench;
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
+
+            // type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+            type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
             let mut list = Vec::<BenchmarkList>::new();
             list_benchmarks!(list, extra);
@@ -1359,7 +1404,6 @@ impl_runtime_apis! {
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
             use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey, BenchmarkError};
 
-            use frame_system_benchmarking::Pallet as SystemBench;
             impl frame_system_benchmarking::Config for Runtime {}
 
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
@@ -1369,13 +1413,16 @@ impl_runtime_apis! {
             use xcm_config::{LocationToAccountId, XcmExecutorConfig};
 
             parameter_types! {
-                pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = None;
+                pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = Some((
+                    DotLocation::get(),
+                    MultiAsset { fun: Fungible(1 * MANTA), id: Concrete(DotLocation::get()) },
+                ));
                 pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = Some((
                     DotLocation::get(),
                     // Random amount for the benchmark.
                     MultiAsset { fun: Fungible(1_000_000_000_000), id: Concrete(DotLocation::get()) },
                 ));
-                pub const CheckedAccount: Option<AccountId> = None;
+                pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
                 pub const DotLocation: MultiLocation = MultiLocation::parent();
                 pub MantaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
             }
@@ -1385,15 +1432,15 @@ impl_runtime_apis! {
                 type AccountIdConverter = LocationToAccountId;
 
                 fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
-                 Ok(DotLocation::get())
+                    Ok(DotLocation::get())
                 }
 
-                fn worst_case_holding() -> MultiAssets {
+                fn worst_case_holding(depositable_count: u32) -> MultiAssets {
                     // A mix of fungible, non-fungible, and concrete assets.
-                    const HOLDING_FUNGIBLES: u32 = 100;
-                    const HOLDING_NON_FUNGIBLES: u32 = 100;
+                    let holding_non_fungibles = crate::xcm_config::MaxAssetsIntoHolding::get() / 2 - depositable_count;
+                    let holding_fungibles = holding_non_fungibles - 1;
                     let fungibles_amount: u128 = 100;
-                    let mut assets = (0..HOLDING_FUNGIBLES)
+                    let mut assets = (0..holding_fungibles)
                         .map(|i| {
                             MultiAsset {
                                 id: Concrete(GeneralIndex(i as u128).into()),
@@ -1401,17 +1448,17 @@ impl_runtime_apis! {
                             }
                         })
                         .chain(core::iter::once(MultiAsset { id: Concrete(Here.into()), fun: Fungible(u128::MAX) }))
-                        .chain((0..HOLDING_NON_FUNGIBLES).map(|i| MultiAsset {
+                        .chain((0..holding_non_fungibles).map(|i| MultiAsset {
                             id: Concrete(GeneralIndex(i as u128).into()),
                             fun: NonFungible(asset_instance_from(i)),
                         }))
                         .collect::<Vec<_>>();
 
-                        assets.push(MultiAsset{
-                            id: Concrete(MantaLocation::get()),
-                            fun: Fungible(1_000_000 * MANTA),
-                        });
-                        assets.into()
+                    assets.push(MultiAsset {
+                        id: Concrete(DotLocation::get()),
+                        fun: Fungible(1_000_000 * MANTA),
+                    });
+                    assets.into()
                 }
             }
 
@@ -1420,7 +1467,6 @@ impl_runtime_apis! {
 
                 type CheckedAccount = CheckedAccount;
                 type TrustedTeleporter = TrustedTeleporter;
-                type TrustedReserve = TrustedReserve;
 
                 fn get_multi_asset() -> MultiAsset {
                     MultiAsset {
@@ -1437,8 +1483,16 @@ impl_runtime_apis! {
                     (0u64, Response::Version(Default::default()))
                 }
 
-                fn transact_origin() -> Result<MultiLocation, BenchmarkError> {
-                    Ok(DotLocation::get())
+                fn worst_case_asset_exchange() -> Result<(MultiAssets, MultiAssets), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+
+                fn universal_alias() -> Result<(MultiLocation, Junction), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+
+                fn transact_origin_and_runtime_call() -> Result<(MultiLocation, RuntimeCall), BenchmarkError> {
+                    Ok((DotLocation::get(), frame_system::Call::remark_with_event { remark: vec![] }.into()))
                 }
 
                 fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
@@ -1446,12 +1500,24 @@ impl_runtime_apis! {
                 }
 
                 fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
-                    let origin = MantaLocation::get();
-                    let assets: MultiAssets = (Concrete(MantaLocation::get()), 1_000 * MANTA).into();
+                    let origin = DotLocation::get();
+                    let assets: MultiAssets = (Concrete(DotLocation::get()), 1_000 * MANTA).into();
                     let ticket = MultiLocation { parents: 0, interior: Here };
                     Ok((origin, ticket, assets))
                 }
+
+                fn unlockable_asset() -> Result<(MultiLocation, MultiLocation, MultiAsset), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+
+                fn export_message_origin_and_destination(
+                ) -> Result<(MultiLocation, NetworkId, InteriorMultiLocation), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
             }
+
+            // type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+            type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
             let whitelist: Vec<TrackedStorageKey> = vec![
                 // Block Number
@@ -1479,32 +1545,8 @@ impl_runtime_apis! {
     }
 }
 
-struct CheckInherentsStruct;
-impl CheckInherents<Block> for CheckInherentsStruct {
-    fn check_inherents(
-        block: &Block,
-        relay_state_proof: &RelayChainStateProof,
-    ) -> sp_inherents::CheckInherentsResult {
-        let relay_chain_slot = relay_state_proof
-            .read_slot()
-            .expect("Could not read the relay chain slot from the proof");
-
-        let inherent_data =
-            cumulus_primitives_timestamp::InherentDataProvider::from_relay_chain_slot_and_duration(
-                relay_chain_slot,
-                sp_std::time::Duration::from_secs(6),
-            )
-            .create_inherent_data()
-            .expect("Could not create the timestamp inherent data");
-
-        inherent_data.check_extrinsics(block)
-    }
-}
-
 register_validate_block! {
     Runtime = Runtime,
     BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
     CheckInherents = CheckInherentsStruct,
 }
-
-impl parachain_info::Config for Runtime {}

@@ -38,315 +38,542 @@
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
 #![allow(unused_imports)]
-#![allow(clippy::unnecessary_cast)]
+#![allow(missing_docs)]
 
-use frame_support::{traits::Get, weights::Weight};
-use sp_std::marker::PhantomData;
-use manta_primitives::constants::RocksDbWeight;
+use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
+use core::marker::PhantomData;
 
 /// Weight functions needed for pallet_lottery.
 pub trait WeightInfo {
-    fn deposit(x: u32, y: u32, ) -> Weight;
-    fn request_withdraw(x: u32, y: u32, ) -> Weight;
-    fn claim_my_winnings(y: u32, ) -> Weight;
-    fn start_lottery() -> Weight;
-    fn stop_lottery() -> Weight;
-    fn draw_lottery(x: u32, y: u32, ) -> Weight;
-    fn process_matured_withdrawals() -> Weight;
-    fn set_min_deposit() -> Weight;
-    fn set_min_withdraw() -> Weight;
-    fn set_gas_reserve() -> Weight;
+	fn deposit(x: u32, y: u32, ) -> Weight;
+	fn request_withdraw(x: u32, y: u32, ) -> Weight;
+	fn claim_my_winnings(y: u32, ) -> Weight;
+	fn start_lottery() -> Weight;
+	fn stop_lottery() -> Weight;
+	fn draw_lottery(x: u32, y: u32, ) -> Weight;
+	fn process_matured_withdrawals() -> Weight;
+	fn set_min_deposit() -> Weight;
+	fn set_min_withdraw() -> Weight;
+	fn set_gas_reserve() -> Weight;
 }
 
 /// Weights for pallet_lottery using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-	// Storage: Lottery MinDeposit (r:1 w:0)
-	// Storage: Scheduler Lookup (r:1 w:0)
-	// Storage: System Account (r:2 w:2)
-	// Storage: ParachainStaking SelectedCandidates (r:1 w:0)
-	// Storage: Lottery StakedCollators (r:2 w:1)
-	// Storage: ParachainStaking CandidatePool (r:1 w:1)
-	// Storage: ParachainStaking TotalSelected (r:1 w:0)
-	// Storage: ParachainStaking CandidateInfo (r:7 w:1)
-	// Storage: unknown [0x3a65787472696e7369635f696e646578] (r:1 w:0)
-	// Storage: ParachainStaking DelegatorState (r:1 w:1)
-	// Storage: Lottery TotalUnclaimedWinnings (r:1 w:0)
-	// Storage: TransactionPayment NextFeeMultiplier (r:1 w:0)
-	// Storage: ParachainStaking TopDelegations (r:1 w:1)
-	// Storage: Balances Locks (r:1 w:1)
-	// Storage: ParachainStaking Total (r:1 w:1)
-	// Storage: Lottery ActiveBalancePerUser (r:1 w:1)
-	// Storage: Lottery TotalPot (r:1 w:1)
-	// Storage: Lottery TotalUsers (r:1 w:1)
-	// Storage: Lottery SumOfDeposits (r:1 w:1)
-	// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:0)
+	/// Storage: Lottery MinDeposit (r:1 w:0)
+	/// Proof Skipped: Lottery MinDeposit (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Scheduler Lookup (r:1 w:0)
+	/// Proof: Scheduler Lookup (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Lottery FarmingParameters (r:1 w:0)
+	/// Proof Skipped: Lottery FarmingParameters (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: System Account (r:2 w:2)
+	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	/// Storage: ParachainStaking SelectedCandidates (r:1 w:0)
+	/// Proof Skipped: ParachainStaking SelectedCandidates (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery UnstakingCollators (r:1 w:0)
+	/// Proof Skipped: Lottery UnstakingCollators (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery StakedCollators (r:2 w:1)
+	/// Proof Skipped: Lottery StakedCollators (max_values: None, max_size: None, mode: Measured)
+	/// Storage: ParachainStaking CandidateInfo (r:1 w:1)
+	/// Proof Skipped: ParachainStaking CandidateInfo (max_values: None, max_size: None, mode: Measured)
+	/// Storage: ParachainStaking DelegatorState (r:1 w:1)
+	/// Proof Skipped: ParachainStaking DelegatorState (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery TotalUnclaimedWinnings (r:1 w:0)
+	/// Proof Skipped: Lottery TotalUnclaimedWinnings (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery UnlockedUnstakingFunds (r:1 w:0)
+	/// Proof Skipped: Lottery UnlockedUnstakingFunds (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: TransactionPayment NextFeeMultiplier (r:1 w:0)
+	/// Proof: TransactionPayment NextFeeMultiplier (max_values: Some(1), max_size: Some(16), added: 511, mode: MaxEncodedLen)
+	/// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:0)
+	/// Proof Skipped: ParachainStaking DelegationScheduledRequests (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Balances Locks (r:1 w:1)
+	/// Proof: Balances Locks (max_values: None, max_size: Some(1299), added: 3774, mode: MaxEncodedLen)
+	/// Storage: Balances Freezes (r:1 w:0)
+	/// Proof: Balances Freezes (max_values: None, max_size: Some(49), added: 2524, mode: MaxEncodedLen)
+	/// Storage: ParachainStaking TopDelegations (r:1 w:1)
+	/// Proof Skipped: ParachainStaking TopDelegations (max_values: None, max_size: None, mode: Measured)
+	/// Storage: ParachainStaking CandidatePool (r:1 w:1)
+	/// Proof Skipped: ParachainStaking CandidatePool (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainStaking Total (r:1 w:1)
+	/// Proof Skipped: ParachainStaking Total (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery ActiveBalancePerUser (r:1 w:1)
+	/// Proof Skipped: Lottery ActiveBalancePerUser (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery TotalPot (r:1 w:1)
+	/// Proof Skipped: Lottery TotalPot (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery TotalUsers (r:1 w:1)
+	/// Proof Skipped: Lottery TotalUsers (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery SumOfDeposits (r:1 w:1)
+	/// Proof Skipped: Lottery SumOfDeposits (max_values: Some(1), max_size: None, mode: Measured)
 	/// The range of component `x` is `[0, 1000]`.
 	/// The range of component `y` is `[0, 63]`.
 	fn deposit(x: u32, y: u32, ) -> Weight {
-		// Minimum execution time: 183_213 nanoseconds.
-		Weight::from_ref_time(191_155_541)
-			// Standard Error: 525
-			.saturating_add(Weight::from_ref_time(158_552).saturating_mul(x.into()))
-			// Standard Error: 8_276
-			.saturating_add(Weight::from_ref_time(295_360).saturating_mul(y.into()))
-			.saturating_add(T::DbWeight::get().reads(25))
-			.saturating_add(T::DbWeight::get().writes(13))
+		// Proof Size summary in bytes:
+		//  Measured:  `3459 + x * (1 ±0) + y * (72 ±0)`
+		//  Estimated: `8716 + x * (2 ±0) + y * (79 ±0)`
+		// Minimum execution time: 109_295_000 picoseconds.
+		Weight::from_parts(129_547_079, 8716)
+			// Standard Error: 583
+			.saturating_add(Weight::from_parts(58_735, 0).saturating_mul(x.into()))
+			// Standard Error: 9_193
+			.saturating_add(Weight::from_parts(96_358, 0).saturating_mul(y.into()))
+			.saturating_add(T::DbWeight::get().reads(24_u64))
+			.saturating_add(T::DbWeight::get().writes(13_u64))
+			.saturating_add(Weight::from_parts(0, 2).saturating_mul(x.into()))
+			.saturating_add(Weight::from_parts(0, 79).saturating_mul(y.into()))
 	}
-	// Storage: Lottery MinWithdraw (r:1 w:0)
-	// Storage: Scheduler Lookup (r:1 w:0)
-	// Storage: Lottery ActiveBalancePerUser (r:1 w:1)
-	// Storage: Lottery WithdrawalRequestQueue (r:1 w:1)
-	// Storage: Lottery TotalUsers (r:1 w:1)
-	// Storage: Lottery TotalPot (r:1 w:1)
-	// Storage: Lottery SurplusUnstakingBalance (r:1 w:1)
-	// Storage: ParachainStaking SelectedCandidates (r:1 w:0)
-	// Storage: Lottery StakedCollators (r:2 w:1)
-	// Storage: TransactionPayment NextFeeMultiplier (r:1 w:0)
-	// Storage: System Account (r:1 w:0)
-	// Storage: ParachainStaking DelegatorState (r:1 w:1)
-	// Storage: Lottery TotalUnclaimedWinnings (r:1 w:0)
-	// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:1)
-	// Storage: Lottery UnstakingCollators (r:1 w:1)
-	// Storage: ParachainStaking AwardedPts (r:1 w:0)
+	/// Storage: Lottery MinWithdraw (r:1 w:0)
+	/// Proof Skipped: Lottery MinWithdraw (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Scheduler Lookup (r:1 w:0)
+	/// Proof: Scheduler Lookup (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Lottery FarmingParameters (r:1 w:0)
+	/// Proof Skipped: Lottery FarmingParameters (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery ActiveBalancePerUser (r:1 w:1)
+	/// Proof Skipped: Lottery ActiveBalancePerUser (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery WithdrawalRequestQueue (r:1 w:1)
+	/// Proof Skipped: Lottery WithdrawalRequestQueue (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery TotalUsers (r:1 w:1)
+	/// Proof Skipped: Lottery TotalUsers (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery TotalPot (r:1 w:1)
+	/// Proof Skipped: Lottery TotalPot (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery SurplusUnstakingBalance (r:1 w:1)
+	/// Proof Skipped: Lottery SurplusUnstakingBalance (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery StakedCollators (r:2 w:0)
+	/// Proof Skipped: Lottery StakedCollators (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery UnstakingCollators (r:1 w:1)
+	/// Proof Skipped: Lottery UnstakingCollators (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainStaking SelectedCandidates (r:1 w:0)
+	/// Proof Skipped: ParachainStaking SelectedCandidates (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: TransactionPayment NextFeeMultiplier (r:1 w:0)
+	/// Proof: TransactionPayment NextFeeMultiplier (max_values: Some(1), max_size: Some(16), added: 511, mode: MaxEncodedLen)
+	/// Storage: System Account (r:1 w:0)
+	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	/// Storage: ParachainStaking DelegatorState (r:1 w:1)
+	/// Proof Skipped: ParachainStaking DelegatorState (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery TotalUnclaimedWinnings (r:1 w:0)
+	/// Proof Skipped: Lottery TotalUnclaimedWinnings (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery UnlockedUnstakingFunds (r:1 w:0)
+	/// Proof Skipped: Lottery UnlockedUnstakingFunds (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:1)
+	/// Proof Skipped: ParachainStaking DelegationScheduledRequests (max_values: None, max_size: None, mode: Measured)
 	/// The range of component `x` is `[0, 1000]`.
 	/// The range of component `y` is `[0, 63]`.
 	fn request_withdraw(x: u32, y: u32, ) -> Weight {
-		// Minimum execution time: 110_186 nanoseconds.
-		Weight::from_ref_time(114_775_116)
-			// Standard Error: 1_466
-			.saturating_add(Weight::from_ref_time(106_892).saturating_mul(x.into()))
-			// Standard Error: 23_106
-			.saturating_add(Weight::from_ref_time(106_427).saturating_mul(y.into()))
-			.saturating_add(T::DbWeight::get().reads(16))
-			.saturating_add(T::DbWeight::get().writes(9))
+		// Proof Size summary in bytes:
+		//  Measured:  `2216 + x * (1 ±0)`
+		//  Estimated: `7719 + x * (1 ±0) + y * (5 ±0)`
+		// Minimum execution time: 50_976_000 picoseconds.
+		Weight::from_parts(56_643_077, 7719)
+			// Standard Error: 244
+			.saturating_add(Weight::from_parts(32_928, 0).saturating_mul(x.into()))
+			// Standard Error: 3_856
+			.saturating_add(Weight::from_parts(4_322, 0).saturating_mul(y.into()))
+			.saturating_add(T::DbWeight::get().reads(18_u64))
+			.saturating_add(T::DbWeight::get().writes(8_u64))
+			.saturating_add(Weight::from_parts(0, 1).saturating_mul(x.into()))
+			.saturating_add(Weight::from_parts(0, 5).saturating_mul(y.into()))
 	}
-	// Storage: Lottery UnclaimedWinningsByAccount (r:1 w:1)
-	// Storage: System Account (r:2 w:2)
-	// Storage: Lottery SumOfDeposits (r:1 w:0)
-	// Storage: Lottery TotalUnclaimedWinnings (r:1 w:1)
+	/// Storage: Lottery UnclaimedWinningsByAccount (r:1 w:1)
+	/// Proof Skipped: Lottery UnclaimedWinningsByAccount (max_values: None, max_size: None, mode: Measured)
+	/// Storage: System Account (r:2 w:2)
+	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	/// Storage: Lottery SumOfDeposits (r:1 w:0)
+	/// Proof Skipped: Lottery SumOfDeposits (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery TotalUnclaimedWinnings (r:1 w:1)
+	/// Proof Skipped: Lottery TotalUnclaimedWinnings (max_values: Some(1), max_size: None, mode: Measured)
 	/// The range of component `y` is `[0, 63]`.
 	fn claim_my_winnings(y: u32, ) -> Weight {
-		// Minimum execution time: 47_723 nanoseconds.
-		Weight::from_ref_time(50_397_562)
-			// Standard Error: 1_406
-			.saturating_add(Weight::from_ref_time(151_698).saturating_mul(y.into()))
-			.saturating_add(T::DbWeight::get().reads(5))
-			.saturating_add(T::DbWeight::get().writes(4))
+		// Proof Size summary in bytes:
+		//  Measured:  `694 + y * (5 ±0)`
+		//  Estimated: `6196 + y * (6 ±0)`
+		// Minimum execution time: 29_094_000 picoseconds.
+		Weight::from_parts(31_109_054, 6196)
+			// Standard Error: 1_069
+			.saturating_add(Weight::from_parts(58_847, 0).saturating_mul(y.into()))
+			.saturating_add(T::DbWeight::get().reads(5_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
+			.saturating_add(Weight::from_parts(0, 6).saturating_mul(y.into()))
 	}
-	// Storage: Scheduler Lookup (r:1 w:1)
-	// Storage: System Account (r:1 w:0)
-	// Storage: ParachainStaking DelegatorState (r:1 w:0)
-	// Storage: Lottery TotalUnclaimedWinnings (r:1 w:0)
-	// Storage: Lottery GasReserve (r:1 w:0)
-	// Storage: Scheduler Agenda (r:1 w:1)
+	/// Storage: Scheduler Lookup (r:1 w:1)
+	/// Proof: Scheduler Lookup (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: System Account (r:1 w:0)
+	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	/// Storage: ParachainStaking DelegatorState (r:1 w:0)
+	/// Proof Skipped: ParachainStaking DelegatorState (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery TotalUnclaimedWinnings (r:1 w:0)
+	/// Proof Skipped: Lottery TotalUnclaimedWinnings (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery UnlockedUnstakingFunds (r:1 w:0)
+	/// Proof Skipped: Lottery UnlockedUnstakingFunds (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery GasReserve (r:1 w:0)
+	/// Proof Skipped: Lottery GasReserve (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Scheduler Agenda (r:1 w:1)
+	/// Proof: Scheduler Agenda (max_values: None, max_size: Some(38963), added: 41438, mode: MaxEncodedLen)
 	fn start_lottery() -> Weight {
-		// Minimum execution time: 40_198 nanoseconds.
-		Weight::from_ref_time(43_685_000)
-			.saturating_add(T::DbWeight::get().reads(6))
-			.saturating_add(T::DbWeight::get().writes(2))
+		// Proof Size summary in bytes:
+		//  Measured:  `324`
+		//  Estimated: `42428`
+		// Minimum execution time: 15_670_000 picoseconds.
+		Weight::from_parts(16_020_000, 42428)
+			.saturating_add(T::DbWeight::get().reads(7_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
-	// Storage: Scheduler Lookup (r:1 w:1)
-	// Storage: Scheduler Agenda (r:1 w:1)
+	/// Storage: Scheduler Lookup (r:1 w:1)
+	/// Proof: Scheduler Lookup (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Scheduler Agenda (r:1 w:1)
+	/// Proof: Scheduler Agenda (max_values: None, max_size: Some(38963), added: 41438, mode: MaxEncodedLen)
 	fn stop_lottery() -> Weight {
-		// Minimum execution time: 28_772 nanoseconds.
-		Weight::from_ref_time(29_405_000)
-			.saturating_add(T::DbWeight::get().reads(2))
-			.saturating_add(T::DbWeight::get().writes(2))
+		// Proof Size summary in bytes:
+		//  Measured:  `162`
+		//  Estimated: `42428`
+		// Minimum execution time: 10_520_000 picoseconds.
+		Weight::from_parts(10_770_000, 42428)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
-	// Storage: System Account (r:1 w:0)
-	// Storage: Lottery WithdrawalRequestQueue (r:1 w:0)
-	// Storage: ParachainStaking DelegatorState (r:1 w:0)
-	// Storage: Lottery TotalUnclaimedWinnings (r:1 w:1)
-	// Storage: Lottery GasReserve (r:1 w:0)
-	// Storage: Lottery SumOfDeposits (r:1 w:0)
-	// Storage: Lottery TotalPot (r:1 w:0)
-	// Storage: Lottery ActiveBalancePerUser (r:2 w:0)
-	// Storage: Lottery UnclaimedWinningsByAccount (r:1 w:1)
-	// Storage: Lottery UnstakingCollators (r:1 w:0)
+	/// Storage: System Account (r:1 w:0)
+	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	/// Storage: ParachainStaking DelegatorState (r:1 w:0)
+	/// Proof Skipped: ParachainStaking DelegatorState (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery TotalUnclaimedWinnings (r:1 w:1)
+	/// Proof Skipped: Lottery TotalUnclaimedWinnings (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery UnlockedUnstakingFunds (r:1 w:0)
+	/// Proof Skipped: Lottery UnlockedUnstakingFunds (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery GasReserve (r:1 w:0)
+	/// Proof Skipped: Lottery GasReserve (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery TotalPot (r:1 w:0)
+	/// Proof Skipped: Lottery TotalPot (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery SumOfDeposits (r:1 w:0)
+	/// Proof Skipped: Lottery SumOfDeposits (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery ActiveBalancePerUser (r:516 w:0)
+	/// Proof Skipped: Lottery ActiveBalancePerUser (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery UnclaimedWinningsByAccount (r:1 w:1)
+	/// Proof Skipped: Lottery UnclaimedWinningsByAccount (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery UnstakingCollators (r:1 w:0)
+	/// Proof Skipped: Lottery UnstakingCollators (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery WithdrawalRequestQueue (r:1 w:0)
+	/// Proof Skipped: Lottery WithdrawalRequestQueue (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery MinDeposit (r:1 w:0)
+	/// Proof Skipped: Lottery MinDeposit (max_values: Some(1), max_size: None, mode: Measured)
 	/// The range of component `x` is `[0, 1000]`.
 	/// The range of component `y` is `[0, 63]`.
-	fn draw_lottery(x: u32, y: u32, ) -> Weight {
-		// Minimum execution time: 78_612 nanoseconds.
-		Weight::from_ref_time(79_396_000)
-			// Standard Error: 46_210
-			.saturating_add(Weight::from_ref_time(908_503).saturating_mul(x.into()))
-			// Standard Error: 735_204
-			.saturating_add(Weight::from_ref_time(17_320_055).saturating_mul(y.into()))
-			.saturating_add(T::DbWeight::get().reads(11))
-			.saturating_add(T::DbWeight::get().reads((3_u64).saturating_mul(y.into())))
-			.saturating_add(T::DbWeight::get().writes(2))
+	fn draw_lottery(x: u32, _y: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `1665 + x * (30 ±0)`
+		//  Estimated: `259887 + x * (1112 ±0)`
+		// Minimum execution time: 35_998_000 picoseconds.
+		Weight::from_parts(334_839_510, 259887)
+			// Standard Error: 27_525
+			.saturating_add(Weight::from_parts(1_187_025, 0).saturating_mul(x.into()))
+			.saturating_add(T::DbWeight::get().reads(112_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
+			.saturating_add(Weight::from_parts(0, 1112).saturating_mul(x.into()))
 	}
-	// Storage: Lottery UnstakingCollators (r:1 w:0)
-	// Storage: Lottery WithdrawalRequestQueue (r:1 w:0)
-	// Storage: System Account (r:1 w:0)
-	// Storage: ParachainStaking DelegatorState (r:1 w:0)
-	// Storage: Lottery TotalUnclaimedWinnings (r:1 w:0)
-	// Storage: Lottery GasReserve (r:1 w:0)
+	/// Storage: Lottery UnstakingCollators (r:1 w:0)
+	/// Proof Skipped: Lottery UnstakingCollators (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery WithdrawalRequestQueue (r:1 w:0)
+	/// Proof Skipped: Lottery WithdrawalRequestQueue (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery UnlockedUnstakingFunds (r:1 w:0)
+	/// Proof Skipped: Lottery UnlockedUnstakingFunds (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery MinDeposit (r:1 w:0)
+	/// Proof Skipped: Lottery MinDeposit (max_values: Some(1), max_size: None, mode: Measured)
 	fn process_matured_withdrawals() -> Weight {
-		// Minimum execution time: 52_626 nanoseconds.
-		Weight::from_ref_time(53_534_000)
-			.saturating_add(T::DbWeight::get().reads(6))
+		// Proof Size summary in bytes:
+		//  Measured:  `238`
+		//  Estimated: `1723`
+		// Minimum execution time: 6_332_000 picoseconds.
+		Weight::from_parts(6_522_000, 1723)
+			.saturating_add(T::DbWeight::get().reads(4_u64))
 	}
-    fn set_min_deposit() -> Weight {
-		// Minimum execution time: 52_626 nanoseconds.
-		Weight::from_ref_time(53_534_000)
-			.saturating_add(T::DbWeight::get().reads(6))
+	/// Storage: Lottery MinWithdraw (r:1 w:0)
+	/// Proof Skipped: Lottery MinWithdraw (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery MinDeposit (r:0 w:1)
+	/// Proof Skipped: Lottery MinDeposit (max_values: Some(1), max_size: None, mode: Measured)
+	fn set_min_deposit() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `216`
+		//  Estimated: `1701`
+		// Minimum execution time: 3_958_000 picoseconds.
+		Weight::from_parts(4_098_000, 1701)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-    fn set_min_withdraw() -> Weight {
-		// Minimum execution time: 52_626 nanoseconds.
-		Weight::from_ref_time(53_534_000)
-			.saturating_add(T::DbWeight::get().reads(6))
+	/// Storage: Lottery MinWithdraw (r:0 w:1)
+	/// Proof Skipped: Lottery MinWithdraw (max_values: Some(1), max_size: None, mode: Measured)
+	fn set_min_withdraw() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 1_152_000 picoseconds.
+		Weight::from_parts(1_232_000, 0)
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-    fn set_gas_reserve() -> Weight {
-		// Minimum execution time: 52_626 nanoseconds.
-		Weight::from_ref_time(53_534_000)
-			.saturating_add(T::DbWeight::get().reads(6))
+	/// Storage: Lottery GasReserve (r:0 w:1)
+	/// Proof Skipped: Lottery GasReserve (max_values: Some(1), max_size: None, mode: Measured)
+	fn set_gas_reserve() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 1_142_000 picoseconds.
+		Weight::from_parts(1_233_000, 0)
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-	// Storage: Lottery MinDeposit (r:1 w:0)
-	// Storage: Scheduler Lookup (r:1 w:0)
-	// Storage: System Account (r:2 w:2)
-	// Storage: ParachainStaking SelectedCandidates (r:1 w:0)
-	// Storage: Lottery StakedCollators (r:2 w:1)
-	// Storage: ParachainStaking CandidatePool (r:1 w:1)
-	// Storage: ParachainStaking TotalSelected (r:1 w:0)
-	// Storage: ParachainStaking CandidateInfo (r:7 w:1)
-	// Storage: unknown [0x3a65787472696e7369635f696e646578] (r:1 w:0)
-	// Storage: ParachainStaking DelegatorState (r:1 w:1)
-	// Storage: Lottery TotalUnclaimedWinnings (r:1 w:0)
-	// Storage: TransactionPayment NextFeeMultiplier (r:1 w:0)
-	// Storage: ParachainStaking TopDelegations (r:1 w:1)
-	// Storage: Balances Locks (r:1 w:1)
-	// Storage: ParachainStaking Total (r:1 w:1)
-	// Storage: Lottery ActiveBalancePerUser (r:1 w:1)
-	// Storage: Lottery TotalPot (r:1 w:1)
-	// Storage: Lottery TotalUsers (r:1 w:1)
-	// Storage: Lottery SumOfDeposits (r:1 w:1)
-	// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:0)
+	/// Storage: Lottery MinDeposit (r:1 w:0)
+	/// Proof Skipped: Lottery MinDeposit (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Scheduler Lookup (r:1 w:0)
+	/// Proof: Scheduler Lookup (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Lottery FarmingParameters (r:1 w:0)
+	/// Proof Skipped: Lottery FarmingParameters (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: System Account (r:2 w:2)
+	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	/// Storage: ParachainStaking SelectedCandidates (r:1 w:0)
+	/// Proof Skipped: ParachainStaking SelectedCandidates (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery UnstakingCollators (r:1 w:0)
+	/// Proof Skipped: Lottery UnstakingCollators (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery StakedCollators (r:2 w:1)
+	/// Proof Skipped: Lottery StakedCollators (max_values: None, max_size: None, mode: Measured)
+	/// Storage: ParachainStaking CandidateInfo (r:1 w:1)
+	/// Proof Skipped: ParachainStaking CandidateInfo (max_values: None, max_size: None, mode: Measured)
+	/// Storage: ParachainStaking DelegatorState (r:1 w:1)
+	/// Proof Skipped: ParachainStaking DelegatorState (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery TotalUnclaimedWinnings (r:1 w:0)
+	/// Proof Skipped: Lottery TotalUnclaimedWinnings (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery UnlockedUnstakingFunds (r:1 w:0)
+	/// Proof Skipped: Lottery UnlockedUnstakingFunds (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: TransactionPayment NextFeeMultiplier (r:1 w:0)
+	/// Proof: TransactionPayment NextFeeMultiplier (max_values: Some(1), max_size: Some(16), added: 511, mode: MaxEncodedLen)
+	/// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:0)
+	/// Proof Skipped: ParachainStaking DelegationScheduledRequests (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Balances Locks (r:1 w:1)
+	/// Proof: Balances Locks (max_values: None, max_size: Some(1299), added: 3774, mode: MaxEncodedLen)
+	/// Storage: Balances Freezes (r:1 w:0)
+	/// Proof: Balances Freezes (max_values: None, max_size: Some(49), added: 2524, mode: MaxEncodedLen)
+	/// Storage: ParachainStaking TopDelegations (r:1 w:1)
+	/// Proof Skipped: ParachainStaking TopDelegations (max_values: None, max_size: None, mode: Measured)
+	/// Storage: ParachainStaking CandidatePool (r:1 w:1)
+	/// Proof Skipped: ParachainStaking CandidatePool (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainStaking Total (r:1 w:1)
+	/// Proof Skipped: ParachainStaking Total (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery ActiveBalancePerUser (r:1 w:1)
+	/// Proof Skipped: Lottery ActiveBalancePerUser (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery TotalPot (r:1 w:1)
+	/// Proof Skipped: Lottery TotalPot (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery TotalUsers (r:1 w:1)
+	/// Proof Skipped: Lottery TotalUsers (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery SumOfDeposits (r:1 w:1)
+	/// Proof Skipped: Lottery SumOfDeposits (max_values: Some(1), max_size: None, mode: Measured)
 	/// The range of component `x` is `[0, 1000]`.
 	/// The range of component `y` is `[0, 63]`.
 	fn deposit(x: u32, y: u32, ) -> Weight {
-		// Minimum execution time: 183_213 nanoseconds.
-		Weight::from_ref_time(191_155_541)
-			// Standard Error: 525
-			.saturating_add(Weight::from_ref_time(158_552).saturating_mul(x.into()))
-			// Standard Error: 8_276
-			.saturating_add(Weight::from_ref_time(295_360).saturating_mul(y.into()))
-			.saturating_add(RocksDbWeight::get().reads(25))
-			.saturating_add(RocksDbWeight::get().writes(13))
+		// Proof Size summary in bytes:
+		//  Measured:  `3459 + x * (1 ±0) + y * (72 ±0)`
+		//  Estimated: `8716 + x * (2 ±0) + y * (79 ±0)`
+		// Minimum execution time: 109_295_000 picoseconds.
+		Weight::from_parts(129_547_079, 8716)
+			// Standard Error: 583
+			.saturating_add(Weight::from_parts(58_735, 0).saturating_mul(x.into()))
+			// Standard Error: 9_193
+			.saturating_add(Weight::from_parts(96_358, 0).saturating_mul(y.into()))
+			.saturating_add(RocksDbWeight::get().reads(24_u64))
+			.saturating_add(RocksDbWeight::get().writes(13_u64))
+			.saturating_add(Weight::from_parts(0, 2).saturating_mul(x.into()))
+			.saturating_add(Weight::from_parts(0, 79).saturating_mul(y.into()))
 	}
-	// Storage: Lottery MinWithdraw (r:1 w:0)
-	// Storage: Scheduler Lookup (r:1 w:0)
-	// Storage: Lottery ActiveBalancePerUser (r:1 w:1)
-	// Storage: Lottery WithdrawalRequestQueue (r:1 w:1)
-	// Storage: Lottery TotalUsers (r:1 w:1)
-	// Storage: Lottery TotalPot (r:1 w:1)
-	// Storage: Lottery SurplusUnstakingBalance (r:1 w:1)
-	// Storage: ParachainStaking SelectedCandidates (r:1 w:0)
-	// Storage: Lottery StakedCollators (r:2 w:1)
-	// Storage: TransactionPayment NextFeeMultiplier (r:1 w:0)
-	// Storage: System Account (r:1 w:0)
-	// Storage: ParachainStaking DelegatorState (r:1 w:1)
-	// Storage: Lottery TotalUnclaimedWinnings (r:1 w:0)
-	// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:1)
-	// Storage: Lottery UnstakingCollators (r:1 w:1)
-	// Storage: ParachainStaking AwardedPts (r:1 w:0)
+	/// Storage: Lottery MinWithdraw (r:1 w:0)
+	/// Proof Skipped: Lottery MinWithdraw (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Scheduler Lookup (r:1 w:0)
+	/// Proof: Scheduler Lookup (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Lottery FarmingParameters (r:1 w:0)
+	/// Proof Skipped: Lottery FarmingParameters (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery ActiveBalancePerUser (r:1 w:1)
+	/// Proof Skipped: Lottery ActiveBalancePerUser (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery WithdrawalRequestQueue (r:1 w:1)
+	/// Proof Skipped: Lottery WithdrawalRequestQueue (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery TotalUsers (r:1 w:1)
+	/// Proof Skipped: Lottery TotalUsers (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery TotalPot (r:1 w:1)
+	/// Proof Skipped: Lottery TotalPot (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery SurplusUnstakingBalance (r:1 w:1)
+	/// Proof Skipped: Lottery SurplusUnstakingBalance (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery StakedCollators (r:2 w:0)
+	/// Proof Skipped: Lottery StakedCollators (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery UnstakingCollators (r:1 w:1)
+	/// Proof Skipped: Lottery UnstakingCollators (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainStaking SelectedCandidates (r:1 w:0)
+	/// Proof Skipped: ParachainStaking SelectedCandidates (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: TransactionPayment NextFeeMultiplier (r:1 w:0)
+	/// Proof: TransactionPayment NextFeeMultiplier (max_values: Some(1), max_size: Some(16), added: 511, mode: MaxEncodedLen)
+	/// Storage: System Account (r:1 w:0)
+	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	/// Storage: ParachainStaking DelegatorState (r:1 w:1)
+	/// Proof Skipped: ParachainStaking DelegatorState (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery TotalUnclaimedWinnings (r:1 w:0)
+	/// Proof Skipped: Lottery TotalUnclaimedWinnings (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery UnlockedUnstakingFunds (r:1 w:0)
+	/// Proof Skipped: Lottery UnlockedUnstakingFunds (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainStaking DelegationScheduledRequests (r:1 w:1)
+	/// Proof Skipped: ParachainStaking DelegationScheduledRequests (max_values: None, max_size: None, mode: Measured)
 	/// The range of component `x` is `[0, 1000]`.
 	/// The range of component `y` is `[0, 63]`.
 	fn request_withdraw(x: u32, y: u32, ) -> Weight {
-		// Minimum execution time: 110_186 nanoseconds.
-		Weight::from_ref_time(114_775_116)
-			// Standard Error: 1_466
-			.saturating_add(Weight::from_ref_time(106_892).saturating_mul(x.into()))
-			// Standard Error: 23_106
-			.saturating_add(Weight::from_ref_time(106_427).saturating_mul(y.into()))
-			.saturating_add(RocksDbWeight::get().reads(16))
-			.saturating_add(RocksDbWeight::get().writes(9))
+		// Proof Size summary in bytes:
+		//  Measured:  `2216 + x * (1 ±0)`
+		//  Estimated: `7719 + x * (1 ±0) + y * (5 ±0)`
+		// Minimum execution time: 50_976_000 picoseconds.
+		Weight::from_parts(56_643_077, 7719)
+			// Standard Error: 244
+			.saturating_add(Weight::from_parts(32_928, 0).saturating_mul(x.into()))
+			// Standard Error: 3_856
+			.saturating_add(Weight::from_parts(4_322, 0).saturating_mul(y.into()))
+			.saturating_add(RocksDbWeight::get().reads(18_u64))
+			.saturating_add(RocksDbWeight::get().writes(8_u64))
+			.saturating_add(Weight::from_parts(0, 1).saturating_mul(x.into()))
+			.saturating_add(Weight::from_parts(0, 5).saturating_mul(y.into()))
 	}
-	// Storage: Lottery UnclaimedWinningsByAccount (r:1 w:1)
-	// Storage: System Account (r:2 w:2)
-	// Storage: Lottery SumOfDeposits (r:1 w:0)
-	// Storage: Lottery TotalUnclaimedWinnings (r:1 w:1)
+	/// Storage: Lottery UnclaimedWinningsByAccount (r:1 w:1)
+	/// Proof Skipped: Lottery UnclaimedWinningsByAccount (max_values: None, max_size: None, mode: Measured)
+	/// Storage: System Account (r:2 w:2)
+	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	/// Storage: Lottery SumOfDeposits (r:1 w:0)
+	/// Proof Skipped: Lottery SumOfDeposits (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery TotalUnclaimedWinnings (r:1 w:1)
+	/// Proof Skipped: Lottery TotalUnclaimedWinnings (max_values: Some(1), max_size: None, mode: Measured)
 	/// The range of component `y` is `[0, 63]`.
 	fn claim_my_winnings(y: u32, ) -> Weight {
-		// Minimum execution time: 47_723 nanoseconds.
-		Weight::from_ref_time(50_397_562)
-			// Standard Error: 1_406
-			.saturating_add(Weight::from_ref_time(151_698).saturating_mul(y.into()))
-			.saturating_add(RocksDbWeight::get().reads(5))
-			.saturating_add(RocksDbWeight::get().writes(4))
+		// Proof Size summary in bytes:
+		//  Measured:  `694 + y * (5 ±0)`
+		//  Estimated: `6196 + y * (6 ±0)`
+		// Minimum execution time: 29_094_000 picoseconds.
+		Weight::from_parts(31_109_054, 6196)
+			// Standard Error: 1_069
+			.saturating_add(Weight::from_parts(58_847, 0).saturating_mul(y.into()))
+			.saturating_add(RocksDbWeight::get().reads(5_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
+			.saturating_add(Weight::from_parts(0, 6).saturating_mul(y.into()))
 	}
-	// Storage: Scheduler Lookup (r:1 w:1)
-	// Storage: System Account (r:1 w:0)
-	// Storage: ParachainStaking DelegatorState (r:1 w:0)
-	// Storage: Lottery TotalUnclaimedWinnings (r:1 w:0)
-	// Storage: Lottery GasReserve (r:1 w:0)
-	// Storage: Scheduler Agenda (r:1 w:1)
+	/// Storage: Scheduler Lookup (r:1 w:1)
+	/// Proof: Scheduler Lookup (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: System Account (r:1 w:0)
+	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	/// Storage: ParachainStaking DelegatorState (r:1 w:0)
+	/// Proof Skipped: ParachainStaking DelegatorState (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery TotalUnclaimedWinnings (r:1 w:0)
+	/// Proof Skipped: Lottery TotalUnclaimedWinnings (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery UnlockedUnstakingFunds (r:1 w:0)
+	/// Proof Skipped: Lottery UnlockedUnstakingFunds (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery GasReserve (r:1 w:0)
+	/// Proof Skipped: Lottery GasReserve (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Scheduler Agenda (r:1 w:1)
+	/// Proof: Scheduler Agenda (max_values: None, max_size: Some(38963), added: 41438, mode: MaxEncodedLen)
 	fn start_lottery() -> Weight {
-		// Minimum execution time: 40_198 nanoseconds.
-		Weight::from_ref_time(43_685_000)
-			.saturating_add(RocksDbWeight::get().reads(6))
-			.saturating_add(RocksDbWeight::get().writes(2))
+		// Proof Size summary in bytes:
+		//  Measured:  `324`
+		//  Estimated: `42428`
+		// Minimum execution time: 15_670_000 picoseconds.
+		Weight::from_parts(16_020_000, 42428)
+			.saturating_add(RocksDbWeight::get().reads(7_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
-	// Storage: Scheduler Lookup (r:1 w:1)
-	// Storage: Scheduler Agenda (r:1 w:1)
+	/// Storage: Scheduler Lookup (r:1 w:1)
+	/// Proof: Scheduler Lookup (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Scheduler Agenda (r:1 w:1)
+	/// Proof: Scheduler Agenda (max_values: None, max_size: Some(38963), added: 41438, mode: MaxEncodedLen)
 	fn stop_lottery() -> Weight {
-		// Minimum execution time: 28_772 nanoseconds.
-		Weight::from_ref_time(29_405_000)
-			.saturating_add(RocksDbWeight::get().reads(2))
-			.saturating_add(RocksDbWeight::get().writes(2))
+		// Proof Size summary in bytes:
+		//  Measured:  `162`
+		//  Estimated: `42428`
+		// Minimum execution time: 10_520_000 picoseconds.
+		Weight::from_parts(10_770_000, 42428)
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
-	// Storage: System Account (r:1 w:0)
-	// Storage: Lottery WithdrawalRequestQueue (r:1 w:0)
-	// Storage: ParachainStaking DelegatorState (r:1 w:0)
-	// Storage: Lottery TotalUnclaimedWinnings (r:1 w:1)
-	// Storage: Lottery GasReserve (r:1 w:0)
-	// Storage: Lottery SumOfDeposits (r:1 w:0)
-	// Storage: Lottery TotalPot (r:1 w:0)
-	// Storage: Lottery ActiveBalancePerUser (r:2 w:0)
-	// Storage: Lottery UnclaimedWinningsByAccount (r:1 w:1)
-	// Storage: Lottery UnstakingCollators (r:1 w:0)
+	/// Storage: System Account (r:1 w:0)
+	/// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	/// Storage: ParachainStaking DelegatorState (r:1 w:0)
+	/// Proof Skipped: ParachainStaking DelegatorState (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery TotalUnclaimedWinnings (r:1 w:1)
+	/// Proof Skipped: Lottery TotalUnclaimedWinnings (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery UnlockedUnstakingFunds (r:1 w:0)
+	/// Proof Skipped: Lottery UnlockedUnstakingFunds (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery GasReserve (r:1 w:0)
+	/// Proof Skipped: Lottery GasReserve (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery TotalPot (r:1 w:0)
+	/// Proof Skipped: Lottery TotalPot (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery SumOfDeposits (r:1 w:0)
+	/// Proof Skipped: Lottery SumOfDeposits (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery ActiveBalancePerUser (r:516 w:0)
+	/// Proof Skipped: Lottery ActiveBalancePerUser (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery UnclaimedWinningsByAccount (r:1 w:1)
+	/// Proof Skipped: Lottery UnclaimedWinningsByAccount (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Lottery UnstakingCollators (r:1 w:0)
+	/// Proof Skipped: Lottery UnstakingCollators (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery WithdrawalRequestQueue (r:1 w:0)
+	/// Proof Skipped: Lottery WithdrawalRequestQueue (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery MinDeposit (r:1 w:0)
+	/// Proof Skipped: Lottery MinDeposit (max_values: Some(1), max_size: None, mode: Measured)
 	/// The range of component `x` is `[0, 1000]`.
 	/// The range of component `y` is `[0, 63]`.
-	fn draw_lottery(x: u32, y: u32, ) -> Weight {
-		// Minimum execution time: 78_612 nanoseconds.
-		Weight::from_ref_time(79_396_000)
-			// Standard Error: 46_210
-			.saturating_add(Weight::from_ref_time(908_503).saturating_mul(x.into()))
-			// Standard Error: 735_204
-			.saturating_add(Weight::from_ref_time(17_320_055).saturating_mul(y.into()))
-			.saturating_add(RocksDbWeight::get().reads(11))
-			.saturating_add(RocksDbWeight::get().reads((3_u64).saturating_mul(y.into())))
-			.saturating_add(RocksDbWeight::get().writes(2))
+	fn draw_lottery(x: u32, _y: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `1665 + x * (30 ±0)`
+		//  Estimated: `259887 + x * (1112 ±0)`
+		// Minimum execution time: 35_998_000 picoseconds.
+		Weight::from_parts(334_839_510, 259887)
+			// Standard Error: 27_525
+			.saturating_add(Weight::from_parts(1_187_025, 0).saturating_mul(x.into()))
+			.saturating_add(RocksDbWeight::get().reads(112_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
+			.saturating_add(Weight::from_parts(0, 1112).saturating_mul(x.into()))
 	}
-	// Storage: Lottery UnstakingCollators (r:1 w:0)
-	// Storage: Lottery WithdrawalRequestQueue (r:1 w:0)
-	// Storage: System Account (r:1 w:0)
-	// Storage: ParachainStaking DelegatorState (r:1 w:0)
-	// Storage: Lottery TotalUnclaimedWinnings (r:1 w:0)
-	// Storage: Lottery GasReserve (r:1 w:0)
+	/// Storage: Lottery UnstakingCollators (r:1 w:0)
+	/// Proof Skipped: Lottery UnstakingCollators (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery WithdrawalRequestQueue (r:1 w:0)
+	/// Proof Skipped: Lottery WithdrawalRequestQueue (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery UnlockedUnstakingFunds (r:1 w:0)
+	/// Proof Skipped: Lottery UnlockedUnstakingFunds (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery MinDeposit (r:1 w:0)
+	/// Proof Skipped: Lottery MinDeposit (max_values: Some(1), max_size: None, mode: Measured)
 	fn process_matured_withdrawals() -> Weight {
-		// Minimum execution time: 52_626 nanoseconds.
-		Weight::from_ref_time(53_534_000)
-			.saturating_add(RocksDbWeight::get().reads(6))
+		// Proof Size summary in bytes:
+		//  Measured:  `238`
+		//  Estimated: `1723`
+		// Minimum execution time: 6_332_000 picoseconds.
+		Weight::from_parts(6_522_000, 1723)
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
 	}
-    fn set_min_deposit() -> Weight {
-		// Minimum execution time: 52_626 nanoseconds.
-		Weight::from_ref_time(53_534_000)
-			.saturating_add(RocksDbWeight::get().reads(6))
+	/// Storage: Lottery MinWithdraw (r:1 w:0)
+	/// Proof Skipped: Lottery MinWithdraw (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: Lottery MinDeposit (r:0 w:1)
+	/// Proof Skipped: Lottery MinDeposit (max_values: Some(1), max_size: None, mode: Measured)
+	fn set_min_deposit() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `216`
+		//  Estimated: `1701`
+		// Minimum execution time: 3_958_000 picoseconds.
+		Weight::from_parts(4_098_000, 1701)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
-    fn set_min_withdraw() -> Weight {
-		// Minimum execution time: 52_626 nanoseconds.
-		Weight::from_ref_time(53_534_000)
-			.saturating_add(RocksDbWeight::get().reads(6))
+	/// Storage: Lottery MinWithdraw (r:0 w:1)
+	/// Proof Skipped: Lottery MinWithdraw (max_values: Some(1), max_size: None, mode: Measured)
+	fn set_min_withdraw() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 1_152_000 picoseconds.
+		Weight::from_parts(1_232_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
-    fn set_gas_reserve() -> Weight {
-		// Minimum execution time: 52_626 nanoseconds.
-		Weight::from_ref_time(53_534_000)
-			.saturating_add(RocksDbWeight::get().reads(6))
+	/// Storage: Lottery GasReserve (r:0 w:1)
+	/// Proof Skipped: Lottery GasReserve (max_values: Some(1), max_size: None, mode: Measured)
+	fn set_gas_reserve() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 1_142_000 picoseconds.
+		Weight::from_parts(1_233_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

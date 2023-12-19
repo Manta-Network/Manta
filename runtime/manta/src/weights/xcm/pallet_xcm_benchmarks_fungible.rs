@@ -46,67 +46,110 @@ use sp_std::marker::PhantomData;
 /// Weights for `pallet_xcm_benchmarks::fungible`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo<T> {
-	// Storage: ParachainInfo ParachainId (r:1 w:0)
-	// Storage: AssetManager LocationAssetId (r:1 w:0)
 	// Storage: System Account (r:1 w:1)
-	pub(crate) fn withdraw_asset() -> Weight {
-		Weight::from_ref_time(45_682_000)
-			.saturating_add(T::DbWeight::get().reads(3))
+	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	pub fn withdraw_asset() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `101`
+		//  Estimated: `3593`
+		// Minimum execution time: 25_619_000 picoseconds.
+		Weight::from_parts(26_283_000, 3593)
+			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	// Storage: ParachainInfo ParachainId (r:1 w:0)
-	// Storage: AssetManager LocationAssetId (r:1 w:0)
 	// Storage: System Account (r:2 w:2)
-	pub(crate) fn transfer_asset() -> Weight {
-		Weight::from_ref_time(60_170_000)
-			.saturating_add(T::DbWeight::get().reads(4))
+	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	pub fn transfer_asset() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `101`
+		//  Estimated: `6196`
+		// Minimum execution time: 48_538_000 picoseconds.
+		Weight::from_parts(49_245_000, 6196)
+			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
-	// Storage: ParachainInfo ParachainId (r:1 w:0)
-	// Storage: AssetManager LocationAssetId (r:1 w:0)
 	// Storage: System Account (r:2 w:2)
+	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	// Storage: ParachainInfo ParachainId (r:1 w:0)
+	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
 	// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
-	pub(crate) fn transfer_reserve_asset() -> Weight {
-		Weight::from_ref_time(77_570_000)
-			.saturating_add(T::DbWeight::get().reads(9))
+	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	pub fn transfer_reserve_asset() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `176`
+		//  Estimated: `6196`
+		// Minimum execution time: 70_133_000 picoseconds.
+		Weight::from_parts(70_675_000, 6196)
+			.saturating_add(T::DbWeight::get().reads(8))
 			.saturating_add(T::DbWeight::get().writes(4))
 	}
-	pub(crate) fn reserve_asset_deposited() -> Weight {
-		Weight::from_ref_time(2_107_000)
+	pub fn receive_teleported_asset() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 3_765_000 picoseconds.
+		Weight::from_parts(3_860_000, 0)
 	}
-	// Storage: ParachainInfo ParachainId (r:1 w:0)
-	// Storage: AssetManager LocationAssetId (r:1 w:0)
 	// Storage: System Account (r:1 w:1)
-	pub(crate) fn deposit_asset() -> Weight {
-		Weight::from_ref_time(48_582_000)
-			.saturating_add(T::DbWeight::get().reads(3))
+	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	pub fn deposit_asset() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `3593`
+		// Minimum execution time: 26_210_000 picoseconds.
+		Weight::from_parts(26_602_000, 3593)
+			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	// Storage: ParachainInfo ParachainId (r:1 w:0)
-	// Storage: AssetManager LocationAssetId (r:1 w:0)
 	// Storage: System Account (r:1 w:1)
+	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
+	// Storage: ParachainInfo ParachainId (r:1 w:0)
+	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
 	// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
-	pub(crate) fn deposit_reserve_asset() -> Weight {
-		Weight::from_ref_time(70_633_000)
-			.saturating_add(T::DbWeight::get().reads(8))
+	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	pub fn deposit_reserve_asset() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `75`
+		//  Estimated: `3593`
+		// Minimum execution time: 50_179_000 picoseconds.
+		Weight::from_parts(50_814_000, 3593)
+			.saturating_add(T::DbWeight::get().reads(7))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
 	// Storage: ParachainInfo ParachainId (r:1 w:0)
+	// Proof: ParachainInfo ParachainId (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
 	// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
-	pub(crate) fn initiate_teleport() -> Weight {
-		Weight::from_ref_time(30_701_000)
+	// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	pub fn initiate_teleport() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `75`
+		//  Estimated: `3540`
+		// Minimum execution time: 29_986_000 picoseconds.
+		Weight::from_parts(30_384_000, 3540)
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}

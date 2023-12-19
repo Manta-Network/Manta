@@ -69,8 +69,8 @@ jobs:
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
-          rustup toolchain install nightly-2023-03-03
-          rustup default nightly-2023-03-03
+          rustup toolchain install 1.71.0
+          rustup default 1.71.0
           rustup target add wasm32-unknown-unknown
       - name: cache cargo
         uses: Swatinem/rust-cache@v2
@@ -318,7 +318,7 @@ jobs:
           cd $GITHUB_WORKSPACE/Manta/tests
           yarn install
           yarn
-          node append_storage.js
+          node append_storage.js calamari
           cd ../../
           mv $GITHUB_WORKSPACE/Manta/tests/data/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
           $HOME/dasel put -t string -v $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json -r toml \
@@ -409,7 +409,7 @@ jobs:
             --tag ${{ matrix.runtime.name }}   ./
       - name: run docker image
         run: |
-          sudo docker run -p 9944:9944 -p 9945:9945 -d ${{ matrix.runtime.name }} --unsafe-ws-external -- --unsafe-ws-external > docker_id.log
+          sudo docker run -p 9944:9944 -p 9945:9945 -d ${{ matrix.runtime.name }} --unsafe-rpc-external -- --unsafe-rpc-external > docker_id.log
           sleep 60
       - name: Show log
         run: |

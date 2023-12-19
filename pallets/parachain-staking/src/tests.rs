@@ -8697,11 +8697,8 @@ fn locking_zero_amount_is_ignored() {
             );
 
             Balances::set_lock(DELEGATOR_LOCK_ID, &1, 0, WithdrawReasons::all());
-            // Note that we tried to call `set_lock(0)` and it ignored it, we still have our lock
-            assert_eq!(
-                crate::mock::query_lock_amount(1, DELEGATOR_LOCK_ID),
-                Some(1)
-            );
+            // Note that we tried to call `set_lock(0)` and the previous lock gets removed
+            assert_eq!(crate::mock::query_lock_amount(1, DELEGATOR_LOCK_ID), None);
         });
 }
 

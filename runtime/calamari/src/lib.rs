@@ -39,6 +39,7 @@ use sp_std::{cmp::Ordering, prelude::*};
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+use cumulus_primitives_core::relay_chain::MAX_POV_SIZE;
 use frame_support::{
     construct_runtime,
     dispatch::DispatchClass,
@@ -52,7 +53,7 @@ use frame_support::{
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureRoot,
+    EnsureRoot, EnsureSigned,
 };
 use manta_primitives::{
     constants::{
@@ -166,9 +167,9 @@ pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(70);
 
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
-pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_ref_time(WEIGHT_PER_SECOND)
+pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(WEIGHT_PER_SECOND, 0)
     .saturating_div(2)
-    .set_proof_size(cumulus_primitives_core::relay_chain::v2::MAX_POV_SIZE as u64);
+    .set_proof_size(MAX_POV_SIZE as u64);
 
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
@@ -276,7 +277,6 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::XcmpQueue(_) | RuntimeCall::DmpQueue(_) => false,
 
             // Explicitly ALLOWED calls
-            | RuntimeCall::Authorship(_)
             | RuntimeCall::Multisig(_)
             | RuntimeCall::Democracy(pallet_democracy::Call::vote {..}
                                 | pallet_democracy::Call::emergency_cancel {..}
@@ -369,7 +369,7 @@ impl frame_system::Config for Runtime {
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type AccountData = pallet_balances::AccountData<Balance>;
-    type SystemWeightInfo = weights::frame_system::SubstrateWeight<Runtime>;
+    type SystemWeightInfo = ();
     type SS58Prefix = SS58Prefix;
     type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
     type MaxConsumers = ConstU32<16>;
@@ -465,8 +465,6 @@ impl pallet_lottery::Config for Runtime {
 }
 impl pallet_authorship::Config for Runtime {
     type FindAuthor = AuthorInherent;
-    type UncleGenerations = ConstU32<0>;
-    type FilterUncle = ();
     type EventHandler = (CollatorSelection,);
 }
 
@@ -483,6 +481,10 @@ impl pallet_balances::Config for Runtime {
     type ExistentialDeposit = NativeTokenExistentialDeposit;
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
+    type FreezeIdentifier = ();
+    type MaxFreezes = ();
+    type HoldIdentifier = ();
+    type MaxHolds = ConstU32<50>;
 }
 
 parameter_types! {
@@ -583,12 +585,14 @@ impl pallet_democracy::Config for Runtime {
     type Preimages = Preimage;
     type MaxDeposits = ConstU32<100>;
     type MaxBlacklisted = ConstU32<100>;
+    type SubmitOrigin = EnsureSigned<AccountId>;
 }
 
 parameter_types! {
     /// The maximum amount of time (in blocks) for council members to vote on motions.
     /// Motions may end in fewer blocks if enough votes are cast to determine the result.
     pub const CouncilMotionDuration: BlockNumber = 3 * DAYS;
+    pub MaxProposalWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
 }
 
 type CouncilCollective = pallet_collective::Instance1;
@@ -600,6 +604,8 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
     type MaxProposals = ConstU32<100>;
     type MaxMembers = ConstU32<100>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
+    type SetMembersOrigin = EnsureRoot<AccountId>;
+    type MaxProposalWeight = MaxProposalWeight;
     type WeightInfo = weights::pallet_collective::SubstrateWeight<Runtime>;
 }
 
@@ -635,6 +641,8 @@ impl pallet_collective::Config<TechnicalCollective> for Runtime {
     type MaxProposals = ConstU32<100>;
     type MaxMembers = ConstU32<100>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
+    type SetMembersOrigin = EnsureRoot<AccountId>;
+    type MaxProposalWeight = MaxProposalWeight;
     type WeightInfo = weights::pallet_collective::SubstrateWeight<Runtime>;
 }
 
@@ -754,9 +762,11 @@ impl pallet_parachain_staking::Config for Runtime {
 
 impl pallet_author_inherent::Config for Runtime {
     // We start a new slot each time we see a new relay block.
-    type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
+    type SlotBeacon = cumulus_pallet_parachain_system::RelaychainDataProvider<Self>;
     type AccountLookup = CollatorSelection;
-    type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
+    type AuthorId = AccountId;
+    // PUT REAL WEIGHT
+    type WeightInfo = ();
     /// Nimbus filter pipeline step 1:
     /// Filters out NimbusIds not registered as SessionKeys of some AccountId
     type CanAuthor = AuraAuthorFilter;
@@ -940,6 +950,28 @@ impl pallet_name_service::Config for Runtime {
     type WeightInfo = weights::pallet_name_service::SubstrateWeight<Runtime>;
 }
 
+struct CheckInherents;
+impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
+    fn check_inherents(
+        block: &Block,
+        relay_state_proof: &cumulus_pallet_parachain_system::RelayChainStateProof,
+    ) -> sp_inherents::CheckInherentsResult {
+        let relay_chain_slot = relay_state_proof
+            .read_slot()
+            .expect("Could not read the relay chain slot from the proof");
+
+        let inherent_data =
+            cumulus_primitives_timestamp::InherentDataProvider::from_relay_chain_slot_and_duration(
+                relay_chain_slot,
+                sp_std::time::Duration::from_secs(6),
+            )
+            .create_inherent_data()
+            .expect("Could not create the timestamp inherent data");
+
+        inherent_data.check_extrinsics(block)
+    }
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -972,7 +1004,7 @@ construct_runtime!(
         AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 60,
         AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage} = 63,
         // The order of the next 4 is important and shall not change.
-        Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
+        Authorship: pallet_authorship::{Pallet, Storage} = 20,
         CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
@@ -1044,7 +1076,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, Si
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = ();
+pub type OnRuntimeUpgradeHooks = (migrations::asset_manager::XcmV1ToV3<Runtime>,);
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
@@ -1065,7 +1097,9 @@ mod benches {
         // Substrate pallets
         [pallet_balances, Balances]
         [pallet_multisig, Multisig]
-        [frame_system, SystemBench::<Runtime>]
+        // always get this error ValidationDataNotAvailable while benchmarking
+        // we disable frame_system in this release, and will fix it in next release
+        // [frame_system, SystemBench::<Runtime>]
         [pallet_timestamp, Timestamp]
         [pallet_utility, Utility]
         [pallet_democracy, Democracy]
@@ -1088,11 +1122,17 @@ mod benches {
         [pallet_manta_sbt, MantaSbt]
         [pallet_name_service, NameService]
         // Dex
-        [zenlink_protocol, ZenlinkProtocol]
+        // always get this error Other("deposit lp asset error") while benchmarking
+        // we disable zenlink in this release, and will fix it in next release
+        // [zenlink_protocol, ZenlinkProtocol]
         [pallet_farming, Farming]
         // XCM
+        [pallet_xcm, PolkadotXcm]
         [cumulus_pallet_xcmp_queue, XcmpQueue]
-        [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
+        // always get this error(Unimplemented) while benchmarking pallet_xcm_benchmarks::fungible::initiate_teleport
+        // so this time we will use statemint's fungible weights
+        // and actually we don't support teleport now
+        // [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
         [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
@@ -1129,6 +1169,14 @@ impl_runtime_apis! {
     impl sp_api::Metadata<Block> for Runtime {
         fn metadata() -> OpaqueMetadata {
             OpaqueMetadata::new(Runtime::metadata().into())
+        }
+
+        fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+            Runtime::metadata_at_version(version)
+        }
+
+        fn metadata_versions() -> sp_std::vec::Vec<u32> {
+            Runtime::metadata_versions()
         }
     }
 
@@ -1200,6 +1248,12 @@ impl_runtime_apis! {
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_fee_details(uxt, len)
         }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
+        }
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
+        }
     }
 
     impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
@@ -1216,6 +1270,12 @@ impl_runtime_apis! {
             len: u32,
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_call_fee_details(call, len)
+        }
+        fn query_weight_to_fee(weight: Weight) -> Balance {
+            TransactionPayment::weight_to_fee(weight)
+        }
+        fn query_length_to_fee(length: u32) -> Balance {
+            TransactionPayment::length_to_fee(length)
         }
     }
 
@@ -1363,11 +1423,11 @@ impl_runtime_apis! {
 
     impl pallet_farming_rpc_runtime_api::FarmingRuntimeApi<Block, AccountId, CalamariAssetId, PoolId> for Runtime {
         fn get_farming_rewards(who: AccountId, pid: PoolId) -> Vec<(CalamariAssetId, Balance)> {
-            Farming::get_farming_rewards(&who, pid).unwrap_or(Vec::new())
+            Farming::get_farming_rewards(&who, pid).unwrap_or_default()
         }
 
         fn get_gauge_rewards(who: AccountId, pid: PoolId) -> Vec<(CalamariAssetId, Balance)> {
-            Farming::get_gauge_rewards(&who, pid).unwrap_or(Vec::new())
+            Farming::get_gauge_rewards(&who, pid).unwrap_or_default()
         }
     }
 
@@ -1396,7 +1456,6 @@ impl_runtime_apis! {
         ) {
             use frame_benchmarking::{Benchmarking, BenchmarkList};
             use frame_support::traits::StorageInfoTrait;
-            use frame_system_benchmarking::Pallet as SystemBench;
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 
             let mut list = Vec::<BenchmarkList>::new();
@@ -1412,7 +1471,6 @@ impl_runtime_apis! {
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
             use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey, BenchmarkError};
 
-            use frame_system_benchmarking::Pallet as SystemBench;
             impl frame_system_benchmarking::Config for Runtime {}
 
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
@@ -1428,7 +1486,7 @@ impl_runtime_apis! {
                     // Random amount for the benchmark.
                     MultiAsset { fun: Fungible(1_000_000_000_000), id: Concrete(KsmLocation::get()) },
                 ));
-                pub const CheckedAccount: Option<AccountId> = None;
+                pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
                 pub const KsmLocation: MultiLocation = MultiLocation::parent();
                 pub KmaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
             }
@@ -1441,12 +1499,12 @@ impl_runtime_apis! {
                  Ok(KsmLocation::get())
                 }
 
-                fn worst_case_holding() -> MultiAssets {
+                fn worst_case_holding(depositable_count: u32) -> MultiAssets {
                     // A mix of fungible, non-fungible, and concrete assets.
-                    const HOLDING_FUNGIBLES: u32 = 100;
-                    const HOLDING_NON_FUNGIBLES: u32 = 100;
+                    let holding_non_fungibles = crate::xcm_config::MaxAssetsIntoHolding::get() / 2 - depositable_count;
+                    let holding_fungibles = holding_non_fungibles.saturating_sub(1);
                     let fungibles_amount: u128 = 100;
-                    let mut assets = (0..HOLDING_FUNGIBLES)
+                    let mut assets = (0..holding_fungibles)
                         .map(|i| {
                             MultiAsset {
                                 id: Concrete(GeneralIndex(i as u128).into()),
@@ -1454,17 +1512,17 @@ impl_runtime_apis! {
                             }
                         })
                         .chain(core::iter::once(MultiAsset { id: Concrete(Here.into()), fun: Fungible(u128::MAX) }))
-                        .chain((0..HOLDING_NON_FUNGIBLES).map(|i| MultiAsset {
+                        .chain((0..holding_non_fungibles).map(|i| MultiAsset {
                             id: Concrete(GeneralIndex(i as u128).into()),
                             fun: NonFungible(asset_instance_from(i)),
                         }))
                         .collect::<Vec<_>>();
 
-                        assets.push(MultiAsset{
-                            id: Concrete(KmaLocation::get()),
-                            fun: Fungible(1_000_000 * KMA),
-                        });
-                        assets.into()
+                    assets.push(MultiAsset {
+                        id: Concrete(KmaLocation::get()),
+                        fun: Fungible(1_000_000 * KMA),
+                    });
+                    assets.into()
                 }
             }
 
@@ -1473,7 +1531,6 @@ impl_runtime_apis! {
 
                 type CheckedAccount = CheckedAccount;
                 type TrustedTeleporter = TrustedTeleporter;
-                type TrustedReserve = TrustedReserve;
 
                 fn get_multi_asset() -> MultiAsset {
                     MultiAsset {
@@ -1490,8 +1547,16 @@ impl_runtime_apis! {
                     (0u64, Response::Version(Default::default()))
                 }
 
-                fn transact_origin() -> Result<MultiLocation, BenchmarkError> {
-                    Ok(KsmLocation::get())
+                fn worst_case_asset_exchange() -> Result<(MultiAssets, MultiAssets), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+
+                fn universal_alias() -> Result<(MultiLocation, Junction), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+
+                fn transact_origin_and_runtime_call() -> Result<(MultiLocation, RuntimeCall), BenchmarkError> {
+                    Ok((KsmLocation::get(), frame_system::Call::remark_with_event { remark: vec![] }.into()))
                 }
 
                 fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
@@ -1503,6 +1568,15 @@ impl_runtime_apis! {
                     let assets: MultiAssets = (Concrete(KmaLocation::get()), 1_000 * KMA).into();
                     let ticket = MultiLocation { parents: 0, interior: Here };
                     Ok((origin, ticket, assets))
+                }
+
+                fn unlockable_asset() -> Result<(MultiLocation, MultiLocation, MultiAsset), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+
+                fn export_message_origin_and_destination(
+                ) -> Result<(MultiLocation, NetworkId, InteriorMultiLocation), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
                 }
             }
 
@@ -1529,28 +1603,6 @@ impl_runtime_apis! {
 
             Ok(batches)
         }
-    }
-}
-
-struct CheckInherents;
-impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
-    fn check_inherents(
-        block: &Block,
-        relay_state_proof: &cumulus_pallet_parachain_system::RelayChainStateProof,
-    ) -> sp_inherents::CheckInherentsResult {
-        let relay_chain_slot = relay_state_proof
-            .read_slot()
-            .expect("Could not read the relay chain slot from the proof");
-
-        let inherent_data =
-            cumulus_primitives_timestamp::InherentDataProvider::from_relay_chain_slot_and_duration(
-                relay_chain_slot,
-                sp_std::time::Duration::from_secs(6),
-            )
-            .create_inherent_data()
-            .expect("Could not create the timestamp inherent data");
-
-        inherent_data.check_extrinsics(block)
     }
 }
 

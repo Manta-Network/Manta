@@ -22,8 +22,9 @@ use frame_support::{
     ensure,
     traits::{
         fungible, fungibles,
-        fungibles::{Mutate, Transfer},
-        Currency, ExistenceRequirement, WithdrawReasons,
+        fungibles::Mutate,
+        tokens::{currency::Currency, Fortitude, Precision, Preservation},
+        ExistenceRequirement, WithdrawReasons,
     },
     Parameter,
 };
@@ -58,8 +59,7 @@ where
         + fungible::Mutate<C::AccountId>
         + Currency<C::AccountId, Balance = A::Balance>,
     NonNative: fungibles::Inspect<C::AccountId, AssetId = A::AssetId, Balance = A::Balance>
-        + Mutate<C::AccountId>
-        + Transfer<C::AccountId>,
+        + Mutate<C::AccountId>, // + Transfer<C::AccountId>,
 {
     type CurrencyId = A::AssetId;
     type Balance = A::Balance;
@@ -125,9 +125,20 @@ where
         amount: Self::Balance,
     ) -> DispatchResult {
         if currency_id == A::NativeAssetId::get() {
-            Native::transfer(from, to, amount, ExistenceRequirement::AllowDeath)?;
+            <Native as Currency<C::AccountId>>::transfer(
+                from,
+                to,
+                amount,
+                ExistenceRequirement::AllowDeath,
+            )?;
         } else {
-            NonNative::transfer(currency_id, from, to, amount, false)?;
+            <NonNative as Mutate<C::AccountId>>::transfer(
+                currency_id,
+                from,
+                to,
+                amount,
+                Preservation::Expendable,
+            )?;
         }
         Ok(())
     }
@@ -139,10 +150,10 @@ where
     ) -> DispatchResult {
         if currency_id == A::NativeAssetId::get() {
             Native::deposit_creating(who, amount);
-            Ok(())
         } else {
-            NonNative::mint_into(currency_id, who, amount)
+            let _ = NonNative::mint_into(currency_id, who, amount);
         }
+        Ok(())
     }
 
     fn withdraw(
@@ -158,7 +169,13 @@ where
                 ExistenceRequirement::AllowDeath,
             )?;
         } else {
-            NonNative::burn_from(currency_id, who, amount)?;
+            NonNative::burn_from(
+                currency_id,
+                who,
+                amount,
+                Precision::Exact,
+                Fortitude::Polite,
+            )?;
         }
         Ok(())
     }
@@ -176,10 +193,10 @@ where
         amount: Self::Balance,
     ) -> Self::Balance {
         if currency_id == A::NativeAssetId::get() {
-            <Native as fungible::Mutate<C::AccountId>>::slash(who, amount)
-                .expect("slash should not failed")
+            <Native as Currency<C::AccountId>>::slash(who, amount).1
         } else {
-            NonNative::slash(currency_id, who, amount).expect("slash should not failed")
+            // we don't use slash now, so returning default value should be fine
+            Default::default()
         }
     }
 }

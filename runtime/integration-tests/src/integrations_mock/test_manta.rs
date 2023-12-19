@@ -141,6 +141,20 @@ fn verify_pallet_prefixes() {
                 max_values: None,
                 max_size: Some(1249),
             },
+            StorageInfo {
+                pallet_name: b"Balances".to_vec(),
+                storage_name: b"Holds".to_vec(),
+                prefix: prefix(b"Balances", b"Holds"),
+                max_values: None,
+                max_size: Some(849),
+            },
+            StorageInfo {
+                pallet_name: b"Balances".to_vec(),
+                storage_name: b"Freezes".to_vec(),
+                prefix: prefix(b"Balances", b"Freezes"),
+                max_values: None,
+                max_size: Some(49),
+            },
         ]
     );
 }
@@ -228,7 +242,7 @@ fn reward_fees_to_block_author_and_treasury() {
             });
 
             let len = 10;
-            let info = info_from_weight(Weight::from_ref_time(100));
+            let info = info_from_weight(Weight::from_parts(100, 0));
             let maybe_pre = ChargeTransactionPayment::<Runtime>::from(0)
                 .pre_dispatch(&BOB, &call, &info, len)
                 .unwrap();

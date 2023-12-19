@@ -48,7 +48,7 @@ benchmarks! {
         let assets_count = 1000;
         for i in 8..assets_count + 8 {
             let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
-            let location = T::Location::from(location.clone());
+            let location = T::Location::from(location);
             let metadata = AssetRegistryMetadata::<Balance>::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
             Pallet::<T>::set_units_per_second(RawOrigin::Root.into(), <T as Config>::AssetId::from(i), 0)?;
@@ -68,7 +68,7 @@ benchmarks! {
         let assets_count = 1000;
         for i in 0..assets_count {
             let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
-            let location = T::Location::from(location.clone());
+            let location = T::Location::from(location);
             let metadata = AssetRegistryMetadata::<Balance>::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
         }
@@ -87,7 +87,7 @@ benchmarks! {
         let assets_count = 1000;
         for i in 0..assets_count {
             let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
-            let location = T::Location::from(location.clone());
+            let location = T::Location::from(location);
             let metadata = AssetRegistryMetadata::<Balance>::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
         }
@@ -124,7 +124,7 @@ benchmarks! {
         let assets_count = 1000;
         for i in 8..assets_count + 8 {
             let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
-            let location = T::Location::from(location.clone());
+            let location = T::Location::from(location);
             let metadata = AssetRegistryMetadata::<Balance>::testing_default();
 
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
@@ -146,12 +146,12 @@ benchmarks! {
         let assets_count = 1000;
         for i in 0..assets_count {
             let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
-            let location = T::Location::from(location.clone());
+            let location = T::Location::from(location);
             let metadata = AssetRegistryMetadata::<Balance>::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
         }
         let location: MultiLocation = MultiLocation::new(0, X1(Parachain(1)));
-    }: _(RawOrigin::Root, location.clone().into(), true)
+    }: _(RawOrigin::Root, location.into(), true)
     verify {
         assert_last_event::<T>(crate::Event::AssetLocationFilteredForOutgoingTransfers { filtered_location: location.into() }.into());
     }
@@ -161,7 +161,7 @@ benchmarks! {
         let assets_count = 10;
         for i in 8..assets_count {
             let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
-            let location = T::Location::from(location.clone());
+            let location = T::Location::from(location);
             let metadata = AssetRegistryMetadata::<Balance>::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
         }

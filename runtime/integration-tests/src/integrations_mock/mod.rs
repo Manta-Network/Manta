@@ -61,7 +61,7 @@ cfg_if::cfg_if! {
             DefaultBlocksPerRound, RuntimeEvent, InflationInfo, LeaveDelayRounds, NativeTokenExistentialDeposit,
             RuntimeOrigin, ParachainStaking, PolkadotXcm, Range, Runtime, Session, System, Timestamp, TransactionPause,
             TransactionPayment, Treasury, Utility, TechnicalCommittee, Council, EnactmentPeriod, VotingPeriod,
-            LaunchPeriod, Preimage, Democracy, Scheduler, Aura, Multisig, ParachainSystem, ParachainInfo, MantaPay,
+            LaunchPeriod, Preimage, Democracy, Scheduler, Aura, Multisig, ParachainSystem, ParachainInfo,
             XTokens, DmpQueue, CumulusXcm, XcmpQueue, AuraAuthorFilter, NonPausablePallets, AllPalletsWithSystem
         };
         type RuntimeAssetConfig = manta_runtime::assets_config::MantaAssetConfig;
@@ -122,6 +122,7 @@ pub fn initialize_collators_through_whitelist(collators: Vec<AccountId>) {
         candidate_count
     ));
     for aid in collators.clone() {
+        System::inc_providers(&aid);
         assert_ok!(CollatorSelection::register_candidate(root_origin(), aid));
     }
     assert_eq!(

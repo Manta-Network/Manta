@@ -233,6 +233,7 @@ where
             FungibleLedgerError::InvalidBurn(_) => Self::PublicUpdateInvalidBurn,
             FungibleLedgerError::InvalidTransfer(_) => Self::PublicUpdateInvalidTransfer,
             FungibleLedgerError::EncodeError => Self::FungibleLedgerEncodeError,
+            FungibleLedgerError::Blocked => Self::Blocked,
         }
     }
 }
@@ -276,6 +277,7 @@ where
                 TransferLedgerError::Marker(_) => Self::Marker,
                 TransferLedgerError::SenderLedgerError(err) => SenderPostError::from(err).into(),
                 TransferLedgerError::InvalidAssetId => Self::InvalidAssetId,
+                TransferLedgerError::Blocked => Self::Blocked,
                 TransferLedgerError::ReceiverLedgerError(err) => {
                     ReceiverPostError::from(err).into()
                 }
@@ -326,6 +328,9 @@ where
 
     /// Type Marker Parameter
     Marker(PhantomData<T>),
+
+    /// Account cannot receive the assets.
+    Blocked,
 }
 
 impl<T> From<TransferLedgerError<T>> for TransferPostError<T>

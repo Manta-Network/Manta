@@ -27,7 +27,7 @@ pub use pallet_farming_rpc_runtime_api::{self as runtime_api, FarmingRuntimeApi}
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_rpc::number::NumberOrHex;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 
 #[rpc(client, server)]
 pub trait FarmingRpcApi<BlockHash, AccountId, CurrencyId, PoolId>
@@ -88,9 +88,9 @@ where
         at: Option<<Block as BlockT>::Hash>,
     ) -> RpcResult<Vec<(CurrencyId, NumberOrHex)>> {
         let api = self.client.runtime_api();
-        let at = BlockId::<Block>::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+        let at = at.unwrap_or_else(|| self.client.info().best_hash);
 
-        let rs: Result<Vec<(CurrencyId, Balance)>, _> = api.get_farming_rewards(&at, who, pid);
+        let rs: Result<Vec<(CurrencyId, Balance)>, _> = api.get_farming_rewards(at, who, pid);
 
         match rs {
             Ok(rewards) => Ok(rewards
@@ -113,9 +113,9 @@ where
         at: Option<<Block as BlockT>::Hash>,
     ) -> RpcResult<Vec<(CurrencyId, NumberOrHex)>> {
         let api = self.client.runtime_api();
-        let at = BlockId::<Block>::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+        let at = at.unwrap_or_else(|| self.client.info().best_hash);
 
-        let rs: Result<Vec<(CurrencyId, Balance)>, _> = api.get_gauge_rewards(&at, who, pid);
+        let rs: Result<Vec<(CurrencyId, Balance)>, _> = api.get_gauge_rewards(at, who, pid);
 
         match rs {
             Ok(rewards) => Ok(rewards

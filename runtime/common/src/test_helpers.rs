@@ -14,37 +14,40 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+use crate::Weight;
 use sp_std::vec;
 use xcm::{
     latest::{
         prelude::{
-            All, Any, BuyExecution, ClearOrigin, Concrete, DepositAsset, InitiateReserveWithdraw,
-            Limited, MultiAssets, ReserveAssetDeposited, TransferReserveAsset, Wild, WithdrawAsset,
+            All, AllCounted, BuyExecution, ClearOrigin, Concrete, Definite, DepositAsset,
+            DepositReserveAsset, InitiateReserveWithdraw, Limited, MultiAssets,
+            ReserveAssetDeposited, TransferReserveAsset, Wild, WithdrawAsset, X1,
         },
         Xcm,
     },
-    v1::{
+    v3::{
         Fungibility::*,
         Junction::{AccountId32, Parachain},
-        Junctions::*,
         MultiAsset, MultiLocation,
     },
 };
 
-// 4_000_000_000 is a typical configuration value provided to dApp developers for `dest_weight`
-// argument when sending xcm message to Manta. ie moonbeam, sub-wallet, phala, etc
-pub const ADVERTISED_DEST_WEIGHT: u64 = 4_000_000_000;
+// The weight input needs to be more than or equal to what the message actually weighs
+// in that case the barrier will be substituted with the lower weight, otherwise it won't pass
+pub const ADVERTISED_DEST_WEIGHT: Weight =
+    Weight::from_parts(100_000_000_000u64, 100_000_000_000u64);
 
 // Composition of self_reserve message composed by xTokens on the sender side
 pub fn self_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
+    let assets = MultiAssets::from(vec![MultiAsset {
+        id: Concrete(MultiLocation {
+            parents: 1,
+            interior: X1(Parachain(1)),
+        }),
+        fun: Fungible(10000000000000),
+    }]);
     Xcm(vec![
-        ReserveAssetDeposited(MultiAssets::from(vec![MultiAsset {
-            id: Concrete(MultiLocation {
-                parents: 1,
-                interior: X1(Parachain(1)),
-            }),
-            fun: Fungible(10000000000000),
-        }])),
+        ReserveAssetDeposited(assets.clone()),
         ClearOrigin,
         BuyExecution {
             fees: MultiAsset {
@@ -54,15 +57,14 @@ pub fn self_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
                 }),
                 fun: Fungible(10000000000000),
             },
-            weight_limit: Limited(3999999999),
+            weight_limit: Limited(Weight::from_parts(100000000000u64, 0)),
         },
         DepositAsset {
-            assets: Wild(All),
-            max_assets: 1,
+            assets: Definite(assets),
             beneficiary: MultiLocation {
                 parents: 0,
                 interior: X1(AccountId32 {
-                    network: Any,
+                    network: None,
                     id: [
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                         0, 0, 0, 0, 0, 0, 0,
@@ -75,14 +77,15 @@ pub fn self_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
 
 // Composition of to_reserve message composed by xTokens on the receiver side
 pub fn to_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
+    let assets = MultiAssets::from(vec![MultiAsset {
+        id: Concrete(MultiLocation {
+            parents: 1,
+            interior: X1(Parachain(1)),
+        }),
+        fun: Fungible(10000000000000),
+    }]);
     Xcm(vec![
-        WithdrawAsset(MultiAssets::from(vec![MultiAsset {
-            id: Concrete(MultiLocation {
-                parents: 1,
-                interior: X1(Parachain(1)),
-            }),
-            fun: Fungible(10000000000000),
-        }])),
+        WithdrawAsset(assets.clone()),
         ClearOrigin,
         BuyExecution {
             fees: MultiAsset {
@@ -92,19 +95,15 @@ pub fn to_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
                 }),
                 fun: Fungible(10000000000000),
             },
-            weight_limit: Limited(3999999999),
+            weight_limit: Limited(Weight::from_parts(100000000000u64, 0)),
         },
         DepositAsset {
-            assets: Wild(All),
-            max_assets: 1,
+            assets: Definite(assets),
             beneficiary: MultiLocation {
                 parents: 0,
                 interior: X1(AccountId32 {
-                    network: Any,
-                    id: [
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0,
-                    ],
+                    network: None,
+                    id: [0; 32],
                 }),
             },
         },
@@ -113,6 +112,13 @@ pub fn to_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
 
 // Composition of to_reserve message composed by xTokens on the sender side
 pub fn to_reserve_xcm_message_sender_side<T>() -> Xcm<T> {
+    let assets = MultiAssets::from(vec![MultiAsset {
+        id: Concrete(MultiLocation {
+            parents: 1,
+            interior: X1(Parachain(1)),
+        }),
+        fun: Fungible(10000000000000),
+    }]);
     let dummy_multi_location = MultiLocation {
         parents: 1,
         interior: X1(Parachain(1)),
@@ -127,27 +133,23 @@ pub fn to_reserve_xcm_message_sender_side<T>() -> Xcm<T> {
     Xcm(vec![
         WithdrawAsset(dummy_assets),
         InitiateReserveWithdraw {
-            assets: Wild(All),
-            reserve: dummy_multi_location.clone(),
+            assets: Definite(assets),
+            reserve: dummy_multi_location,
             xcm: Xcm(vec![
                 BuyExecution {
                     fees: MultiAsset {
                         id: Concrete(dummy_multi_location),
                         fun: Fungible(10000000000000),
                     },
-                    weight_limit: Limited(3999999999),
+                    weight_limit: Limited(Weight::from_parts(30, 30)),
                 },
                 DepositAsset {
                     assets: Wild(All),
-                    max_assets: 1,
                     beneficiary: MultiLocation {
                         parents: 0,
                         interior: X1(AccountId32 {
-                            network: Any,
-                            id: [
-                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                            ],
+                            network: None,
+                            id: [0; 32],
                         }),
                     },
                 },
@@ -171,29 +173,78 @@ pub fn self_reserve_xcm_message_sender_side<T>() -> Xcm<T> {
     }]);
     Xcm(vec![TransferReserveAsset {
         assets: dummy_assets,
-        dest: dummy_multi_location.clone(),
+        dest: dummy_multi_location,
         xcm: Xcm(vec![
             BuyExecution {
                 fees: MultiAsset {
                     id: Concrete(dummy_multi_location),
                     fun: Fungible(10000000000000),
                 },
-                weight_limit: Limited(3999999999),
+                weight_limit: Limited(3999999999.into()),
             },
             DepositAsset {
                 assets: Wild(All),
-                max_assets: 1,
                 beneficiary: MultiLocation {
                     parents: 0,
                     interior: X1(AccountId32 {
-                        network: Any,
-                        id: [
-                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                            0, 0, 0, 0, 0, 0, 0, 0,
-                        ],
+                        network: None,
+                        id: [0; 32],
                     }),
                 },
             },
         ]),
     }])
+}
+
+pub fn to_non_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
+    let assets = MultiAssets::from(vec![MultiAsset {
+        id: Concrete(MultiLocation {
+            parents: 1,
+            interior: X1(Parachain(1)),
+        }),
+        fun: Fungible(10000000000000),
+    }]);
+    Xcm(vec![
+        WithdrawAsset(assets.clone()),
+        ClearOrigin,
+        BuyExecution {
+            fees: MultiAsset {
+                id: Concrete(MultiLocation {
+                    parents: 1,
+                    interior: X1(Parachain(1)),
+                }),
+                fun: Fungible(10000000000000),
+            },
+            weight_limit: Limited(Weight::from_parts(100000000000u64, 0)),
+        },
+        DepositReserveAsset {
+            assets: AllCounted(1u32).into(),
+            dest: MultiLocation {
+                parents: 1,
+                interior: X1(Parachain(1)),
+            },
+            xcm: Xcm(vec![
+                BuyExecution {
+                    fees: MultiAsset {
+                        id: Concrete(MultiLocation {
+                            parents: 1,
+                            interior: X1(Parachain(1)),
+                        }),
+                        fun: Fungible(10000000000000),
+                    },
+                    weight_limit: Limited(Weight::from_parts(100000000000u64, 0)),
+                },
+                DepositAsset {
+                    assets: Definite(assets),
+                    beneficiary: MultiLocation {
+                        parents: 0,
+                        interior: X1(AccountId32 {
+                            network: None,
+                            id: [0; 32],
+                        }),
+                    },
+                },
+            ]),
+        },
+    ])
 }

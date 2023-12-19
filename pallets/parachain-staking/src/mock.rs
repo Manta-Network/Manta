@@ -100,6 +100,10 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<1>;
+    type MaxHolds = ConstU32<1>;
 }
 impl block_author::Config for Test {}
 parameter_types! {
@@ -633,7 +637,6 @@ pub mod block_author {
     pub trait Config: frame_system::Config {}
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(_);
 
     #[pallet::storage]

@@ -178,7 +178,6 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::storage_version(STORAGE_VERSION)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
@@ -773,10 +772,6 @@ pub mod pallet {
                 T::WeightInfo::note_author(),
                 DispatchClass::Mandatory,
             );
-        }
-
-        fn note_uncle(_author: T::AccountId, _age: T::BlockNumber) {
-            //TODO can we ignore this?
         }
     }
 

@@ -46,7 +46,7 @@ frame_support::construct_runtime!(
 
 parameter_types! {
     pub BlockWeights: frame_system::limits::BlockWeights =
-        frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1024));
+        frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
 impl frame_system::Config for Test {
     type AccountData = pallet_balances::AccountData<Balance>;
@@ -85,6 +85,10 @@ impl pallet_balances::Config for Test {
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
     type WeightInfo = ();
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
+    type MaxFreezes = ConstU32<1>;
+    type MaxHolds = ConstU32<1>;
 }
 
 parameter_types! {

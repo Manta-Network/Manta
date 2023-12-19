@@ -67,14 +67,14 @@ impl<T: frame_system::Config> zenlink_protocol::WeightInfo for SubstrateWeight<T
 	// Storage: ZenlinkProtocol FeeMeta (r:1 w:1)
 	fn set_fee_receiver() -> Weight {
 		// Minimum execution time: 7_898 nanoseconds.
-		Weight::from_ref_time(8_215_000)
+		Weight::from_parts(8_215_000, 0)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	// Storage: ZenlinkProtocol FeeMeta (r:1 w:1)
 	fn set_fee_point() -> Weight {
 		// Minimum execution time: 7_394 nanoseconds.
-		Weight::from_ref_time(7_631_000)
+		Weight::from_parts(7_631_000, 0)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -84,7 +84,7 @@ impl<T: frame_system::Config> zenlink_protocol::WeightInfo for SubstrateWeight<T
 	// Storage: ZenlinkProtocol LiquidityPairs (r:0 w:1)
 	fn create_pair() -> Weight {
 		// Minimum execution time: 31_116 nanoseconds.
-		Weight::from_ref_time(32_163_000)
+		Weight::from_parts(32_163_000, 0)
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
@@ -93,7 +93,7 @@ impl<T: frame_system::Config> zenlink_protocol::WeightInfo for SubstrateWeight<T
 	// Storage: ZenlinkProtocol BootstrapRewards (r:0 w:1)
 	fn bootstrap_create() -> Weight {
 		// Minimum execution time: 23_286 nanoseconds.
-		Weight::from_ref_time(25_884_000)
+		Weight::from_parts(25_884_000, 0)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
@@ -104,7 +104,7 @@ impl<T: frame_system::Config> zenlink_protocol::WeightInfo for SubstrateWeight<T
 	// Storage: ZenlinkProtocol BootstrapPersonalSupply (r:1 w:1)
 	fn bootstrap_contribute() -> Weight {
 		// Minimum execution time: 65_295 nanoseconds.
-		Weight::from_ref_time(69_828_000)
+		Weight::from_parts(69_828_000, 0)
 			.saturating_add(T::DbWeight::get().reads(8))
 			.saturating_add(T::DbWeight::get().writes(6))
 	}
@@ -124,7 +124,7 @@ impl<T: frame_system::Config> zenlink_protocol::WeightInfo for SubstrateWeight<T
 	// Storage: AssetManager AssetIdMetadata (r:0 w:4)
 	fn bootstrap_claim() -> Weight {
 		// Minimum execution time: 255_049 nanoseconds.
-		Weight::from_ref_time(258_789_000)
+		Weight::from_parts(258_789_000, 0)
 			.saturating_add(T::DbWeight::get().reads(24))
 			.saturating_add(T::DbWeight::get().writes(20))
 	}
@@ -143,7 +143,7 @@ impl<T: frame_system::Config> zenlink_protocol::WeightInfo for SubstrateWeight<T
 	// Storage: ZenlinkProtocol BootstrapEndStatus (r:0 w:1)
 	fn bootstrap_end() -> Weight {
 		// Minimum execution time: 233_624 nanoseconds.
-		Weight::from_ref_time(249_534_000)
+		Weight::from_parts(249_534_000, 0)
 			.saturating_add(T::DbWeight::get().reads(23))
 			.saturating_add(T::DbWeight::get().writes(32))
 	}
@@ -152,7 +152,7 @@ impl<T: frame_system::Config> zenlink_protocol::WeightInfo for SubstrateWeight<T
 	// Storage: ZenlinkProtocol BootstrapLimits (r:0 w:1)
 	fn bootstrap_update() -> Weight {
 		// Minimum execution time: 31_272 nanoseconds.
-		Weight::from_ref_time(32_439_000)
+		Weight::from_parts(32_439_000, 0)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
@@ -162,7 +162,7 @@ impl<T: frame_system::Config> zenlink_protocol::WeightInfo for SubstrateWeight<T
 	// Storage: ZenlinkProtocol ForeignLedger (r:4 w:4)
 	fn bootstrap_refund() -> Weight {
 		// Minimum execution time: 65_555 nanoseconds.
-		Weight::from_ref_time(69_005_000)
+		Weight::from_parts(69_005_000, 0)
 			.saturating_add(T::DbWeight::get().reads(7))
 			.saturating_add(T::DbWeight::get().writes(6))
 	}
@@ -181,7 +181,7 @@ impl<T: frame_system::Config> zenlink_protocol::WeightInfo for SubstrateWeight<T
 	// Storage: AssetManager AssetIdLocation (r:0 w:3)
 	fn add_liquidity() -> Weight {
 		// Minimum execution time: 242_575 nanoseconds.
-		Weight::from_ref_time(245_455_000)
+		Weight::from_parts(245_455_000, 0)
 			.saturating_add(T::DbWeight::get().reads(25))
 			.saturating_add(T::DbWeight::get().writes(29))
 	}
@@ -199,7 +199,7 @@ impl<T: frame_system::Config> zenlink_protocol::WeightInfo for SubstrateWeight<T
 	// Storage: AssetManager AssetIdMetadata (r:0 w:2)
 	fn remove_liquidity() -> Weight {
 		// Minimum execution time: 176_759 nanoseconds.
-		Weight::from_ref_time(179_110_000)
+		Weight::from_parts(179_110_000, 0)
 			.saturating_add(T::DbWeight::get().reads(19))
 			.saturating_add(T::DbWeight::get().writes(14))
 	}
@@ -208,7 +208,7 @@ impl<T: frame_system::Config> zenlink_protocol::WeightInfo for SubstrateWeight<T
 	// Storage: ZenlinkProtocol PairStatuses (r:2 w:0)
 	fn swap_exact_assets_for_assets() -> Weight {
 		// Minimum execution time: 102_906 nanoseconds.
-		Weight::from_ref_time(104_186_000)
+		Weight::from_parts(104_186_000, 0)
 			.saturating_add(T::DbWeight::get().reads(9))
 			.saturating_add(T::DbWeight::get().writes(6))
 	}
@@ -217,7 +217,7 @@ impl<T: frame_system::Config> zenlink_protocol::WeightInfo for SubstrateWeight<T
 	// Storage: ZenlinkProtocol PairStatuses (r:2 w:0)
 	fn swap_assets_for_exact_assets() -> Weight {
 		// Minimum execution time: 103_272 nanoseconds.
-		Weight::from_ref_time(104_287_000)
+		Weight::from_parts(104_287_000, 0)
 			.saturating_add(T::DbWeight::get().reads(9))
 			.saturating_add(T::DbWeight::get().writes(6))
 	}
@@ -228,14 +228,14 @@ impl WeightInfo for () {
 	// Storage: ZenlinkProtocol FeeMeta (r:1 w:1)
 	fn set_fee_receiver() -> Weight {
 		// Minimum execution time: 7_898 nanoseconds.
-		Weight::from_ref_time(8_215_000)
+		Weight::from_parts(8_215_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	// Storage: ZenlinkProtocol FeeMeta (r:1 w:1)
 	fn set_fee_point() -> Weight {
 		// Minimum execution time: 7_394 nanoseconds.
-		Weight::from_ref_time(7_631_000)
+		Weight::from_parts(7_631_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
@@ -245,7 +245,7 @@ impl WeightInfo for () {
 	// Storage: ZenlinkProtocol LiquidityPairs (r:0 w:1)
 	fn create_pair() -> Weight {
 		// Minimum execution time: 31_116 nanoseconds.
-		Weight::from_ref_time(32_163_000)
+		Weight::from_parts(32_163_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(3))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
@@ -254,7 +254,7 @@ impl WeightInfo for () {
 	// Storage: ZenlinkProtocol BootstrapRewards (r:0 w:1)
 	fn bootstrap_create() -> Weight {
 		// Minimum execution time: 23_286 nanoseconds.
-		Weight::from_ref_time(25_884_000)
+		Weight::from_parts(25_884_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
@@ -265,7 +265,7 @@ impl WeightInfo for () {
 	// Storage: ZenlinkProtocol BootstrapPersonalSupply (r:1 w:1)
 	fn bootstrap_contribute() -> Weight {
 		// Minimum execution time: 65_295 nanoseconds.
-		Weight::from_ref_time(69_828_000)
+		Weight::from_parts(69_828_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(8))
 			.saturating_add(RocksDbWeight::get().writes(6))
 	}
@@ -285,7 +285,7 @@ impl WeightInfo for () {
 	// Storage: AssetManager AssetIdMetadata (r:0 w:4)
 	fn bootstrap_claim() -> Weight {
 		// Minimum execution time: 255_049 nanoseconds.
-		Weight::from_ref_time(258_789_000)
+		Weight::from_parts(258_789_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(24))
 			.saturating_add(RocksDbWeight::get().writes(20))
 	}
@@ -304,7 +304,7 @@ impl WeightInfo for () {
 	// Storage: ZenlinkProtocol BootstrapEndStatus (r:0 w:1)
 	fn bootstrap_end() -> Weight {
 		// Minimum execution time: 233_624 nanoseconds.
-		Weight::from_ref_time(249_534_000)
+		Weight::from_parts(249_534_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(23))
 			.saturating_add(RocksDbWeight::get().writes(32))
 	}
@@ -313,7 +313,7 @@ impl WeightInfo for () {
 	// Storage: ZenlinkProtocol BootstrapLimits (r:0 w:1)
 	fn bootstrap_update() -> Weight {
 		// Minimum execution time: 31_272 nanoseconds.
-		Weight::from_ref_time(32_439_000)
+		Weight::from_parts(32_439_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
@@ -323,7 +323,7 @@ impl WeightInfo for () {
 	// Storage: ZenlinkProtocol ForeignLedger (r:4 w:4)
 	fn bootstrap_refund() -> Weight {
 		// Minimum execution time: 65_555 nanoseconds.
-		Weight::from_ref_time(69_005_000)
+		Weight::from_parts(69_005_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(7))
 			.saturating_add(RocksDbWeight::get().writes(6))
 	}
@@ -342,7 +342,7 @@ impl WeightInfo for () {
 	// Storage: AssetManager AssetIdLocation (r:0 w:3)
 	fn add_liquidity() -> Weight {
 		// Minimum execution time: 242_575 nanoseconds.
-		Weight::from_ref_time(245_455_000)
+		Weight::from_parts(245_455_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(25))
 			.saturating_add(RocksDbWeight::get().writes(29))
 	}
@@ -360,7 +360,7 @@ impl WeightInfo for () {
 	// Storage: AssetManager AssetIdMetadata (r:0 w:2)
 	fn remove_liquidity() -> Weight {
 		// Minimum execution time: 176_759 nanoseconds.
-		Weight::from_ref_time(179_110_000)
+		Weight::from_parts(179_110_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(19))
 			.saturating_add(RocksDbWeight::get().writes(14))
 	}
@@ -369,7 +369,7 @@ impl WeightInfo for () {
 	// Storage: ZenlinkProtocol PairStatuses (r:2 w:0)
 	fn swap_exact_assets_for_assets() -> Weight {
 		// Minimum execution time: 102_906 nanoseconds.
-		Weight::from_ref_time(104_186_000)
+		Weight::from_parts(104_186_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(9))
 			.saturating_add(RocksDbWeight::get().writes(6))
 	}
@@ -378,7 +378,7 @@ impl WeightInfo for () {
 	// Storage: ZenlinkProtocol PairStatuses (r:2 w:0)
 	fn swap_assets_for_exact_assets() -> Weight {
 		// Minimum execution time: 103_272 nanoseconds.
-		Weight::from_ref_time(104_287_000)
+		Weight::from_parts(104_287_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(9))
 			.saturating_add(RocksDbWeight::get().writes(6))
 	}

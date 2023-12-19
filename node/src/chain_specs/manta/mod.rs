@@ -23,7 +23,7 @@ use manta_runtime::{
     GenesisConfig, LotteryConfig, ParachainStakingConfig, PolkadotXcmConfig,
     TechnicalCommitteeConfig,
 };
-use sc_network_common::config::MultiaddrWithPeerId;
+use sc_service::config::MultiaddrWithPeerId;
 
 mod local_testnets_geneses;
 mod public_testnet_genesis;
@@ -43,7 +43,7 @@ pub const POLKADOT_RELAYCHAIN_LOCAL_NET: &str = "polkadot-local";
 pub const POLKADOT_RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
 
 /// The default XCM version to set in genesis config.
-pub const MANTA_SAFE_XCM_VERSION: u32 = 2;
+pub const MANTA_SAFE_XCM_VERSION: u32 = 3;
 
 /// Manta Chain Specification
 pub type MantaChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;

@@ -14,10 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use substrate_wasm_builder::WasmBuilder;
-
 fn main() {
-    WasmBuilder::new()
+    substrate_wasm_builder::WasmBuilder::new()
         .with_current_project()
         .export_heap_base()
         .import_memory()

@@ -166,7 +166,7 @@ benchmarks! {
         // should have won now
         let unclaimed_winnings = Pallet::<T>::total_unclaimed_winnings();
         let account_balance_before = <T as pallet_parachain_staking::Config>::Currency::free_balance(&caller);
-        let fee_estimate  = T::EstimateCallFee::estimate_call_fee(&Call::<T>::claim_my_winnings {  }, None::<u64>.into());
+        let fee_estimate  = T::EstimateCallFee::estimate_call_fee(&Call::<T>::claim_my_winnings {  }, None.into());
         assert!(!unclaimed_winnings.is_zero());
         assert_eq!(unclaimed_winnings,Pallet::<T>::unclaimed_winnings_by_account(caller.clone()).unwrap());
     }: _(RawOrigin::Signed(caller.clone()))

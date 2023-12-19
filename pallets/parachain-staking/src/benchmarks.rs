@@ -22,7 +22,10 @@ use crate::{
     Points, Range, Round, ScheduledRequest,
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, vec};
-use frame_support::traits::{tokens::fungible::Inspect, Currency, Get, OnFinalize, OnInitialize};
+use frame_support::traits::{
+    tokens::{fungible::Inspect, Fortitude, Preservation},
+    Currency, Get, OnFinalize, OnInitialize,
+};
 use frame_system::RawOrigin;
 use sp_runtime::{Perbill, Percent};
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
@@ -365,10 +368,10 @@ benchmarks! {
             true,
             1u32,
         )?;
-        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
+        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller, Preservation::Preserve, Fortitude::Polite);
     }: _(RawOrigin::Signed(caller.clone()), more)
     verify {
-        let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
+        let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller, Preservation::Preserve, Fortitude::Polite);
         assert!(usable_balance_after < usable_balance_before);
     }
     schedule_candidate_bond_less {
@@ -406,14 +409,14 @@ benchmarks! {
             min_candidate_stk
         )?;
         roll_to_and_author::<T>(<<T as Config>::CandidateBondLessDelay as Get<u32>>::get(), caller.clone());
-        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
+        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller, Preservation::Preserve, Fortitude::Polite);
     }: {
         Pallet::<T>::execute_candidate_bond_less(
             RawOrigin::Signed(caller.clone()).into(),
             caller.clone()
         )?;
     } verify {
-        let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
+        let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller, Preservation::Preserve, Fortitude::Polite);
         assert!(usable_balance_after > usable_balance_before);
     }
 
@@ -741,7 +744,7 @@ benchmarks! {
             bond_less
         )?;
         roll_to_and_author::<T>(<<T as Config>::DelegationBondLessDelay as Get<u32>>::get(), collator.clone());
-        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
+        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller, Preservation::Preserve, Fortitude::Polite);
     }: {
         Pallet::<T>::execute_delegation_request(
             RawOrigin::Signed(caller.clone()).into(),
@@ -750,7 +753,7 @@ benchmarks! {
         )?;
     } verify {
         let expected = total - bond_less;
-        let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
+        let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller, Preservation::Preserve, Fortitude::Polite);
         assert!(usable_balance_after > usable_balance_before);
     }
 

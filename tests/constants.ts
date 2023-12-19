@@ -10,7 +10,7 @@ export const USDC_10M = new BN("100000000000000000");
 export const USDC_20M = new BN("200000000000000000");
 
 export const USDT_LOCATION = {
-    V1: {
+    V3: {
         parents: 1,
         interior: {
             X3: [
@@ -40,7 +40,7 @@ export const USDT_METADATA = {
 };
 
 export const USDC_LOCATION = {
-    V1: {
+    V3: {
         parents: 1,
         interior: {
             X3: [

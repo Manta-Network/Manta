@@ -20,7 +20,7 @@ use crate::{
 };
 use core::marker::PhantomData;
 use frame_support::traits::{Get, OnRuntimeUpgrade};
-use sp_runtime::traits::UniqueSaturatedInto;
+use sp_runtime::{traits::UniqueSaturatedInto, DispatchError};
 
 /// Migration to move old invulnerables to the staking set on upgrade
 pub struct InitializeStakingPallet<T>(PhantomData<T>);
@@ -127,7 +127,7 @@ where
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, DispatchError> {
         // Before beginning the migration invulnerables must have 400k KMA in free balance
         let invulnerables = manta_collator_selection::Pallet::<T>::invulnerables();
         for invulnerable in invulnerables.clone() {
@@ -148,7 +148,7 @@ where
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), DispatchError> {
         // Invulnerables were migrated correctly
         let invulnerables = manta_collator_selection::Pallet::<T>::invulnerables();
         for invuln in invulnerables {
