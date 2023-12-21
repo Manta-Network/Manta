@@ -86,7 +86,13 @@ jobs:
           cd ${{ github.workspace }}/tests
           yarn install
           yarn
-          node append_storage.js
+          if [[ $CHAIN_SPEC == calamari* ]];then
+            echo insert mantapay and mantasbt storage into calamari chain spec
+            node append_storage.js calamari
+          else
+            echo insert mantasbt storage into manta chain spec
+            node append_storage.js
+          fi
           CHAIN_SPEC=${{ github.workspace }}/tests/data/fork.json
           echo $CHAIN_SPEC
       - name: stop sccache server
