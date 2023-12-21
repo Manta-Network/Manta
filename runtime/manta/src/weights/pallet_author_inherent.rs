@@ -50,7 +50,7 @@ pub trait WeightInfo {
 
 /// Weights for pallet_author_inherent using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> pallet_author_inherent::WeightInfo for SubstrateWeight<T> {
+impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: ParachainSystem ValidationData (r:1 w:0)
 	/// Proof Skipped: ParachainSystem ValidationData (max_values: Some(1), max_size: None, mode: Measured)
 	/// Storage: AuthorInherent HighestSlotSeen (r:1 w:1)
