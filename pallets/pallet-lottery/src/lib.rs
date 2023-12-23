@@ -163,7 +163,7 @@ pub mod pallet {
         type DrawingInterval: Get<Self::BlockNumber>;
         /// Time in blocks *before* a drawing in
         /// Depending on the randomness source, the winner might be established before the drawing, this prevents modification of the eligible winning set after the winner
-        /// has been established but before it is selected by [`Call::draw_lottery`] which modifications of the win-eligble pool are prevented
+        /// has been established but before it is selected by [`Call::draw_lottery`] which modifications of the win-eligible pool are prevented
         #[pallet::constant]
         type DrawingFreezeout: Get<Self::BlockNumber>;
         /// Time in blocks until a collator is done unstaking
@@ -1116,7 +1116,7 @@ pub mod pallet {
                                 return true;
                             }
                     };
-                    // Ensure the pallet has enough gas to pay for this. Should never run out as long as its's called from `draw_lottery`
+                    // Ensure the pallet has enough gas to pay for this. Should never run out as long as it's called from `draw_lottery`
                     let fee_estimate : BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(&pallet_parachain_staking::Call::execute_delegation_request { delegator: Self::account_id() , candidate: collator.account.clone()  }, None.into());
                     if Self::surplus_funds() <= fee_estimate{
                         log::warn!("could not finish unstaking delegation because the pallet is out of funds to pay TX fees. Skipping");
