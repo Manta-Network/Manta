@@ -50,7 +50,7 @@ jobs:
         uses: chevdor/srtool-actions@v0.9.1
         with:
           image: paritytech/srtool
-          tag: 1.74
+          tag: 1.74.0
           chain: ${{ matrix.runtime.name }}
       - name: persist srtool digest
         run: >
@@ -114,8 +114,8 @@ jobs:
           rustup default stable
           rustup update
           rustup target add wasm32-unknown-unknown
-          rustup install 1.69.0
-          rustup target add wasm32-unknown-unknown --toolchain 1.69.0
+          rustup install 1.71.0
+          rustup target add wasm32-unknown-unknown --toolchain 1.71.0
       - name: cache cargo
         uses: Swatinem/rust-cache@v2
       - name: build
@@ -127,7 +127,7 @@ jobs:
           SCCACHE_DIR: ~/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo +1.69.0 build --profile production --verbose
+          RUSTC_BOOTSTRAP=1 cargo +1.71.0 build --profile production --verbose
       - name: stop sccache server
         run: sccache --stop-server || true
       - if: always()
