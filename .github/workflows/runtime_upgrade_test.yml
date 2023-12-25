@@ -41,7 +41,7 @@ jobs:
         uses: chevdor/srtool-actions@v0.9.1
         with:
           image: paritytech/srtool
-          tag: 1.74
+          tag: 1.74.0
           chain: ${{ env.RUNTIME }}
       - name: persist srtool digest
         run: >
