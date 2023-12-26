@@ -86,7 +86,7 @@ pub trait AssetRegistry: AssetIdType + BalanceType {
     /// Error Type
     type Error;
 
-    /// Creates an new asset.
+    /// Creates a new asset.
     ///
     /// * `asset_id`: the asset id to be created
     /// * `metadata`: the metadata that the implementation layer stores
