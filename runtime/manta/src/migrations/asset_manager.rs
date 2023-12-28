@@ -402,7 +402,7 @@ impl<T: frame_system::Config + pallet_asset_manager::Config> OnRuntimeUpgrade fo
                     ) => {
                         let v3_general_key = {
                             let mut data = [0u8; 32];
-                            data.copy_from_slice(&general_key[..]);
+                            data[..general_key.len()].copy_from_slice(&general_key[..]);
                             Junction::GeneralKey {
                                 length: general_key.len() as u8,
                                 data,
@@ -525,7 +525,7 @@ impl<T: frame_system::Config + pallet_asset_manager::Config> OnRuntimeUpgrade fo
                     ) => {
                         let v3_general_key = {
                             let mut data = [0u8; 32];
-                            data.copy_from_slice(&general_key[..]);
+                            data[..general_key.len()].copy_from_slice(&general_key[..]);
                             Junction::GeneralKey {
                                 length: general_key.len() as u8,
                                 data,
