@@ -216,8 +216,9 @@ jobs:
       - name: launch testnet
         shell: bash
         run: |
+          cd $GITHUB_WORKSPACE/zombienet-tool
+          git pull && git checkout v1.3.89
           cd $GITHUB_WORKSPACE/zombienet-tool/javascript
-          git checkout v1.3.89
           yarn
           npm run build
           pm2 start packages/cli/dist/cli.js --name zombienet \
