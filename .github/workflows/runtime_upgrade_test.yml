@@ -145,6 +145,8 @@ jobs:
           path: dev-tools
       - name: launch testnet
         run: |
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang git
           cd ${{ github.workspace }}/zombienet-tool/javascript
           git checkout v1.3.89
           yarn
