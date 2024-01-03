@@ -11,28 +11,28 @@ version = '4.6.0'
 
 [dependencies]
 # utils
-anyhow = { version = "1.0.55", optional = true, default-features = false }
-base64 = { version = "0.20", default-features = false, features = ["alloc"] }
-indoc = { version = "2.0.1", optional = true, default-features = false }
-rand_chacha = { version = "0.3.1", optional = true, default-features = false }
-tempfile = { version = "3.3.0", optional = true, default-features = false }
+anyhow = { workspace = true, optional = true, default-features = false }
+base64 = { workspace = true, features = ["alloc"] }
+indoc = { workspace = true, optional = true, default-features = false }
+rand_chacha = { workspace = true, optional = true, default-features = false }
+tempfile = { workspace = true, optional = true, default-features = false }
 
 # substrate dependencies
-frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.43", default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.43", default-features = false }
-scale-codec = { package = "parity-scale-codec", version = '3.4.0', default-features = false, features = ["derive", "max-encoded-len"] }
-scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
-sp-api = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43", optional = true, default-features = false }
-sp-blockchain = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43", optional = true, default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.43", default-features = false }
-sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43", default-features = false }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+codec = { workspace = true }
+scale-info = { workspace = true }
+sp-api = { workspace = true, optional = true, default-features = false }
+sp-blockchain = { workspace = true, optional = true, default-features = false }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 # manta dependencies
-manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.15", default-features = false }
-manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.15", default-features = false }
-manta-pay = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.15", default-features = false, features = ["groth16", "parameters", "scale"] }
-manta-primitives = { path = "../../primitives/manta", default-features = false }
-manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.15", default-features = false }
+manta-accounting = { workspace = true }
+manta-crypto = { workspace = true }
+manta-pay = { workspace = true }
+manta-primitives = { workspace = true }
+manta-util = { workspace = true }
 
 [features]
 default = ["std"]
@@ -56,7 +56,7 @@ std = [
   "anyhow/std",
   "frame-support/std",
   "frame-system/std",
-  "scale-codec/std",
+  "codec/std",
   "scale-info/std",
   "sp-runtime/std",
   "sp-api/std",

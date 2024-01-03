@@ -8,12 +8,12 @@ repository = 'https://github.com/Manta-Network/Manta/'
 version = "4.6.0"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false, features = ["derive"] }
+codec = { workspace = true }
 
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.43", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.43", default-features = false }
+sp-api = { workspace = true }
+sp-std = { workspace = true }
 
-manta-primitives = { path = '../../../../primitives/manta', default-features = false }
+manta-primitives = { workspace = true }
 
 [features]
 default = ["std"]

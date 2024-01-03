@@ -8,24 +8,24 @@ repository = 'https://github.com/Manta-Network/Manta/'
 version = '4.6.0'
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = '3.4.0', default-features = false, features = ["derive", "max-encoded-len"] }
-scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+codec = { workspace = true }
+scale-info = { workspace = true }
 
-frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43", optional = true }
-frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-pallet-balances = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43", optional = true }
-pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43", optional = true }
-sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-balances = { workspace = true, optional = true }
+pallet-timestamp = { workspace = true, optional = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 [dev-dependencies]
-chrono = "0.4"
-manta-primitives = { path = "../../primitives/manta" }
-pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43" }
-pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43" }
-sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43" }
-sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43" }
+chrono = { workspace = true }
+manta-primitives = { workspace = true }
+pallet-balances = { workspace = true }
+pallet-timestamp = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
 
 [features]
 default = ["std"]

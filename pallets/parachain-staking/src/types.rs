@@ -20,11 +20,11 @@ use crate::{
     set::OrderedSet, BalanceOf, BottomDelegations, CandidateInfo, Config, DelegatorState, Error,
     Event, Pallet, Round, RoundIndex, TopDelegations, Total, COLLATOR_LOCK_ID, DELEGATOR_LOCK_ID,
 };
+use codec::{Decode, Encode};
 use frame_support::{
     pallet_prelude::*,
     traits::{tokens::WithdrawReasons, LockableCurrency},
 };
-use parity_scale_codec::{Decode, Encode};
 use sp_runtime::{
     traits::{AtLeast32BitUnsigned, Saturating, Zero},
     Perbill, Percent, RuntimeDebug,
