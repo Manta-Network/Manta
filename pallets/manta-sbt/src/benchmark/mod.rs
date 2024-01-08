@@ -20,7 +20,7 @@ use crate::{
 use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_support::traits::{Currency, Get};
 use frame_system::RawOrigin;
-use scale_codec::Decode;
+use codec::Decode;
 use sp_core::H160;
 use sp_io::hashing::keccak_256;
 

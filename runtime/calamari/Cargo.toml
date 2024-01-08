@@ -13,7 +13,7 @@ codec = { workspace = true }
 hex-literal = { workspace = true, optional = true }
 log = { workspace = true }
 scale-info = { workspace = true }
-serde = { workspace = true, features = ["alloc", "derive"], optional = true }
+serde = { workspace = true, optional = true }
 smallvec = { workspace = true }
 
 # Substrate primitives
@@ -129,15 +129,15 @@ serde_json = { workspace = true }
 version-compare = { workspace = true }
 
 # Substrate 3rd-party dependencies
-cumulus-primitives-parachain-inherent = { workspace = true }
-cumulus-test-relay-sproof-builder = { workspace = true }
-polkadot-core-primitives = { workspace = true }
-polkadot-runtime-parachains = { workspace = true }
-sp-io = { workspace = true }
+cumulus-primitives-parachain-inherent = { workspace = true, feature = ["std"] }
+cumulus-test-relay-sproof-builder = { workspace = true, feature = ["std"] }
+polkadot-core-primitives = { workspace = true, feature = ["std"] }
+polkadot-runtime-parachains = { workspace = true, feature = ["std"] }
+sp-io = { workspace = true, feature = ["std"] }
 xcm-simulator = { workspace = true }
 
 # Self dependencies
-runtime-common = { workspace = true, features = ["test-helpers"] }
+runtime-common = { workspace = true, features = ["std", "test-helpers"] }
 
 [features]
 default = ['std']

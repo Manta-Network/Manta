@@ -9,6 +9,7 @@ repository = 'https://github.com/Manta-Network/Manta/'
 version = '4.6.0'
 
 [dependencies]
+codec = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
@@ -16,7 +17,6 @@ hex = { workspace = true }
 log = { workspace = true }
 manta-primitives = { workspace = true }
 nimbus-primitives = { workspace = true }
-codec = { workspace = true }
 scale-info = { workspace = true }
 serde = { workspace = true, optional = true }
 session-key-primitives = { workspace = true }
@@ -27,7 +27,7 @@ sp-std = { workspace = true }
 
 [dev-dependencies]
 derive_more = { workspace = true }
-pallet-balances = { workspace = true }
+pallet-balances = { workspace = true, features = ["std"] }
 
 [features]
 default = ["std"]

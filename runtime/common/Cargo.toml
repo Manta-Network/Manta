@@ -28,36 +28,36 @@ codec = { workspace = true }
 scale-info = { workspace = true }
 
 # Substrate dependencies
-frame-system = { workspace = true }
-pallet-assets = { workspace = true }
-pallet-balances = { workspace = true }
-pallet-utility = { workspace = true }
-sp-core = { workspace = true }
-sp-io = { workspace = true }
-sp-std = { workspace = true }
+frame-system = { workspace = true, features = ["std"] }
+pallet-assets = { workspace = true, features = ["std"] }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-utility = { workspace = true, features = ["std"] }
+sp-core = { workspace = true, features = ["std"] }
+sp-io = { workspace = true, features = ["std"] }
+sp-std = { workspace = true, features = ["std"] }
 
 # Polkadot dependencies
-pallet-xcm = { workspace = true }
-polkadot-core-primitives = { workspace = true }
-polkadot-parachain = { workspace = true }
-polkadot-runtime-parachains = { workspace = true }
-xcm = { workspace = true }
-xcm-builder = { workspace = true }
-xcm-executor = { workspace = true }
+pallet-xcm = { workspace = true, features = ["std"] }
+polkadot-core-primitives = { workspace = true, features = ["std"] }
+polkadot-parachain = { workspace = true, features = ["std"] }
+polkadot-runtime-parachains = { workspace = true, features = ["std"] }
+xcm = { workspace = true, features = ["std"] }
+xcm-builder = { workspace = true, features = ["std"] }
+xcm-executor = { workspace = true, features = ["std"] }
 xcm-simulator = { workspace = true }
 
 # Cumulus dependencies
-cumulus-pallet-dmp-queue = { workspace = true }
-cumulus-pallet-parachain-system = { workspace = true }
-cumulus-pallet-xcm = { workspace = true }
-cumulus-pallet-xcmp-queue = { workspace = true }
-cumulus-primitives-parachain-inherent = { workspace = true }
-cumulus-test-relay-sproof-builder = { workspace = true }
-parachain-info = { workspace = true }
+cumulus-pallet-dmp-queue = { workspace = true, features = ["std"] }
+cumulus-pallet-parachain-system = { workspace = true, features = ["std"] }
+cumulus-pallet-xcm = { workspace = true, features = ["std"] }
+cumulus-pallet-xcmp-queue = { workspace = true, features = ["std"] }
+cumulus-primitives-parachain-inherent = { workspace = true, features = ["std"] }
+cumulus-test-relay-sproof-builder = { workspace = true, features = ["std"] }
+parachain-info = { workspace = true, features = ["std"] }
 
 # Orml dependencies
-orml-traits = { workspace = true }
-orml-xtokens = { workspace = true }
+orml-traits = { workspace = true, features = ["std"] }
+orml-xtokens = { workspace = true, features = ["std"] }
 
 # Self dependencies
 pallet-asset-manager = { workspace = true }

@@ -102,10 +102,10 @@ sha3 = { workspace = true }
 tempfile = { workspace = true, optional = true }
 
 # substrate dependencies
+codec = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-codec = { workspace = true }
 scale-info = { workspace = true }
 sp-api = { workspace = true, optional = true }
 sp-blockchain = { workspace = true, optional = true }
@@ -129,11 +129,11 @@ manta-util = { workspace = true }
 lazy_static = { workspace = true }
 manta-crypto = { workspace = true, features = ["getrandom"] }
 manta-pay = { workspace = true, features = ["groth16", "parameters", "scale", "download", "test"] }
-pallet-asset-manager = { workspace = true }
-pallet-assets = { workspace = true }
-pallet-balances = { workspace = true }
-pallet-manta-pay = { workspace = true }
-pallet-timestamp = { workspace = true }
-pallet-tx-pause = { workspace = true }
+pallet-asset-manager = { workspace = true, features = ["std"] }
+pallet-assets = { workspace = true, features = ["std"] }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-manta-pay = { workspace = true, features = ["std"] }
+pallet-timestamp = { workspace = true, features = ["std"] }
+pallet-tx-pause = { workspace = true, features = ["std"] }
 tempfile = { workspace = true }
-xcm = { workspace = true }
+xcm = { workspace = true, features = ["std"] }

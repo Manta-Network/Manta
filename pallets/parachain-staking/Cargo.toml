@@ -13,10 +13,10 @@ log = { workspace = true }
 serde = { workspace = true, optional = true }
 
 # Substrate
+codec = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-codec = { workspace = true }
 scale-info = { workspace = true }
 sp-arithmetic = { workspace = true }
 sp-runtime = { workspace = true }
@@ -33,9 +33,9 @@ sp-staking = { workspace = true }
 [dev-dependencies]
 similar-asserts = { workspace = true }
 
-pallet-balances = { workspace = true }
-sp-core = { workspace = true }
-sp-io = { workspace = true }
+pallet-balances = { workspace = true, features = ["std"] }
+sp-core = { workspace = true, features = ["std"] }
+sp-io = { workspace = true, features = ["std"] }
 
 [features]
 default = ["std"]

@@ -10,8 +10,8 @@ version = '4.6.0'
 [dependencies]
 codec = { workspace = true }
 hex-literal = { workspace = true, optional = true }
-log = { workspace = true  }
-scale-info = { workspace = true  }
+log = { workspace = true }
+scale-info = { workspace = true }
 serde = { workspace = true, optional = true }
 smallvec = { workspace = true }
 

@@ -32,7 +32,7 @@ use manta_pay::{
 };
 use manta_support::manta_pay::{AccountId, TransferPost};
 use rand_chacha::ChaCha20Rng;
-use scale_codec::Encode;
+use codec::Encode;
 use std::{
     env,
     fs::{self, OpenOptions},

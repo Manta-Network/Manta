@@ -14,7 +14,7 @@ hex-literal = { workspace = true }
 log = { workspace = true }
 scale-info = { workspace = true }
 
-frame-benchmarking = { workspace = true }
+frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 pallet-balances = { workspace = true }
@@ -26,7 +26,7 @@ sp-std = { workspace = true }
 manta-primitives = { workspace = true }
 orml-traits = { workspace = true }
 pallet-asset-manager = { workspace = true, optional = true }
-pallet-assets = { workspace = true }
+pallet-assets = { workspace = true, optional = true }
 xcm = { workspace = true, optional = true }
 
 [dev-dependencies]

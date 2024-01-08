@@ -5378,7 +5378,6 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
- "tracing-core",
  "try-runtime-cli",
  "xcm",
  "zenlink-protocol",

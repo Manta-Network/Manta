@@ -296,7 +296,7 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::TechnicalCommittee(_)
             | RuntimeCall::CouncilMembership(_)
             | RuntimeCall::TechnicalMembership(_)
-            | RuntimeCall::Lottery(_)
+            // | RuntimeCall::Lottery(_)
             | RuntimeCall::Randomness(pallet_randomness::Call::set_babe_randomness_results{..})
             | RuntimeCall::Scheduler(_)
             | RuntimeCall::CalamariVesting(_)

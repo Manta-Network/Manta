@@ -14,7 +14,7 @@ function_name = { workspace = true }
 jsonrpsee = { workspace = true, features = ["server", "macros"], optional = true }
 log = { workspace = true }
 scale-info = { workspace = true }
-serde = { workspace = true }
+serde = { workspace = true, optional = true }
 
 # Substrate dependencies
 frame-support = { workspace = true }
@@ -40,19 +40,19 @@ frame-benchmarking = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
 
 [dev-dependencies]
-calamari-runtime = { workspace = true }
-manta-collator-selection = { workspace = true }
-pallet-asset-manager = { workspace = true }
-pallet-assets = { workspace = true }
-pallet-balances = { workspace = true }
-pallet-preimage = { workspace = true }
-pallet-randomness = { workspace = true }
-pallet-scheduler = { workspace = true }
-pallet-transaction-payment = { workspace = true }
-rand = { workspace = true }
+calamari-runtime = { workspace = true, feature = ["std"] }
+manta-collator-selection = { workspace = true, feature = ["std"] }
+pallet-asset-manager = { workspace = true, feature = ["std"] }
+pallet-assets = { workspace = true, feature = ["std"] }
+pallet-balances = { workspace = true, feature = ["std"] }
+pallet-preimage = { workspace = true, feature = ["std"] }
+pallet-randomness = { workspace = true, feature = ["std"] }
+pallet-scheduler = { workspace = true, feature = ["std"] }
+pallet-transaction-payment = { workspace = true, feature = ["std"] }
+rand = { workspace = true, feature = ["std"] }
 similar-asserts = { workspace = true }
-sp-staking = { workspace = true }
-xcm = { workspace = true }
+sp-staking = { workspace = true, feature = ["std"] }
+xcm = { workspace = true, feature = ["std"] }
 
 [features]
 default = ["std"]

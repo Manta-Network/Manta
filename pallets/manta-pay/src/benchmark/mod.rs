@@ -27,7 +27,7 @@ use manta_primitives::{
     constants::TEST_DEFAULT_ASSET_ED,
     types::Balance,
 };
-use scale_codec::Decode;
+use codec::Decode;
 
 pub const INITIAL_VALUE: u128 = 1_000_000_000_000_000_000_000u128;
 
