@@ -1,11 +1,11 @@
 [package]
-authors = ["Manta Network"]
-edition = "2021"
-homepage = "https://manta.network"
-license = "GPL-3.0"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
 name = "pallet-name-service"
-repository = "https://github.com/Manta-Network/Manta/"
-version = "4.6.0"
+repository.workspace = true
+version.workspace = true
 
 [dependencies]
 codec = { workspace = true }

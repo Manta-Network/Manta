@@ -17,6 +17,7 @@
 //! Type Definitions for Manta Pay
 
 use alloc::{boxed::Box, vec::Vec};
+use codec::{Decode, Encode, Error, MaxEncodedLen};
 use core::ops::Add;
 use frame_support::sp_runtime::traits::Zero;
 use manta_pay::{
@@ -33,7 +34,6 @@ use manta_pay::{
     },
 };
 use manta_util::{Array, BoxArray};
-use codec::{Decode, Encode, Error, MaxEncodedLen};
 use scale_info::TypeInfo;
 
 #[cfg(feature = "rpc")]

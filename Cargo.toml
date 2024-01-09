@@ -1,3 +1,12 @@
+[workspace.package]
+authors = ['Manta Network']
+edition = '2021'
+homepage = 'https://manta.network'
+license = 'GPL-3.0'
+repository = 'https://github.com/Manta-Network/Manta/'
+rust-version = '1.71'
+version = '4.6.0'
+
 [workspace]
 members = [
   "node",

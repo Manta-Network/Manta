@@ -1,12 +1,12 @@
 [package]
-authors = ["Manta Network"]
+authors.workspace = true
 description = "parachain staking pallet for collator selection and reward distribution"
-edition = "2021"
-homepage = 'https://manta.network'
-license = 'GPL-3.0'
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
 name = "pallet-parachain-staking"
-repository = 'https://github.com/Manta-Network/Manta/'
-version = '4.6.0'
+repository.workspace = true
+version.workspace = true
 
 [dependencies]
 log = { workspace = true }

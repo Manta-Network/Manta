@@ -17,6 +17,7 @@
 //! Precomputed Transactions
 
 use anyhow::Result;
+use codec::Encode;
 use indoc::indoc;
 use manta_crypto::{
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
@@ -29,7 +30,6 @@ use manta_pay::{
 };
 use manta_support::manta_pay::TransferPost;
 use rand_chacha::ChaCha20Rng;
-use codec::Encode;
 use std::{
     env,
     fs::{self, File, OpenOptions},
