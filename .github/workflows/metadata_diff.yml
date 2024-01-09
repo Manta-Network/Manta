@@ -115,6 +115,8 @@ jobs:
           cat $GITHUB_WORKSPACE/zombienet/tests/0003-metadata-diff.toml
       - name: launch testnet
         run: |
+          cd $GITHUB_WORKSPACE/zombienet-tool
+          git pull && git checkout v1.3.89
           cd $GITHUB_WORKSPACE/zombienet-tool/javascript
           yarn
           npm run build

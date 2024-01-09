@@ -70,3 +70,7 @@ For example, if one relaychain node takes `Alice` as node, you can use `alice` f
     ```
     The first line will check parachain's block production, the second line will check relaychain's.
     Because relaychain and parachain use the same node name, the zombienet's test framework won't know who is `Alice`.
+3. If you want to specify the path of `base-path`, please use the command like this
+```shell
+zombienet spawn --provider native two-parachains.toml -d your_path
+```
