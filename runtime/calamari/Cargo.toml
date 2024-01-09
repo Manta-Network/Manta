@@ -129,11 +129,11 @@ serde_json = { workspace = true }
 version-compare = { workspace = true }
 
 # Substrate 3rd-party dependencies
-cumulus-primitives-parachain-inherent = { workspace = true, feature = ["std"] }
-cumulus-test-relay-sproof-builder = { workspace = true, feature = ["std"] }
-polkadot-core-primitives = { workspace = true, feature = ["std"] }
-polkadot-runtime-parachains = { workspace = true, feature = ["std"] }
-sp-io = { workspace = true, feature = ["std"] }
+cumulus-primitives-parachain-inherent = { workspace = true }
+cumulus-test-relay-sproof-builder = { workspace = true }
+polkadot-core-primitives = { workspace = true }
+polkadot-runtime-parachains = { workspace = true }
+sp-io = { workspace = true }
 xcm-simulator = { workspace = true }
 
 # Self dependencies

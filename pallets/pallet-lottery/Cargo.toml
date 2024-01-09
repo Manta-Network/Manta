@@ -40,19 +40,19 @@ frame-benchmarking = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
 
 [dev-dependencies]
-calamari-runtime = { workspace = true, feature = ["std"] }
-manta-collator-selection = { workspace = true, feature = ["std"] }
-pallet-asset-manager = { workspace = true, feature = ["std"] }
-pallet-assets = { workspace = true, feature = ["std"] }
-pallet-balances = { workspace = true, feature = ["std"] }
-pallet-preimage = { workspace = true, feature = ["std"] }
-pallet-randomness = { workspace = true, feature = ["std"] }
-pallet-scheduler = { workspace = true, feature = ["std"] }
-pallet-transaction-payment = { workspace = true, feature = ["std"] }
-rand = { workspace = true, feature = ["std"] }
+calamari-runtime = { workspace = true, features = ["std"] }
+manta-collator-selection = { workspace = true, features = ["std"] }
+pallet-asset-manager = { workspace = true, features = ["std"] }
+pallet-assets = { workspace = true, features = ["std"] }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-preimage = { workspace = true, features = ["std"] }
+pallet-randomness = { workspace = true, features = ["std"] }
+pallet-scheduler = { workspace = true, features = ["std"] }
+pallet-transaction-payment = { workspace = true, features = ["std"] }
+rand = { workspace = true }
 similar-asserts = { workspace = true }
-sp-staking = { workspace = true, feature = ["std"] }
-xcm = { workspace = true, feature = ["std"] }
+sp-staking = { workspace = true, features = ["std"] }
+xcm = { workspace = true, features = ["std"] }
 
 [features]
 default = ["std"]

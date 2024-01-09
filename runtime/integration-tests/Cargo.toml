@@ -8,9 +8,9 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-calamari-runtime = { workspace = true, optional = true }
+calamari-runtime = { workspace = true, optional = true, features = ["std"] }
 cfg-if = { workspace = true }
-manta-runtime = { workspace = true, optional = true }
+manta-runtime = { workspace = true, optional = true, features = ["std"] }
 
 [dev-dependencies]
 codec = { workspace = true }
