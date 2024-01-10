@@ -22,12 +22,12 @@ use manta_support::manta_pay::{
     asset_value_decode, asset_value_encode, field_from_id, id_from_field, AccountId, Asset,
 };
 
+use codec::Decode;
 use manta_primitives::{
     assets::{AssetConfig, FungibleLedger},
     constants::TEST_DEFAULT_ASSET_ED,
     types::Balance,
 };
-use scale_codec::Decode;
 
 pub const INITIAL_VALUE: u128 = 1_000_000_000_000_000_000_000u128;
 

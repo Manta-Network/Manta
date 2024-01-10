@@ -15,7 +15,7 @@
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Inherents used for randomness
-use parity_scale_codec::{Decode, Encode};
+use codec::{Decode, Encode};
 use sp_inherents::{Error, InherentData, InherentIdentifier, IsFatalError};
 use sp_runtime::RuntimeString;
 
@@ -40,7 +40,7 @@ impl InherentError {
     #[cfg(feature = "std")]
     pub fn try_from(id: &InherentIdentifier, data: &[u8]) -> Option<Self> {
         if id == &INHERENT_IDENTIFIER {
-            <InherentError as parity_scale_codec::Decode>::decode(&mut &*data).ok()
+            <InherentError as codec::Decode>::decode(&mut &*data).ok()
         } else {
             None
         }

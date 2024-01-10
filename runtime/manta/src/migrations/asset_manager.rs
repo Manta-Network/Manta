@@ -24,8 +24,7 @@ use frame_support::{
     traits::{Get, OnRuntimeUpgrade},
     Blake2_128Concat, StorageHasher,
 };
-use sp_runtime::DispatchError;
-use sp_runtime::{traits::ConstU32, WeakBoundedVec};
+use sp_runtime::{traits::ConstU32, DispatchError, WeakBoundedVec};
 use sp_std::vec::Vec;
 use xcm::{
     v3::{Junction, Junctions, MultiLocation},

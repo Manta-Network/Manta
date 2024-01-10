@@ -54,7 +54,7 @@ where
     T: Config,
 {
     /// Utxo Decoding Error
-    UtxoDecodeError(scale_codec::Error),
+    UtxoDecodeError(codec::Error),
 
     /// Wrong Checksum Error
     ChecksumError,
@@ -69,16 +69,16 @@ where
     MerkleTreeCapacityError,
 
     /// Field Element Encoding Error
-    FpEncodeError(scale_codec::Error),
+    FpEncodeError(codec::Error),
 
     /// Field Element Encoding Error
-    FpDecodeError(scale_codec::Error),
+    FpDecodeError(codec::Error),
 
     /// Path Decoding Error
-    PathDecodeError(scale_codec::Error),
+    PathDecodeError(codec::Error),
 
     /// Full Incoming Note Decoding Error
-    FullNoteDecodeError(scale_codec::Error),
+    FullNoteDecodeError(codec::Error),
 
     /// Asset Registered Error
     ///
@@ -141,10 +141,10 @@ where
 /// Sender Ledger Error
 pub enum SenderLedgerError {
     /// Field Element Encoding Error
-    FpEncodeError(scale_codec::Error),
+    FpEncodeError(codec::Error),
 
     /// Outgoing Note Decoding Error
-    OutgoingNoteDecodeError(scale_codec::Error),
+    OutgoingNoteDecodeError(codec::Error),
 
     /// Asset Spent Error
     ///
@@ -281,7 +281,7 @@ where
     VerifyingContextDecodeError(VerifyingContextError),
 
     /// Field Element Encoding Error
-    FpEncodeError(scale_codec::Error),
+    FpEncodeError(codec::Error),
 
     /// Unknown Asset Error
     UnknownAsset,

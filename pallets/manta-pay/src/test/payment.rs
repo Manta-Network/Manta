@@ -746,7 +746,7 @@ fn check_number_conversions() {
 
 #[test]
 fn pull_ledger_diff_should_work() {
-    use scale_codec::Decode;
+    use codec::Decode;
     new_test_ext().execute_with(|| {
         for _ in 0..2 {
             let mut rng = OsRng;
