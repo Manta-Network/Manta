@@ -10,6 +10,7 @@
     "runtime_upgrade_test": "mocha -r ts-node/register runtime_upgrade_test.ts",
     "parachain_lease_test": "mocha -r ts-node/register check_parachain_lease_expiration.ts",
     "test_farming": "mocha -r ts-node/register test-farming.ts",
+    "reconstruct_pallet_storages": "mocha -r ts-node/register reconstruct_pallet_storages.ts",
     "tests": "mocha -r ts-node/register --timeout 50000 tests/test-*.ts",
     "lint": "eslint ."
   },

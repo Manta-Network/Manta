@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Manta Network.
+// Copyright 2020-2024 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -24,8 +24,7 @@ use frame_support::{
     traits::{Get, OnRuntimeUpgrade},
     Blake2_128Concat, StorageHasher,
 };
-use sp_runtime::DispatchError;
-use sp_runtime::{traits::ConstU32, WeakBoundedVec};
+use sp_runtime::{traits::ConstU32, DispatchError, WeakBoundedVec};
 use sp_std::vec::Vec;
 use xcm::{
     v3::{Junction, Junctions, MultiLocation},
@@ -382,6 +381,18 @@ impl<T: frame_system::Config + pallet_asset_manager::Config> OnRuntimeUpgrade fo
             })) = v1_location
             {
                 match interior {
+                    // kusama location
+                    v1::Junctions::Here => {
+                        let v3_junctions = Junctions::Here;
+                        let v3_location =
+                            VersionedMultiLocation::V3(MultiLocation::new(parents, v3_junctions));
+                        put_storage_value(
+                            pallet_prefix,
+                            storage_item_prefix,
+                            &Blake2_128Concat::hash(&asset_id.encode()),
+                            v3_location,
+                        );
+                    }
                     // we have two X1::Junction::Parachain: 2004 and 2084
                     // { Parachain }: 2
                     v1::Junctions::X1(v1::Junction::Parachain(para_id)) => {
@@ -402,7 +413,7 @@ impl<T: frame_system::Config + pallet_asset_manager::Config> OnRuntimeUpgrade fo
                     ) => {
                         let v3_general_key = {
                             let mut data = [0u8; 32];
-                            data.copy_from_slice(&general_key[..]);
+                            data[..general_key.len()].copy_from_slice(&general_key[..]);
                             Junction::GeneralKey {
                                 length: general_key.len() as u8,
                                 data,
@@ -484,6 +495,18 @@ impl<T: frame_system::Config + pallet_asset_manager::Config> OnRuntimeUpgrade fo
             })) = v1_location
             {
                 match interior {
+                    // kusama location
+                    v1::Junctions::Here => {
+                        let v3_junctions = Junctions::Here;
+                        let v3_location =
+                            VersionedMultiLocation::V3(MultiLocation::new(parents, v3_junctions));
+                        put_storage_value(
+                            pallet_prefix,
+                            storage_item_prefix,
+                            &Blake2_128Concat::hash(&v3_location.encode()),
+                            asset_id,
+                        );
+                    }
                     // we have two X1::Junction::Parachain: 2004 and 2084
                     // { Parachain }: 2
                     v1::Junctions::X1(v1::Junction::Parachain(para_id)) => {
@@ -504,7 +527,7 @@ impl<T: frame_system::Config + pallet_asset_manager::Config> OnRuntimeUpgrade fo
                     ) => {
                         let v3_general_key = {
                             let mut data = [0u8; 32];
-                            data.copy_from_slice(&general_key[..]);
+                            data[..general_key.len()].copy_from_slice(&general_key[..]);
                             Junction::GeneralKey {
                                 length: general_key.len() as u8,
                                 data,
@@ -586,6 +609,18 @@ impl<T: frame_system::Config + pallet_asset_manager::Config> OnRuntimeUpgrade fo
             })) = v1_location
             {
                 match interior {
+                    // kusama location
+                    v1::Junctions::Here => {
+                        let v3_junctions = Junctions::Here;
+                        let v3_location =
+                            VersionedMultiLocation::V3(MultiLocation::new(parents, v3_junctions));
+                        put_storage_value(
+                            pallet_prefix,
+                            storage_item_prefix,
+                            &Blake2_128Concat::hash(&v3_location.encode()),
+                            fees,
+                        );
+                    }
                     // we have two X1::Junction::Parachain: 2004 and 2084
                     // { Parachain }: 2
                     v1::Junctions::X1(v1::Junction::Parachain(para_id)) => {
@@ -606,7 +641,7 @@ impl<T: frame_system::Config + pallet_asset_manager::Config> OnRuntimeUpgrade fo
                     ) => {
                         let v3_general_key = {
                             let mut data = [0u8; 32];
-                            data.copy_from_slice(&general_key[..]);
+                            data[..general_key.len()].copy_from_slice(&general_key[..]);
                             Junction::GeneralKey {
                                 length: general_key.len() as u8,
                                 data,

@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Manta Network.
+// Copyright 2020-2024 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -296,7 +296,7 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::TechnicalCommittee(_)
             | RuntimeCall::CouncilMembership(_)
             | RuntimeCall::TechnicalMembership(_)
-            | RuntimeCall::Lottery(_)
+            // | RuntimeCall::Lottery(_)
             | RuntimeCall::Randomness(pallet_randomness::Call::set_babe_randomness_results{..})
             | RuntimeCall::Scheduler(_)
             | RuntimeCall::CalamariVesting(_)
@@ -1076,7 +1076,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, Si
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = (migrations::asset_manager::XcmV1ToV3<Runtime>,);
+pub type OnRuntimeUpgradeHooks = ();
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,

@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Manta Network.
+// Copyright 2020-2024 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -23,8 +23,8 @@ use crate::{
     },
     Delegator, DelegatorStatus,
 };
+use codec::{Decode, Encode};
 use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::Get, RuntimeDebug};
-use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::traits::Saturating;
 use sp_std::{vec, vec::Vec};

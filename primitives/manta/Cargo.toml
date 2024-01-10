@@ -1,34 +1,33 @@
 [package]
-authors = ['Manta Network']
-edition = "2021"
-homepage = 'https://manta.network'
-license = 'GPL-3.0'
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
 name = "manta-primitives"
-repository = 'https://github.com/Manta-Network/Manta/'
-version = '4.6.0'
+repository.workspace = true
+version.workspace = true
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = '3.4.0', default-features = false }
-log = "0.4.16"
-scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
-smallvec = "1.8.0"
+codec = { workspace = true }
+log = { workspace = true }
+scale-info = { workspace = true }
+smallvec = { workspace = true }
 
 # Substrate primitives
-frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43", default-features = false, optional = true }
-frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.43" }
-xcm-builder = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.43" }
-xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.43" }
-
-orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', branch = "polkadot-v0.9.43", default-features = false }
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+orml-traits = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+xcm = { workspace = true }
+xcm-builder = { workspace = true }
+xcm-executor = { workspace = true }
 
 [features]
 default = ["std"]

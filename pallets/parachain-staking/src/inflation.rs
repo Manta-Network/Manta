@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Manta Network.
+// Copyright 2020-2024 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -16,8 +16,8 @@
 
 //! Helper methods for computing issuance based on inflation
 use crate::pallet::{BalanceOf, Config, Pallet};
+use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::traits::Currency;
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};

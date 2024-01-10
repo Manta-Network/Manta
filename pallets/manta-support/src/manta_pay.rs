@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Manta Network.
+// Copyright 2020-2024 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -17,6 +17,7 @@
 //! Type Definitions for Manta Pay
 
 use alloc::{boxed::Box, vec::Vec};
+use codec::{Decode, Encode, Error, MaxEncodedLen};
 use core::ops::Add;
 use frame_support::sp_runtime::traits::Zero;
 use manta_pay::{
@@ -33,7 +34,6 @@ use manta_pay::{
     },
 };
 use manta_util::{Array, BoxArray};
-use scale_codec::{Decode, Encode, Error, MaxEncodedLen};
 use scale_info::TypeInfo;
 
 #[cfg(feature = "rpc")]
@@ -46,7 +46,7 @@ use manta_crypto::arkworks::{
     groth16::Proof as CryptoProof,
 };
 pub use manta_pay::config::utxo::Checkpoint;
-use manta_util::{codec, into_array_unchecked};
+use manta_util::{codec as manta_codec, into_array_unchecked};
 
 /// Standard Asset Id
 pub type StandardAssetId = u128;
@@ -87,26 +87,26 @@ pub const PROOF_ENCODE: &str = "Proof encoding to [u8; 128] failed.";
 pub const PROOF_DECODE: &str = "Vec<u8>(u8; 128) decoding to Proof failed.";
 
 /// Field encode to byte array
-pub fn fp_encode<T>(fp: Fp<T>) -> Result<[u8; 32], scale_codec::Error>
+pub fn fp_encode<T>(fp: Fp<T>) -> Result<[u8; 32], codec::Error>
 where
     T: manta_crypto::arkworks::ff::Field,
 {
     use manta_util::codec::Encode;
     fp.to_vec()
         .try_into()
-        .map_err(|_e| scale_codec::Error::from(FP_ENCODE))
+        .map_err(|_e| codec::Error::from(FP_ENCODE))
 }
 
 /// Field decode from byte array
-pub fn fp_decode<T>(fp_bytes: Vec<u8>) -> Result<Fp<T>, scale_codec::Error>
+pub fn fp_decode<T>(fp_bytes: Vec<u8>) -> Result<Fp<T>, codec::Error>
 where
     T: manta_crypto::arkworks::ff::Field,
 {
-    Fp::try_from(fp_bytes).map_err(|_e| scale_codec::Error::from(FP_DECODE))
+    Fp::try_from(fp_bytes).map_err(|_e| codec::Error::from(FP_DECODE))
 }
 
 /// Group encode to byte array
-pub fn group_encode<T>(group: CryptoGroup<T>) -> Result<[u8; 32], scale_codec::Error>
+pub fn group_encode<T>(group: CryptoGroup<T>) -> Result<[u8; 32], codec::Error>
 where
     T: ProjectiveCurve,
 {
@@ -114,19 +114,19 @@ where
     group
         .to_vec()
         .try_into()
-        .map_err(|_e| scale_codec::Error::from(GROUP_ENCODE))
+        .map_err(|_e| codec::Error::from(GROUP_ENCODE))
 }
 
 /// Group decode from byte array
-pub fn group_decode<T>(group_bytes: Vec<u8>) -> Result<CryptoGroup<T>, scale_codec::Error>
+pub fn group_decode<T>(group_bytes: Vec<u8>) -> Result<CryptoGroup<T>, codec::Error>
 where
     T: ProjectiveCurve,
 {
-    CryptoGroup::try_from(group_bytes).map_err(|_e| scale_codec::Error::from(GROUP_DECODE))
+    CryptoGroup::try_from(group_bytes).map_err(|_e| codec::Error::from(GROUP_DECODE))
 }
 
 /// Proof encode to byte array
-pub fn proof_encode<T>(proof: CryptoProof<T>) -> Result<[u8; 128], scale_codec::Error>
+pub fn proof_encode<T>(proof: CryptoProof<T>) -> Result<[u8; 128], codec::Error>
 where
     T: PairingEngine,
 {
@@ -137,15 +137,15 @@ where
     u128_bytes
         .to_vec()
         .try_into()
-        .map_err(|_e| scale_codec::Error::from(PROOF_ENCODE))
+        .map_err(|_e| codec::Error::from(PROOF_ENCODE))
 }
 
 /// Proof decode from byte array
-pub fn proof_decode<T>(proof_bytes: Vec<u8>) -> Result<CryptoProof<T>, scale_codec::Error>
+pub fn proof_decode<T>(proof_bytes: Vec<u8>) -> Result<CryptoProof<T>, codec::Error>
 where
     T: PairingEngine,
 {
-    CryptoProof::try_from(proof_bytes).map_err(|_e| scale_codec::Error::from(PROOF_DECODE))
+    CryptoProof::try_from(proof_bytes).map_err(|_e| codec::Error::from(PROOF_DECODE))
 }
 
 /// AssetValue(u128) to byte array [u8; 16]
@@ -211,7 +211,7 @@ pub type AssetValue = u128;
 pub type AccountId = [u8; 32];
 
 /// Transfer Proof encoded value
-/// Compatability for JS u128 and Encode/Decode from parity_scale_codec
+/// Compatability for JS u128 and Encode/Decode from parity_codec
 pub type EncodedAssetValue = [u8; 16];
 
 /// Asset
@@ -1129,21 +1129,21 @@ impl From<RawCheckpoint> for Checkpoint {
 }
 
 /// Merkle Tree Parameters Decode Error Type
-pub type MTParametersError = codec::DecodeError<
-    <&'static [u8] as codec::Read>::Error,
-    <config::UtxoAccumulatorModel as codec::Decode>::Error,
+pub type MTParametersError = manta_codec::DecodeError<
+    <&'static [u8] as manta_codec::Read>::Error,
+    <config::UtxoAccumulatorModel as manta_codec::Decode>::Error,
 >;
 
 /// Utxo Accumulator Item Hash Decode Error Type
-pub type UtxoItemHashError = codec::DecodeError<
-    <&'static [u8] as codec::Read>::Error,
-    <config::utxo::UtxoAccumulatorItemHash as codec::Decode>::Error,
+pub type UtxoItemHashError = manta_codec::DecodeError<
+    <&'static [u8] as manta_codec::Read>::Error,
+    <config::utxo::UtxoAccumulatorItemHash as manta_codec::Decode>::Error,
 >;
 
 /// Verification Context Decode Error Type
-pub type VerifyingContextError = codec::DecodeError<
-    <&'static [u8] as codec::Read>::Error,
-    <config::VerifyingContext as codec::Decode>::Error,
+pub type VerifyingContextError = manta_codec::DecodeError<
+    <&'static [u8] as manta_codec::Read>::Error,
+    <config::VerifyingContext as manta_codec::Decode>::Error,
 >;
 
 /// Wrap Type

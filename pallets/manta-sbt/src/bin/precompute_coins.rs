@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Manta Network.
+// Copyright 2020-2024 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -17,6 +17,7 @@
 //! Precomputed Transactions
 
 use anyhow::Result;
+use codec::Encode;
 use indoc::indoc;
 use manta_crypto::{
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
@@ -29,7 +30,6 @@ use manta_pay::{
 };
 use manta_support::manta_pay::TransferPost;
 use rand_chacha::ChaCha20Rng;
-use scale_codec::Encode;
 use std::{
     env,
     fs::{self, File, OpenOptions},
@@ -121,7 +121,7 @@ fn main() -> Result<()> {
     writeln!(
         target_file,
         indoc! {r"
-            // Copyright 2020-2023 Manta Network.
+            // Copyright 2020-2024 Manta Network.
             // This file is part of Manta.
             //
             // Manta is free software: you can redistribute it and/or modify

@@ -128,7 +128,7 @@ jobs:
       - name: fetch and chmod polkadot
         shell: bash
         run: |
-          apt update && apt install -y curl jq wget
+          apt update && apt install -y curl jq wget git
           if [[ ! -f "$HOME/.local/bin/polkadot" ]]; then
             curl -L -o $HOME/.local/bin/polkadot ${{ env.POLKADOT_BINARY }}
             chmod +x $HOME/.local/bin/polkadot
@@ -231,6 +231,8 @@ jobs:
       - name: launch testnet
         shell: bash
         run: |
+          cd $GITHUB_WORKSPACE/zombienet-tool
+          git pull && git checkout v1.3.89
           cd $GITHUB_WORKSPACE/zombienet-tool/javascript
           yarn
           npm run build

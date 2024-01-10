@@ -1,45 +1,45 @@
 [package]
-authors = ['Manta Network']
+authors.workspace = true
 description = 'Simple staking pallet with a fixed stake.'
-edition = "2021"
-homepage = 'https://manta.network'
-license = 'GPL-3.0'
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
 name = 'manta-collator-selection'
 readme = 'README.md'
-repository = 'https://github.com/Manta-Network/Manta/'
-version = '4.6.0'
+repository.workspace = true
+version.workspace = true
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
-codec = { version = '3.4.0', default-features = false, features = ['derive'], package = 'parity-scale-codec' }
-log = { version = "0.4.16", default-features = false }
-rand = { version = "0.8.5", default-features = false, optional = true }
-scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
-serde = { version = "1.0.140", default-features = false }
+codec = { workspace = true }
+log = { workspace = true }
+rand = { workspace = true, optional = true }
+scale-info = { workspace = true }
+serde = { workspace = true, optional = true }
 
-frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43", optional = true }
-frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "polkadot-v0.9.43", default-features = false }
-pallet-authorship = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-pallet-session = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-sp-arithmetic = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-sp-staking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+nimbus-primitives = { workspace = true }
+pallet-authorship = { workspace = true }
+pallet-session = { workspace = true }
+sp-arithmetic = { workspace = true }
+sp-runtime = { workspace = true }
+sp-staking = { workspace = true }
+sp-std = { workspace = true }
 
 [dev-dependencies]
-manta-primitives = { path = "../../primitives/manta" }
-pallet-aura = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43" }
-pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43" }
-pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43" }
-sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43" }
-sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43" }
-sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43" }
-sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43" }
-sp-tracing = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.43" }
+manta-primitives = { workspace = true, features = ["std"] }
+pallet-aura = { workspace = true, features = ["std"] }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-timestamp = { workspace = true, features = ["std"] }
+sp-consensus-aura = { workspace = true, features = ["std"] }
+sp-core = { workspace = true, features = ["std"] }
+sp-io = { workspace = true, features = ["std"] }
+sp-runtime = { workspace = true, features = ["std"] }
+sp-tracing = { workspace = true, features = ["std"] }
 
 [features]
 default = ['std']

@@ -1,19 +1,19 @@
 [package]
-authors = ['Manta Network']
-edition = "2021"
-homepage = "https://manta.network"
-license = "GPL-3.0"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
 name = "pallet-farming-rpc-runtime-api"
-repository = 'https://github.com/Manta-Network/Manta/'
-version = "4.6.0"
+repository.workspace = true
+version.workspace = true
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false, features = ["derive"] }
+codec = { workspace = true }
 
-sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.43", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.43", default-features = false }
+sp-api = { workspace = true }
+sp-std = { workspace = true }
 
-manta-primitives = { path = '../../../../primitives/manta', default-features = false }
+manta-primitives = { workspace = true }
 
 [features]
 default = ["std"]

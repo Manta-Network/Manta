@@ -1,41 +1,41 @@
 [package]
-authors = ["Manta Network"]
+authors.workspace = true
 description = "parachain staking pallet for collator selection and reward distribution"
-edition = "2021"
-homepage = 'https://manta.network'
-license = 'GPL-3.0'
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
 name = "pallet-parachain-staking"
-repository = 'https://github.com/Manta-Network/Manta/'
-version = '4.6.0'
+repository.workspace = true
+version.workspace = true
 
 [dependencies]
-log = { version = "0.4", default-features = false }
-serde = { version = "1.0.136", default-features = false, optional = true }
+log = { workspace = true }
+serde = { workspace = true, optional = true }
 
 # Substrate
-frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.43", optional = true, default-features = false }
-frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.43", default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.43", default-features = false }
-parity-scale-codec = { version = "3.4.0", default-features = false, features = ["derive"] }
-scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
-sp-arithmetic = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.43", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.43", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.43", default-features = false }
-substrate-fixed = { git = "https://github.com/Manta-Network/substrate-fixed.git", tag = "v0.5.9", default-features = false }
+codec = { workspace = true }
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+scale-info = { workspace = true }
+sp-arithmetic = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+substrate-fixed = { workspace = true }
 
 # Manta
-manta-primitives = { path = '../../primitives/manta', default-features = false }
+manta-primitives = { workspace = true }
 # TODO: remove after whitelist period
-manta-collator-selection = { path = '../collator-selection', default-features = false }
-pallet-session = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
-sp-staking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.43" }
+manta-collator-selection = { workspace = true }
+pallet-session = { workspace = true }
+sp-staking = { workspace = true }
 
 [dev-dependencies]
-similar-asserts = "1.1.0"
+similar-asserts = { workspace = true }
 
-pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.43" }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.43" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.43" }
+pallet-balances = { workspace = true, features = ["std"] }
+sp-core = { workspace = true, features = ["std"] }
+sp-io = { workspace = true, features = ["std"] }
 
 [features]
 default = ["std"]
@@ -51,7 +51,7 @@ std = [
   "manta-primitives/std",
   "manta-collator-selection/std",
   'pallet-session/std',
-  "parity-scale-codec/std",
+  "codec/std",
   "scale-info/std",
   "serde/std",
   "sp-arithmetic/std",
