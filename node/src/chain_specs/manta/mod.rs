@@ -115,9 +115,6 @@ fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
         },
         // empty aura authorities, collators registered with parachain staking instead
         aura: Default::default(),
-        sudo: manta_runtime::SudoConfig {
-            key: Some(root_key),
-        },
         parachain_staking: ParachainStakingConfig {
             candidates: genesis_collators
                 .iter()

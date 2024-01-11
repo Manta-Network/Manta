@@ -73,8 +73,6 @@ fn verify_pallet_prefixes() {
     is_pallet_prefix::<Utility>("Utility");
     is_pallet_prefix::<Multisig>("Multisig");
 
-    is_pallet_prefix::<manta_runtime::Sudo>("Sudo");
-
     is_pallet_prefix::<Assets>("Assets");
     is_pallet_prefix::<AssetManager>("AssetManager");
 
@@ -198,8 +196,6 @@ fn verify_manta_pallet_indices() {
 
     is_pallet_index::<Utility>(40);
     is_pallet_index::<Multisig>(41);
-
-    is_pallet_index::<manta_runtime::Sudo>(42);
 
     is_pallet_index::<Assets>(45);
     is_pallet_index::<AssetManager>(46);

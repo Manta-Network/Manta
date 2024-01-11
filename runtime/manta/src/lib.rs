@@ -241,8 +241,6 @@ impl Contains<RuntimeCall> for MantaFilter {
             | RuntimeCall::Lottery(_)
             | RuntimeCall::Randomness(pallet_randomness::Call::set_babe_randomness_results{..})
             | RuntimeCall::Scheduler(_)
-            // Sudo also cannot be filtered because it is used in runtime upgrade.
-            | RuntimeCall::Sudo(_)
             | RuntimeCall::Multisig(_)
             | RuntimeCall::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
             | RuntimeCall::Session(_) // User must be able to set their session key when applying for a collator
@@ -486,12 +484,6 @@ impl pallet_utility::Config for Runtime {
     type RuntimeCall = RuntimeCall;
     type PalletsOrigin = OriginCaller;
     type WeightInfo = weights::pallet_utility::SubstrateWeight<Runtime>;
-}
-
-impl pallet_sudo::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type RuntimeCall = RuntimeCall;
-    type WeightInfo = weights::pallet_sudo::SubstrateWeight<Runtime>;
 }
 
 impl pallet_aura_style_filter::Config for Runtime {
@@ -973,8 +965,6 @@ construct_runtime!(
         // Handy utilities.
         Utility: pallet_utility::{Pallet, Call, Event} = 40,
         Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
-        // Temporary
-        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
 
         // Assets management
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
@@ -1053,7 +1043,6 @@ mod benches {
         [pallet_assets, Assets]
         [pallet_asset_manager, AssetManager]
         [pallet_scheduler, Scheduler]
-        [pallet_sudo, Sudo]
         // XCM
         [cumulus_pallet_xcmp_queue, XcmpQueue]
         [pallet_xcm, PolkadotXcm]
