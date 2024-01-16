@@ -250,6 +250,7 @@ impl Contains<RuntimeCall> for MantaFilter {
                 // Collator extrinsics
                 pallet_parachain_staking::Call::join_candidates{..}
                 | pallet_parachain_staking::Call::schedule_leave_candidates{..}
+                | pallet_parachain_staking::Call::set_staking_expectations{..}
                 | pallet_parachain_staking::Call::execute_leave_candidates{..}
                 | pallet_parachain_staking::Call::cancel_leave_candidates{..}
                 | pallet_parachain_staking::Call::go_offline{..}
