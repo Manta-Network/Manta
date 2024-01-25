@@ -236,3 +236,28 @@ manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.
 runtime-common = { path = "./runtime/common", default-features = false }
 session-key-primitives = { path = './primitives/session-keys', default-features = false }
 substrate-fixed = { git = "https://github.com/Manta-Network/substrate-fixed.git", tag = "v0.5.9", default-features = false }
+
+# Cumulus patch for bench fixing
+# See https://github.com/paritytech/cumulus/pull/2766
+[patch."https://github.com/paritytech/cumulus.git"]
+cumulus-client-cli = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-client-consensus-aura = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-client-consensus-common = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-client-consensus-relay-chain = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-client-network = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-client-service = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-pallet-dmp-queue = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-pallet-parachain-system = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-pallet-session-benchmarking = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-pallet-xcm = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-pallet-xcmp-queue = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-primitives-core = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-primitives-parachain-inherent = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-primitives-timestamp = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-primitives-utility = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-relay-chain-inprocess-interface = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-relay-chain-interface = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-relay-chain-minimal-node = { git = "https://github.com/manta-network/cumulus.git", branch = "frame_bench" }
+cumulus-relay-chain-rpc-interface = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
+cumulus-test-relay-sproof-builder = { git = "https://github.com/manta-network/cumulus.git", branch = "frame_bench" }
+parachain-info = { git = 'https://github.com/manta-network/cumulus.git', branch = "frame_bench" }
