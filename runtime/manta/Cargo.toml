@@ -78,7 +78,7 @@ pallet-author-inherent = { workspace = true }
 # Polkadot dependencies
 pallet-xcm = { workspace = true }
 pallet-xcm-benchmarks = { workspace = true, optional = true }
-polkadot-parachain = { workspace = true }
+polkadot-parachain-primitives = { workspace = true }
 polkadot-primitives = { workspace = true }
 xcm = { workspace = true }
 xcm-builder = { workspace = true }
@@ -268,7 +268,7 @@ std = [
   'scale-info/std',
   'log/std',
   'cumulus-pallet-session-benchmarking/std',
-  'polkadot-parachain/std',
+  'polkadot-parachain-primitives/std',
   'xcm/std',
   'xcm-builder/std',
   'xcm-executor/std',
