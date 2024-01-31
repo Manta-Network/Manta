@@ -20,37 +20,33 @@ use crate::{
     pallet, AwardedPts, Config, InflationInfo, Points, Range, COLLATOR_LOCK_ID, DELEGATOR_LOCK_ID,
 };
 use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{Everything, GenesisBuild, LockIdentifier, OnFinalize, OnInitialize},
+    construct_runtime, derive_impl, parameter_types,
+    traits::{Everything, LockIdentifier, OnFinalize, OnInitialize},
 };
-use manta_primitives::types::{BlockNumber, Header};
+use manta_primitives::types::BlockNumber;
 use sp_core::H256;
 use sp_io;
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
-    Perbill, Percent,
+    BuildStorage, Perbill, Percent,
 };
 
 pub type AccountId = u64;
 pub type Balance = u128;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 // WHITELIST: Remove Session and CollatorSelection after end of whitelist-period
 construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub enum Test
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        ParachainStaking: pallet_parachain_staking::{Pallet, Call, Storage, Config<T>, Event<T>},
-        BlockAuthor: block_author::{Pallet, Storage},
-        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
-        CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Config<T>, Event<T>},
+        System: frame_system,
+        Balances: pallet_balances,
+        ParachainStaking: pallet_parachain_staking,
+        BlockAuthor: block_author,
+        Session: pallet_session,
+        CollatorSelection: manta_collator_selection,
     }
 );
 
@@ -61,18 +57,19 @@ parameter_types! {
     pub const AvailableBlockRatio: Perbill = Perbill::one();
     pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
 }
+
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type DbWeight = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
+    type Block = Block;
     type RuntimeCall = RuntimeCall;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
@@ -100,7 +97,8 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = ();
     type MaxFreezes = ConstU32<1>;
     type MaxHolds = ConstU32<1>;
@@ -318,8 +316,8 @@ impl ExtBuilder {
     }
 
     pub(crate) fn build(self) -> sp_io::TestExternalities {
-        let mut t = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
+        let mut t = frame_system::GenesisConfig::<Test>::default()
+            .build_storage()
             .expect("Frame system builds valid default genesis config");
 
         pallet_balances::GenesisConfig::<Test> {
@@ -342,7 +340,7 @@ impl ExtBuilder {
 }
 
 /// Rolls forward one block. Returns the new block number.
-pub(crate) fn roll_one_block() -> u32 {
+pub(crate) fn roll_one_block() -> u64 {
     Balances::on_finalize(System::block_number());
     System::on_finalize(System::block_number());
     System::set_block_number(System::block_number() + 1);
@@ -353,7 +351,7 @@ pub(crate) fn roll_one_block() -> u32 {
 }
 
 /// Rolls to the desired block. Returns the number of blocks played.
-pub(crate) fn roll_to(n: u32) -> u32 {
+pub(crate) fn roll_to(n: u64) -> u64 {
     let mut num_blocks = 0;
     let mut block = System::block_number();
     while block < n {
@@ -366,16 +364,16 @@ pub(crate) fn roll_to(n: u32) -> u32 {
 /// Rolls block-by-block to the beginning of the specified round.
 /// This will complete the block in which the round change occurs.
 /// Returns the number of blocks played.
-pub(crate) fn roll_to_round_begin(round: u32) -> u32 {
+pub(crate) fn roll_to_round_begin(round: u32) -> u64 {
     let block = (round - 1) * DefaultBlocksPerRound::get();
-    roll_to(block)
+    roll_to(block.try_into().unwrap())
 }
 
 /// Rolls block-by-block to the end of the specified round.
 /// The block following will be the one in which the specified round change occurs.
-pub(crate) fn roll_to_round_end(round: u32) -> u32 {
+pub(crate) fn roll_to_round_end(round: u32) -> u64 {
     let block = round * DefaultBlocksPerRound::get() - 1;
-    roll_to(block)
+    roll_to(block.try_into().unwrap())
 }
 
 pub(crate) fn last_event() -> RuntimeEvent {

@@ -23,14 +23,17 @@
 
 use super::*;
 use frame_support::{
-    construct_runtime, ord_parameter_types, parameter_types,
-    traits::{ConstU32, IsInVec},
+    construct_runtime, derive_impl, ord_parameter_types, parameter_types,
+    traits::{ConstU32, ConstU64, IsInVec},
 };
 use frame_system::EnsureRoot;
-use manta_primitives::types::{Balance, BlockNumber, Header};
+use manta_primitives::types::Balance;
 
 use sp_core::H256;
-use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
+use sp_runtime::{
+    traits::{BlakeTwo256, IdentityLookup},
+    BuildStorage,
+};
 
 pub type AccountId = u128;
 
@@ -46,18 +49,18 @@ impl Contains<RuntimeCall> for BaseFilter {
     }
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
+    type Block = Block;
     type RuntimeCall = RuntimeCall;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = ConstU32<250>;
+    type BlockHashCount = ConstU64<250>;
     type BlockWeights = ();
     type BlockLength = ();
     type Version = ();
@@ -87,7 +90,8 @@ impl pallet_balances::Config for Runtime {
     type MaxReserves = ConstU32<50>;
     type ReserveIdentifier = ();
     type WeightInfo = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = ();
     type MaxFreezes = ConstU32<1>;
     type MaxHolds = ConstU32<1>;
@@ -111,18 +115,14 @@ impl Config for Runtime {
     type WeightInfo = ();
 }
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
 construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic
+    pub enum Runtime
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        TransactionPause: tx_pause::{Pallet, Storage, Call, Event<T>},
-        Balances: pallet_balances::{Pallet, Storage, Call, Event<T>},
+        System: frame_system,
+        TransactionPause: tx_pause,
+        Balances: pallet_balances,
     }
 );
 
@@ -136,8 +136,8 @@ impl Default for ExtBuilder {
 
 impl ExtBuilder {
     pub fn build(self) -> sp_io::TestExternalities {
-        let t = frame_system::GenesisConfig::default()
-            .build_storage::<Runtime>()
+        let t = frame_system::GenesisConfig::<Runtime>::default()
+            .build_storage()
             .unwrap();
 
         t.into()

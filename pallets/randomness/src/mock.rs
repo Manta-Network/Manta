@@ -17,31 +17,28 @@
 //! A minimal runtime including the pallet-randomness pallet
 use super::*;
 use crate as pallet_randomness;
-use frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
+use frame_support::{
+    construct_runtime, derive_impl, parameter_types, traits::Everything, weights::Weight,
+};
 use sp_core::{H160, H256};
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
-    Perbill,
+    BuildStorage, Perbill,
 };
 use sp_std::convert::{TryFrom, TryInto};
 
 pub type AccountId = H160;
 pub type Balance = u128;
-pub type BlockNumber = u32;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub enum Test
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Randomness: pallet_randomness::{Pallet, Call, Storage, Inherent},
+        System: frame_system,
+        Balances: pallet_balances,
+        Randomness: pallet_randomness,
     }
 );
 
@@ -52,18 +49,19 @@ parameter_types! {
     pub const AvailableBlockRatio: Perbill = Perbill::one();
     pub const SS58Prefix: u8 = 42;
 }
+
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type DbWeight = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
+    type Block = Block;
     type RuntimeCall = RuntimeCall;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
@@ -92,7 +90,8 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = ();
     type MaxFreezes = frame_support::traits::ConstU32<1>;
     type MaxHolds = frame_support::traits::ConstU32<1>;
@@ -135,8 +134,8 @@ impl ExtBuilder {
 
     #[allow(dead_code)]
     pub(crate) fn build(self) -> sp_io::TestExternalities {
-        let mut t = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
+        let mut t = frame_system::GenesisConfig::<Test>::default()
+            .build_storage()
             .expect("Frame system builds valid default genesis config");
 
         pallet_balances::GenesisConfig::<Test> {

@@ -68,7 +68,7 @@ try-runtime-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch =
 # RPC related dependencies
 frame-rpc-system = { package = "substrate-frame-rpc-system", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0" }
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
-jsonrpsee = { version = "0.20.3" }
+jsonrpsee = { version = "0.20.3", features = ["server", "macros"] }
 pallet-farming-rpc-api = { path = "./pallets/farming/rpc" }
 pallet-farming-rpc-runtime-api = { path = "./pallets/farming/rpc/runtime-api", default-features = false }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }

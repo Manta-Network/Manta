@@ -20,7 +20,7 @@ use codec::Codec;
 use jsonrpsee::{
     core::{async_trait, RpcResult},
     proc_macros::rpc,
-    types::error::{CallError, ErrorCode, ErrorObject},
+    types::error::{ErrorCode, ErrorObject},
 };
 use manta_primitives::types::Balance;
 pub use pallet_farming_rpc_runtime_api::{self as runtime_api, FarmingRuntimeApi};
@@ -29,7 +29,7 @@ use sp_blockchain::HeaderBackend;
 use sp_rpc::number::NumberOrHex;
 use sp_runtime::traits::Block as BlockT;
 
-#[rpc(client, server)]
+#[rpc(server)]
 pub trait FarmingRpcApi<BlockHash, AccountId, CurrencyId, PoolId>
 where
     AccountId: Send + Sync + 'static,
@@ -97,13 +97,12 @@ where
                 .into_iter()
                 .map(|(token, amount)| (token, NumberOrHex::Hex(amount.into())))
                 .collect()),
-            Err(e) => Err(CallError::Custom(ErrorObject::owned(
+            Err(e) => Err(ErrorObject::owned(
                 ErrorCode::InternalError.code(),
                 "Failed to get farming rewards.",
                 Some(format!("{:?}", e)),
-            ))),
+            )),
         }
-        .map_err(jsonrpsee::core::Error::Call)
     }
 
     async fn get_gauge_rewards(
@@ -122,12 +121,11 @@ where
                 .into_iter()
                 .map(|(token, amount)| (token, NumberOrHex::Hex(amount.into())))
                 .collect()),
-            Err(e) => Err(CallError::Custom(ErrorObject::owned(
+            Err(e) => Err(ErrorObject::owned(
                 ErrorCode::InternalError.code(),
                 "Failed to get gauge rewards.",
                 Some(format!("{:?}", e)),
-            ))),
+            )),
         }
-        .map_err(jsonrpsee::core::Error::Call)
     }
 }

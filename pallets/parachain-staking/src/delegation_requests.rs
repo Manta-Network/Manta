@@ -24,9 +24,9 @@ use crate::{
     Delegator, DelegatorStatus,
 };
 use codec::{Decode, Encode};
-use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::Get, RuntimeDebug};
+use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::Get};
 use scale_info::TypeInfo;
-use sp_runtime::traits::Saturating;
+use sp_runtime::{traits::Saturating, RuntimeDebug};
 use sp_std::{vec, vec::Vec};
 
 /// An action that can be performed upon a delegation

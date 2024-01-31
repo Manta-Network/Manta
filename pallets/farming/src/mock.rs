@@ -20,9 +20,10 @@
 #![allow(non_upper_case_globals)]
 
 use frame_support::{
+    derive_impl,
     dispatch::DispatchResult,
     ord_parameter_types, parameter_types,
-    traits::{AsEnsureOriginWithArg, EitherOfDiverse, GenesisBuild},
+    traits::{AsEnsureOriginWithArg, EitherOfDiverse},
     PalletId,
 };
 use frame_system::{EnsureNever, EnsureRoot, EnsureSignedBy};
@@ -37,9 +38,8 @@ use manta_primitives::{
 };
 use sp_core::{ConstU128, ConstU32, H256};
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
-    AccountId32,
+    AccountId32, BuildStorage,
 };
 use xcm::{
     prelude::{Parachain, X1},
@@ -61,40 +61,37 @@ pub const CHARLIE: AccountId = AccountId32::new([3u8; 32]);
 pub const TREASURY_ACCOUNT: AccountId = AccountId32::new([9u8; 32]);
 
 frame_support::construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub enum Runtime
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Assets: pallet_assets::{Pallet, Storage, Config<T>, Event<T>},
-        AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>},
-        Farming: pallet_farming::{Pallet, Call, Storage, Event<T>}
+        System: frame_system,
+        Balances: pallet_balances,
+        Assets: pallet_assets,
+        AssetManager: pallet_asset_manager,
+        Farming: pallet_farming,
     }
 );
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
 }
+
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Runtime {
     type AccountData = pallet_balances::AccountData<Balance>;
     type AccountId = AccountId;
     type BaseCallFilter = frame_support::traits::Everything;
     type BlockHashCount = BlockHashCount;
     type BlockLength = ();
-    type BlockNumber = u64;
     type BlockWeights = ();
     type RuntimeCall = RuntimeCall;
     type DbWeight = ();
     type RuntimeEvent = RuntimeEvent;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type Header = Header;
-    type Index = u64;
+    type Nonce = u64;
+    type Block = Block;
     type Lookup = IdentityLookup<Self::AccountId>;
     type OnKilledAccount = ();
     type OnNewAccount = ();
@@ -120,7 +117,8 @@ impl pallet_balances::Config for Runtime {
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
     type WeightInfo = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = ();
     type MaxFreezes = ConstU32<1>;
     type MaxHolds = ConstU32<1>;
@@ -324,8 +322,8 @@ impl ExtBuilder {
     }
 
     pub fn build(self) -> sp_io::TestExternalities {
-        let mut t = frame_system::GenesisConfig::default()
-            .build_storage::<Runtime>()
+        let mut t = frame_system::GenesisConfig::<Runtime>::default()
+            .build_storage()
             .unwrap();
 
         let initial_asset_accounts = self
