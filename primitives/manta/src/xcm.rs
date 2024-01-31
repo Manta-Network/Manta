@@ -52,8 +52,8 @@ use xcm::{
 use xcm_builder::TakeRevenue;
 use xcm_executor::{
     traits::{
-        Convert as XcmConvert, MatchesFungible, MatchesFungibles, ShouldExecute, TransactAsset,
-        WeightTrader,
+        ConvertLocation, MatchesFungible, MatchesFungibles, ShouldExecute, TransactAsset,
+        WeightTrader, Properties
     },
     Assets,
 };
@@ -152,12 +152,13 @@ where
     /// Buys weight for XCM execution. We always return the [`TooExpensive`](XcmError::TooExpensive)
     /// error if this fails.
     #[inline]
-    fn buy_weight(&mut self, weight: XcmWeight, payment: Assets) -> Result<Assets> {
+    fn buy_weight(&mut self, weight: XcmWeight, payment: Assets, context: &XcmContext) -> Result<Assets> {
         log::debug!(
             target: "FirstAssetTrader::buy_weight",
-            "weight: {:?}, payment: {:?}",
+            "weight: {:?}, payment: {:?}, context: {:?}",
             weight,
-            payment
+            payment,
+            context,
         );
 
         let first_asset = payment.fungible_assets_iter().next().ok_or({
@@ -262,7 +263,7 @@ where
 
     ///
     #[inline]
-    fn refund_weight(&mut self, weight: XcmWeight) -> Option<MultiAsset> {
+    fn refund_weight(&mut self, weight: XcmWeight, _context: &XcmContext) -> Option<MultiAsset> {
         if let Some((id, prev_amount, units_per_second)) = &mut self.refund_cache {
             let weight = weight.min(self.weight);
             self.weight = self.weight.saturating_sub(weight);
@@ -300,6 +301,7 @@ pub struct XcmFeesToAccount<AccountId, A, M, R>(PhantomData<(AccountId, A, M, R)
 
 impl<AccountId, A, M, R> TakeRevenue for XcmFeesToAccount<AccountId, A, M, R>
 where
+    AccountId: Eq,
     A: Mutate<AccountId>,
     M: MatchesFungibles<A::AssetId, A::Balance>,
     R: Get<AccountId>,
@@ -352,7 +354,7 @@ impl<T, A, AccountIdConverter, Native, NonNative>
 where
     T: Config,
     A: AssetConfig<T>,
-    AccountIdConverter: XcmConvert<MultiLocation, T::AccountId>,
+    AccountIdConverter: ConvertLocation<T::AccountId>,
     Native: MatchesFungible<A::Balance>,
     NonNative: MatchesFungibles<A::AssetId, A::Balance>,
 {
@@ -365,7 +367,7 @@ where
         asset: &MultiAsset,
         location: &MultiLocation,
     ) -> Result<(A::AssetId, T::AccountId, A::Balance)> {
-        let receiver = AccountIdConverter::convert_ref(location).map_err(|_| {
+        let receiver = AccountIdConverter::convert_location(location).ok_or({
             XcmError::FailedToTransactAsset("Failed Location to AccountId Conversion")
         })?;
         let (asset_id, amount) = match (
@@ -390,7 +392,7 @@ where
     A: AssetConfig<T>,
     A::AssetId: Clone,
     A::Balance: Clone,
-    AccountIdConverter: XcmConvert<MultiLocation, T::AccountId>,
+    AccountIdConverter:ConvertLocation<T::AccountId>,
     Native: MatchesFungible<A::Balance>,
     NonNative: MatchesFungibles<A::AssetId, A::Balance>,
 {
@@ -398,7 +400,7 @@ where
     fn deposit_asset(
         asset: &MultiAsset,
         location: &MultiLocation,
-        _context: &XcmContext,
+        _context: Option<&XcmContext>,
     ) -> Result {
         log::debug!(
             target: "xcm::multi_asset_adapter",
@@ -451,7 +453,7 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionFro
         origin: &MultiLocation,
         message: &mut [Instruction<RuntimeCall>],
         max_weight: Weight,
-        _weight_credit: &mut Weight,
+        _weight_credit: &mut Properties,
     ) -> Result<(), ProcessMessageError> {
         log::trace!(
             target: "xcm::barriers",
@@ -501,7 +503,7 @@ impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionDes
         origin: &MultiLocation,
         message: &mut [Instruction<RuntimeCall>],
         max_weight: Weight,
-        _weight_credit: &mut Weight,
+        _weight_credit: &mut Properties,
     ) -> Result<(), ProcessMessageError> {
         log::trace!(
             target: "xcm::barriers",

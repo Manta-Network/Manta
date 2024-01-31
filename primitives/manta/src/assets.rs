@@ -20,7 +20,6 @@ use alloc::vec::Vec;
 use codec::{Decode, Encode};
 use core::{borrow::Borrow, marker::PhantomData};
 use frame_support::{
-    dispatch::DispatchError,
     pallet_prelude::Get,
     traits::tokens::{
         currency::Currency,
@@ -36,7 +35,7 @@ use xcm::{
     v3::{Junctions, MultiLocation},
     VersionedMultiLocation,
 };
-use xcm_executor::traits::Convert;
+use sp_runtime::{DispatchError, traits::MaybeEquivalence};
 
 /// Asset Id
 pub trait AssetIdType {
@@ -301,22 +300,21 @@ pub trait UnitsPerSecond: AssetIdType {
 /// Converter struct implementing `Convert`. MultiLocation to AssetId and the reverse.
 pub struct AssetIdLocationConvert<M>(PhantomData<M>);
 
-impl<M> Convert<MultiLocation, M::AssetId> for AssetIdLocationConvert<M>
+impl<M> MaybeEquivalence<MultiLocation, M::AssetId> for AssetIdLocationConvert<M>
 where
     M: AssetIdLocationMap,
     M::AssetId: Clone,
     M::Location: Clone + From<MultiLocation> + Into<Option<MultiLocation>>,
 {
     #[inline]
-    fn convert_ref(location: impl Borrow<MultiLocation>) -> Result<M::AssetId, ()> {
-        M::asset_id(&(*location.borrow()).into()).ok_or(())
+    fn convert(location: &MultiLocation) -> Option<M::AssetId> {
+        M::asset_id(&(*location.borrow()).into())
     }
 
     #[inline]
-    fn reverse_ref(asset_id: impl Borrow<M::AssetId>) -> Result<MultiLocation, ()> {
+    fn convert_back(asset_id: &M::AssetId) -> Option<MultiLocation> {
         M::location(asset_id.borrow())
             .and_then(Into::into)
-            .ok_or(())
     }
 }
 
