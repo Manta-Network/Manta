@@ -16,9 +16,15 @@
 
 use super::*;
 use crate as calamari_vesting;
-use frame_support::{parameter_types, derive_impl, traits::{ConstU64, ConstU32}};
+use frame_support::{
+    derive_impl, parameter_types,
+    traits::{ConstU32, ConstU64},
+};
 use sp_core::H256;
-use sp_runtime::{BuildStorage, traits::{BlakeTwo256, IdentityLookup}};
+use sp_runtime::{
+    traits::{BlakeTwo256, IdentityLookup},
+    BuildStorage,
+};
 
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -82,7 +88,7 @@ impl pallet_balances::Config for Test {
     type ReserveIdentifier = [u8; 8];
     type WeightInfo = ();
     type RuntimeHoldReason = RuntimeHoldReason;
-	type RuntimeFreezeReason = RuntimeFreezeReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = ();
     type MaxFreezes = ConstU32<1>;
     type MaxHolds = ConstU32<1>;

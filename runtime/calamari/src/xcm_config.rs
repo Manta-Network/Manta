@@ -39,7 +39,7 @@ use manta_primitives::{
 };
 use orml_traits::location::AbsoluteReserveProvider;
 use pallet_xcm::XcmPassthrough;
-use polkadot_parachain::primitives::Sibling;
+use polkadot_parachain_primitives::primitives::Sibling;
 use scale_info::TypeInfo;
 use sp_runtime::traits::Convert;
 use sp_std::prelude::*;
@@ -64,13 +64,14 @@ parameter_types! {
 impl cumulus_pallet_parachain_system::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type SelfParaId = parachain_info::Pallet<Runtime>;
-    type DmpMessageHandler = DmpQueue;
+    type DmpQueue = DmpQueue;
     type ReservedDmpWeight = ReservedDmpWeight;
     type OutboundXcmpMessageSource = XcmpQueue;
     type XcmpMessageHandler = XcmpQueue;
     type ReservedXcmpWeight = ReservedXcmpWeight;
     type OnSystemEvent = ();
     type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+    type WeightInfo = ();
 }
 
 impl parachain_info::Config for Runtime {}
@@ -309,10 +310,8 @@ impl cumulus_pallet_xcm::Config for Runtime {
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type ChannelInfo = ParachainSystem;
     type VersionWrapper = PolkadotXcm;
-    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
     type ControllerOrigin = EnsureRootOrMoreThanHalfCouncil;
     type ControllerOriginConverter = XcmOriginToCallOrigin;
     type WeightInfo = crate::weights::cumulus_pallet_xcmp_queue::SubstrateWeight<Runtime>;
@@ -321,8 +320,6 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
-    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }
 
 /// We wrap AssetId for XToken
@@ -338,14 +335,11 @@ pub struct CurrencyIdtoMultiLocation<AssetXConverter>(PhantomData<AssetXConverte
 impl<AssetXConverter> sp_runtime::traits::Convert<CurrencyId, Option<MultiLocation>>
     for CurrencyIdtoMultiLocation<AssetXConverter>
 where
-    AssetXConverter: xcm_executor::traits::Convert<MultiLocation, CalamariAssetId>,
+    AssetXConverter: sp_runtime::traits::MaybeEquivalence<MultiLocation, CalamariAssetId>,
 {
     fn convert(currency: CurrencyId) -> Option<MultiLocation> {
         match currency {
-            CurrencyId::MantaCurrency(asset_id) => match AssetXConverter::reverse_ref(asset_id) {
-                Ok(location) => Some(location),
-                Err(_) => None,
-            },
+            CurrencyId::MantaCurrency(asset_id) => AssetXConverter::convert_back(asset_id),
         }
     }
 }

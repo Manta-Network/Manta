@@ -19,6 +19,7 @@ mod withdraw_strategies;
 
 use super::*;
 use frame_support::{dispatch::RawOrigin, ensure, traits::EstimateCallFee};
+use frame_system::pallet_prelude::*;
 use pallet_parachain_staking::BalanceOf;
 use sp_runtime::{
     traits::{Saturating, Zero},
@@ -306,7 +307,7 @@ impl<T: Config> Pallet<T> {
 
     #[named]
     pub(crate) fn do_unstake_collator(
-        now: T::BlockNumber,
+        now: BlockNumberFor<T>,
         some_collator: T::AccountId,
     ) -> DispatchResult {
         log::trace!(function_name!());

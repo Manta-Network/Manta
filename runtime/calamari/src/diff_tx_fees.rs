@@ -103,7 +103,7 @@ fn diff_tx_fees() {
     test_runner.execute_with(|| {
         let opaque_metadata = crate::Runtime::metadata();
         let pallets = match opaque_metadata.1 {
-            frame_support::metadata::RuntimeMetadata::V14(metadata) => metadata.pallets,
+            frame_metadata::RuntimeMetadata::V15(metadata) => metadata.pallets,
             _ => unreachable!(),
         };
         assert_eq!(pallets.len(), 39);

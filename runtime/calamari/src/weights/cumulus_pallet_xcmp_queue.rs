@@ -46,7 +46,6 @@ use core::marker::PhantomData;
 /// Weight functions needed for cumulus_pallet_xcmp_queue.
 pub trait WeightInfo {
 	fn set_config_with_u32() -> Weight;
-	fn set_config_with_weight() -> Weight;
 }
 
 /// Weights for cumulus_pallet_xcmp_queue using the Substrate node and recommended hardware.
@@ -63,17 +62,6 @@ impl<T: frame_system::Config> cumulus_pallet_xcmp_queue::WeightInfo for Substrat
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	/// Storage: XcmpQueue QueueConfig (r:1 w:1)
-	/// Proof Skipped: XcmpQueue QueueConfig (max_values: Some(1), max_size: None, mode: Measured)
-	fn set_config_with_weight() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `109`
-		//  Estimated: `1594`
-		// Minimum execution time: 5_628_000 picoseconds.
-		Weight::from_parts(5_795_000, 1594)
-			.saturating_add(T::DbWeight::get().reads(1_u64))
-			.saturating_add(T::DbWeight::get().writes(1_u64))
-	}
 }
 
 // For backwards compatibility and tests
@@ -86,17 +74,6 @@ impl WeightInfo for () {
 		//  Estimated: `1594`
 		// Minimum execution time: 5_584_000 picoseconds.
 		Weight::from_parts(5_779_000, 1594)
-			.saturating_add(RocksDbWeight::get().reads(1_u64))
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
-	}
-	/// Storage: XcmpQueue QueueConfig (r:1 w:1)
-	/// Proof Skipped: XcmpQueue QueueConfig (max_values: Some(1), max_size: None, mode: Measured)
-	fn set_config_with_weight() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `109`
-		//  Estimated: `1594`
-		// Minimum execution time: 5_628_000 picoseconds.
-		Weight::from_parts(5_795_000, 1594)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}

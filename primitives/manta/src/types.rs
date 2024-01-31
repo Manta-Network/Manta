@@ -51,7 +51,7 @@ pub type CalamariAssetId = u128;
 pub type Balance = u128;
 
 /// Transaction Index Type
-pub type Index = u32;
+pub type Nonce = u32;
 
 /// A hash of some data used by the chain.
 pub type Hash = H256;

@@ -18,5 +18,5 @@ sp-core = { workspace = true, features = ["std"] }
 sp-rpc = { workspace = true }
 sp-runtime = { workspace = true, features = ["std"] }
 
-manta-primitives = { workspace = true, features = ["std"]}
+manta-primitives = { workspace = true, features = ["std"] }
 pallet-farming-rpc-runtime-api = { workspace = true, features = ["std"] }

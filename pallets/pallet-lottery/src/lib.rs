@@ -94,7 +94,7 @@ pub mod pallet {
     use super::*;
     pub use ::function_name::named;
     use frame_support::{
-        ensure, log,
+        ensure,
         pallet_prelude::*,
         traits::{
             schedule::{v2::Named as ScheduleNamed, DispatchTime, MaybeHashed, LOWEST_PRIORITY},
@@ -132,7 +132,7 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         /// The Scheduler.
         type Scheduler: ScheduleNamed<
-            Self::BlockNumber,
+            BlockNumberFor<Self>,
             CallOf<Self>,
             Self::PalletsOrigin,
             Hash = Self::Hash,
@@ -145,7 +145,7 @@ pub mod pallet {
                 >>::Balance,
             > + From<BalanceOf<Self>>;
         /// Randomness source to use for determining lottery winner
-        type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
+        type RandomnessSource: Randomness<Self::Hash, BlockNumberFor<Self>>;
         /// Something that can estimate the cost of sending an extrinsic
         type EstimateCallFee: frame_support::traits::EstimateCallFee<
                 pallet_parachain_staking::Call<Self>,
@@ -160,15 +160,15 @@ pub mod pallet {
         type LotteryPot: Get<PalletId>;
         /// Time in blocks between lottery drawings
         #[pallet::constant]
-        type DrawingInterval: Get<Self::BlockNumber>;
+        type DrawingInterval: Get<BlockNumberFor<Self>>;
         /// Time in blocks *before* a drawing in
         /// Depending on the randomness source, the winner might be established before the drawing, this prevents modification of the eligible winning set after the winner
         /// has been established but before it is selected by [`Call::draw_lottery`] which modifications of the win-eligble pool are prevented
         #[pallet::constant]
-        type DrawingFreezeout: Get<Self::BlockNumber>;
+        type DrawingFreezeout: Get<BlockNumberFor<Self>>;
         /// Time in blocks until a collator is done unstaking
         #[pallet::constant]
-        type UnstakeLockTime: Get<Self::BlockNumber>; // XXX: could maybe alculate this from staking LeaveDelayRounds * DefaultBlocksPerRound
+        type UnstakeLockTime: Get<BlockNumberFor<Self>>; // XXX: could maybe alculate this from staking LeaveDelayRounds * DefaultBlocksPerRound
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
     }
@@ -250,7 +250,7 @@ pub mod pallet {
 
     #[pallet::storage]
     pub(super) type UnstakingCollators<T: Config> =
-        StorageValue<_, Vec<UnstakingCollator<T::AccountId, T::BlockNumber>>, ValueQuery>;
+        StorageValue<_, Vec<UnstakingCollator<T::AccountId, BlockNumberFor<T>>>, ValueQuery>;
 
     /// This is balance unstaked from a collator that is not needed to service user's withdrawal requests
     /// Incremented on initiation of a collator unstake in [`Call::request_withdraw`]
@@ -269,7 +269,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn withdrawal_request_queue)]
     pub(super) type WithdrawalRequestQueue<T: Config> =
-        StorageValue<_, Vec<Request<T::AccountId, T::BlockNumber, BalanceOf<T>>>, ValueQuery>;
+        StorageValue<_, Vec<Request<T::AccountId, BlockNumberFor<T>, BalanceOf<T>>>, ValueQuery>;
 
     /// Incremented whenever delegating tokens to a collator
     /// Collators are removed from here when their funds are unlocked in [`Call::finish_unstaking_collators`]
@@ -320,7 +320,7 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         #[inline]
         fn build(&self) {
             GasReserve::<T>::set(self.gas_reserve);
@@ -1105,7 +1105,7 @@ pub mod pallet {
                     let delegation_requests_against_this_collator = pallet_parachain_staking::Pallet::<T>::delegation_scheduled_requests(collator.account.clone());
                     let balance_to_unstake = match delegation_requests_against_this_collator.iter().find(|request|request.delegator == Self::account_id()){
                         Some(our_request) if matches!(our_request.action, pallet_parachain_staking::DelegationAction::Revoke(_)) => {
-                            if T::BlockNumber::from(our_request.when_executable) > now {
+                            if BlockNumberFor::<T>::from(our_request.when_executable) > now {
                                 log::error!("Collator {:?} finished lottery unstaking timelock but not the pallet_parachain_staking one. leaving in queue", collator.account.clone());
                                 return true;
                             };
@@ -1289,7 +1289,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         // public getters for lottery state
         /// Returns the block the next drawing will execute, if any
-        pub fn next_drawing_at() -> Option<T::BlockNumber> {
+        pub fn next_drawing_at() -> Option<BlockNumberFor<T>> {
             T::Scheduler::next_dispatch_time(Self::lottery_schedule_id()).ok()
         }
         /// funds in the lottery that are not staked, unstaked-pending-restaking or assigned to previous winners ( can be used to pay TX fees )

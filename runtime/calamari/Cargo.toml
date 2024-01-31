@@ -35,6 +35,7 @@ sp-version = { workspace = true }
 # Substrate frames
 frame-benchmarking = { workspace = true, optional = true }
 frame-executive = { workspace = true }
+frame-metadata = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 frame-system-benchmarking = { workspace = true, optional = true }
@@ -253,6 +254,7 @@ std = [
   'sp-inherents/std',
   'frame-support/std',
   'frame-executive/std',
+  'frame-metadata/std',
   'frame-system/std',
   'frame-system-rpc-runtime-api/std',
   'frame-try-runtime/std',
