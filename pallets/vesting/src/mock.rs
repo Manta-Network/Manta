@@ -16,12 +16,10 @@
 
 use super::*;
 use crate as calamari_vesting;
-use frame_support::{parameter_types, traits::ConstU32};
-use manta_primitives::types::{BlockNumber, Header};
+use frame_support::{parameter_types, derive_impl, traits::{ConstU64, ConstU32}};
 use sp_core::H256;
-use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
+use sp_runtime::{BuildStorage, traits::{BlakeTwo256, IdentityLookup}};
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 pub type AccountId = u128;
@@ -32,15 +30,12 @@ pub const BOB: AccountId = 2;
 pub const ALICE_DEPOSIT: Balance = 10_000;
 
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub enum Test
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>},
+        System: frame_system,
+        Timestamp: pallet_timestamp,
+        Balances: pallet_balances,
+        CalamariVesting: calamari_vesting,
     }
 );
 
@@ -48,21 +43,22 @@ parameter_types! {
     pub BlockWeights: frame_system::limits::BlockWeights =
         frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
+
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
     type AccountData = pallet_balances::AccountData<Balance>;
     type AccountId = AccountId;
     type BaseCallFilter = frame_support::traits::Everything;
-    type BlockHashCount = ConstU32<250>;
+    type BlockHashCount = ConstU64<250>;
     type BlockLength = ();
-    type BlockNumber = BlockNumber;
+    type Block = Block;
     type BlockWeights = ();
     type RuntimeCall = RuntimeCall;
     type DbWeight = ();
     type RuntimeEvent = RuntimeEvent;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type Header = Header;
-    type Index = u64;
+    type Nonce = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
     type OnKilledAccount = ();
     type OnNewAccount = ();
@@ -85,7 +81,8 @@ impl pallet_balances::Config for Test {
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];
     type WeightInfo = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
+	type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = ();
     type MaxFreezes = ConstU32<1>;
     type MaxHolds = ConstU32<1>;
@@ -135,8 +132,8 @@ impl ExtBuilder {
 
     pub fn build(self) -> sp_io::TestExternalities {
         EXISTENTIAL_DEPOSIT.with(|v| *v.borrow_mut() = self.existential_deposit);
-        let mut t = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
+        let mut t = frame_system::GenesisConfig::<Test>::default()
+            .build_storage()
             .unwrap();
         pallet_balances::GenesisConfig::<Test> {
             balances: vec![(ALICE, ALICE_DEPOSIT * self.existential_deposit)],
@@ -154,6 +151,6 @@ impl ExtBuilder {
     }
 }
 
-pub(crate) fn run_to_block(n: BlockNumber) {
+pub(crate) fn run_to_block(n: u64) {
     System::set_block_number(n);
 }
