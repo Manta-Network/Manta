@@ -52,8 +52,8 @@ use xcm::{
 use xcm_builder::TakeRevenue;
 use xcm_executor::{
     traits::{
-        ConvertLocation, MatchesFungible, MatchesFungibles, ShouldExecute, TransactAsset,
-        WeightTrader, Properties
+        ConvertLocation, MatchesFungible, MatchesFungibles, Properties, ShouldExecute,
+        TransactAsset, WeightTrader,
     },
     Assets,
 };
@@ -152,7 +152,12 @@ where
     /// Buys weight for XCM execution. We always return the [`TooExpensive`](XcmError::TooExpensive)
     /// error if this fails.
     #[inline]
-    fn buy_weight(&mut self, weight: XcmWeight, payment: Assets, context: &XcmContext) -> Result<Assets> {
+    fn buy_weight(
+        &mut self,
+        weight: XcmWeight,
+        payment: Assets,
+        context: &XcmContext,
+    ) -> Result<Assets> {
         log::debug!(
             target: "FirstAssetTrader::buy_weight",
             "weight: {:?}, payment: {:?}, context: {:?}",
@@ -392,7 +397,7 @@ where
     A: AssetConfig<T>,
     A::AssetId: Clone,
     A::Balance: Clone,
-    AccountIdConverter:ConvertLocation<T::AccountId>,
+    AccountIdConverter: ConvertLocation<T::AccountId>,
     Native: MatchesFungible<A::Balance>,
     NonNative: MatchesFungibles<A::AssetId, A::Balance>,
 {

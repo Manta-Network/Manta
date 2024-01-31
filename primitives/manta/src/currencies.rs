@@ -47,7 +47,8 @@ where
     A: AssetConfig<C>,
     A::AssetId:
         Parameter + Member + Copy + MaybeSerializeDeserialize + Ord + TypeInfo + MaxEncodedLen,
-    A::Balance: 'static + AtLeast32BitUnsigned
+    A::Balance: 'static
+        + AtLeast32BitUnsigned
         + FullCodec
         + Copy
         + MaybeSerializeDeserialize

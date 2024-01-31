@@ -72,7 +72,6 @@ mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-pub mod migrations;
 pub mod weights;
 
 #[frame_support::pallet]
@@ -81,7 +80,6 @@ pub mod pallet {
     use core::ops::Div;
     use frame_support::{
         dispatch::{DispatchClass, DispatchResultWithPostInfo},
-        inherent::Vec,
         pallet_prelude::*,
         sp_runtime::{
             traits::{AccountIdConversion, CheckedSub, Convert, One, Zero},
@@ -249,7 +247,7 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             let duplicate_invulnerables = self
                 .invulnerables
@@ -750,7 +748,7 @@ pub mod pallet {
     /// Keep track of number of authored blocks per authority, uncles are counted as well since
     /// they're a valid proof of being online.
     impl<T: Config + pallet_authorship::Config>
-        pallet_authorship::EventHandler<T::AccountId, T::BlockNumber> for Pallet<T>
+        pallet_authorship::EventHandler<T::AccountId, BlockNumberFor<T>> for Pallet<T>
     {
         fn note_author(author: T::AccountId) {
             let pot = Self::account_id();

@@ -31,11 +31,11 @@ use frame_support::{
 };
 use frame_system::Config;
 use scale_info::TypeInfo;
+use sp_runtime::{traits::MaybeEquivalence, DispatchError};
 use xcm::{
     v3::{Junctions, MultiLocation},
     VersionedMultiLocation,
 };
-use sp_runtime::{DispatchError, traits::MaybeEquivalence};
 
 /// Asset Id
 pub trait AssetIdType {
@@ -313,8 +313,7 @@ where
 
     #[inline]
     fn convert_back(asset_id: &M::AssetId) -> Option<MultiLocation> {
-        M::location(asset_id.borrow())
-            .and_then(Into::into)
+        M::location(asset_id.borrow()).and_then(Into::into)
     }
 }
 
