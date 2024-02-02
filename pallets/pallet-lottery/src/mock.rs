@@ -21,11 +21,12 @@ use crate as pallet_lottery;
 use crate::{pallet, Config, FarmingParamsOf};
 use calamari_runtime::currency::KMA;
 use frame_support::{
-    assert_ok, construct_runtime, ord_parameter_types,
+    assert_ok, construct_runtime, derive_impl, ord_parameter_types,
     pallet_prelude::*,
     parameter_types,
     traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU32, EitherOfDiverse, Everything, GenesisBuild,
+        fungible::HoldConsideration, AsEnsureOriginWithArg, ConstU128, ConstU32, EitherOfDiverse,
+        Everything, LinearStoragePrice,
     },
     weights::Weight,
 };
@@ -37,14 +38,14 @@ use manta_primitives::{
     },
     constants::ASSET_MANAGER_PALLET_ID,
     currencies::Currencies,
-    types::{BlockNumber, CalamariAssetId, Header, PoolId},
+    types::{BlockNumber, CalamariAssetId, PoolId},
 };
 use pallet_parachain_staking::{InflationInfo, Range};
 use sp_core::H256;
 
 use sp_runtime::{
     traits::{BlakeTwo256, Hash, IdentityLookup},
-    Perbill, Percent,
+    BuildStorage, Perbill, Percent,
 };
 use xcm::{
     prelude::{Junctions, Parachain, X1},
@@ -70,27 +71,23 @@ pub const JUMBO_ID: CalamariAssetId = 9;
 
 pub const POOL_ID: PoolId = 0;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub enum Test
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        ParachainStaking: pallet_parachain_staking::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>},
-        BlockAuthor: block_author::{Pallet, Storage},
-        CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Lottery: pallet_lottery::{Pallet, Call, Storage, Event<T>, Config<T>},
-        Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>},
-        Assets: pallet_assets::{Pallet, Storage, Config<T>, Event<T>},
-        AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>},
-        Farming: pallet_farming::{Pallet, Call, Storage, Event<T>}
+        System: frame_system,
+        Balances: pallet_balances,
+        ParachainStaking: pallet_parachain_staking,
+        Scheduler: pallet_scheduler,
+        BlockAuthor: block_author,
+        CollatorSelection: manta_collator_selection,
+        Lottery: pallet_lottery,
+        Preimage: pallet_preimage,
+        Assets: pallet_assets,
+        AssetManager: pallet_asset_manager,
+        Farming: pallet_farming,
     }
 );
 
@@ -120,18 +117,19 @@ parameter_types! {
     pub const AvailableBlockRatio: Perbill = Perbill::one();
     pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
 }
+
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type DbWeight = ();
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
+    type Block = Block;
     type RuntimeCall = RuntimeCall;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
@@ -159,7 +157,8 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = ();
     type MaxFreezes = ConstU32<1>;
     type MaxHolds = ConstU32<1>;
@@ -169,6 +168,9 @@ parameter_types! {
     // Our NORMAL_DISPATCH_RATIO is 70% of the 5MB limit
     // So anything more than 3.5MB doesn't make sense here
     pub const PreimageMaxSize: u32 = 3584 * 1024;
+    pub const PreimageBaseDeposit: Balance = KMA;
+    pub const PreimageByteDeposit: Balance = KMA;
+    pub const PreimageHoldReason: RuntimeHoldReason = RuntimeHoldReason::Preimage(pallet_preimage::HoldReason::Preimage);
 }
 
 impl pallet_preimage::Config for Test {
@@ -176,19 +178,11 @@ impl pallet_preimage::Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type ManagerOrigin = EnsureRoot<AccountId>;
-    // The sum of the below 2 amounts will get reserved every time someone submits a preimage.
-    // Their sum will be unreserved when the preimage is requested, i.e. when it is going to be used.
-    type BaseDeposit = ConstU128<
-        {
-            /* 1 */
-            KMA
-        },
-    >;
-    type ByteDeposit = ConstU128<
-        {
-            /* 1 */
-            KMA
-        },
+    type Consideration = HoldConsideration<
+        AccountId,
+        Balances,
+        PreimageHoldReason,
+        LinearStoragePrice<PreimageBaseDeposit, PreimageByteDeposit, Balance>,
     >;
 }
 use sp_std::cmp::Ordering;
@@ -614,8 +608,8 @@ impl ExtBuilder {
     }
 
     pub(crate) fn build(self) -> sp_io::TestExternalities {
-        let mut t = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
+        let mut t = frame_system::GenesisConfig::<Test>::default()
+            .build_storage()
             .expect("Frame system builds valid default genesis config");
 
         pallet_balances::GenesisConfig::<Test> {
@@ -794,7 +788,7 @@ pub mod from_bench {
 }
 
 /// Rolls forward one block. Returns the new block number.
-pub(crate) fn roll_one_block() -> u32 {
+pub(crate) fn roll_one_block() -> u64 {
     Balances::on_finalize(System::block_number());
     System::on_finalize(System::block_number());
     System::set_block_number(System::block_number() + 1);
@@ -806,7 +800,7 @@ pub(crate) fn roll_one_block() -> u32 {
 }
 
 /// Rolls to the desired block. Returns the number of blocks played.
-pub(crate) fn roll_to(n: u32) -> u32 {
+pub(crate) fn roll_to(n: u64) -> u64 {
     let mut num_blocks = 0;
     let mut block = System::block_number();
     while block < n {
@@ -819,15 +813,19 @@ pub(crate) fn roll_to(n: u32) -> u32 {
 /// Rolls block-by-block to the beginning of the specified round.
 /// This will complete the block in which the round change occurs.
 /// Returns the number of blocks played.
-pub(crate) fn roll_to_round_begin(round: u32) -> u32 {
-    let block = (round - 1) * DefaultBlocksPerRound::get();
+pub(crate) fn roll_to_round_begin(round: u32) -> u64 {
+    let block = ((round - 1) * DefaultBlocksPerRound::get())
+        .try_into()
+        .unwrap();
     roll_to(block)
 }
 
 /// Rolls block-by-block to the end of the specified round.
 /// The block following will be the one in which the specified round change occurs.
-pub(crate) fn roll_to_round_end(round: u32) -> u32 {
-    let block = round * DefaultBlocksPerRound::get() - 1;
+pub(crate) fn roll_to_round_end(round: u32) -> u64 {
+    let block = (round * DefaultBlocksPerRound::get() - 1)
+        .try_into()
+        .unwrap();
     roll_to(block)
 }
 
