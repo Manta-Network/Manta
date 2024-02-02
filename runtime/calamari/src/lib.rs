@@ -77,9 +77,6 @@ use runtime_common::{
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 use zenlink_protocol::{AssetBalance, AssetId as ZenlinkAssetId, MultiAssetsHandler, PairInfo};
 
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
-
 use xcm::latest::prelude::*;
 
 pub mod assets_config;
@@ -1027,7 +1024,7 @@ construct_runtime!(
         Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>} = 26,
 
         // Preimage registry.
-        Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 28,
+        Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>, HoldReason} = 28,
         // System scheduler
         Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 29,
 

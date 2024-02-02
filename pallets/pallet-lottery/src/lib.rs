@@ -107,7 +107,6 @@ pub mod pallet {
     use manta_primitives::types::PoolId;
     use orml_traits::MultiCurrency;
     use pallet_parachain_staking::BalanceOf;
-    #[cfg(feature = "std")]
     use serde::{Deserialize, Serialize};
     use sp_arithmetic::traits::SaturatedConversion;
     use sp_core::U256;
@@ -278,8 +277,7 @@ pub mod pallet {
     pub(super) type StakedCollators<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, ValueQuery>;
 
-    #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-    #[derive(Clone, Copy, Encode, Decode, TypeInfo, Default)]
+    #[derive(Clone, Copy, Encode, Decode, TypeInfo, Default, Serialize, Deserialize)]
     pub struct FarmingParams<T: Default + Copy> {
         pub mint_farming_token: bool,
         pub destroy_farming_token: bool,
@@ -302,7 +300,6 @@ pub mod pallet {
         pub farming_pool_params: FarmingParamsOf<T>,
     }
 
-    #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {

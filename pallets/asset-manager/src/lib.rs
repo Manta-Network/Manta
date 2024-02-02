@@ -203,7 +203,6 @@ pub mod pallet {
         pub start_id: T::AssetId,
     }
 
-    #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         #[inline]
         fn default() -> Self {

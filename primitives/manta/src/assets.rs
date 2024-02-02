@@ -308,7 +308,7 @@ where
 {
     #[inline]
     fn convert(location: &MultiLocation) -> Option<M::AssetId> {
-        M::asset_id(&(*location.borrow()).into())
+        M::asset_id(&(*location).into())
     }
 
     #[inline]

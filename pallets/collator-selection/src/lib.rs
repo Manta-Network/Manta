@@ -96,6 +96,7 @@ pub mod pallet {
     use pallet_session::SessionManager;
     use sp_arithmetic::Percent;
     use sp_staking::SessionIndex;
+    use sp_std::vec::Vec;
 
     type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
@@ -233,7 +234,6 @@ pub mod pallet {
         pub desired_candidates: u32,
     }
 
-    #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
@@ -252,7 +252,7 @@ pub mod pallet {
             let duplicate_invulnerables = self
                 .invulnerables
                 .iter()
-                .collect::<std::collections::BTreeSet<_>>();
+                .collect::<sp_std::collections::btree_set::BTreeSet<_>>();
             assert!(
                 duplicate_invulnerables.len() == self.invulnerables.len(),
                 "duplicate invulnerables in genesis."

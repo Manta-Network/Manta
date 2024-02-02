@@ -625,7 +625,6 @@ pub mod pallet {
         pub inflation_config: InflationInfo<BalanceOf<T>>,
     }
 
-    #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
