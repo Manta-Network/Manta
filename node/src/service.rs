@@ -31,7 +31,7 @@ use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_interface::RelayChainInterface;
 use futures::{channel::oneshot, FutureExt, StreamExt};
 use jsonrpsee::RpcModule;
-pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
+pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Nonce};
 use sc_consensus::ImportQueue;
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use sc_network::{config::SyncMode, NetworkBlock, NetworkService};

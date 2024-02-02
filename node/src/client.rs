@@ -16,7 +16,7 @@
 
 //! RuntimeApi for client
 
-use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
+use manta_primitives::types::{AccountId, Balance, Block, Nonce};
 use sp_runtime::traits::BlakeTwo256;
 
 /// RuntimeApiCommon + RuntimeApiNimbus: nimbus
@@ -32,7 +32,7 @@ pub trait RuntimeApiCommon:
     + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
     + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
 where
-    <Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
+    <Self as sp_api::ApiExt<Block>>::StateBackend: sp_consensus::StateBackend<BlakeTwo256>,
 {
 }
 
@@ -52,7 +52,7 @@ where
         + sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
-    <Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
+    <Self as sp_api::ApiExt<Block>>::StateBackend: sp_consensus::StateBackend<BlakeTwo256>,
 {
 }
 

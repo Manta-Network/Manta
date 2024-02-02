@@ -24,7 +24,7 @@ use crate::{
 };
 use std::future::Future;
 
-pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
+pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Nonce};
 use polkadot_service::CollatorPair;
 use session_key_primitives::AuraId;
 use std::sync::Arc;
@@ -40,13 +40,11 @@ use substrate_prometheus_endpoint::Registry;
 
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::ParachainConsensus;
+use cumulus_client_parachain_inherent::{MockValidationDataInherentDataProvider, MockXcmConfig};
 use cumulus_primitives_core::ParaId;
-use cumulus_primitives_parachain_inherent::{
-    MockValidationDataInherentDataProvider, MockXcmConfig,
-};
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
+use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node_with_rpc;
 
 use nimbus_consensus::{
     BuildNimbusConsensusParams, NimbusConsensus, NimbusManualSealConsensusDataProvider,
@@ -65,7 +63,7 @@ pub async fn build_relay_chain_interface(
     Option<CollatorPair>,
 )> {
     if !collator_options.relay_chain_rpc_urls.is_empty() {
-        build_minimal_relay_chain_node(
+        build_minimal_relay_chain_node_with_rpc(
             polkadot_config,
             task_manager,
             collator_options.relay_chain_rpc_urls,

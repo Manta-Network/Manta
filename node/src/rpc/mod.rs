@@ -16,7 +16,7 @@
 
 //! Parachain-specific RPCs implementation.
 
-use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
+use manta_primitives::types::{AccountId, Balance, Block, Nonce};
 use sc_client_api::AuxStore;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_transaction_pool_api::TransactionPool;

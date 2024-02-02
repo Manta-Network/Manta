@@ -22,7 +22,7 @@ use core::marker::PhantomData;
 use jsonrpsee::{
     core::{async_trait, RpcResult},
     proc_macros::rpc,
-    types::error::{CallError, ErrorObject},
+    types::error::ErrorObject,
 };
 use manta_support::manta_pay::{
     Checkpoint, DenseInitialSyncResponse, DensePullResponse, InitialSyncResponse, PullResponse,
@@ -112,11 +112,11 @@ where
         let at = self.client.info().finalized_hash;
         api.pull_ledger_diff(at, checkpoint.into(), max_receivers, max_senders)
             .map_err(|err| {
-                CallError::Custom(ErrorObject::owned(
+                ErrorObject::owned(
                     PULL_LEDGER_DIFF_ERROR,
                     "Unable to compute state diff for pull",
                     Some(format!("{err:?}")),
-                ))
+                )
                 .into()
             })
     }
@@ -133,11 +133,11 @@ where
         api.pull_ledger_diff(at, checkpoint.into(), max_receivers, max_senders)
             .map(Into::into)
             .map_err(|err| {
-                CallError::Custom(ErrorObject::owned(
+                ErrorObject::owned(
                     PULL_LEDGER_DIFF_ERROR,
                     "Unable to compute dense state diff for pull",
                     Some(format!("{err:?}")),
-                ))
+                )
                 .into()
             })
     }
@@ -152,11 +152,11 @@ where
         let at = self.client.info().finalized_hash;
         api.initial_pull(at, checkpoint.into(), max_receivers)
             .map_err(|err| {
-                CallError::Custom(ErrorObject::owned(
+                ErrorObject::owned(
                     PULL_LEDGER_DIFF_ERROR,
                     "Unable to compute state diff for initial pull",
                     Some(format!("{err:?}")),
-                ))
+                )
                 .into()
             })
     }
@@ -172,11 +172,11 @@ where
         api.initial_pull(at, checkpoint.into(), max_receivers)
             .map(Into::into)
             .map_err(|err| {
-                CallError::Custom(ErrorObject::owned(
+                ErrorObject::owned(
                     PULL_LEDGER_DIFF_ERROR,
                     "Unable to compute state diff for initial pull",
                     Some(format!("{err:?}")),
-                ))
+                )
                 .into()
             })
     }
@@ -186,11 +186,11 @@ where
         let api = self.client.runtime_api();
         let at = self.client.info().finalized_hash;
         api.pull_ledger_total_count(at).map_err(|err| {
-            CallError::Custom(ErrorObject::owned(
+            ErrorObject::owned(
                 PULL_LEDGER_DIFF_ERROR,
                 "Unable to compute total count for pull",
                 Some(format!("{err:?}")),
-            ))
+            )
             .into()
         })
     }

@@ -150,16 +150,6 @@ impl SubstrateCli for Cli {
     fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         load_spec(id)
     }
-
-    fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-        if chain_spec.is_manta() {
-            &manta_runtime::VERSION
-        } else if chain_spec.is_calamari() {
-            &calamari_runtime::VERSION
-        } else {
-            panic!("invalid chain spec! should be one of manta, calamari chain specs")
-        }
-    }
 }
 
 impl SubstrateCli for RelayChainCli {
@@ -195,10 +185,6 @@ impl SubstrateCli for RelayChainCli {
 
     fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
-    }
-
-    fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-        polkadot_cli::Cli::native_runtime_version(chain_spec)
     }
 }
 

@@ -35,7 +35,6 @@ where
     I: BlockImport<Block> + Send,
 {
     type Error = I::Error;
-    type Transaction = I::Transaction;
 
     async fn check_block(
         &mut self,
