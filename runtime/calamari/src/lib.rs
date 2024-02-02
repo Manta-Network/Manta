@@ -29,7 +29,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
-    traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT},
+    traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, IdentityLookup},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, Perbill, Percent, Permill,
 };
@@ -45,8 +45,10 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        fungible::HoldConsideration, ConstU128, ConstU32, ConstU8, Contains, Currency,
-        EitherOfDiverse, IsInVec, LinearStoragePrice, NeverEnsureOrigin, PrivilegeCmp,
+        fungible::HoldConsideration,
+        tokens::{PayFromAccount, UnityAssetBalanceConversion},
+        ConstBool, ConstU128, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, IsInVec,
+        LinearStoragePrice, NeverEnsureOrigin, PrivilegeCmp,
     },
     weights::{ConstantMultiplier, Weight},
     PalletId,
@@ -669,6 +671,7 @@ parameter_types! {
     pub SpendPeriod: BlockNumber = prod_or_fast!(6 * DAYS, 2 * MINUTES, "CALAMARI_SPEND_PERIOD");
     pub const Burn: Permill = Permill::from_percent(0);
     pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
+    pub const PayoutSpendPeriod: BlockNumber = 30 * DAYS;
 }
 
 type EnsureRootOrThreeFifthsCouncil = EitherOfDiverse<
@@ -700,6 +703,12 @@ impl pallet_treasury::Config for Runtime {
     // Expects an implementation of `EnsureOrigin` with a `Success` generic,
     // which is the the maximum amount that this origin is allowed to spend at a time.
     type SpendOrigin = NeverEnsureOrigin<Balance>;
+    type Beneficiary = AccountId;
+    type BeneficiaryLookup = IdentityLookup<Self::Beneficiary>;
+    type Paymaster = PayFromAccount<Balances, TreasuryAccount>;
+    type BalanceConverter = UnityAssetBalanceConversion;
+    type PayoutPeriod = PayoutSpendPeriod;
+    type AssetKind = ();
 }
 
 impl pallet_aura_style_filter::Config for Runtime {
@@ -820,7 +829,8 @@ parameter_types! {
     // So anything more than 3.5MB doesn't make sense here
     pub const PreimageMaxSize: u32 = 3584 * 1024;
     pub const PreimageBaseDeposit: Balance = 1 * KMA;
-    pub const PreimageHoldReason: RuntimeHoldReason = RuntimeHoldReason::Preimage(pallet_preimage::HoldReason::Preimage);
+    pub const PreimageHoldReason: RuntimeHoldReason =
+        RuntimeHoldReason::Preimage(pallet_preimage::HoldReason::Preimage);
 }
 
 impl pallet_preimage::Config for Runtime {
@@ -870,6 +880,7 @@ impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<100_000>;
+    type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 parameter_types! {
@@ -1026,6 +1037,7 @@ construct_runtime!(
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
         XTokens: orml_xtokens::{Pallet, Call, Event<T>, Storage} = 34,
+        MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>} = 35,
 
         // Handy utilities.
         Utility: pallet_utility::{Pallet, Call, Event} = 40,

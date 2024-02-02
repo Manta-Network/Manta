@@ -53,6 +53,8 @@ pub trait WeightInfo {
 	fn set_storage(i: u32, ) -> Weight;
 	fn kill_storage(i: u32, ) -> Weight;
 	fn kill_prefix(p: u32, ) -> Weight;
+	fn authorize_upgrade() -> Weight;
+	fn apply_authorized_upgrade() -> Weight;
 }
 
 /// Weights for frame_system using the Substrate node and recommended hardware.
@@ -116,6 +118,24 @@ impl<T: frame_system::Config> frame_system::WeightInfo for SubstrateWeight<T> {
 			.saturating_add(Weight::from_parts(1_158_786, 0).saturating_mul(p.into()))
 			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(p.into())))
 	}
+	// Storage: Skipped Metadata (r:0 w:0)
+	/// The range of component `p` is `[0, 1000]`.
+	fn authorize_upgrade() -> Weight {
+		// Minimum execution time: 17_856 nanoseconds.
+		Weight::from_parts(18_373_000, 0)
+			// Standard Error: 1_613
+			.saturating_add(Weight::from_parts(1_158_786, 0))
+			.saturating_add(T::DbWeight::get().writes((1_u64)))
+	}
+	// Storage: Skipped Metadata (r:0 w:0)
+	/// The range of component `p` is `[0, 1000]`.
+	fn apply_authorized_upgrade() -> Weight {
+		// Minimum execution time: 17_856 nanoseconds.
+		Weight::from_parts(18_373_000, 0)
+			// Standard Error: 1_613
+			.saturating_add(Weight::from_parts(1_158_786, 0))
+			.saturating_add(T::DbWeight::get().writes((1_u64)))
+	}
 }
 
 // For backwards compatibility and tests
@@ -177,5 +197,23 @@ impl WeightInfo for () {
 			// Standard Error: 1_613
 			.saturating_add(Weight::from_parts(1_158_786, 0).saturating_mul(p.into()))
 			.saturating_add(RocksDbWeight::get().writes((1_u64).saturating_mul(p.into())))
+	}
+	// Storage: Skipped Metadata (r:0 w:0)
+	/// The range of component `p` is `[0, 1000]`.
+	fn authorize_upgrade() -> Weight {
+		// Minimum execution time: 17_856 nanoseconds.
+		Weight::from_parts(18_373_000, 0)
+			// Standard Error: 1_613
+			.saturating_add(Weight::from_parts(1_158_786, 0))
+			.saturating_add(RocksDbWeight::get().writes((1_u64)))
+	}
+	// Storage: Skipped Metadata (r:0 w:0)
+	/// The range of component `p` is `[0, 1000]`.
+	fn apply_authorized_upgrade() -> Weight {
+		// Minimum execution time: 17_856 nanoseconds.
+		Weight::from_parts(18_373_000, 0)
+			// Standard Error: 1_613
+			.saturating_add(Weight::from_parts(1_158_786, 0))
+			.saturating_add(RocksDbWeight::get().writes((1_u64)))
 	}
 }

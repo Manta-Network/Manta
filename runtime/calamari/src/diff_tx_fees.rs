@@ -28,7 +28,7 @@ use pallet_transaction_payment::Multiplier;
 use runtime_common::MinimumMultiplier;
 use sp_runtime::{
     traits::{Saturating, Zero},
-    AccountId32, FixedPointNumber, MultiAddress, Perbill, Percent,
+    AccountId32, BuildStorage, FixedPointNumber, MultiAddress, Perbill, Percent,
 };
 use std::str::FromStr;
 use xcm::prelude::*;
@@ -191,8 +191,8 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
     Vec<(&'static str, &'static str, DispatchInfo, u32)>,
     sp_io::TestExternalities,
 ) {
-    let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
-        .build_storage::<Runtime>()
+    let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::<Runtime>::default()
+        .build_storage()
         .unwrap()
         .into();
 
@@ -331,6 +331,8 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         let call = crate::RuntimeCall::Treasury(pallet_treasury::Call::spend {
             amount: 8,
             beneficiary: ALICE.into(),
+            asset_kind: Box::new(()),
+            valid_from: Some(0),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_treasury", "spend", dispatch_info, call_len));
@@ -820,19 +822,6 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
             9,
             "Please update new extrinsic here."
         );
-        // service_overweight
-        let call =
-            crate::RuntimeCall::XcmpQueue(cumulus_pallet_xcmp_queue::Call::service_overweight {
-                index: 1,
-                weight_limit: 64.into(),
-            });
-        let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push((
-            "cumulus_pallet_xcmp_queue",
-            "service_overweight",
-            dispatch_info,
-            call_len,
-        ));
 
         // suspend_xcm_execution
         let call = crate::RuntimeCall::XcmpQueue(
@@ -889,42 +878,6 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
         calamari_runtime_calls.push((
             "cumulus_pallet_xcmp_queue",
             "update_resume_threshold",
-            dispatch_info,
-            call_len,
-        ));
-
-        // update_threshold_weight
-        let call = crate::RuntimeCall::XcmpQueue(
-            cumulus_pallet_xcmp_queue::Call::update_threshold_weight { new: 64.into() },
-        );
-        let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push((
-            "cumulus_pallet_xcmp_queue",
-            "update_threshold_weight",
-            dispatch_info,
-            call_len,
-        ));
-
-        // update_weight_restrict_decay
-        let call = crate::RuntimeCall::XcmpQueue(
-            cumulus_pallet_xcmp_queue::Call::update_weight_restrict_decay { new: 64.into() },
-        );
-        let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push((
-            "cumulus_pallet_xcmp_queue",
-            "update_weight_restrict_decay",
-            dispatch_info,
-            call_len,
-        ));
-
-        // update_xcmp_max_individual_weight
-        let call = crate::RuntimeCall::XcmpQueue(
-            cumulus_pallet_xcmp_queue::Call::update_xcmp_max_individual_weight { new: 64.into() },
-        );
-        let (dispatch_info, call_len) = get_call_details(&call);
-        calamari_runtime_calls.push((
-            "cumulus_pallet_xcmp_queue",
-            "update_xcmp_max_individual_weight",
             dispatch_info,
             call_len,
         ));
