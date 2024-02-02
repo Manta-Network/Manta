@@ -34,6 +34,7 @@ sp-version = { workspace = true }
 # Substrate frames
 frame-benchmarking = { workspace = true, optional = true }
 frame-executive = { workspace = true }
+frame-metadata = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 frame-system-benchmarking = { workspace = true, optional = true }
@@ -48,6 +49,7 @@ pallet-balances = { workspace = true }
 pallet-collective = { workspace = true }
 pallet-democracy = { workspace = true }
 pallet-membership = { workspace = true }
+pallet-message-queue = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-preimage = { workspace = true }
 pallet-scheduler = { workspace = true }
@@ -78,8 +80,10 @@ pallet-author-inherent = { workspace = true }
 # Polkadot dependencies
 pallet-xcm = { workspace = true }
 pallet-xcm-benchmarks = { workspace = true, optional = true }
+parachains-common = { workspace = true }
 polkadot-parachain-primitives = { workspace = true }
 polkadot-primitives = { workspace = true }
+polkadot-runtime-common = { workspace = true }
 xcm = { workspace = true }
 xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
@@ -162,6 +166,7 @@ runtime-benchmarks = [
   'pallet-name-service/runtime-benchmarks',
   "zenlink-protocol/runtime-benchmarks",
   'pallet-farming/runtime-benchmarks',
+  'parachains-common/runtime-benchmarks',
 ]
 try-runtime = [
   'frame-try-runtime/try-runtime',
@@ -229,6 +234,7 @@ std = [
   'nimbus-primitives/std',
   'frame-support/std',
   'frame-executive/std',
+  'frame-metadata/std',
   'frame-system/std',
   'frame-system-rpc-runtime-api/std',
   'frame-try-runtime/std',
@@ -269,6 +275,8 @@ std = [
   'log/std',
   'cumulus-pallet-session-benchmarking/std',
   'polkadot-parachain-primitives/std',
+  'polkadot-runtime-common/std',
+  'parachains-common/std',
   'xcm/std',
   'xcm-builder/std',
   'xcm-executor/std',

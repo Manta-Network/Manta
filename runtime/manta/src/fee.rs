@@ -43,6 +43,7 @@ mod multiplier_tests {
     use manta_primitives::constants::time::DAYS;
     use pallet_transaction_payment::Multiplier;
     use runtime_common::MinimumMultiplier;
+    use sp_runtime::BuildStorage;
 
     fn fetch_manta_price() -> f32 {
         0.36
@@ -76,8 +77,8 @@ mod multiplier_tests {
             ..Default::default()
         };
 
-        let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
-            .build_storage::<Runtime>()
+        let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::<Runtime>::default()
+            .build_storage()
             .unwrap()
             .into();
         // set the minimum
@@ -147,8 +148,8 @@ mod multiplier_tests {
         let mut multiplier = Multiplier::from_u32(1);
         let mut blocks = 0;
 
-        let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
-            .build_storage::<Runtime>()
+        let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::<Runtime>::default()
+            .build_storage()
             .unwrap()
             .into();
 
