@@ -31,8 +31,6 @@ pub trait RuntimeApiCommon:
     + sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
     + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
     + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
-where
-    <Self as sp_api::ApiExt<Block>>::StateBackend: sp_consensus::StateBackend<BlakeTwo256>,
 {
 }
 
@@ -42,8 +40,7 @@ pub trait RuntimeApiNimbus:
 {
 }
 
-impl<Api> RuntimeApiCommon for Api
-where
+impl<Api> RuntimeApiCommon for Api where
     Api: sp_api::Metadata<Block>
         + sp_api::ApiExt<Block>
         + sp_block_builder::BlockBuilder<Block>
@@ -51,8 +48,7 @@ where
         + sp_session::SessionKeys<Block>
         + sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-        + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
-    <Self as sp_api::ApiExt<Block>>::StateBackend: sp_consensus::StateBackend<BlakeTwo256>,
+        + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
 {
 }
 

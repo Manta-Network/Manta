@@ -93,8 +93,7 @@ pub type DefaultExecutorType = WasmExecutor<HostFunctions>;
 pub type Client<RuntimeApi> = TFullClient<Block, RuntimeApi, DefaultExecutorType>;
 
 /// Default Import Queue Type
-pub type DefaultImportQueue<RuntimeApi> =
-    sc_consensus::DefaultImportQueue<Block, Client<RuntimeApi>>;
+pub type DefaultImportQueue = sc_consensus::DefaultImportQueue<Block>;
 
 /// Full Transaction Pool Type
 pub type TransactionPool<RuntimeApi> = sc_transaction_pool::FullPool<Block, Client<RuntimeApi>>;
@@ -104,7 +103,7 @@ pub type PartialComponents<RuntimeApi> = sc_service::PartialComponents<
     Client<RuntimeApi>,
     TFullBackend<Block>,
     (),
-    DefaultImportQueue<RuntimeApi>,
+    DefaultImportQueue,
     TransactionPool<RuntimeApi>,
     (Option<Telemetry>, Option<TelemetryWorkerHandle>),
 >;
@@ -121,8 +120,7 @@ pub fn new_partial<RuntimeApi>(
 ) -> Result<PartialComponents<RuntimeApi>, Error>
 where
     RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi:
-        RuntimeApiCommon<StateBackend = StateBackend> + sp_consensus_aura::AuraApi<Block, AuraId>,
+    RuntimeApi::RuntimeApi: RuntimeApiCommon + sp_consensus_aura::AuraApi<Block, AuraId>,
 {
     let telemetry = config
         .telemetry_endpoints
@@ -208,9 +206,8 @@ async fn start_node_impl<RuntimeApi, BIC, FullRpc>(
 ) -> sc_service::error::Result<(TaskManager, Arc<Client<RuntimeApi>>)>
 where
     RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend>
-        + RuntimeApiNimbus
-        + sp_consensus_aura::AuraApi<Block, AuraId>,
+    RuntimeApi::RuntimeApi:
+        RuntimeApiCommon + RuntimeApiNimbus + sp_consensus_aura::AuraApi<Block, AuraId>,
     FullRpc: Fn(
             rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
         ) -> Result<RpcModule<()>, Error>
@@ -475,9 +472,8 @@ pub async fn start_parachain_node<RuntimeApi, FullRpc>(
 ) -> sc_service::error::Result<(TaskManager, Arc<Client<RuntimeApi>>)>
 where
     RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend>
-        + RuntimeApiNimbus
-        + sp_consensus_aura::AuraApi<Block, AuraId>,
+    RuntimeApi::RuntimeApi:
+        RuntimeApiCommon + RuntimeApiNimbus + sp_consensus_aura::AuraApi<Block, AuraId>,
     FullRpc: Fn(
             rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
         ) -> Result<RpcModule<()>, Error>
@@ -502,9 +498,8 @@ pub async fn start_dev_nimbus_node<RuntimeApi, FullRpc>(
 ) -> sc_service::error::Result<TaskManager>
 where
     RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend>
-        + RuntimeApiNimbus
-        + sp_consensus_aura::AuraApi<Block, AuraId>,
+    RuntimeApi::RuntimeApi:
+        RuntimeApiCommon + RuntimeApiNimbus + sp_consensus_aura::AuraApi<Block, AuraId>,
     FullRpc: Fn(
             rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
         ) -> Result<RpcModule<()>, Error>

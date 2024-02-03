@@ -23,7 +23,6 @@ use crate::{
     service::{new_partial, CalamariRuntimeExecutor, MantaRuntimeExecutor},
 };
 use codec::Encode;
-use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::info;
@@ -440,14 +439,6 @@ pub fn run_with(cli: Cli) -> Result {
                 let parachain_account =
                     AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(&id);
 
-                let state_version =
-                    RelayChainCli::native_runtime_version(&config.chain_spec).state_version();
-
-                let block: crate::service::Block =
-                    generate_genesis_block(&*config.chain_spec, state_version)
-                        .map_err(|e| format!("{e:?}"))?;
-                let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
-
                 let tokio_handle = config.tokio_handle.clone();
                 let polkadot_config =
                     SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
@@ -455,7 +446,6 @@ pub fn run_with(cli: Cli) -> Result {
 
                 info!("Parachain id: {:?}", id);
                 info!("Parachain Account: {}", parachain_account);
-                info!("Parachain genesis state: {}", genesis_state);
                 info!(
                     "Is collating: {}",
                     if config.role.is_authority() {

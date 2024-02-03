@@ -38,7 +38,7 @@ use sp_blockchain::HeaderBackend;
 use sp_keystore::KeystorePtr;
 use substrate_prometheus_endpoint::Registry;
 
-use cumulus_client_cli::CollatorOptions;
+use cumulus_client_cli::{CollatorOptions, RelayChainMode};
 use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_client_parachain_inherent::{MockValidationDataInherentDataProvider, MockXcmConfig};
 use cumulus_primitives_core::ParaId;
@@ -62,13 +62,8 @@ pub async fn build_relay_chain_interface(
     Arc<(dyn RelayChainInterface + 'static)>,
     Option<CollatorPair>,
 )> {
-    if !collator_options.relay_chain_rpc_urls.is_empty() {
-        build_minimal_relay_chain_node_with_rpc(
-            polkadot_config,
-            task_manager,
-            collator_options.relay_chain_rpc_urls,
-        )
-        .await
+    if let RelayChainMode::ExternalRpc(rpc) = collator_options.relay_chain_mode {
+        build_minimal_relay_chain_node_with_rpc(polkadot_config, task_manager, rpc).await
     } else {
         build_inprocess_relay_chain(
             polkadot_config,
@@ -96,9 +91,8 @@ pub fn build_nimbus_consensus<RuntimeApi>(
 ) -> Result<Box<dyn ParachainConsensus<Block>>, Error>
 where
     RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend>
-        + RuntimeApiNimbus
-        + sp_consensus_aura::AuraApi<Block, AuraId>,
+    RuntimeApi::RuntimeApi:
+        RuntimeApiCommon + RuntimeApiNimbus + sp_consensus_aura::AuraApi<Block, AuraId>,
 {
     let spawn_handle = task_manager.spawn_handle();
     let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
@@ -158,7 +152,7 @@ pub fn build_dev_nimbus_consensus<RuntimeApi>(
 ) -> Result<impl Future<Output = ()> + Send + 'static, Error>
 where
     RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend> + RuntimeApiNimbus,
+    RuntimeApi::RuntimeApi: RuntimeApiCommon + RuntimeApiNimbus,
 {
     use futures::{Stream, StreamExt};
     use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
@@ -225,6 +219,7 @@ where
                     ),
                     raw_downward_messages: vec![],
                     raw_horizontal_messages: vec![],
+                    additional_key_values: None,
                 };
 
                 Ok((time, mocked_parachain))
