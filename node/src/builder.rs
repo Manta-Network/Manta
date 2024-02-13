@@ -20,7 +20,7 @@
 use crate::{
     client::{RuntimeApiCommon, RuntimeApiNimbus},
     instant_finalize::InstantFinalizeBlockImport,
-    service::{Client, StateBackend, TransactionPool},
+    service::{FullClient, StateBackend, TransactionPool},
 };
 use std::future::Future;
 
@@ -76,24 +76,19 @@ pub async fn build_relay_chain_interface(
 }
 
 /// build parachain nimbus consensus
-pub fn build_nimbus_consensus<RuntimeApi>(
+pub fn build_nimbus_consensus(
     id: ParaId,
-    client: Arc<Client<RuntimeApi>>,
+    client: Arc<FullClient>,
     backend: Arc<sc_client_db::Backend<Block>>,
     prometheus_registry: Option<&Registry>,
     telemetry: Option<TelemetryHandle>,
     task_manager: &TaskManager,
     relay_chain_interface: Arc<dyn RelayChainInterface>,
-    transaction_pool: Arc<TransactionPool<RuntimeApi>>,
+    transaction_pool: Arc<TransactionPool>,
     _sync_oracle: Arc<NetworkService<Block, Hash>>,
     keystore: KeystorePtr,
     force_authoring: bool,
-) -> Result<Box<dyn ParachainConsensus<Block>>, Error>
-where
-    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi:
-        RuntimeApiCommon + RuntimeApiNimbus + sp_consensus_aura::AuraApi<Block, AuraId>,
-{
+) -> Result<Box<dyn ParachainConsensus<Block>>, Error> {
     let spawn_handle = task_manager.spawn_handle();
     let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
         spawn_handle,
@@ -108,7 +103,7 @@ where
         let relay_chain_interface = relay_chain_interface.clone();
         async move {
             let parachain_inherent =
-                cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+                cumulus_client_parachain_inherent::ParachainInherentDataProvider::create_at(
                     relay_parent,
                     &relay_chain_interface,
                     &validation_data,
@@ -143,17 +138,13 @@ where
 }
 
 /// build standalone mode dev consensus using manual instant seal
-pub fn build_dev_nimbus_consensus<RuntimeApi>(
-    client: Arc<Client<RuntimeApi>>,
-    transaction_pool: Arc<TransactionPool<RuntimeApi>>,
+pub fn build_dev_nimbus_consensus(
+    client: Arc<FullClient>,
+    transaction_pool: Arc<TransactionPool>,
     keystore_container: &KeystoreContainer,
     select_chain: LongestChain<TFullBackend<Block>, Block>,
     task_manager: &TaskManager,
-) -> Result<impl Future<Output = ()> + Send + 'static, Error>
-where
-    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: RuntimeApiCommon + RuntimeApiNimbus,
-{
+) -> Result<impl Future<Output = ()> + Send + 'static, Error> {
     use futures::{Stream, StreamExt};
     use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
 

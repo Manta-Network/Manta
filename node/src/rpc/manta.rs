@@ -36,6 +36,7 @@ use zenlink_protocol_runtime_api::ZenlinkProtocolApi as ZenlinkProtocolRuntimeAp
 pub fn create_manta_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, sc_service::Error>
 where
     C: ProvideRuntimeApi<Block>
+        + sc_client_api::BlockBackend<Block>
         + HeaderBackend<Block>
         + AuxStore
         + HeaderMetadata<Block, Error = BlockChainError>
@@ -59,6 +60,7 @@ where
         client,
         pool,
         deny_unsafe,
+        command_sink,
     } = deps;
 
     module

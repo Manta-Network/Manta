@@ -65,6 +65,7 @@ where
         client,
         pool,
         deny_unsafe,
+        command_sink,
     } = deps;
 
     module

@@ -26,6 +26,7 @@ serde = { workspace = true }
 # Substrate frames
 frame-benchmarking = { workspace = true }
 frame-benchmarking-cli = { workspace = true }
+frame-support = { workspace = true }
 try-runtime-cli = { workspace = true, optional = true }
 
 # RPC related dependencies
@@ -34,8 +35,10 @@ jsonrpsee = { workspace = true, features = ["server"] }
 pallet-transaction-payment-rpc = { workspace = true }
 sc-transaction-pool-api = { workspace = true }
 
+frame-system-rpc-runtime-api = { workspace = true }
 pallet-farming-rpc-api = { workspace = true }
 pallet-farming-rpc-runtime-api = { workspace = true }
+pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 zenlink-protocol = { workspace = true, features = ["std"] }
 zenlink-protocol-rpc = { workspace = true }
 zenlink-protocol-runtime-api = { workspace = true, features = ["std"] }
@@ -62,6 +65,7 @@ sc-tracing = { workspace = true }
 sc-transaction-pool = { workspace = true }
 
 # Substrate primitives
+pallet-transaction-payment = { workspace = true, features = ["std"] }
 sp-api = { workspace = true, features = ["std"] }
 sp-application-crypto = { workspace = true, features = ["std"] }
 sp-arithmetic = { workspace = true, features = ["std"] }
@@ -76,8 +80,10 @@ sp-keystore = { workspace = true, features = ["std"] }
 sp-offchain = { workspace = true, features = ["std"] }
 sp-runtime = { workspace = true, features = ["std"] }
 sp-session = { workspace = true, features = ["std"] }
+sp-std = { workspace = true, features = ["std"] }
 sp-timestamp = { workspace = true, features = ["std"] }
 sp-transaction-pool = { workspace = true, features = ["std"] }
+sp-version = { workspace = true, features = ["std"] }
 substrate-prometheus-endpoint = { workspace = true }
 
 # Cumulus dependencies
@@ -110,6 +116,7 @@ xcm = { workspace = true, features = ["std"] }
 calamari-runtime = { workspace = true, features = ["std"] }
 manta-primitives = { workspace = true, features = ["std"] }
 manta-runtime = { workspace = true, features = ["std"] }
+manta-support = { workspace = true, features = ["rpc", "serde"] }
 pallet-lottery = { workspace = true, features = ["rpc"] }
 pallet-manta-pay = { workspace = true, features = ["rpc", "runtime"] }
 pallet-manta-sbt = { workspace = true, features = ["rpc", "runtime"] }

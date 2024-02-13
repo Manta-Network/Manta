@@ -21,7 +21,7 @@ use core::marker::PhantomData;
 use jsonrpsee::{
     core::{async_trait, RpcResult},
     proc_macros::rpc,
-    types::error::ErrorObject,
+    types::error::{CallError, ErrorObject},
 };
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
@@ -74,11 +74,11 @@ where
         let api = self.client.runtime_api();
         let at = self.client.info().best_hash;
         api.not_in_drawing_freezeout(at).map_err(|err| {
-            ErrorObject::owned(
+            CallError::Custom(ErrorObject::owned(
                 LOTTERY_ERROR,
                 "Unable to compute drawing freezeout",
                 Some(format!("{err:?}")),
-            )
+            ))
             .into()
         })
     }
@@ -88,11 +88,11 @@ where
         let api = self.client.runtime_api();
         let at = self.client.info().best_hash;
         api.current_prize_pool(at).map_err(|err| {
-            ErrorObject::owned(
+            CallError::Custom(ErrorObject::owned(
                 LOTTERY_ERROR,
                 "Unable to compute current prize pool",
                 Some(format!("{err:?}")),
-            )
+            ))
             .into()
         })
     }
@@ -102,11 +102,11 @@ where
         let api = self.client.runtime_api();
         let at = self.client.info().best_hash;
         api.next_drawing_at(at).map_err(|err| {
-            ErrorObject::owned(
+            CallError::Custom(ErrorObject::owned(
                 LOTTERY_ERROR,
                 "Unable to compute next drawing",
                 Some(format!("{err:?}")),
-            )
+            ))
             .into()
         })
     }

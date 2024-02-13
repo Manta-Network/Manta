@@ -17,6 +17,7 @@
 //! Manta Local Dev Network Configurations
 
 use super::*;
+use manta_runtime::WASM_BINARY;
 use session_key_primitives::util::unchecked_account_id;
 
 pub fn genesis_spec_dev() -> MantaChainSpec {
@@ -44,6 +45,7 @@ pub fn genesis_spec_dev() -> MantaChainSpec {
             relay_chain: POLKADOT_RELAYCHAIN_LOCAL_NET.into(),
             para_id: MANTA_PARACHAIN_ID,
         },
+        WASM_BINARY.expect("WASM binary was not build, please build it!"),
     )
 }
 
@@ -106,5 +108,6 @@ pub fn genesis_spec_local(localdev: bool) -> MantaChainSpec {
             relay_chain: POLKADOT_RELAYCHAIN_LOCAL_NET.into(),
             para_id: MANTA_PARACHAIN_ID,
         },
+        WASM_BINARY.expect("WASM binary was not build, please build it!"),
     )
 }

@@ -16,9 +16,11 @@
 
 //! Parachain-specific RPCs implementation.
 
-use manta_primitives::types::{AccountId, Balance, Block, Nonce};
+use frame_rpc_system::{System, SystemApiServer};
+use manta_primitives::types::{AccountId, Balance, Block, Hash, Nonce};
 use sc_client_api::AuxStore;
-pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
+use sc_consensus_manual_seal::rpc::{EngineCommand, ManualSeal, ManualSealApiServer};
+pub use sc_rpc::{dev::Dev, DenyUnsafe, SubscriptionTaskExecutor};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
@@ -42,4 +44,6 @@ pub struct FullDeps<C, P> {
     pub pool: Arc<P>,
     /// Whether to deny unsafe calls
     pub deny_unsafe: DenyUnsafe,
+    /// Manual seal command sink
+    pub command_sink: Option<futures::channel::mpsc::Sender<EngineCommand<Hash>>>,
 }

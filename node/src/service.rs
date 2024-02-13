@@ -18,14 +18,16 @@
 
 use crate::{
     client::{RuntimeApiCommon, RuntimeApiNimbus},
-    rpc,
+    fake_runtime_api, rpc,
 };
 use codec::Decode;
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
-    prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
+    build_network, build_relay_chain_interface, prepare_node_config, start_relay_chain_tasks,
+    CollatorSybilResistance, DARecoveryProfile, StartCollatorParams, StartFullNodeParams,
+    StartRelayChainTasksParams,
 };
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_interface::RelayChainInterface;
@@ -39,6 +41,7 @@ pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_service::{
     Configuration, Error, SpawnTaskHandle, TFullBackend, TFullClient, TaskManager, WarpSyncParams,
 };
+use sc_sysinfo::HwBench;
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use session_key_primitives::AuraId;
 use sp_api::ConstructRuntimeApi;
@@ -58,53 +61,25 @@ type HostFunctions = (
     frame_benchmarking::benchmarking::HostFunctions,
 );
 
-/// Native Manta Parachain executor instance.
-pub struct MantaRuntimeExecutor;
-impl sc_executor::NativeExecutionDispatch for MantaRuntimeExecutor {
-    type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-
-    fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-        manta_runtime::api::dispatch(method, data)
-    }
-
-    fn native_version() -> sc_executor::NativeVersion {
-        manta_runtime::native_version()
-    }
-}
-
-/// Native Calamari Parachain executor instance.
-pub struct CalamariRuntimeExecutor;
-impl sc_executor::NativeExecutionDispatch for CalamariRuntimeExecutor {
-    type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-
-    fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-        calamari_runtime::api::dispatch(method, data)
-    }
-
-    fn native_version() -> sc_executor::NativeVersion {
-        calamari_runtime::native_version()
-    }
-}
-
 /// We use wasm executor only now.
 pub type DefaultExecutorType = WasmExecutor<HostFunctions>;
 
 /// Full Client Implementation Type
-pub type Client<RuntimeApi> = TFullClient<Block, RuntimeApi, DefaultExecutorType>;
+pub type FullClient = TFullClient<Block, fake_runtime_api::RuntimeApi, DefaultExecutorType>;
 
 /// Default Import Queue Type
 pub type DefaultImportQueue = sc_consensus::DefaultImportQueue<Block>;
 
 /// Full Transaction Pool Type
-pub type TransactionPool<RuntimeApi> = sc_transaction_pool::FullPool<Block, Client<RuntimeApi>>;
+pub type TransactionPool = sc_transaction_pool::FullPool<Block, FullClient>;
 
 /// Components Needed for Chain Ops Subcommands
-pub type PartialComponents<RuntimeApi> = sc_service::PartialComponents<
-    Client<RuntimeApi>,
+pub type PartialComponents = sc_service::PartialComponents<
+    FullClient,
     TFullBackend<Block>,
     (),
     DefaultImportQueue,
-    TransactionPool<RuntimeApi>,
+    TransactionPool,
     (Option<Telemetry>, Option<TelemetryWorkerHandle>),
 >;
 
@@ -115,13 +90,7 @@ pub type StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Bloc
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
-pub fn new_partial<RuntimeApi>(
-    config: &Configuration,
-) -> Result<PartialComponents<RuntimeApi>, Error>
-where
-    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: RuntimeApiCommon + sp_consensus_aura::AuraApi<Block, AuraId>,
-{
+pub fn new_partial(config: &Configuration) -> Result<PartialComponents, Error> {
     let telemetry = config
         .telemetry_endpoints
         .clone()
@@ -148,7 +117,7 @@ where
         .build();
 
     let (client, backend, keystore_container, task_manager) =
-        sc_service::new_full_parts::<Block, RuntimeApi, _>(
+        sc_service::new_full_parts::<Block, fake_runtime_api::RuntimeApi, _>(
             config,
             telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
             executor,
@@ -194,41 +163,16 @@ where
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
-#[sc_tracing::logging::prefix_logs_with("Parachain")]
-async fn start_node_impl<RuntimeApi, BIC, FullRpc>(
+pub async fn start_parachain_node(
     parachain_config: Configuration,
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
-    full_rpc: FullRpc,
-    build_consensus: BIC,
-    hwbench: Option<sc_sysinfo::HwBench>,
-) -> sc_service::error::Result<(TaskManager, Arc<Client<RuntimeApi>>)>
-where
-    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi:
-        RuntimeApiCommon + RuntimeApiNimbus + sp_consensus_aura::AuraApi<Block, AuraId>,
-    FullRpc: Fn(
-            rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
-        ) -> Result<RpcModule<()>, Error>
-        + 'static,
-    BIC: FnOnce(
-        ParaId,
-        Arc<Client<RuntimeApi>>,
-        Arc<sc_client_db::Backend<Block>>,
-        Option<&Registry>,
-        Option<TelemetryHandle>,
-        &TaskManager,
-        Arc<dyn RelayChainInterface>,
-        Arc<TransactionPool<RuntimeApi>>,
-        Arc<NetworkService<Block, Hash>>,
-        KeystorePtr,
-        bool,
-    ) -> Result<Box<dyn ParachainConsensus<Block>>, Error>,
-{
+    hw_bench: Option<HwBench>,
+) -> sc_service::error::Result<(TaskManager, Arc<FullClient>)> {
     let parachain_config = prepare_node_config(parachain_config);
 
-    let params = new_partial::<RuntimeApi>(&parachain_config)?;
+    let params = new_partial(&parachain_config)?;
     let (mut telemetry, telemetry_worker_handle) = params.other;
 
     let mut task_manager = params.task_manager;
@@ -238,14 +182,13 @@ where
         telemetry_worker_handle,
         &mut task_manager,
         collator_options.clone(),
-        hwbench.clone(),
+        hw_bench,
     )
     .await
     .map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
     let client = params.client.clone();
     let backend = params.backend.clone();
-    let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
 
     let force_authoring = parachain_config.force_authoring;
     let collator = parachain_config.role.is_authority();
@@ -254,31 +197,19 @@ where
     let import_queue = params.import_queue.service();
     let net_config = sc_network::config::FullNetworkConfiguration::new(&parachain_config.network);
 
-    let warp_sync_params = match parachain_config.network.sync_mode {
-        SyncMode::Warp => {
-            let target_block = warp_sync_get::<Block, _>(
-                id,
-                relay_chain_interface.clone(),
-                task_manager.spawn_handle(),
-            );
-            Some(WarpSyncParams::WaitForTarget(target_block))
-        }
-        _ => None,
-    };
-
     let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
-        sc_service::build_network(sc_service::BuildNetworkParams {
-            config: &parachain_config,
+        build_network(cumulus_client_service::BuildNetworkParams {
+            parachain_config: &parachain_config,
+            net_config,
             client: client.clone(),
             transaction_pool: transaction_pool.clone(),
             spawn_handle: task_manager.spawn_handle(),
             import_queue: params.import_queue,
-            block_announce_validator_builder: Some(Box::new(|_| {
-                Box::new(block_announce_validator)
-            })),
-            warp_sync_params,
-            net_config,
-        })?;
+            relay_chain_interface: relay_chain_interface.clone(),
+            para_id: id,
+            sybil_resistance_level: CollatorSybilResistance::Resistant,
+        })
+        .await?;
 
     let rpc_builder = {
         let client = client.clone();
@@ -289,9 +220,10 @@ where
                 client: client.clone(),
                 pool: transaction_pool.clone(),
                 deny_unsafe,
+                command_sink: None,
             };
 
-            full_rpc(deps)
+            rpc::create_calamari_full::<FullClient, TransactionPool>(deps)
         })
     };
 
@@ -316,12 +248,13 @@ where
     };
 
     let overseer_handle = relay_chain_interface
+        .clone()
         .overseer_handle()
         .map_err(|e| sc_service::Error::Application(Box::new(e)))?;
 
     let relay_chain_slot_duration = core::time::Duration::from_secs(6);
     if collator {
-        let parachain_consensus = build_consensus(
+        /*let parachain_consensus = build_consensus(
             id,
             client.clone(),
             backend,
@@ -333,33 +266,30 @@ where
             network,
             params.keystore_container.keystore(),
             force_authoring,
-        )?;
+        )?;*/
         let spawner = task_manager.spawn_handle();
-        start_collator(StartCollatorParams {
+        start_relay_chain_tasks(StartRelayChainTasksParams {
             para_id: id,
-            block_status: client.clone(),
             announce_block,
             client: client.clone(),
             task_manager: &mut task_manager,
+            da_recovery_profile: DARecoveryProfile::Collator,
             relay_chain_interface,
-            spawner,
-            parachain_consensus,
             import_queue,
-            collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
             relay_chain_slot_duration,
             recovery_handle: Box::new(overseer_handle),
             sync_service,
-        })
-        .await?;
+        })?;
     } else {
-        start_full_node(StartFullNodeParams {
-            client: client.clone(),
-            announce_block,
-            task_manager: &mut task_manager,
+        start_relay_chain_tasks(StartRelayChainTasksParams {
             para_id: id,
+            announce_block,
+            client: client.clone(),
+            task_manager: &mut task_manager,
+            da_recovery_profile: DARecoveryProfile::FullNode,
             relay_chain_interface,
-            relay_chain_slot_duration,
             import_queue,
+            relay_chain_slot_duration,
             recovery_handle: Box::new(overseer_handle),
             sync_service,
         })?;
@@ -369,141 +299,10 @@ where
     Ok((task_manager, client))
 }
 
-/// Creates a new background task to wait for the relay chain to sync up and retrieve the parachain header
-fn warp_sync_get<B, RCInterface>(
-    para_id: ParaId,
-    relay_chain_interface: RCInterface,
-    spawner: SpawnTaskHandle,
-) -> oneshot::Receiver<<B as BlockT>::Header>
-where
-    B: BlockT + 'static,
-    RCInterface: RelayChainInterface + 'static,
-{
-    let (sender, receiver) = oneshot::channel::<B::Header>();
-    spawner.spawn(
-        "cumulus-parachain-wait-for-target-block",
-        None,
-        async move {
-            log::debug!(
-                target: "calamari-network",
-                "waiting for announce block in a background task...",
-            );
-
-            let _ = wait_for_target_block::<B, _>(sender, para_id, relay_chain_interface)
-                .await
-                .map_err(|e| {
-                    log::error!(
-                        target: LOG_TARGET_SYNC,
-                        "Unable to determine parachain target block {:?}",
-                        e
-                    )
-                });
-        }
-        .boxed(),
-    );
-
-    receiver
-}
-
-/// Waits for the relay chain to have finished syncing and then gets the parachain header that corresponds to the last finalized relay chain block.
-async fn wait_for_target_block<B, RCInterface>(
-    sender: oneshot::Sender<<B as BlockT>::Header>,
-    para_id: ParaId,
-    relay_chain_interface: RCInterface,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>>
-where
-    B: BlockT + 'static,
-    RCInterface: RelayChainInterface + Send + 'static,
-{
-    let mut imported_blocks = relay_chain_interface
-        .import_notification_stream()
-        .await?
-        .fuse();
-    while imported_blocks.next().await.is_some() {
-        let is_syncing = relay_chain_interface
-            .is_major_syncing()
-            .await
-            .map_err(|e| {
-                Box::<dyn std::error::Error + Send + Sync>::from(format!(
-                    "Unable to determine sync status. {e}"
-                ))
-            })?;
-
-        if !is_syncing {
-            let relay_chain_best_hash = relay_chain_interface
-                .finalized_block_hash()
-                .await
-                .map_err(|e| Box::new(e) as Box<_>)?;
-
-            let validation_data = relay_chain_interface
-                .persisted_validation_data(
-                    relay_chain_best_hash,
-                    para_id,
-                    polkadot_primitives::OccupiedCoreAssumption::TimedOut,
-                )
-                .await
-                .map_err(|e| format!("{e:?}"))?
-                .ok_or("Could not find parachain head in relay chain")?;
-
-            let target_block = B::Header::decode(&mut &validation_data.parent_head.0[..])
-                .map_err(|e| format!("Failed to decode parachain head: {e}"))?;
-
-            log::debug!(
-                target: LOG_TARGET_SYNC,
-                "Target block reached {:?}",
-                target_block
-            );
-            let _ = sender.send(target_block);
-            return Ok(());
-        }
-    }
-
-    Err("Stopping following imported blocks. Could not determine parachain target block".into())
-}
-
-/// Start a calamari parachain node.
-pub async fn start_parachain_node<RuntimeApi, FullRpc>(
-    parachain_config: Configuration,
-    polkadot_config: Configuration,
-    collator_options: CollatorOptions,
-    id: ParaId,
-    hwbench: Option<sc_sysinfo::HwBench>,
-    full_rpc: FullRpc,
-) -> sc_service::error::Result<(TaskManager, Arc<Client<RuntimeApi>>)>
-where
-    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi:
-        RuntimeApiCommon + RuntimeApiNimbus + sp_consensus_aura::AuraApi<Block, AuraId>,
-    FullRpc: Fn(
-            rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
-        ) -> Result<RpcModule<()>, Error>
-        + 'static,
-{
-    start_node_impl::<RuntimeApi, _, _>(
-        parachain_config,
-        polkadot_config,
-        collator_options,
-        id,
-        full_rpc,
-        crate::builder::build_nimbus_consensus,
-        hwbench,
-    )
-    .await
-}
-
-/// Start a dev node using nimbus instant-sealing consensus without relaychain attached.
-pub async fn start_dev_nimbus_node<RuntimeApi, FullRpc>(
+/*/// Start a dev node using nimbus instant-sealing consensus without relaychain attached.
+pub async fn start_dev_nimbus_node(
     config: Configuration,
-    full_rpc: FullRpc,
 ) -> sc_service::error::Result<TaskManager>
-where
-    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi:
-        RuntimeApiCommon + RuntimeApiNimbus + sp_consensus_aura::AuraApi<Block, AuraId>,
-    FullRpc: Fn(
-            rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
-        ) -> Result<RpcModule<()>, Error>
-        + 'static,
 {
     use sc_consensus::LongestChain;
 
@@ -516,21 +315,20 @@ where
         select_chain: _maybe_select_chain,
         transaction_pool,
         other: (_, _),
-    } = new_partial::<RuntimeApi>(&config)?;
+    } = new_partial(&config)?;
 
     let net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
 
     let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
-        sc_service::build_network(sc_service::BuildNetworkParams {
-            config: &config,
+        build_network(cumulus_client_service::BuildNetworkParams {
+            parachain_config: &config,
             client: client.clone(),
             transaction_pool: transaction_pool.clone(),
             spawn_handle: task_manager.spawn_handle(),
             import_queue,
-            block_announce_validator_builder: None,
-            warp_sync_params: None,
             net_config,
-        })?;
+            sybil_resistance_level: CollatorSybilResistance::Resistant,
+        }).await?;
 
     let role = config.role.clone();
     let select_chain = LongestChain::new(backend.clone());
@@ -560,9 +358,10 @@ where
                 client: client.clone(),
                 pool: transaction_pool.clone(),
                 deny_unsafe,
+                command_sink: None,
             };
 
-            full_rpc(deps)
+            rpc::create_calamari_full::<FullClient, TransactionPool>(deps)
         })
     };
 
@@ -584,4 +383,4 @@ where
     network_starter.start_network();
 
     Ok(task_manager)
-}
+}*/

@@ -20,7 +20,7 @@ use crate::{
     chain_specs,
     cli::{Cli, RelayChainCli, Subcommand},
     rpc,
-    service::{new_partial, CalamariRuntimeExecutor, MantaRuntimeExecutor},
+    service::new_partial,
 };
 use codec::Encode;
 use cumulus_primitives_core::ParaId;
@@ -39,6 +39,9 @@ use sp_runtime::{
     OpaqueExtrinsic,
 };
 use std::net::SocketAddr;
+
+use calamari_runtime::RuntimeApi as CalamariRuntimeApi;
+use manta_runtime::RuntimeApi as MantaRuntimeApi;
 
 pub use sc_cli::Error;
 
@@ -191,10 +194,10 @@ impl SubstrateCli for RelayChainCli {
 macro_rules! construct_benchmark_partials {
     ($config:expr, |$partials:ident| $code:expr) => {
         if $config.chain_spec.is_manta() {
-            let $partials = new_partial::<manta_runtime::RuntimeApi>(&$config)?;
+            let $partials = new_partial(&$config)?;
             $code
         } else if $config.chain_spec.is_calamari() {
-            let $partials = new_partial::<calamari_runtime::RuntimeApi>(&$config)?;
+            let $partials = new_partial(&$config)?;
             $code
         } else {
             Err("The chain is not supported".into())
@@ -207,7 +210,7 @@ macro_rules! construct_async_run {
         let runner = $cli.create_runner($cmd)?;
             if runner.config().chain_spec.is_manta() {
                 runner.async_run(|$config| {
-                    let $components = crate::service::new_partial::<manta_runtime::RuntimeApi>(
+                    let $components = crate::service::new_partial(
                         &$config,
                     )?;
                     let task_manager = $components.task_manager;
@@ -215,7 +218,7 @@ macro_rules! construct_async_run {
                 })
             } else if runner.config().chain_spec.is_calamari() {
                 runner.async_run(|$config| {
-                    let $components = new_partial::<calamari_runtime::RuntimeApi>(
+                    let $components = new_partial(
                         &$config,
                     )?;
                     let task_manager = $components.task_manager;
@@ -280,12 +283,12 @@ pub fn run_with(cli: Cli) -> Result {
                 cmd.run(config, polkadot_config)
             })
         }
-        Some(Subcommand::ExportGenesisState(cmd)) => {
+        Some(Subcommand::ExportGenesisHead(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.sync_run(|_config| {
-                let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
-                let state_version = Cli::native_runtime_version(&spec).state_version();
-                cmd.run::<Block>(&*spec, state_version)
+            runner.sync_run(|config| {
+                let partials = new_partial(&config)?;
+
+                cmd.run(partials.client)
             })
         }
         Some(Subcommand::ExportGenesisWasm(cmd)) => {
@@ -302,15 +305,7 @@ pub fn run_with(cli: Cli) -> Result {
             match cmd {
                 BenchmarkCmd::Pallet(cmd) => {
                     if cfg!(feature = "runtime-benchmarks") {
-                        runner.sync_run(|config| {
-                            if config.chain_spec.is_manta() {
-                                cmd.run::<Block, MantaRuntimeExecutor>(config)
-                            } else if config.chain_spec.is_calamari() {
-                                cmd.run::<Block, CalamariRuntimeExecutor>(config)
-                            } else {
-                                Err("Chain doesn't support benchmarking".into())
-                            }
-                        })
+                        runner.sync_run(|config| cmd.run::<Block, ()>(config))
                     } else {
                         Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
@@ -397,21 +392,7 @@ pub fn run_with(cli: Cli) -> Result {
             runner.run_node_until_exit(|config| async move {
                 if is_dev {
                     info!("⚠️  DEV STANDALONE MODE.");
-                    if config.chain_spec.is_calamari() {
-                        return crate::service::start_dev_nimbus_node::<calamari_runtime::RuntimeApi, _>(
-                            config,
-                            rpc::create_calamari_full,
-                        ).await
-                            .map_err(Into::into);
-                    } else if config.chain_spec.is_manta() {
-                        return crate::service::start_dev_nimbus_node::<manta_runtime::RuntimeApi, _>(
-                            config,
-                            rpc::create_manta_full,
-                        ).await
-                            .map_err(Into::into);
-                    } else {
-                        return Err("Dev mode not support for current chain".into());
-                    }
+                    return Err("Dev mode not support for current chain".into());
                 }
 
                 let hwbench = if !cli.no_hardware_benchmarks {
@@ -437,7 +418,9 @@ pub fn run_with(cli: Cli) -> Result {
                 let id = ParaId::from(para_id);
 
                 let parachain_account =
-                    AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(&id);
+                    AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(
+                        &id,
+                    );
 
                 let tokio_handle = config.tokio_handle.clone();
                 let polkadot_config =
@@ -456,25 +439,23 @@ pub fn run_with(cli: Cli) -> Result {
                 );
 
                 if config.chain_spec.is_manta() {
-                    crate::service::start_parachain_node::<manta_runtime::RuntimeApi, _>(
+                    crate::service::start_parachain_node(
                         config,
                         polkadot_config,
                         collator_options,
                         id,
                         hwbench,
-                        rpc::create_manta_full,
                     )
                     .await
                     .map(|r| r.0)
                     .map_err(Into::into)
                 } else if config.chain_spec.is_calamari() {
-                    crate::service::start_parachain_node::<calamari_runtime::RuntimeApi, _>(
+                    crate::service::start_parachain_node(
                         config,
                         polkadot_config,
                         collator_options,
                         id,
                         hwbench,
-                        rpc::create_calamari_full,
                     )
                     .await
                     .map(|r| r.0)
