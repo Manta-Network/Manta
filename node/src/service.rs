@@ -20,10 +20,8 @@ use crate::{
     client::{RuntimeApiCommon, RuntimeApiNimbus},
     fake_runtime_api, rpc,
 };
-use codec::Decode;
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::ParachainConsensus;
-use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
     build_network, build_relay_chain_interface, prepare_node_config, start_relay_chain_tasks,
     CollatorSybilResistance, DARecoveryProfile, StartCollatorParams, StartFullNodeParams,
@@ -31,8 +29,6 @@ use cumulus_client_service::{
 };
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_interface::RelayChainInterface;
-use futures::{channel::oneshot, FutureExt, StreamExt};
-use jsonrpsee::RpcModule;
 pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Nonce};
 use sc_consensus::ImportQueue;
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
@@ -50,7 +46,7 @@ use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
 
-const LOG_TARGET_SYNC: &str = "sync::cumulus";
+//const LOG_TARGET_SYNC: &str = "sync::cumulus";
 
 #[cfg(not(feature = "runtime-benchmarks"))]
 type HostFunctions = sp_io::SubstrateHostFunctions;

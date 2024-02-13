@@ -21,9 +21,12 @@
 use crate::xcm_mock::parachain::XcmFeesAccount;
 use codec::Encode;
 use frame_support::{
-    assert_err, assert_noop, assert_ok, traits::tokens::fungibles::Mutate, weights::Weight,
+    assert_err, assert_noop, assert_ok,
+    traits::{tokens::fungibles::Mutate, Currency, ExistenceRequirement},
+    weights::Weight,
 };
 use parachain::{RuntimeEvent, System};
+use sp_runtime::traits::Convert;
 
 use manta_primitives::{assets::AssetLocation, constants::WEIGHT_PER_SECOND};
 use runtime_common::test_helpers::{
@@ -32,7 +35,7 @@ use runtime_common::test_helpers::{
     to_reserve_xcm_message_sender_side, ADVERTISED_DEST_WEIGHT,
 };
 use xcm::{latest::prelude::*, VersionedMultiLocation, WrapVersion};
-use xcm_executor::traits::{Convert, WeightBounds};
+use xcm_executor::traits::WeightBounds;
 use xcm_simulator::TestExt;
 
 use super::{
@@ -1465,8 +1468,8 @@ fn send_para_b_asset_to_para_b_with_trader_and_fee() {
         ),
     };
 
-    let para_a_account =
-        polkadot_parachain::primitives::Sibling::from(PARA_A_ID).into_account_truncating();
+    let para_a_account = polkadot_parachain_primitives::primitives::Sibling::from(PARA_A_ID)
+        .into_account_truncating();
 
     ParaB::execute_with(|| {
         use frame_support::traits::Currency;
@@ -2082,9 +2085,10 @@ fn receive_insufficient_relay_asset_on_parachain() {
     // Send native token to fresh_account
     ParaA::execute_with(|| {
         assert_ok!(parachain::Balances::transfer(
-            parachain::RuntimeOrigin::signed(ALICE),
-            new_account.into(),
-            fresh_account_amount
+            &ALICE,
+            &new_account.into(),
+            fresh_account_amount,
+            ExistenceRequirement::AllowDeath,
         ));
     });
 
@@ -3456,7 +3460,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
     ParaB::execute_with(|| {
         // Parachain A sovereign account on Parachain B should receive: 0
         // because transfer_multicurrencies uses Teleport in this case
-        let para_a_sovereign_on_para_b = parachain::LocationToAccountId::convert_ref(
+        let para_a_sovereign_on_para_b = parachain::LocationToAccountId::convert(
             MultiLocation::new(1, X1(Parachain(para_a_id))),
         )
         .unwrap();

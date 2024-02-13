@@ -40,6 +40,7 @@ xcm-executor = { workspace = true }
 
 polkadot-core-primitives = { workspace = true, features = ["std"] }
 polkadot-parachain-primitives = { workspace = true, features = ["std"] }
+polkadot-runtime-common = { workspace = true, features = ["std"] }
 polkadot-runtime-parachains = { workspace = true, features = ["std"] }
 xcm-simulator = { workspace = true }
 

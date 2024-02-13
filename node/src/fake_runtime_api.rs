@@ -19,7 +19,7 @@
 use frame_support::weights::Weight;
 use manta_primitives::types::{AccountId, Balance, Block, CalamariAssetId, Nonce, PoolId};
 use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
-use session_key_primitives::{NimbusId, VrfId};
+use session_key_primitives::NimbusId;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -27,7 +27,7 @@ use sp_runtime::{
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult,
 };
-use zenlink_protocol::{AssetBalance, AssetId as ZenlinkAssetId, MultiAssetsHandler, PairInfo};
+use zenlink_protocol::{AssetBalance, AssetId as ZenlinkAssetId, PairInfo};
 
 pub struct Runtime;
 
@@ -196,25 +196,25 @@ sp_api::impl_runtime_apis! {
 
     impl pallet_manta_pay::runtime::PullLedgerDiffApi<Block> for Runtime {
         fn pull_ledger_diff(
-            checkpoint: RawCheckpoint,
-            max_receiver: u64,
-            max_sender: u64
+            _checkpoint: RawCheckpoint,
+            _max_receiver: u64,
+            _max_sender: u64
         ) -> PullResponse {
             unimplemented!()
         }
         fn pull_ledger_total_count() -> [u8; 16] {
             unimplemented!()
         }
-        fn initial_pull(checkpoint: RawCheckpoint, max_receiver: u64) -> InitialSyncResponse {
+        fn initial_pull(_checkpoint: RawCheckpoint, _max_receiver: u64) -> InitialSyncResponse {
             unimplemented!()
         }
     }
 
     impl pallet_manta_sbt::runtime::SBTPullLedgerDiffApi<Block> for Runtime {
         fn sbt_pull_ledger_diff(
-            checkpoint: RawCheckpoint,
-            max_receiver: u64,
-            max_sender: u64
+            _checkpoint: RawCheckpoint,
+            _max_receiver: u64,
+            _max_sender: u64
         ) -> PullResponse {
             unimplemented!()
         }
@@ -224,7 +224,7 @@ sp_api::impl_runtime_apis! {
     }
 
     impl nimbus_primitives::NimbusApi<Block> for Runtime {
-        fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool {
+        fn can_author(_author: NimbusId, _relay_parent: u32, _parent_header: &<Block as BlockT>::Header) -> bool {
             unimplemented!()
         }
     }
@@ -233,59 +233,59 @@ sp_api::impl_runtime_apis! {
     impl zenlink_protocol_runtime_api::ZenlinkProtocolApi<Block, AccountId, ZenlinkAssetId> for Runtime {
 
         fn get_balance(
-            asset_id: ZenlinkAssetId,
-            owner: AccountId
+            _asset_id: ZenlinkAssetId,
+            _owner: AccountId
         ) -> AssetBalance {
             unimplemented!()
         }
 
         fn get_pair_by_asset_id(
-            asset_0: ZenlinkAssetId,
-            asset_1: ZenlinkAssetId
+            _asset_0: ZenlinkAssetId,
+            _asset_1: ZenlinkAssetId
         ) -> Option<PairInfo<AccountId, AssetBalance, ZenlinkAssetId>> {
             unimplemented!()
         }
 
         fn get_amount_in_price(
-            supply: AssetBalance,
-            path: Vec<ZenlinkAssetId>
+            _supply: AssetBalance,
+            _path: Vec<ZenlinkAssetId>
         ) -> AssetBalance {
             unimplemented!()
         }
 
         fn get_amount_out_price(
-            supply: AssetBalance,
-            path: Vec<ZenlinkAssetId>
+            _supply: AssetBalance,
+            _path: Vec<ZenlinkAssetId>
         ) -> AssetBalance {
             unimplemented!()
         }
 
         fn get_estimate_lptoken(
-            token_0: ZenlinkAssetId,
-            token_1: ZenlinkAssetId,
-            amount_0_desired: AssetBalance,
-            amount_1_desired: AssetBalance,
-            amount_0_min: AssetBalance,
-            amount_1_min: AssetBalance,
+            _token_0: ZenlinkAssetId,
+            _token_1: ZenlinkAssetId,
+            _amount_0_desired: AssetBalance,
+            _amount_1_desired: AssetBalance,
+            _amount_0_min: AssetBalance,
+            _amount_1_min: AssetBalance,
         ) -> AssetBalance{
             unimplemented!()
         }
 
         fn calculate_remove_liquidity(
-            asset_0: ZenlinkAssetId,
-            asset_1: ZenlinkAssetId,
-            amount: AssetBalance,
+            _asset_0: ZenlinkAssetId,
+            _asset_1: ZenlinkAssetId,
+            _amount: AssetBalance,
         ) -> Option<(AssetBalance, AssetBalance)> {
             unimplemented!()
         }
     }
 
     impl pallet_farming_rpc_runtime_api::FarmingRuntimeApi<Block, AccountId, CalamariAssetId, PoolId> for Runtime {
-        fn get_farming_rewards(who: AccountId, pid: PoolId) -> Vec<(CalamariAssetId, Balance)> {
+        fn get_farming_rewards(_who: AccountId, _pid: PoolId) -> Vec<(CalamariAssetId, Balance)> {
             unimplemented!()
         }
 
-        fn get_gauge_rewards(who: AccountId, pid: PoolId) -> Vec<(CalamariAssetId, Balance)> {
+        fn get_gauge_rewards(_who: AccountId, _pid: PoolId) -> Vec<(CalamariAssetId, Balance)> {
             unimplemented!()
         }
     }

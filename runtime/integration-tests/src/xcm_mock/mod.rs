@@ -20,9 +20,9 @@ pub mod parachain;
 pub mod relay_chain;
 pub mod xcm_tests;
 
-use frame_support::traits::GenesisBuild;
-use polkadot_parachain::primitives::Id as ParaId;
-use sp_runtime::traits::AccountIdConversion;
+use core::marker::PhantomData;
+use cumulus_primitives_core::ParaId;
+use sp_runtime::{traits::AccountIdConversion, BuildStorage};
 use xcm::latest::prelude::*;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain, TestExt};
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
@@ -88,8 +88,8 @@ pub fn para_account_id(id: u32) -> relay_chain::AccountId {
 pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
     use parachain::{MsgQueue, Runtime, System};
 
-    let mut t = frame_system::GenesisConfig::default()
-        .build_storage::<Runtime>()
+    let mut t = frame_system::GenesisConfig::<Runtime>::default()
+        .build_storage()
         .unwrap();
 
     pallet_balances::GenesisConfig::<Runtime> {
@@ -100,12 +100,9 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
 
     let parachain_info_config = parachain_info::GenesisConfig {
         parachain_id: para_id.into(),
+        _config: PhantomData::<Runtime>,
     };
-    <parachain_info::GenesisConfig as GenesisBuild<Runtime, _>>::assimilate_storage(
-        &parachain_info_config,
-        &mut t,
-    )
-    .unwrap();
+    parachain_info::GenesisConfig::<Runtime>::assimilate_storage(&parachain_info_config, &mut t);
 
     let mut ext = sp_io::TestExternalities::new(t);
     ext.execute_with(|| {
@@ -118,8 +115,8 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
 pub fn relay_ext() -> sp_io::TestExternalities {
     use relay_chain::{Runtime, System};
 
-    let mut t = frame_system::GenesisConfig::default()
-        .build_storage::<Runtime>()
+    let mut t = frame_system::GenesisConfig::<Runtime>::default()
+        .build_storage()
         .unwrap();
 
     pallet_balances::GenesisConfig::<Runtime> {

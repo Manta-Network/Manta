@@ -52,7 +52,7 @@ where
     C::Api: ZenlinkProtocolRuntimeApi<Block, AccountId, ZenlinkAssetId>,
     P: TransactionPool + Sync + Send + 'static,
 {
-    use frame_rpc_system::{System, SystemApiServer};
+    use frame_rpc_system::System;
     use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 
     let mut module = RpcExtension::new(());
@@ -60,7 +60,7 @@ where
         client,
         pool,
         deny_unsafe,
-        command_sink,
+        ..
     } = deps;
 
     module

@@ -19,20 +19,17 @@
 use crate::{
     chain_specs,
     cli::{Cli, RelayChainCli, Subcommand},
-    rpc,
     service::new_partial,
 };
-use codec::Encode;
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::info;
 use manta_primitives::types::Header;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
-    NetworkParams, RuntimeVersion, SharedParams, SubstrateCli,
+    NetworkParams, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
-use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{
     generic,
     traits::{AccountIdConversion, Block as BlockT},

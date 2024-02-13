@@ -18,13 +18,12 @@
 
 use super::{mock::ExtBuilder, *};
 use frame_support::{
-    dispatch::Dispatchable,
     traits::{PalletInfo, StorageInfo, StorageInfoTrait},
     StorageHasher, Twox128,
 };
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_runtime::{
-    traits::{Header as HeaderT, SignedExtension},
+    traits::{Dispatchable, Header as HeaderT, SignedExtension},
     Percent,
 };
 
