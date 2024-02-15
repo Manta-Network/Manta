@@ -7,9 +7,9 @@ After=network-online.target
 ExecStart=/usr/bin/manta \
     --chain /usr/share/substrate/manta.json \
     --base-path /var/lib/substrate \
-    --port 32333 \
+    --port 31333 \
     --rpc-max-connections 100 \
-    --rpc-port 9233 \
+    --rpc-port 9144 \
     --rpc-cors all \
     --rpc-methods safe \
     --state-cache-size 0 \
