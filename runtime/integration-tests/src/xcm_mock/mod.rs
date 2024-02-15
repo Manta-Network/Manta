@@ -34,7 +34,7 @@ pub const PARA_C_ID: u32 = 3;
 decl_test_parachain! {
     pub struct ParaA {
         Runtime = parachain::Runtime,
-        XcmpMessageHandler = parachain::XcmpQueue,
+        XcmpMessageHandler = parachain::MsgQueue,
         DmpMessageHandler = parachain::MsgQueue,
         new_ext = para_ext(PARA_A_ID),
     }
@@ -43,7 +43,7 @@ decl_test_parachain! {
 decl_test_parachain! {
     pub struct ParaB {
         Runtime = parachain::Runtime,
-        XcmpMessageHandler = parachain::XcmpQueue,
+        XcmpMessageHandler = parachain::MsgQueue,
         DmpMessageHandler = parachain::MsgQueue,
         new_ext = para_ext(PARA_B_ID),
     }
@@ -52,7 +52,7 @@ decl_test_parachain! {
 decl_test_parachain! {
     pub struct ParaC {
         Runtime = parachain::Runtime,
-        XcmpMessageHandler = parachain::XcmpQueue,
+        XcmpMessageHandler = parachain::MsgQueue,
         DmpMessageHandler = parachain::MsgQueue,
         new_ext = para_ext(PARA_C_ID),
     }

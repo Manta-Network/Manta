@@ -367,7 +367,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type WeightInfo = ();
     type PriceForSiblingDelivery = NoPriceForMessageDelivery<ParaId>;
     type MaxInboundSuspended = ConstU32<1_000>;
-    type XcmpQueue = TransformOrigin<MsgQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling>;
+    type XcmpQueue = ();
 }
 
 #[frame_support::pallet]
@@ -523,7 +523,7 @@ impl mock_msg_queue::Config for Runtime {
 impl cumulus_pallet_parachain_system::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type SelfParaId = parachain_info::Pallet<Runtime>;
-    type DmpQueue = EnqueueWithOrigin<MsgQueue, RelayOrigin>;
+    type DmpQueue = EnqueueWithOrigin<(), RelayOrigin>;
     type ReservedDmpWeight = ReservedDmpWeight;
     type OutboundXcmpMessageSource = XcmpQueue;
     type XcmpMessageHandler = XcmpQueue;
