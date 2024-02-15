@@ -235,7 +235,7 @@ fn reward_fees_to_block_author_and_treasury() {
             System::initialize(&1, &Default::default(), header.digest());
             assert_eq!(Authorship::author().unwrap(), author);
 
-            let call = RuntimeCall::Balances(pallet_balances::Call::transfer {
+            let call = RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death {
                 dest: sp_runtime::MultiAddress::Id(CHARLIE.clone()),
                 value: 10 * MANTA,
             });

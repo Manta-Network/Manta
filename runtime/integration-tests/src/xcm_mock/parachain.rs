@@ -20,11 +20,15 @@
 
 use codec::{Decode, Encode};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+use cumulus_primitives_core::AggregateMessageOrigin;
 use frame_support::{
     assert_ok, construct_runtime, match_types,
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, Everything, Nothing},
+    traits::{
+        AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, EnqueueWithOrigin,
+        Everything, Nothing, TransformOrigin,
+    },
     weights::Weight,
     PalletId,
 };
@@ -54,6 +58,7 @@ use manta_primitives::{
     },
 };
 use pallet_xcm::XcmPassthrough;
+use parachains_common::message_queue::ParaIdToSibling;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain_primitives::primitives::{
     DmpMessageHandler, Sibling, XcmpMessageFormat, XcmpMessageHandler,
@@ -349,6 +354,10 @@ impl Config for XcmExecutorConfig {
     type Aliasers = ();
 }
 
+parameter_types! {
+    pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
+}
+
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type ChannelInfo = ParachainSystem;
@@ -358,6 +367,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type WeightInfo = ();
     type PriceForSiblingDelivery = NoPriceForMessageDelivery<ParaId>;
     type MaxInboundSuspended = ConstU32<1_000>;
+    type XcmpQueue = TransformOrigin<MsgQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling>;
 }
 
 #[frame_support::pallet]
@@ -513,13 +523,14 @@ impl mock_msg_queue::Config for Runtime {
 impl cumulus_pallet_parachain_system::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type SelfParaId = parachain_info::Pallet<Runtime>;
-    type DmpMessageHandler = MsgQueue;
+    type DmpQueue = EnqueueWithOrigin<MsgQueue, RelayOrigin>;
     type ReservedDmpWeight = ReservedDmpWeight;
     type OutboundXcmpMessageSource = XcmpQueue;
     type XcmpMessageHandler = XcmpQueue;
     type ReservedXcmpWeight = ReservedXcmpWeight;
     type OnSystemEvent = ();
     type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+    type WeightInfo = ();
 }
 
 pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, RelayNetwork>;

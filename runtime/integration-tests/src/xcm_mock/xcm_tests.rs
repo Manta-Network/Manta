@@ -35,7 +35,7 @@ use runtime_common::test_helpers::{
     to_reserve_xcm_message_sender_side, ADVERTISED_DEST_WEIGHT,
 };
 use xcm::{latest::prelude::*, VersionedMultiLocation, WrapVersion};
-use xcm_executor::traits::WeightBounds;
+use xcm_executor::traits::{ConvertLocation, WeightBounds};
 use xcm_simulator::TestExt;
 
 use super::{
@@ -200,7 +200,7 @@ fn xcmp_transact_from_sibling_tests() {
         id: ALICE.into(),
     });
     let alice_derived_account_on_b =
-        xcm_builder::Account32Hash::<RelayNetwork, AccountId>::convert_ref(MultiLocation {
+        xcm_builder::Account32Hash::<RelayNetwork, AccountId>::convert_location(&MultiLocation {
             parents: 1,
             interior: X2(
                 Parachain(PARA_A_ID),
@@ -2349,13 +2349,13 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
     });
 
     let expected_supported_version: relay_chain::RuntimeEvent =
-        pallet_xcm::Event::SupportedVersionChanged(
-            MultiLocation {
+        pallet_xcm::Event::SupportedVersionChanged {
+            location: MultiLocation {
                 parents: 0,
                 interior: X1(Parachain(PARA_A_ID)),
             },
-            1,
-        )
+            version: 1,
+        }
         .into();
 
     Relay::execute_with(|| {
@@ -2364,14 +2364,15 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
     });
 
     let expected_version_notified: parachain::RuntimeEvent =
-        pallet_xcm::Event::VersionChangeNotified(
-            MultiLocation {
+        pallet_xcm::Event::VersionChangeNotified {
+            destination: MultiLocation {
                 parents: 1,
                 interior: Here,
             },
-            2,
-            MultiAssets::default(),
-        )
+            result: 2,
+            cost: MultiAssets::default(),
+            message_id: XcmHash::default(),
+        }
         .into();
 
     // ParaA changes version to 2, and calls on_runtime_upgrade. This should notify the targets
@@ -2389,13 +2390,13 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
 
     // This event should have been seen in the relay
     let expected_supported_version_2: relay_chain::RuntimeEvent =
-        pallet_xcm::Event::SupportedVersionChanged(
-            MultiLocation {
+        pallet_xcm::Event::SupportedVersionChanged {
+            location: MultiLocation {
                 parents: 0,
                 interior: X1(Parachain(PARA_A_ID)),
             },
-            2,
-        )
+            version: 2,
+        }
         .into();
 
     Relay::execute_with(|| {
@@ -2479,13 +2480,13 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
     });
 
     let expected_supported_version: parachain::RuntimeEvent =
-        pallet_xcm::Event::SupportedVersionChanged(
-            MultiLocation {
+        pallet_xcm::Event::SupportedVersionChanged {
+            location: MultiLocation {
                 parents: 1,
                 interior: X1(Parachain(PARA_B_ID)),
             },
-            0,
-        )
+            version: 0,
+        }
         .into();
 
     ParaA::execute_with(|| {
@@ -2527,14 +2528,15 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
     });
 
     let expected_version_notified: parachain::RuntimeEvent =
-        pallet_xcm::Event::VersionChangeNotified(
-            MultiLocation {
+        pallet_xcm::Event::VersionChangeNotified {
+            destination: MultiLocation {
                 parents: 1,
                 interior: X1(Parachain(PARA_A_ID)),
             },
-            2,
-            MultiAssets::default(),
-        )
+            result: 2,
+            cost: MultiAssets::default(),
+            message_id: XcmHash::default(),
+        }
         .into();
 
     // ParaB changes version to 2, and calls on_runtime_upgrade. This should notify the targets
@@ -2552,13 +2554,13 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 
     // This event should have been seen in para A
     let expected_supported_version_2: parachain::RuntimeEvent =
-        pallet_xcm::Event::SupportedVersionChanged(
-            MultiLocation {
+        pallet_xcm::Event::SupportedVersionChanged {
+            location: MultiLocation {
                 parents: 1,
                 interior: X1(Parachain(PARA_B_ID)),
             },
-            2,
-        )
+            version: 2,
+        }
         .into();
 
     // Para A should have received the version change
@@ -3111,8 +3113,8 @@ fn transfer_multicurrencies_should_work_scenarios() {
 
         // Parachain A sovereign account on Parachain B should receive: 0
         // because transfer_multicurrencies uses Teleport in this case
-        let para_a_sovereign_on_para_b = parachain::LocationToAccountId::convert_ref(
-            MultiLocation::new(1, X1(Parachain(para_a_id))),
+        let para_a_sovereign_on_para_b = parachain::LocationToAccountId::convert_location(
+            &MultiLocation::new(1, X1(Parachain(para_a_id))),
         )
         .unwrap();
         assert_eq!(
@@ -3460,8 +3462,8 @@ fn transfer_multicurrencies_should_fail_scenarios() {
     ParaB::execute_with(|| {
         // Parachain A sovereign account on Parachain B should receive: 0
         // because transfer_multicurrencies uses Teleport in this case
-        let para_a_sovereign_on_para_b = parachain::LocationToAccountId::convert(
-            MultiLocation::new(1, X1(Parachain(para_a_id))),
+        let para_a_sovereign_on_para_b = parachain::LocationToAccountId::convert_location(
+            &MultiLocation::new(1, X1(Parachain(para_a_id))),
         )
         .unwrap();
         assert_eq!(

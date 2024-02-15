@@ -5049,6 +5049,7 @@ dependencies = [
  "pallet-tx-pause",
  "pallet-utility",
  "pallet-xcm",
+ "parachains-common",
  "parity-scale-codec",
  "polkadot-core-primitives",
  "polkadot-parachain-primitives",

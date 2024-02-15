@@ -241,6 +241,7 @@ impl pallet_message_queue::Config for Runtime {
     type MaxStale = MessageQueueMaxStale;
     type ServiceWeight = MessageQueueServiceWeight;
     type MessageProcessor = MessageProcessor;
+    type QueuePausedQuery = ();
     type QueueChangeHandler = ();
     type WeightInfo = ();
 }
