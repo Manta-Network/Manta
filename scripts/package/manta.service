@@ -8,18 +8,21 @@ ExecStart=/usr/bin/manta \
     --chain /usr/share/substrate/manta.json \
     --base-path /var/lib/substrate \
     --port 32333 \
-    --ws-port 9244 \
-    --ws-max-connections 100 \
+    --rpc-max-connections 100 \
     --rpc-port 9233 \
     --rpc-cors all \
     --rpc-methods safe \
     --state-cache-size 0 \
     --bootnodes \
-        /dns/alfredi.manta.systems/tcp/30333/p2p/12D3KooWKMw84HHuEbjHep6FVqUM2sss6TCzqehfXKw3PGoB4HoG \
-        /dns/birostris.manta.systems/tcp/30333/p2p/12D3KooWP5ASruuz1BEnD5M1QMSS7GiiFTnXMNoDUDn7o9GmcRyZ \
-        /dns/eregoodootenkey.manta.systems/tcp/30333/p2p/12D3KooWCKgXKVYbpxkmouHBrCyaPGr7NJSHVAgncUPVzH9fTB5e \
-        /dns/hypostoma.manta.systems/tcp/30333/p2p/12D3KooWHF462NFNuhPAK3cmqZ6c9jD85GnknsFT43n8TFdWcxJY \
-        /dns/japanica.manta.systems/tcp/30333/p2p/12D3KooWQvvB62n2dEWEYxUCcqzU6dxzVgi8ACPA6X7VeWzxAFMF \
+        /dns/a1.manta.systems/tcp/30333/p2p/12D3KooWCpnkG834s9ETesFTWtGqRDjs6Te1UCXHib3iD8GEmXLU \
+        /dns/a4.manta.systems/tcp/30333/p2p/12D3KooWN9Zud842idiiUypJF9nzQfNrSsuWQRdtRA8D6sqsPXMb \
+        /dns/a5.manta.systems/tcp/30333/p2p/12D3KooWM6Txo8orkxGsSTPByzzWhtTSfdFi2u9KJtd9eWCkry3k \
+        /dns/a6.manta.systems/tcp/30333/p2p/12D3KooWPj1Fhw5nGLbDx49AHr7qa6f5QMJK7PuoYB1C77WVSCnF \
+        /dns/a7.manta.systems/tcp/30333/p2p/12D3KooWFKMcE12XRLZfktX3crfkZyyBetpHsffDjPopYVhQLXwP \
+        /dns/c1.manta.systems/tcp/30333/p2p/12D3KooWSNwD7tJkqKGdMfCVTJbbzrGFTGbXoeMFZCTwEytpFCM4 \
+        /dns/c2.manta.systems/tcp/30333/p2p/12D3KooWSyPTkVytQwurRBt73wPQDTgypw88bdhsE4Rb6RnQvCJ9 \
+        /dns/c3.manta.systems/tcp/30333/p2p/12D3KooWJwHqCEjTF46eAUDspKKwxa15TMfs7x8DNr3Gs71Qr64j \
+        /dns/c4.manta.systems/tcp/30333/p2p/12D3KooWAgZYhwfUo7brgZK2TvArK6XNUtZnzk1cSNfyD9kX1rDE \
     -- \
     --chain polkadot
 User=manta
