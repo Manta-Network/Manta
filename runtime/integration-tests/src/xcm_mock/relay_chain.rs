@@ -30,8 +30,6 @@ use sp_runtime::{
     AccountId32,
 };
 
-#[cfg(feature = "runtime-benchmarks")]
-use super::ReachableDest;
 use cumulus_primitives_core::ParaId;
 use manta_primitives::{types::BlockNumber, xcm::AllowTopLevelPaidExecutionFrom};
 use polkadot_runtime_parachains::{
@@ -43,7 +41,7 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
     ChildParachainAsNative, ChildParachainConvertsVia, ChildSystemParachainAsSuperuser,
-    CurrencyAdapter as XcmCurrencyAdapter, FixedRateOfFungible, FixedWeightBounds, IsConcrete,
+    FixedRateOfFungible, FixedWeightBounds, FungibleAdapter as XcmCurrencyAdapter, IsConcrete,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::{Config, XcmExecutor};

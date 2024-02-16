@@ -41,8 +41,6 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-#[cfg(feature = "runtime-benchmarks")]
-use super::ReachableDest;
 use cumulus_primitives_core::ParaId;
 use manta_primitives::{
     assets::{
