@@ -877,6 +877,8 @@ impl pallet_treasury::Config for Runtime {
     type BalanceConverter = UnityAssetBalanceConversion;
     type PayoutPeriod = PayoutSpendPeriod;
     type AssetKind = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
 }
 
 parameter_types! {
@@ -1049,10 +1051,6 @@ pub type Executive = frame_executive::Executive<
 >;
 
 #[cfg(feature = "runtime-benchmarks")]
-#[macro_use]
-extern crate frame_benchmarking;
-
-#[cfg(feature = "runtime-benchmarks")]
 mod benches {
     frame_benchmarking::define_benchmarks!(
         // Substrate pallets
@@ -1074,7 +1072,6 @@ mod benches {
         [pallet_sudo, Sudo]
         // XCM
         [cumulus_pallet_xcmp_queue, XcmpQueue]
-        [pallet_xcm, PolkadotXcm]
         // always get this error(Unimplemented) while benchmarking pallet_xcm_benchmarks::fungible::initiate_teleport
         // so this time we will use statemint's fungible weights
         // [pallet_xcm_benchmarks::fungible, XcmBalances]
@@ -1444,11 +1441,21 @@ impl_runtime_apis! {
                 pub const CheckedAccount: Option<(AccountId, xcm_builder::MintLocation)> = None;
                 pub const DotLocation: MultiLocation = MultiLocation::parent();
                 pub MantaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
+                pub ExistentialDepositAsset: Option<MultiAsset> = Some(MultiAsset {
+                    id: Concrete(MultiLocation::parent()),
+                    fun: Fungible(NativeTokenExistentialDeposit::get())
+                }).into();
+
             }
 
             impl pallet_xcm_benchmarks::Config for Runtime {
                 type XcmConfig = XcmExecutorConfig;
                 type AccountIdConverter = LocationToAccountId;
+                type DeliveryHelper = cumulus_primitives_utility::ToParentDeliveryHelper<
+                    XcmExecutorConfig,
+                    ExistentialDepositAsset,
+                    (),
+                >;
 
                 fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
                     Ok(DotLocation::get())
@@ -1483,9 +1490,9 @@ impl_runtime_apis! {
 
             impl pallet_xcm_benchmarks::fungible::Config for Runtime {
                 type TransactAsset = Balances;
-
                 type CheckedAccount = CheckedAccount;
                 type TrustedTeleporter = TrustedTeleporter;
+                type TrustedReserve = TrustedReserve;
 
                 fn get_multi_asset() -> MultiAsset {
                     MultiAsset {
@@ -1497,6 +1504,7 @@ impl_runtime_apis! {
 
             impl pallet_xcm_benchmarks::generic::Config for Runtime {
                 type RuntimeCall = RuntimeCall;
+                type TransactAsset = Balances;
 
                 fn worst_case_response() -> (u64, Response) {
                     (0u64, Response::Version(Default::default()))
@@ -1531,6 +1539,10 @@ impl_runtime_apis! {
 
                 fn export_message_origin_and_destination(
                 ) -> Result<(MultiLocation, NetworkId, InteriorMultiLocation), BenchmarkError> {
+                    Err(BenchmarkError::Skip)
+                }
+
+                fn alias_origin() -> Result<(MultiLocation, MultiLocation), BenchmarkError> {
                     Err(BenchmarkError::Skip)
                 }
             }
