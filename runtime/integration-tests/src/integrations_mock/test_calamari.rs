@@ -19,14 +19,13 @@
 use super::{mock::ExtBuilder, *};
 use frame_support::{
     assert_ok,
-    dispatch::Dispatchable,
     traits::{Get, PalletInfo, StorageInfo, StorageInfoTrait},
     StorageHasher, Twox128,
 };
 use manta_support::manta_pay::{asset_value_encode, field_from_id, Asset};
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_runtime::{
-    traits::{Header as HeaderT, SignedExtension},
+    traits::{Header as HeaderT, SignedExtension, Dispatchable},
     Percent,
 };
 
@@ -320,7 +319,7 @@ fn verify_calamari_pallet_indices() {
 
     // Check removed pallets.
     ExtBuilder::default().build().execute_with(|| {
-        use frame_support::metadata::{v14::META_RESERVED, RuntimeMetadata};
+        use frame_metadata::{META_RESERVED, RuntimeMetadata};
 
         let runtime_metadata = calamari_runtime::Runtime::metadata();
         assert_eq!(runtime_metadata.0, META_RESERVED);
@@ -363,7 +362,7 @@ fn reward_fees_to_block_author_and_treasury() {
             System::initialize(&1, &Default::default(), header.digest());
             assert_eq!(Authorship::author().unwrap(), author);
 
-            let call = RuntimeCall::Balances(pallet_balances::Call::transfer {
+            let call = RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive {
                 dest: sp_runtime::MultiAddress::Id(CHARLIE.clone()),
                 value: 10 * KMA,
             });

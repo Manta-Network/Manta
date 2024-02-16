@@ -5022,6 +5022,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
  "cumulus-test-relay-sproof-builder",
+ "frame-metadata",
  "frame-support",
  "frame-system",
  "lazy_static",

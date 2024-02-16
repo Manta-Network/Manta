@@ -27,7 +27,7 @@ use frame_support::{
     parameter_types,
     traits::{
         AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, EnqueueWithOrigin,
-        Everything, Nothing, TransformOrigin,
+        Everything, Nothing,
     },
     weights::Weight,
     PalletId,
@@ -58,7 +58,6 @@ use manta_primitives::{
     },
 };
 use pallet_xcm::XcmPassthrough;
-use parachains_common::message_queue::ParaIdToSibling;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain_primitives::primitives::{
     DmpMessageHandler, Sibling, XcmpMessageFormat, XcmpMessageHandler,
@@ -737,7 +736,6 @@ impl orml_xtokens::Config for Runtime {
 
 impl parachain_info::Config for Runtime {}
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
 pub const PALLET_ASSET_INDEX: u8 = 1;

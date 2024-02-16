@@ -14,6 +14,7 @@ manta-runtime = { workspace = true, optional = true, features = ["std"] }
 
 [dev-dependencies]
 codec = { workspace = true }
+frame-metadata = { workspace = true, features = ["std"] }
 frame-support = { workspace = true, features = ["std"] }
 frame-system = { workspace = true, features = ["std"] }
 lazy_static = { workspace = true }

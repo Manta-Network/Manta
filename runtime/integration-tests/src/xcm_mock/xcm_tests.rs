@@ -26,7 +26,6 @@ use frame_support::{
     weights::Weight,
 };
 use parachain::{RuntimeEvent, System};
-use sp_runtime::traits::Convert;
 
 use manta_primitives::{assets::AssetLocation, constants::WEIGHT_PER_SECOND};
 use runtime_common::test_helpers::{
