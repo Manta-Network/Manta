@@ -18,11 +18,12 @@ use crate::{
     AccountId, Box, Call, Config, EvmAddress, Pallet, Pallet as MantaSBTPallet, TransferPost,
 };
 use codec::Decode;
-use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
+use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::traits::{Currency, Get};
 use frame_system::RawOrigin;
 use sp_core::H160;
 use sp_io::hashing::keccak_256;
+use sp_std::vec;
 
 const MINTS_OFFSET: usize = 4;
 const MINT_SIZE: usize = 553;

@@ -102,7 +102,8 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
         parachain_id: para_id.into(),
         _config: PhantomData::<Runtime>,
     };
-    parachain_info::GenesisConfig::<Runtime>::assimilate_storage(&parachain_info_config, &mut t).unwrap();
+    parachain_info::GenesisConfig::<Runtime>::assimilate_storage(&parachain_info_config, &mut t)
+        .unwrap();
 
     let mut ext = sp_io::TestExternalities::new(t);
     ext.execute_with(|| {

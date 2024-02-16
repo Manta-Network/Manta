@@ -967,7 +967,7 @@ pub mod pallet {
                     let mut rnd = [0u8; 32];
                     rng.fill_bytes(&mut rnd);
                     let randomness = T::Hashing::hash(&rnd);
-                    random = (randomness, <T as frame_system::Config>::BlockNumber::zero());
+                    random = (randomness, BlockNumberFor::<T>::zero());
                     log::debug!("select-winner using randomness {:?}", random);
                 }
                 #[cfg(not(feature = "runtime-benchmarks"))]

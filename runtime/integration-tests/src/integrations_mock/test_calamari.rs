@@ -25,7 +25,7 @@ use frame_support::{
 use manta_support::manta_pay::{asset_value_encode, field_from_id, Asset};
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_runtime::{
-    traits::{Header as HeaderT, SignedExtension, Dispatchable},
+    traits::{Dispatchable, Header as HeaderT, SignedExtension},
     Percent,
 };
 
@@ -319,7 +319,7 @@ fn verify_calamari_pallet_indices() {
 
     // Check removed pallets.
     ExtBuilder::default().build().execute_with(|| {
-        use frame_metadata::{META_RESERVED, RuntimeMetadata};
+        use frame_metadata::{RuntimeMetadata, META_RESERVED};
 
         let runtime_metadata = calamari_runtime::Runtime::metadata();
         assert_eq!(runtime_metadata.0, META_RESERVED);
