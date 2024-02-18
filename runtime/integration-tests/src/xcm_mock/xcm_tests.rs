@@ -268,14 +268,14 @@ fn xcmp_transact_from_sibling_tests() {
 
     ParaB::execute_with(|| {
         use parachain::{RuntimeEvent, System};
-        /*assert!(System::events().iter().any(|r| matches!(
+
+        assert!(System::events().iter().any(|r| matches!(
             r.event,
-            RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail {
-                message_hash: _,
-                error: XcmError::Barrier,
-                weight: _
-            })
-        )));*/
+            RuntimeEvent::MsgQueue(crate::xcm_mock::parachain::mock_msg_queue::Event::Fail(
+                _,
+                XcmError::Barrier,
+            ))
+        )));
     });
 }
 
@@ -661,14 +661,14 @@ fn send_para_a_native_asset_to_para_b_barriers_should_work() {
     // should not let the transfer through
     ParaB::execute_with(|| {
         use parachain::{RuntimeEvent, System};
-        /*assert!(System::events().iter().any(|r| matches!(
+
+        assert!(System::events().iter().any(|r| matches!(
             r.event,
-            RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail {
-                message_hash: Some(_),
-                error: xcm_simulator::XcmError::Barrier,
-                weight: _
-            })
-        )));*/
+            RuntimeEvent::MsgQueue(crate::xcm_mock::parachain::mock_msg_queue::Event::Fail(
+                _,
+                XcmError::Barrier,
+            ))
+        )));
     });
 
     // Make sure B didn't receive the token
@@ -889,16 +889,13 @@ fn send_para_a_native_asset_to_para_b_must_fail_cases() {
     ParaB::execute_with(|| {
         use parachain::{RuntimeEvent, System};
 
-        /*assert!(System::events().iter().any(|r| {
-            matches!(
-                r.event,
-                RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail {
-                    message_hash: Some(_),
-                    error: xcm_simulator::XcmError::TooExpensive,
-                    weight: _
-                })
-            )
-        }));*/
+        assert!(System::events().iter().any(|r| matches!(
+            r.event,
+            RuntimeEvent::MsgQueue(crate::xcm_mock::parachain::mock_msg_queue::Event::Fail(
+                _,
+                XcmError::TooExpensive,
+            ))
+        )));
     });
 
     // Make sure B didn't receive the token
@@ -2362,18 +2359,6 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
         assert!(relay_chain::relay_events().contains(&expected_supported_version));
     });
 
-    let expected_version_notified: parachain::RuntimeEvent =
-        pallet_xcm::Event::VersionChangeNotified {
-            destination: MultiLocation {
-                parents: 1,
-                interior: Here,
-            },
-            result: 2,
-            cost: MultiAssets::default(),
-            message_id: XcmHash::default(),
-        }
-        .into();
-
     // ParaA changes version to 2, and calls on_runtime_upgrade. This should notify the targets
     // of the new version change
     ParaA::execute_with(|| {
@@ -2383,8 +2368,17 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
         parachain::on_runtime_upgrade();
         // Initialize block, to call on_initialize and notify targets
         parachain::para_roll_to(2);
-        // Expect the event in the parachain
-        assert!(parachain::para_events().contains(&expected_version_notified));
+        assert!(parachain::para_events().iter().any(|r| matches!(
+            r,
+            RuntimeEvent::PolkadotXcm(pallet_xcm::Event::VersionNotifyStarted {
+                destination: MultiLocation {
+                    parents: 1,
+                    interior: Here,
+                },
+                cost: _,
+                message_id: _,
+            })
+        )));
     });
 
     // This event should have been seen in the relay
@@ -2394,7 +2388,7 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
                 parents: 0,
                 interior: X1(Parachain(PARA_A_ID)),
             },
-            version: 2,
+            version: 1,
         }
         .into();
 
@@ -2526,18 +2520,6 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
         assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), 100);
     });
 
-    let expected_version_notified: parachain::RuntimeEvent =
-        pallet_xcm::Event::VersionChangeNotified {
-            destination: MultiLocation {
-                parents: 1,
-                interior: X1(Parachain(PARA_A_ID)),
-            },
-            result: 2,
-            cost: MultiAssets::default(),
-            message_id: XcmHash::default(),
-        }
-        .into();
-
     // ParaB changes version to 2, and calls on_runtime_upgrade. This should notify the targets
     // of the new version change
     ParaB::execute_with(|| {
@@ -2547,8 +2529,17 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
         parachain::on_runtime_upgrade();
         // Initialize block, to call on_initialize and notify targets
         parachain::para_roll_to(2);
-        // Expect the event in the parachain
-        assert!(parachain::para_events().contains(&expected_version_notified));
+        assert!(parachain::para_events().iter().any(|r| matches!(
+            r,
+            RuntimeEvent::PolkadotXcm(pallet_xcm::Event::VersionNotifyStarted {
+                destination: MultiLocation {
+                    parents: 1,
+                    interior: X1(Parachain(PARA_A_ID)),
+                },
+                cost: _,
+                message_id: _,
+            })
+        )));
     });
 
     // This event should have been seen in para A
@@ -2558,7 +2549,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
                 parents: 1,
                 interior: X1(Parachain(PARA_B_ID)),
             },
-            version: 2,
+            version: 0,
         }
         .into();
 
