@@ -381,7 +381,8 @@ fn paused_transaction_filter_work() {
             RawOrigin::Root.into(),
             vec![b"AssetManager".to_vec()]
         ));
-        assert!(!PausedTransactionFilter::<Runtime>::contains(REMARK_CALL));
-        assert!(!PausedTransactionFilter::<Runtime>::contains(SETCODE_CALL));
+        assert!(!PausedTransactionFilter::<Runtime>::contains(
+            SET_UNITS_CALL
+        ));
     });
 }
