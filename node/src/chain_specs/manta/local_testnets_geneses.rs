@@ -30,8 +30,8 @@ pub fn genesis_spec_dev() -> MantaChainSpec {
 
     MantaChainSpec::from_genesis(
         "Manta Parachain Dev",
-        "manta",
-        ChainType::Local,
+        "manta-dev",
+        ChainType::Development,
         move || manta_devnet_genesis(genesis_collators_clone.clone()),
         genesis_collators
             .into_iter()

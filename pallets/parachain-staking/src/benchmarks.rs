@@ -28,7 +28,7 @@ use frame_support::traits::{
 };
 use frame_system::{pallet_prelude::*, RawOrigin};
 use sp_runtime::{Perbill, Percent};
-use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
+use sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
 
 /// Minimum collator candidate stake
 pub fn min_candidate_stk<T: Config>() -> BalanceOf<T> {

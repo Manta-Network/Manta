@@ -113,9 +113,9 @@ polkadot-service = { workspace = true }
 xcm = { workspace = true, features = ["std"] }
 
 # Self dependencies
-calamari-runtime = { workspace = true, features = ["std"] }
-manta-primitives = { workspace = true, features = ["std"] }
-manta-runtime = { workspace = true, features = ["std"] }
+calamari-runtime = { workspace = true }
+manta-primitives = { workspace = true }
+manta-runtime = { workspace = true }
 manta-support = { workspace = true, features = ["rpc", "serde"] }
 pallet-lottery = { workspace = true, features = ["rpc"] }
 pallet-manta-pay = { workspace = true, features = ["rpc", "runtime"] }
@@ -135,12 +135,14 @@ runtime-benchmarks = [
   'calamari-runtime/runtime-benchmarks',
   'polkadot-service/runtime-benchmarks',
   'manta-runtime/runtime-benchmarks',
+  'manta-primitives/runtime-benchmarks',
   'polkadot-primitives/runtime-benchmarks',
   'sc-service/runtime-benchmarks',
   'sp-runtime/runtime-benchmarks',
   'polkadot-cli/runtime-benchmarks',
   'frame-benchmarking/runtime-benchmarks',
   'frame-benchmarking-cli/runtime-benchmarks',
+  'cumulus-primitives-core/runtime-benchmarks',
 ]
 try-runtime = [
   'calamari-runtime/try-runtime',

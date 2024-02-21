@@ -39,7 +39,6 @@ pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_service::{
     Configuration, Error, SpawnTaskHandle, TFullBackend, TFullClient, TaskManager, WarpSyncParams,
 };
-use sc_sysinfo::HwBench;
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use session_key_primitives::AuraId;
 use sp_api::ConstructRuntimeApi;
@@ -58,6 +57,34 @@ type HostFunctions = (
     sp_io::SubstrateHostFunctions,
     frame_benchmarking::benchmarking::HostFunctions,
 );
+
+/// Native Manta Parachain executor instance.
+pub struct MantaRuntimeExecutor;
+impl sc_executor::NativeExecutionDispatch for MantaRuntimeExecutor {
+    type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+    fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+        manta_runtime::api::dispatch(method, data)
+    }
+
+    fn native_version() -> sc_executor::NativeVersion {
+        manta_runtime::native_version()
+    }
+}
+
+/// Native Calamari Parachain executor instance.
+pub struct CalamariRuntimeExecutor;
+impl sc_executor::NativeExecutionDispatch for CalamariRuntimeExecutor {
+    type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+    fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+        calamari_runtime::api::dispatch(method, data)
+    }
+
+    fn native_version() -> sc_executor::NativeVersion {
+        calamari_runtime::native_version()
+    }
+}
 
 /// We use wasm executor only now.
 pub type DefaultExecutorType = WasmExecutor<HostFunctions>;
