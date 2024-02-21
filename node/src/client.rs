@@ -30,6 +30,7 @@ pub trait RuntimeApiCommon:
     + sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
     + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
     + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+    + cumulus_primitives_core::CollectCollationInfo<Block>
 {
 }
 
@@ -48,6 +49,7 @@ impl<Api> RuntimeApiCommon for Api where
         + sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+        + cumulus_primitives_core::CollectCollationInfo<Block>
 {
 }
 

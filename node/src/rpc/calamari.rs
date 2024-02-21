@@ -38,7 +38,9 @@ use zenlink_protocol_rpc::{ZenlinkProtocol, ZenlinkProtocolApiServer};
 use zenlink_protocol_runtime_api::ZenlinkProtocolApi as ZenlinkProtocolRuntimeApi;
 
 /// Instantiate all RPC extensions for calamari.
-pub fn create_calamari_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, sc_service::Error>
+pub fn create_calamari_full<C, P>(
+    deps: FullDeps<C, P>,
+) -> Result<RpcExtension, SubstrateServiceError>
 where
     C: ProvideRuntimeApi<Block>
         + HeaderBackend<Block>

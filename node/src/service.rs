@@ -18,10 +18,12 @@
 
 use crate::{
     client::{RuntimeApiCommon, RuntimeApiNimbus},
-    fake_runtime_api, rpc,
+    rpc,
 };
 use cumulus_client_cli::CollatorOptions;
-use cumulus_client_consensus_common::ParachainConsensus;
+use cumulus_client_consensus_common::{
+    ParachainBlockImport as TParachainBlockImport, ParachainConsensus,
+};
 use cumulus_client_service::{
     build_network, build_relay_chain_interface, prepare_node_config, start_relay_chain_tasks,
     CollatorSybilResistance, DARecoveryProfile, StartCollatorParams, StartFullNodeParams,
@@ -61,22 +63,30 @@ type HostFunctions = (
 pub type DefaultExecutorType = WasmExecutor<HostFunctions>;
 
 /// Full Client Implementation Type
-pub type FullClient = TFullClient<Block, fake_runtime_api::RuntimeApi, DefaultExecutorType>;
+pub type FullClient<RuntimeApi> = TFullClient<Block, RuntimeApi, DefaultExecutorType>;
 
 /// Default Import Queue Type
 pub type DefaultImportQueue = sc_consensus::DefaultImportQueue<Block>;
 
 /// Full Transaction Pool Type
-pub type TransactionPool = sc_transaction_pool::FullPool<Block, FullClient>;
+pub type TransactionPool<RuntimeApi> = sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi>>;
+
+/// Block Import type
+pub type ParachainBlockImport<RuntimeApi> =
+    TParachainBlockImport<Block, Arc<FullClient<RuntimeApi>>, TFullBackend<Block>>;
 
 /// Components Needed for Chain Ops Subcommands
-pub type PartialComponents = sc_service::PartialComponents<
-    FullClient,
+pub type PartialComponents<RuntimeApi> = sc_service::PartialComponents<
+    FullClient<RuntimeApi>,
     TFullBackend<Block>,
     (),
     DefaultImportQueue,
-    TransactionPool,
-    (Option<Telemetry>, Option<TelemetryWorkerHandle>),
+    TransactionPool<RuntimeApi>,
+    (
+        ParachainBlockImport<RuntimeApi>,
+        Option<Telemetry>,
+        Option<TelemetryWorkerHandle>,
+    ),
 >;
 
 /// State Backend Type
@@ -86,7 +96,13 @@ pub type StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Bloc
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
-pub fn new_partial(config: &Configuration) -> Result<PartialComponents, Error> {
+pub fn new_partial<RuntimeApi>(
+    config: &Configuration,
+) -> Result<PartialComponents<RuntimeApi>, Error>
+where
+    RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi::RuntimeApi: RuntimeApiCommon + sp_consensus_aura::AuraApi<Block, AuraId>,
+{
     let telemetry = config
         .telemetry_endpoints
         .clone()
@@ -113,7 +129,7 @@ pub fn new_partial(config: &Configuration) -> Result<PartialComponents, Error> {
         .build();
 
     let (client, backend, keystore_container, task_manager) =
-        sc_service::new_full_parts::<Block, fake_runtime_api::RuntimeApi, _>(
+        sc_service::new_full_parts::<Block, RuntimeApi, _>(
             config,
             telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
             executor,
@@ -134,10 +150,12 @@ pub fn new_partial(config: &Configuration) -> Result<PartialComponents, Error> {
         client.clone(),
     );
 
+    let block_import = ParachainBlockImport::new(client.clone(), backend.clone());
+
     let import_queue = crate::aura_or_nimbus_consensus::import_queue(
         // single step block import pipeline, after nimbus/aura seal, import block into client
         client.clone(),
-        client.clone(),
+        block_import.clone(),
         backend.clone(),
         &task_manager.spawn_essential_handle(),
         config.prometheus_registry(),
@@ -152,24 +170,34 @@ pub fn new_partial(config: &Configuration) -> Result<PartialComponents, Error> {
         task_manager,
         transaction_pool,
         select_chain: (),
-        other: (telemetry, telemetry_worker_handle),
+        other: (block_import, telemetry, telemetry_worker_handle),
     })
 }
 
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
-pub async fn start_parachain_node(
+#[sc_tracing::logging::prefix_logs_with("Parachain")]
+pub async fn start_parachain_node<RuntimeApi, RB>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
-    hw_bench: Option<HwBench>,
-) -> sc_service::error::Result<(TaskManager, Arc<FullClient>)> {
+    rpc_ext_builder: RB,
+) -> sc_service::error::Result<(TaskManager, Arc<FullClient<RuntimeApi>>)>
+where
+    RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi::RuntimeApi:
+        RuntimeApiCommon + RuntimeApiNimbus + sp_consensus_aura::AuraApi<Block, AuraId>,
+    RB: Fn(
+            rpc::FullDeps<FullClient<RuntimeApi>, TransactionPool<RuntimeApi>>,
+        ) -> Result<jsonrpsee::RpcModule<()>, sc_service::Error>
+        + 'static,
+{
     let parachain_config = prepare_node_config(parachain_config);
 
-    let params = new_partial(&parachain_config)?;
-    let (mut telemetry, telemetry_worker_handle) = params.other;
+    let params = new_partial::<RuntimeApi>(&parachain_config)?;
+    let (_block_import, mut telemetry, telemetry_worker_handle) = params.other;
 
     let mut task_manager = params.task_manager;
     let (relay_chain_interface, collator_key) = crate::builder::build_relay_chain_interface(
@@ -178,7 +206,6 @@ pub async fn start_parachain_node(
         telemetry_worker_handle,
         &mut task_manager,
         collator_options.clone(),
-        hw_bench,
     )
     .await
     .map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
@@ -219,7 +246,7 @@ pub async fn start_parachain_node(
                 command_sink: None,
             };
 
-            rpc::create_calamari_full::<FullClient, TransactionPool>(deps)
+            rpc_ext_builder(deps)
         })
     };
 

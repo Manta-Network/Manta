@@ -57,7 +57,6 @@ pub async fn build_relay_chain_interface(
     telemetry_worker_handle: Option<TelemetryWorkerHandle>,
     task_manager: &mut TaskManager,
     collator_options: CollatorOptions,
-    hwbench: Option<sc_sysinfo::HwBench>,
 ) -> RelayChainResult<(
     Arc<(dyn RelayChainInterface + 'static)>,
     Option<CollatorPair>,
@@ -70,25 +69,30 @@ pub async fn build_relay_chain_interface(
             parachain_config,
             telemetry_worker_handle,
             task_manager,
-            hwbench,
+            None,
         )
     }
 }
 
 /// build parachain nimbus consensus
-pub fn build_nimbus_consensus(
+pub fn build_nimbus_consensus<RuntimeApi>(
     id: ParaId,
-    client: Arc<FullClient>,
+    client: Arc<FullClient<RuntimeApi>>,
     backend: Arc<sc_client_db::Backend<Block>>,
     prometheus_registry: Option<&Registry>,
     telemetry: Option<TelemetryHandle>,
     task_manager: &TaskManager,
     relay_chain_interface: Arc<dyn RelayChainInterface>,
-    transaction_pool: Arc<TransactionPool>,
+    transaction_pool: Arc<TransactionPool<RuntimeApi>>,
     _sync_oracle: Arc<NetworkService<Block, Hash>>,
     keystore: KeystorePtr,
     force_authoring: bool,
-) -> Result<Box<dyn ParachainConsensus<Block>>, Error> {
+) -> Result<Box<dyn ParachainConsensus<Block>>, Error>
+where
+    RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi::RuntimeApi:
+        RuntimeApiCommon + RuntimeApiNimbus + sp_consensus_aura::AuraApi<Block, AuraId>,
+{
     let spawn_handle = task_manager.spawn_handle();
     let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
         spawn_handle,
@@ -138,13 +142,18 @@ pub fn build_nimbus_consensus(
 }
 
 /// build standalone mode dev consensus using manual instant seal
-pub fn build_dev_nimbus_consensus(
-    client: Arc<FullClient>,
-    transaction_pool: Arc<TransactionPool>,
+pub fn build_dev_nimbus_consensus<RuntimeApi>(
+    client: Arc<FullClient<RuntimeApi>>,
+    transaction_pool: Arc<TransactionPool<RuntimeApi>>,
     keystore_container: &KeystoreContainer,
     select_chain: LongestChain<TFullBackend<Block>, Block>,
     task_manager: &TaskManager,
-) -> Result<impl Future<Output = ()> + Send + 'static, Error> {
+) -> Result<impl Future<Output = ()> + Send + 'static, Error>
+where
+    RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi::RuntimeApi:
+        RuntimeApiCommon + RuntimeApiNimbus + sp_consensus_aura::AuraApi<Block, AuraId>,
+{
     use futures::{Stream, StreamExt};
     use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
 
