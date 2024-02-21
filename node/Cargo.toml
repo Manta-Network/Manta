@@ -27,6 +27,7 @@ serde = { workspace = true }
 frame-benchmarking = { workspace = true, features = ["std"] }
 frame-benchmarking-cli = { workspace = true }
 frame-support = { workspace = true }
+frame-try-runtime = { workspace = true, optional = true }
 try-runtime-cli = { workspace = true, optional = true }
 
 # RPC related dependencies
@@ -148,4 +149,5 @@ try-runtime = [
   'calamari-runtime/try-runtime',
   'manta-runtime/try-runtime',
   'try-runtime-cli/try-runtime',
+  'frame-try-runtime/try-runtime',
 ]

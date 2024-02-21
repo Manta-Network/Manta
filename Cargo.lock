@@ -6114,6 +6114,7 @@ dependencies = [
  "frame-benchmarking-cli",
  "frame-support",
  "frame-system-rpc-runtime-api",
+ "frame-try-runtime",
  "futures 0.3.29",
  "hex-literal",
  "jsonrpsee",

@@ -47,8 +47,6 @@ use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
 
-//const LOG_TARGET_SYNC: &str = "sync::cumulus";
-
 #[cfg(not(feature = "runtime-benchmarks"))]
 type HostFunctions = sp_io::SubstrateHostFunctions;
 
