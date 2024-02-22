@@ -17,7 +17,7 @@
 use super::{
     assets_config::MantaAssetConfig, AssetManager, Assets, Balance, Balances, MessageQueue,
     ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeBlockWeights, RuntimeCall,
-    RuntimeEvent, RuntimeOrigin, Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
+    RuntimeEvent, RuntimeOrigin, Treasury, XcmpQueue,
 };
 
 use codec::{Decode, Encode};
@@ -59,8 +59,8 @@ use xcm_builder::{
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
 parameter_types! {
-    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+    pub ReservedDmpWeight: Weight = RuntimeBlockWeights::get().max_block.saturating_div(4);
+    pub ReservedXcmpWeight: Weight = RuntimeBlockWeights::get().max_block.saturating_div(4);
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
@@ -73,7 +73,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type ReservedXcmpWeight = ReservedXcmpWeight;
     type OnSystemEvent = ();
     type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
-    type WeightInfo = ();
+    type WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight<Runtime>;
 }
 parameter_types! {
     pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
@@ -301,7 +301,7 @@ parameter_types! {
 impl cumulus_pallet_dmp_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type DmpSink = EnqueueWithOrigin<MessageQueue, RelayOrigin>;
-    type WeightInfo = ();
+    type WeightInfo = cumulus_pallet_dmp_queue::weights::SubstrateWeight<Self>;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {

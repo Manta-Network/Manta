@@ -20,7 +20,7 @@
 use crate::{
     client::{RuntimeApiCommon, RuntimeApiNimbus},
     instant_finalize::InstantFinalizeBlockImport,
-    service::{FullClient, StateBackend, TransactionPool},
+    service::{FullClient, TransactionPool},
 };
 use std::future::Future;
 

@@ -31,11 +31,7 @@ use sc_cli::{
     NetworkParams, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
-use sp_runtime::{
-    generic,
-    traits::{AccountIdConversion, Block as BlockT},
-    OpaqueExtrinsic,
-};
+use sp_runtime::{generic, traits::AccountIdConversion, OpaqueExtrinsic};
 use std::net::SocketAddr;
 
 use calamari_runtime::RuntimeApi as CalamariRuntimeApi;
@@ -435,23 +431,25 @@ pub fn run_with(cli: Cli) -> Result {
                 );
 
                 if config.chain_spec.is_manta() {
-                    crate::service::start_parachain_node::<MantaRuntimeApi, _>(
+                    crate::service::start_parachain_node::<MantaRuntimeApi, _, _>(
                         config,
                         polkadot_config,
                         collator_options,
                         id,
                         create_manta_full,
+                        crate::builder::build_nimbus_consensus::<MantaRuntimeApi>,
                     )
                     .await
                     .map(|r| r.0)
                     .map_err(Into::into)
                 } else if config.chain_spec.is_calamari() {
-                    crate::service::start_parachain_node::<CalamariRuntimeApi, _>(
+                    crate::service::start_parachain_node::<CalamariRuntimeApi, _, _>(
                         config,
                         polkadot_config,
                         collator_options,
                         id,
                         create_calamari_full,
+                        crate::builder::build_nimbus_consensus::<CalamariRuntimeApi>,
                     )
                     .await
                     .map(|r| r.0)

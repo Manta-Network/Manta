@@ -25,25 +25,21 @@ use cumulus_client_consensus_common::{
     ParachainBlockImport as TParachainBlockImport, ParachainConsensus,
 };
 use cumulus_client_service::{
-    build_network, build_relay_chain_interface, prepare_node_config, start_relay_chain_tasks,
-    CollatorSybilResistance, DARecoveryProfile, StartCollatorParams, StartFullNodeParams,
-    StartRelayChainTasksParams,
+    build_network, prepare_node_config, start_collator, start_relay_chain_tasks,
+    CollatorSybilResistance, DARecoveryProfile, StartCollatorParams, StartRelayChainTasksParams,
 };
 use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_interface::RelayChainInterface;
 pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Nonce};
 use sc_consensus::ImportQueue;
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
-use sc_network::{config::SyncMode, NetworkBlock, NetworkService};
+use sc_network::{NetworkBlock, NetworkService};
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
-use sc_service::{
-    Configuration, Error, SpawnTaskHandle, TFullBackend, TFullClient, TaskManager, WarpSyncParams,
-};
+use sc_service::{Configuration, Error, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use session_key_primitives::AuraId;
 use sp_api::ConstructRuntimeApi;
 use sp_keystore::KeystorePtr;
-use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
 
@@ -203,12 +199,13 @@ where
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
-pub async fn start_parachain_node<RuntimeApi, RB>(
+pub async fn start_parachain_node<RuntimeApi, RB, BIC>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
     rpc_ext_builder: RB,
+    build_consensus: BIC,
 ) -> sc_service::error::Result<(TaskManager, Arc<FullClient<RuntimeApi>>)>
 where
     RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
@@ -218,6 +215,19 @@ where
             rpc::FullDeps<FullClient<RuntimeApi>, TransactionPool<RuntimeApi>>,
         ) -> Result<jsonrpsee::RpcModule<()>, sc_service::Error>
         + 'static,
+    BIC: FnOnce(
+        ParaId,
+        Arc<FullClient<RuntimeApi>>,
+        Arc<sc_client_db::Backend<Block>>,
+        Option<&Registry>,
+        Option<TelemetryHandle>,
+        &TaskManager,
+        Arc<dyn RelayChainInterface>,
+        Arc<TransactionPool<RuntimeApi>>,
+        Arc<NetworkService<Block, Hash>>,
+        KeystorePtr,
+        bool,
+    ) -> Result<Box<dyn ParachainConsensus<Block>>, Error>,
 {
     let parachain_config = prepare_node_config(parachain_config);
 
@@ -302,7 +312,7 @@ where
 
     let relay_chain_slot_duration = core::time::Duration::from_secs(6);
     if collator {
-        /*let parachain_consensus = build_consensus(
+        let parachain_consensus = build_consensus(
             id,
             client.clone(),
             backend,
@@ -314,20 +324,24 @@ where
             network,
             params.keystore_container.keystore(),
             force_authoring,
-        )?;*/
+        )?;
         let spawner = task_manager.spawn_handle();
-        start_relay_chain_tasks(StartRelayChainTasksParams {
+        start_collator(StartCollatorParams {
             para_id: id,
+            block_status: client.clone(),
             announce_block,
             client: client.clone(),
             task_manager: &mut task_manager,
-            da_recovery_profile: DARecoveryProfile::Collator,
             relay_chain_interface,
+            spawner,
+            parachain_consensus,
             import_queue,
+            collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
             relay_chain_slot_duration,
             recovery_handle: Box::new(overseer_handle),
             sync_service,
-        })?;
+        })
+        .await?;
     } else {
         start_relay_chain_tasks(StartRelayChainTasksParams {
             para_id: id,

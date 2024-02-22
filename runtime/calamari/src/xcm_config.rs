@@ -18,7 +18,6 @@ use super::{
     assets_config::CalamariAssetConfig, AssetManager, Assets, Balances,
     EnsureRootOrMoreThanHalfCouncil, MessageQueue, ParachainInfo, ParachainSystem, PolkadotXcm,
     Runtime, RuntimeBlockWeights, RuntimeCall, RuntimeEvent, RuntimeOrigin, Treasury, XcmpQueue,
-    MAXIMUM_BLOCK_WEIGHT,
 };
 use codec::{Decode, Encode};
 use core::marker::PhantomData;
@@ -63,8 +62,8 @@ use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 pub use sp_runtime::BuildStorage;
 
 parameter_types! {
-    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+    pub ReservedDmpWeight: Weight = RuntimeBlockWeights::get().max_block.saturating_div(4);
+    pub ReservedXcmpWeight: Weight = RuntimeBlockWeights::get().max_block.saturating_div(4);
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
@@ -77,7 +76,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type ReservedXcmpWeight = ReservedXcmpWeight;
     type OnSystemEvent = ();
     type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
-    type WeightInfo = ();
+    type WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight<Runtime>;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -353,7 +352,7 @@ parameter_types! {
 impl cumulus_pallet_dmp_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type DmpSink = EnqueueWithOrigin<MessageQueue, RelayOrigin>;
-    type WeightInfo = ();
+    type WeightInfo = cumulus_pallet_dmp_queue::weights::SubstrateWeight<Self>;
 }
 
 /// We wrap AssetId for XToken
