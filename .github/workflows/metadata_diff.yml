@@ -80,6 +80,7 @@ jobs:
         run: |
           curl -L -o $HOME/polkadot https://github.com/paritytech/polkadot-sdk/releases/download/polkadot-v1.8.0/polkadot
           chmod +x $HOME/polkadot
+          $HOME/polkadot --version
           ls -ahl $HOME/
       - name: stop sccache server
         run: sccache --stop-server || true

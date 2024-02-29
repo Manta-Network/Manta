@@ -134,6 +134,7 @@ jobs:
             chmod +x $HOME/.local/bin/polkadot
           fi
           ls -ahl $HOME/.local/bin/
+          $HOME/.local/bin/polkadot --version
       - name: Install dasel cli
         shell: bash
         run: |
