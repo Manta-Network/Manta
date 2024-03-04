@@ -248,7 +248,7 @@ impl Config for XcmExecutorConfig {
     type CallDispatcher = RuntimeCall;
     type SafeCallFilter = Everything;
     type FeeManager = ();
-    type Aliasers = ();
+    type Aliasers = Nothing;
 }
 
 /// Converts a Signed Local Origin into a MultiLocation
@@ -327,7 +327,7 @@ parameter_types! {
 
 impl pallet_message_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = ();
+    type WeightInfo = pallet_message_queue::weights::SubstrateWeight<Self>;
     #[cfg(feature = "runtime-benchmarks")]
     type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
         cumulus_primitives_core::AggregateMessageOrigin,
