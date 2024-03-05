@@ -129,10 +129,8 @@ jobs:
         shell: bash
         run: |
           apt update && apt install -y curl jq wget git
-          if [[ ! -f "$HOME/.local/bin/polkadot" ]]; then
-            curl -L -o $HOME/.local/bin/polkadot ${{ env.POLKADOT_BINARY }}
-            chmod +x $HOME/.local/bin/polkadot
-          fi
+          curl -L -o $HOME/.local/bin/polkadot ${{ env.POLKADOT_BINARY }}
+          chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       - name: Install dasel cli
         shell: bash
