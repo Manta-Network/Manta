@@ -35,11 +35,7 @@ use sp_runtime::{
     ApplyExtrinsicResult, Perbill, Percent, Permill,
 };
 
-use sp_std::{cmp::Ordering, prelude::*};
-#[cfg(feature = "std")]
-use sp_version::NativeVersion;
-use sp_version::RuntimeVersion;
-
+use codec::{Decode, Encode, MaxEncodedLen};
 use cumulus_pallet_parachain_system::{
     register_validate_block, CheckInherents, ParachainSetCode, RelayChainStateProof,
     RelaychainDataProvider,
@@ -49,12 +45,16 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        ConstU128, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, NeverEnsureOrigin,
-        PrivilegeCmp,
+        ConstU128, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, InstanceFilter,
+        NeverEnsureOrigin, PrivilegeCmp,
     },
     weights::{ConstantMultiplier, Weight},
-    PalletId,
+    PalletId, RuntimeDebug,
 };
+use sp_std::{cmp::Ordering, prelude::*};
+#[cfg(feature = "std")]
+use sp_version::NativeVersion;
+use sp_version::RuntimeVersion;
 
 use frame_system::{
     limits::{BlockLength, BlockWeights},
@@ -317,6 +317,82 @@ impl frame_system::Config for Runtime {
     type SS58Prefix = SS58Prefix;
     type OnSetCode = ParachainSetCode<Self>;
     type MaxConsumers = ConstU32<16>;
+}
+
+parameter_types! {
+    // One storage item; key size 32, value size 8; .
+    pub const ProxyDepositBase: Balance = deposit(1, 8);
+    // Additional storage item size of 33 bytes.
+    pub const ProxyDepositFactor: Balance = deposit(0, 33);
+    pub const AnnouncementDepositBase: Balance = deposit(1, 8);
+    pub const AnnouncementDepositFactor: Balance = deposit(0, 66);
+}
+
+/// The type used to represent the kinds of proxying allowed.
+#[derive(
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Encode,
+    Decode,
+    RuntimeDebug,
+    MaxEncodedLen,
+    scale_info::TypeInfo,
+)]
+pub enum ProxyType {
+    Any,
+    NonTransfer,
+    Governance,
+    Staking,
+}
+
+impl Default for ProxyType {
+    fn default() -> Self {
+        Self::Any
+    }
+}
+
+impl InstanceFilter<RuntimeCall> for ProxyType {
+    fn filter(&self, c: &RuntimeCall) -> bool {
+        match self {
+            ProxyType::Any => true,
+            ProxyType::NonTransfer => !matches!(c, RuntimeCall::Balances(..)),
+            ProxyType::Governance => matches!(
+                c,
+                RuntimeCall::Democracy(..)
+                    | RuntimeCall::Council(..)
+                    | RuntimeCall::TechnicalCommittee(..)
+            ),
+            ProxyType::Staking => matches!(c, RuntimeCall::ParachainStaking(..)),
+        }
+    }
+    fn is_superset(&self, o: &Self) -> bool {
+        match (self, o) {
+            (x, y) if x == y => true,
+            (ProxyType::Any, _) => true,
+            (_, ProxyType::Any) => false,
+            (ProxyType::NonTransfer, _) => true,
+            _ => false,
+        }
+    }
+}
+
+impl pallet_proxy::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type Currency = Balances;
+    type ProxyType = ProxyType;
+    type ProxyDepositBase = ProxyDepositBase;
+    type ProxyDepositFactor = ProxyDepositFactor;
+    type MaxProxies = ConstU32<32>;
+    type WeightInfo = ();
+    type MaxPending = ConstU32<32>;
+    type CallHasher = BlakeTwo256;
+    type AnnouncementDepositBase = AnnouncementDepositBase;
+    type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
 parameter_types! {
@@ -978,6 +1054,7 @@ construct_runtime!(
         Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
         // Temporary
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
+        Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 43,
 
         // Assets management
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
@@ -1052,6 +1129,7 @@ mod benches {
         [pallet_timestamp, Timestamp]
         [pallet_utility, Utility]
         [pallet_preimage, Preimage]
+        [pallet_proxy, Proxy]
         [pallet_treasury, Treasury]
         [pallet_assets, Assets]
         [pallet_asset_manager, AssetManager]
