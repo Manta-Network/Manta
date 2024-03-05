@@ -230,7 +230,7 @@ jobs:
         shell: bash
         run: |
           cd $GITHUB_WORKSPACE/zombienet-tool
-          git pull && git checkout v1.3.93
+          git pull && git checkout v1.3.92
           cd $GITHUB_WORKSPACE/zombienet-tool/javascript
           yarn
           npm run build
