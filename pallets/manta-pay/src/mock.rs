@@ -15,6 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use frame_support::{
+    derive_impl,
     pallet_prelude::DispatchResult,
     parameter_types,
     traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, IsInVec},
@@ -27,12 +28,12 @@ use manta_primitives::{
         AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, MANTA_PAY_PALLET_ID},
-    types::{Balance, BlockNumber, Header},
+    types::{Balance, BlockNumber},
 };
 use sp_core::H256;
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
-    AccountId32,
+    AccountId32, BuildStorage,
 };
 use xcm::{
     prelude::{Parachain, X1},
@@ -42,21 +43,17 @@ use xcm::{
 
 use crate::StandardAssetId;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub enum Test
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        MantaPay: crate::{Pallet, Call, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Assets: pallet_assets::{Pallet, Storage, Event<T>},
-        AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>},
-        TransactionPause: pallet_tx_pause::{Pallet, Storage, Call, Event<T>},
+        System: frame_system,
+        MantaPay: crate,
+        Balances: pallet_balances,
+        Assets: pallet_assets,
+        AssetManager: pallet_asset_manager,
+        TransactionPause: pallet_tx_pause,
     }
 );
 
@@ -65,6 +62,7 @@ parameter_types! {
     pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
     type BaseCallFilter = frame_support::traits::Everything;
     type BlockWeights = ();
@@ -72,13 +70,12 @@ impl frame_system::Config for Test {
     type DbWeight = ();
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
+    type Block = Block;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId32;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
@@ -108,7 +105,8 @@ impl pallet_balances::Config for Test {
     type WeightInfo = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = ();
     type MaxFreezes = ConstU32<1>;
     type MaxHolds = ConstU32<1>;
@@ -290,8 +288,8 @@ impl pallet_tx_pause::Config for Test {
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    let t = frame_system::GenesisConfig::default()
-        .build_storage::<Test>()
+    let t = frame_system::GenesisConfig::<Test>::default()
+        .build_storage()
         .unwrap();
 
     t.into()

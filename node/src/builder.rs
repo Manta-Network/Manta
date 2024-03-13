@@ -20,11 +20,11 @@
 use crate::{
     client::{RuntimeApiCommon, RuntimeApiNimbus},
     instant_finalize::InstantFinalizeBlockImport,
-    service::{Client, StateBackend, TransactionPool},
+    service::{FullClient, TransactionPool},
 };
 use std::future::Future;
 
-pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
+pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Nonce};
 use polkadot_service::CollatorPair;
 use session_key_primitives::AuraId;
 use std::sync::Arc;
@@ -38,15 +38,13 @@ use sp_blockchain::HeaderBackend;
 use sp_keystore::KeystorePtr;
 use substrate_prometheus_endpoint::Registry;
 
-use cumulus_client_cli::CollatorOptions;
+use cumulus_client_cli::{CollatorOptions, RelayChainMode};
 use cumulus_client_consensus_common::ParachainConsensus;
+use cumulus_client_parachain_inherent::{MockValidationDataInherentDataProvider, MockXcmConfig};
 use cumulus_primitives_core::ParaId;
-use cumulus_primitives_parachain_inherent::{
-    MockValidationDataInherentDataProvider, MockXcmConfig,
-};
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
+use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node_with_rpc;
 
 use nimbus_consensus::{
     BuildNimbusConsensusParams, NimbusConsensus, NimbusManualSealConsensusDataProvider,
@@ -59,25 +57,19 @@ pub async fn build_relay_chain_interface(
     telemetry_worker_handle: Option<TelemetryWorkerHandle>,
     task_manager: &mut TaskManager,
     collator_options: CollatorOptions,
-    hwbench: Option<sc_sysinfo::HwBench>,
 ) -> RelayChainResult<(
     Arc<(dyn RelayChainInterface + 'static)>,
     Option<CollatorPair>,
 )> {
-    if !collator_options.relay_chain_rpc_urls.is_empty() {
-        build_minimal_relay_chain_node(
-            polkadot_config,
-            task_manager,
-            collator_options.relay_chain_rpc_urls,
-        )
-        .await
+    if let RelayChainMode::ExternalRpc(rpc) = collator_options.relay_chain_mode {
+        build_minimal_relay_chain_node_with_rpc(polkadot_config, task_manager, rpc).await
     } else {
         build_inprocess_relay_chain(
             polkadot_config,
             parachain_config,
             telemetry_worker_handle,
             task_manager,
-            hwbench,
+            None,
         )
     }
 }
@@ -85,7 +77,7 @@ pub async fn build_relay_chain_interface(
 /// build parachain nimbus consensus
 pub fn build_nimbus_consensus<RuntimeApi>(
     id: ParaId,
-    client: Arc<Client<RuntimeApi>>,
+    client: Arc<FullClient<RuntimeApi>>,
     backend: Arc<sc_client_db::Backend<Block>>,
     prometheus_registry: Option<&Registry>,
     telemetry: Option<TelemetryHandle>,
@@ -97,10 +89,9 @@ pub fn build_nimbus_consensus<RuntimeApi>(
     force_authoring: bool,
 ) -> Result<Box<dyn ParachainConsensus<Block>>, Error>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend>
-        + RuntimeApiNimbus
-        + sp_consensus_aura::AuraApi<Block, AuraId>,
+    RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi::RuntimeApi:
+        RuntimeApiCommon + RuntimeApiNimbus + sp_consensus_aura::AuraApi<Block, AuraId>,
 {
     let spawn_handle = task_manager.spawn_handle();
     let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
@@ -116,7 +107,7 @@ where
         let relay_chain_interface = relay_chain_interface.clone();
         async move {
             let parachain_inherent =
-                cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+                cumulus_client_parachain_inherent::ParachainInherentDataProvider::create_at(
                     relay_parent,
                     &relay_chain_interface,
                     &validation_data,
@@ -152,15 +143,16 @@ where
 
 /// build standalone mode dev consensus using manual instant seal
 pub fn build_dev_nimbus_consensus<RuntimeApi>(
-    client: Arc<Client<RuntimeApi>>,
+    client: Arc<FullClient<RuntimeApi>>,
     transaction_pool: Arc<TransactionPool<RuntimeApi>>,
     keystore_container: &KeystoreContainer,
     select_chain: LongestChain<TFullBackend<Block>, Block>,
     task_manager: &TaskManager,
 ) -> Result<impl Future<Output = ()> + Send + 'static, Error>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend> + RuntimeApiNimbus,
+    RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi::RuntimeApi:
+        RuntimeApiCommon + RuntimeApiNimbus + sp_consensus_aura::AuraApi<Block, AuraId>,
 {
     use futures::{Stream, StreamExt};
     use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
@@ -227,6 +219,7 @@ where
                     ),
                     raw_downward_messages: vec![],
                     raw_horizontal_messages: vec![],
+                    additional_key_values: None,
                 };
 
                 Ok((time, mocked_parachain))

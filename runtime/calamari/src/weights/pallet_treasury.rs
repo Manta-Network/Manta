@@ -51,6 +51,10 @@ pub trait WeightInfo {
 	fn approve_proposal(p: u32, ) -> Weight;
 	fn remove_approval() -> Weight;
 	fn on_initialize_proposals(p: u32, ) -> Weight;
+	fn spend_local() -> Weight;
+	fn payout() -> Weight;
+	fn check_status() -> Weight;
+	fn void_spend() -> Weight;
 }
 
 /// Weights for pallet_treasury using the Substrate node and recommended hardware.
@@ -141,6 +145,50 @@ impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T>
 			.saturating_add(T::DbWeight::get().writes((3_u64).saturating_mul(p.into())))
 			.saturating_add(Weight::from_parts(0, 5206).saturating_mul(p.into()))
 	}
+	/// Storage: Treasury Approvals (r:1 w:1)
+	/// Proof: Treasury Approvals (max_values: Some(1), max_size: Some(402), added: 897, mode: MaxEncodedLen)
+	fn spend_local() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `165`
+		//  Estimated: `1887`
+		// Minimum execution time: 7_926_000 picoseconds.
+		Weight::from_parts(8_195_000, 1887)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: Treasury Approvals (r:1 w:1)
+	/// Proof: Treasury Approvals (max_values: Some(1), max_size: Some(402), added: 897, mode: MaxEncodedLen)
+	fn payout() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `165`
+		//  Estimated: `1887`
+		// Minimum execution time: 7_926_000 picoseconds.
+		Weight::from_parts(8_195_000, 1887)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: Treasury Approvals (r:1 w:1)
+	/// Proof: Treasury Approvals (max_values: Some(1), max_size: Some(402), added: 897, mode: MaxEncodedLen)
+	fn check_status() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `165`
+		//  Estimated: `1887`
+		// Minimum execution time: 7_926_000 picoseconds.
+		Weight::from_parts(8_195_000, 1887)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: Treasury Approvals (r:1 w:1)
+	/// Proof: Treasury Approvals (max_values: Some(1), max_size: Some(402), added: 897, mode: MaxEncodedLen)
+	fn void_spend() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `165`
+		//  Estimated: `1887`
+		// Minimum execution time: 7_926_000 picoseconds.
+		Weight::from_parts(8_195_000, 1887)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
 
 // For backwards compatibility and tests
@@ -229,5 +277,49 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
 			.saturating_add(RocksDbWeight::get().writes((3_u64).saturating_mul(p.into())))
 			.saturating_add(Weight::from_parts(0, 5206).saturating_mul(p.into()))
+	}
+	/// Storage: Treasury Approvals (r:1 w:1)
+	/// Proof: Treasury Approvals (max_values: Some(1), max_size: Some(402), added: 897, mode: MaxEncodedLen)
+	fn spend_local() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `165`
+		//  Estimated: `1887`
+		// Minimum execution time: 7_926_000 picoseconds.
+		Weight::from_parts(8_195_000, 1887)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: Treasury Approvals (r:1 w:1)
+	/// Proof: Treasury Approvals (max_values: Some(1), max_size: Some(402), added: 897, mode: MaxEncodedLen)
+	fn payout() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `165`
+		//  Estimated: `1887`
+		// Minimum execution time: 7_926_000 picoseconds.
+		Weight::from_parts(8_195_000, 1887)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: Treasury Approvals (r:1 w:1)
+	/// Proof: Treasury Approvals (max_values: Some(1), max_size: Some(402), added: 897, mode: MaxEncodedLen)
+	fn check_status() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `165`
+		//  Estimated: `1887`
+		// Minimum execution time: 7_926_000 picoseconds.
+		Weight::from_parts(8_195_000, 1887)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: Treasury Approvals (r:1 w:1)
+	/// Proof: Treasury Approvals (max_values: Some(1), max_size: Some(402), added: 897, mode: MaxEncodedLen)
+	fn void_spend() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `165`
+		//  Estimated: `1887`
+		// Minimum execution time: 7_926_000 picoseconds.
+		Weight::from_parts(8_195_000, 1887)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

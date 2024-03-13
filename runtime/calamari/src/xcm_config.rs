@@ -15,16 +15,19 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    assets_config::CalamariAssetConfig, AssetManager, Assets, Balances, DmpQueue,
-    EnsureRootOrMoreThanHalfCouncil, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime,
-    RuntimeCall, RuntimeEvent, RuntimeOrigin, Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
+    assets_config::CalamariAssetConfig, AssetManager, Assets, Balances,
+    EnsureRootOrMoreThanHalfCouncil, MessageQueue, ParachainInfo, ParachainSystem, PolkadotXcm,
+    Runtime, RuntimeBlockWeights, RuntimeCall, RuntimeEvent, RuntimeOrigin, Treasury, XcmpQueue,
 };
 use codec::{Decode, Encode};
 use core::marker::PhantomData;
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use frame_support::{
     match_types, parameter_types,
-    traits::{ConstU32, Contains, Currency, Everything, Nothing},
+    traits::{
+        ConstU32, Contains, Currency, EnqueueWithOrigin, Everything, Nothing, TransformOrigin,
+    },
     weights::Weight,
 };
 use frame_system::EnsureRoot;
@@ -39,9 +42,11 @@ use manta_primitives::{
 };
 use orml_traits::location::AbsoluteReserveProvider;
 use pallet_xcm::XcmPassthrough;
-use polkadot_parachain::primitives::Sibling;
+use parachains_common::message_queue::{NarrowOriginToSibling, ParaIdToSibling};
+use polkadot_parachain_primitives::primitives::Sibling;
+use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 use scale_info::TypeInfo;
-use sp_runtime::traits::Convert;
+use sp_runtime::{traits::Convert, Perbill};
 use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{
@@ -57,20 +62,21 @@ use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 pub use sp_runtime::BuildStorage;
 
 parameter_types! {
-    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+    pub ReservedDmpWeight: Weight = RuntimeBlockWeights::get().max_block.saturating_div(4);
+    pub ReservedXcmpWeight: Weight = RuntimeBlockWeights::get().max_block.saturating_div(4);
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type SelfParaId = parachain_info::Pallet<Runtime>;
-    type DmpMessageHandler = DmpQueue;
+    type DmpQueue = EnqueueWithOrigin<MessageQueue, RelayOrigin>;
     type ReservedDmpWeight = ReservedDmpWeight;
     type OutboundXcmpMessageSource = XcmpQueue;
     type XcmpMessageHandler = XcmpQueue;
     type ReservedXcmpWeight = ReservedXcmpWeight;
     type OnSystemEvent = ();
     type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+    type WeightInfo = cumulus_pallet_parachain_system::weights::SubstrateWeight<Runtime>;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -249,6 +255,7 @@ impl Config for XcmExecutorConfig {
     type CallDispatcher = RuntimeCall;
     type SafeCallFilter = Everything;
     type FeeManager = ();
+    type Aliasers = Nothing;
 }
 
 /// Converts a Signed Local Origin into a MultiLocation
@@ -262,11 +269,6 @@ pub type XcmRouter = (
     // ..and XCMP to communicate with the sibling chains.
     XcmpQueue,
 );
-
-#[cfg(feature = "runtime-benchmarks")]
-parameter_types! {
-    pub ReachableDest: Option<MultiLocation> = Some(Parent.into());
-}
 
 impl pallet_xcm::Config for Runtime {
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
@@ -297,8 +299,6 @@ impl pallet_xcm::Config for Runtime {
     type MaxRemoteLockConsumers = ConstU32<0>;
     type MaxLockers = ConstU32<8>;
     type RemoteLockConsumerIdentifier = ();
-    #[cfg(feature = "runtime-benchmarks")]
-    type ReachableDest = ReachableDest;
     type WeightInfo = crate::weights::pallet_xcm::SubstrateWeight<Runtime>;
 }
 
@@ -309,20 +309,50 @@ impl cumulus_pallet_xcm::Config for Runtime {
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type ChannelInfo = ParachainSystem;
     type VersionWrapper = PolkadotXcm;
-    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
     type ControllerOrigin = EnsureRootOrMoreThanHalfCouncil;
     type ControllerOriginConverter = XcmOriginToCallOrigin;
     type WeightInfo = crate::weights::cumulus_pallet_xcmp_queue::SubstrateWeight<Runtime>;
-    type PriceForSiblingDelivery = ();
+    type PriceForSiblingDelivery = NoPriceForMessageDelivery<ParaId>;
+    type XcmpQueue = TransformOrigin<MessageQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling>;
+    type MaxInboundSuspended = ConstU32<1_000>;
+}
+
+parameter_types! {
+    pub MessageQueueServiceWeight: Weight = Perbill::from_percent(35) * RuntimeBlockWeights::get().max_block;
+}
+
+impl pallet_message_queue::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type WeightInfo = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type MessageProcessor = pallet_message_queue::mock_helpers::NoopMessageProcessor<
+        cumulus_primitives_core::AggregateMessageOrigin,
+    >;
+    #[cfg(not(feature = "runtime-benchmarks"))]
+    type MessageProcessor = xcm_builder::ProcessXcmMessage<
+        AggregateMessageOrigin,
+        xcm_executor::XcmExecutor<XcmExecutorConfig>,
+        RuntimeCall,
+    >;
+    type Size = u32;
+    // The XCMP queue pallet is only ever able to handle the `Sibling(ParaId)` origin:
+    type QueueChangeHandler = NarrowOriginToSibling<XcmpQueue>;
+    type QueuePausedQuery = NarrowOriginToSibling<XcmpQueue>;
+    type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
+    type MaxStale = sp_core::ConstU32<8>;
+    type ServiceWeight = MessageQueueServiceWeight;
+}
+
+parameter_types! {
+    pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
-    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+    type DmpSink = EnqueueWithOrigin<MessageQueue, RelayOrigin>;
+    type WeightInfo = cumulus_pallet_dmp_queue::weights::SubstrateWeight<Self>;
 }
 
 /// We wrap AssetId for XToken
@@ -338,14 +368,11 @@ pub struct CurrencyIdtoMultiLocation<AssetXConverter>(PhantomData<AssetXConverte
 impl<AssetXConverter> sp_runtime::traits::Convert<CurrencyId, Option<MultiLocation>>
     for CurrencyIdtoMultiLocation<AssetXConverter>
 where
-    AssetXConverter: xcm_executor::traits::Convert<MultiLocation, CalamariAssetId>,
+    AssetXConverter: sp_runtime::traits::MaybeEquivalence<MultiLocation, CalamariAssetId>,
 {
     fn convert(currency: CurrencyId) -> Option<MultiLocation> {
         match currency {
-            CurrencyId::MantaCurrency(asset_id) => match AssetXConverter::reverse_ref(asset_id) {
-                Ok(location) => Some(location),
-                Err(_) => None,
-            },
+            CurrencyId::MantaCurrency(asset_id) => AssetXConverter::convert_back(&asset_id),
         }
     }
 }

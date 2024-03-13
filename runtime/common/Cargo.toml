@@ -39,7 +39,7 @@ sp-std = { workspace = true, features = ["std"] }
 # Polkadot dependencies
 pallet-xcm = { workspace = true, features = ["std"] }
 polkadot-core-primitives = { workspace = true, features = ["std"] }
-polkadot-parachain = { workspace = true, features = ["std"] }
+polkadot-parachain-primitives = { workspace = true, features = ["std"] }
 polkadot-runtime-parachains = { workspace = true, features = ["std"] }
 xcm = { workspace = true, features = ["std"] }
 xcm-builder = { workspace = true, features = ["std"] }

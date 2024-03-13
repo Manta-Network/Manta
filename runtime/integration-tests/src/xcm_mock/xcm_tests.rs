@@ -21,7 +21,9 @@
 use crate::xcm_mock::parachain::XcmFeesAccount;
 use codec::Encode;
 use frame_support::{
-    assert_err, assert_noop, assert_ok, traits::tokens::fungibles::Mutate, weights::Weight,
+    assert_err, assert_noop, assert_ok,
+    traits::{tokens::fungibles::Mutate, Currency, ExistenceRequirement},
+    weights::Weight,
 };
 use parachain::{RuntimeEvent, System};
 
@@ -32,7 +34,7 @@ use runtime_common::test_helpers::{
     to_reserve_xcm_message_sender_side, ADVERTISED_DEST_WEIGHT,
 };
 use xcm::{latest::prelude::*, VersionedMultiLocation, WrapVersion};
-use xcm_executor::traits::{Convert, WeightBounds};
+use xcm_executor::traits::{ConvertLocation, WeightBounds};
 use xcm_simulator::TestExt;
 
 use super::{
@@ -197,7 +199,7 @@ fn xcmp_transact_from_sibling_tests() {
         id: ALICE.into(),
     });
     let alice_derived_account_on_b =
-        xcm_builder::Account32Hash::<RelayNetwork, AccountId>::convert_ref(MultiLocation {
+        xcm_builder::Account32Hash::<RelayNetwork, AccountId>::convert_location(&MultiLocation {
             parents: 1,
             interior: X2(
                 Parachain(PARA_A_ID),
@@ -266,13 +268,13 @@ fn xcmp_transact_from_sibling_tests() {
 
     ParaB::execute_with(|| {
         use parachain::{RuntimeEvent, System};
+
         assert!(System::events().iter().any(|r| matches!(
             r.event,
-            RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail {
-                message_hash: _,
-                error: XcmError::Barrier,
-                weight: _
-            })
+            RuntimeEvent::MsgQueue(crate::xcm_mock::parachain::mock_msg_queue::Event::Fail(
+                _,
+                XcmError::Barrier,
+            ))
         )));
     });
 }
@@ -659,13 +661,13 @@ fn send_para_a_native_asset_to_para_b_barriers_should_work() {
     // should not let the transfer through
     ParaB::execute_with(|| {
         use parachain::{RuntimeEvent, System};
+
         assert!(System::events().iter().any(|r| matches!(
             r.event,
-            RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail {
-                message_hash: Some(_),
-                error: xcm_simulator::XcmError::Barrier,
-                weight: _
-            })
+            RuntimeEvent::MsgQueue(crate::xcm_mock::parachain::mock_msg_queue::Event::Fail(
+                _,
+                XcmError::Barrier,
+            ))
         )));
     });
 
@@ -887,16 +889,13 @@ fn send_para_a_native_asset_to_para_b_must_fail_cases() {
     ParaB::execute_with(|| {
         use parachain::{RuntimeEvent, System};
 
-        assert!(System::events().iter().any(|r| {
-            matches!(
-                r.event,
-                RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail {
-                    message_hash: Some(_),
-                    error: xcm_simulator::XcmError::TooExpensive,
-                    weight: _
-                })
-            )
-        }));
+        assert!(System::events().iter().any(|r| matches!(
+            r.event,
+            RuntimeEvent::MsgQueue(crate::xcm_mock::parachain::mock_msg_queue::Event::Fail(
+                _,
+                XcmError::TooExpensive,
+            ))
+        )));
     });
 
     // Make sure B didn't receive the token
@@ -1465,8 +1464,8 @@ fn send_para_b_asset_to_para_b_with_trader_and_fee() {
         ),
     };
 
-    let para_a_account =
-        polkadot_parachain::primitives::Sibling::from(PARA_A_ID).into_account_truncating();
+    let para_a_account = polkadot_parachain_primitives::primitives::Sibling::from(PARA_A_ID)
+        .into_account_truncating();
 
     ParaB::execute_with(|| {
         use frame_support::traits::Currency;
@@ -2082,9 +2081,10 @@ fn receive_insufficient_relay_asset_on_parachain() {
     // Send native token to fresh_account
     ParaA::execute_with(|| {
         assert_ok!(parachain::Balances::transfer(
-            parachain::RuntimeOrigin::signed(ALICE),
-            new_account.into(),
-            fresh_account_amount
+            &ALICE,
+            &new_account.into(),
+            fresh_account_amount,
+            ExistenceRequirement::AllowDeath,
         ));
     });
 
@@ -2345,30 +2345,19 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
     });
 
     let expected_supported_version: relay_chain::RuntimeEvent =
-        pallet_xcm::Event::SupportedVersionChanged(
-            MultiLocation {
+        pallet_xcm::Event::SupportedVersionChanged {
+            location: MultiLocation {
                 parents: 0,
                 interior: X1(Parachain(PARA_A_ID)),
             },
-            1,
-        )
+            version: 1,
+        }
         .into();
 
     Relay::execute_with(|| {
         // Assert that the events vector contains the version change
         assert!(relay_chain::relay_events().contains(&expected_supported_version));
     });
-
-    let expected_version_notified: parachain::RuntimeEvent =
-        pallet_xcm::Event::VersionChangeNotified(
-            MultiLocation {
-                parents: 1,
-                interior: Here,
-            },
-            2,
-            MultiAssets::default(),
-        )
-        .into();
 
     // ParaA changes version to 2, and calls on_runtime_upgrade. This should notify the targets
     // of the new version change
@@ -2379,19 +2368,28 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
         parachain::on_runtime_upgrade();
         // Initialize block, to call on_initialize and notify targets
         parachain::para_roll_to(2);
-        // Expect the event in the parachain
-        assert!(parachain::para_events().contains(&expected_version_notified));
+        assert!(parachain::para_events().iter().any(|r| matches!(
+            r,
+            RuntimeEvent::PolkadotXcm(pallet_xcm::Event::VersionNotifyStarted {
+                destination: MultiLocation {
+                    parents: 1,
+                    interior: Here,
+                },
+                cost: _,
+                message_id: _,
+            })
+        )));
     });
 
     // This event should have been seen in the relay
     let expected_supported_version_2: relay_chain::RuntimeEvent =
-        pallet_xcm::Event::SupportedVersionChanged(
-            MultiLocation {
+        pallet_xcm::Event::SupportedVersionChanged {
+            location: MultiLocation {
                 parents: 0,
                 interior: X1(Parachain(PARA_A_ID)),
             },
-            2,
-        )
+            version: 1,
+        }
         .into();
 
     Relay::execute_with(|| {
@@ -2475,13 +2473,13 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
     });
 
     let expected_supported_version: parachain::RuntimeEvent =
-        pallet_xcm::Event::SupportedVersionChanged(
-            MultiLocation {
+        pallet_xcm::Event::SupportedVersionChanged {
+            location: MultiLocation {
                 parents: 1,
                 interior: X1(Parachain(PARA_B_ID)),
             },
-            0,
-        )
+            version: 0,
+        }
         .into();
 
     ParaA::execute_with(|| {
@@ -2522,17 +2520,6 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
         assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), 100);
     });
 
-    let expected_version_notified: parachain::RuntimeEvent =
-        pallet_xcm::Event::VersionChangeNotified(
-            MultiLocation {
-                parents: 1,
-                interior: X1(Parachain(PARA_A_ID)),
-            },
-            2,
-            MultiAssets::default(),
-        )
-        .into();
-
     // ParaB changes version to 2, and calls on_runtime_upgrade. This should notify the targets
     // of the new version change
     ParaB::execute_with(|| {
@@ -2542,19 +2529,28 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
         parachain::on_runtime_upgrade();
         // Initialize block, to call on_initialize and notify targets
         parachain::para_roll_to(2);
-        // Expect the event in the parachain
-        assert!(parachain::para_events().contains(&expected_version_notified));
+        assert!(parachain::para_events().iter().any(|r| matches!(
+            r,
+            RuntimeEvent::PolkadotXcm(pallet_xcm::Event::VersionNotifyStarted {
+                destination: MultiLocation {
+                    parents: 1,
+                    interior: X1(Parachain(PARA_A_ID)),
+                },
+                cost: _,
+                message_id: _,
+            })
+        )));
     });
 
     // This event should have been seen in para A
     let expected_supported_version_2: parachain::RuntimeEvent =
-        pallet_xcm::Event::SupportedVersionChanged(
-            MultiLocation {
+        pallet_xcm::Event::SupportedVersionChanged {
+            location: MultiLocation {
                 parents: 1,
                 interior: X1(Parachain(PARA_B_ID)),
             },
-            2,
-        )
+            version: 0,
+        }
         .into();
 
     // Para A should have received the version change
@@ -3107,8 +3103,8 @@ fn transfer_multicurrencies_should_work_scenarios() {
 
         // Parachain A sovereign account on Parachain B should receive: 0
         // because transfer_multicurrencies uses Teleport in this case
-        let para_a_sovereign_on_para_b = parachain::LocationToAccountId::convert_ref(
-            MultiLocation::new(1, X1(Parachain(para_a_id))),
+        let para_a_sovereign_on_para_b = parachain::LocationToAccountId::convert_location(
+            &MultiLocation::new(1, X1(Parachain(para_a_id))),
         )
         .unwrap();
         assert_eq!(
@@ -3456,8 +3452,8 @@ fn transfer_multicurrencies_should_fail_scenarios() {
     ParaB::execute_with(|| {
         // Parachain A sovereign account on Parachain B should receive: 0
         // because transfer_multicurrencies uses Teleport in this case
-        let para_a_sovereign_on_para_b = parachain::LocationToAccountId::convert_ref(
-            MultiLocation::new(1, X1(Parachain(para_a_id))),
+        let para_a_sovereign_on_para_b = parachain::LocationToAccountId::convert_location(
+            &MultiLocation::new(1, X1(Parachain(para_a_id))),
         )
         .unwrap();
         assert_eq!(

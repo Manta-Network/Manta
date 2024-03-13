@@ -48,6 +48,7 @@ pub trait WeightInfo {
 	fn set_key() -> Weight;
 	fn sudo() -> Weight;
 	fn sudo_as() -> Weight;
+	fn remove_key() -> Weight;
 }
 
 /// Weights for pallet_sudo using the Substrate node and recommended hardware.
@@ -84,6 +85,17 @@ impl<T: frame_system::Config> pallet_sudo::WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(15_376_000, 1517)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 	}
+	/// Storage: Sudo Key (r:1 w:1)
+	/// Proof: Sudo Key (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
+	fn remove_key() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `98`
+		//  Estimated: `1517`
+		// Minimum execution time: 13_882_000 picoseconds.
+		Weight::from_parts(14_149_000, 1517)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
 
 // For backwards compatibility and tests
@@ -118,5 +130,16 @@ impl WeightInfo for () {
 		// Minimum execution time: 14_801_000 picoseconds.
 		Weight::from_parts(15_376_000, 1517)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
+	}
+	/// Storage: Sudo Key (r:1 w:1)
+	/// Proof: Sudo Key (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
+	fn remove_key() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `98`
+		//  Estimated: `1517`
+		// Minimum execution time: 13_882_000 picoseconds.
+		Weight::from_parts(14_149_000, 1517)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

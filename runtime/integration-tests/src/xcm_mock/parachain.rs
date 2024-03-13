@@ -20,11 +20,15 @@
 
 use codec::{Decode, Encode};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+use cumulus_primitives_core::AggregateMessageOrigin;
 use frame_support::{
     assert_ok, construct_runtime, match_types,
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, Everything, Nothing},
+    traits::{
+        AsEnsureOriginWithArg, ConstU128, ConstU32, Contains, Currency, EnqueueWithOrigin,
+        Everything, Nothing,
+    },
     weights::Weight,
     PalletId,
 };
@@ -37,15 +41,14 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-#[cfg(feature = "runtime-benchmarks")]
-use super::ReachableDest;
+use cumulus_primitives_core::ParaId;
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdLocationConvert, AssetIdType, AssetLocation, AssetRegistry,
         AssetRegistryMetadata, AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL, WEIGHT_PER_SECOND},
-    types::{BlockNumber, CalamariAssetId, Header},
+    types::{BlockNumber, CalamariAssetId},
     xcm::{
         AccountIdToMultiLocation, AllowTopLevelPaidExecutionDescendOriginFirst,
         AllowTopLevelPaidExecutionFrom, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,
@@ -54,9 +57,10 @@ use manta_primitives::{
 };
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
-use polkadot_parachain::primitives::{
-    DmpMessageHandler, Id as ParaId, Sibling, XcmpMessageFormat, XcmpMessageHandler,
+use polkadot_parachain_primitives::primitives::{
+    DmpMessageHandler, Sibling, XcmpMessageFormat, XcmpMessageHandler,
 };
+use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, VersionedXcm};
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -94,13 +98,13 @@ parameter_types! {
 impl frame_system::Config for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
+    type Block = Block;
+    type RuntimeTask = RuntimeTask;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type BlockWeights = ();
@@ -136,7 +140,8 @@ impl pallet_balances::Config for Runtime {
     type ReserveIdentifier = [u8; 8];
     type FreezeIdentifier = ();
     type MaxFreezes = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type MaxHolds = ConstU32<50>;
 }
 
@@ -343,18 +348,23 @@ impl Config for XcmExecutorConfig {
     type CallDispatcher = RuntimeCall;
     type SafeCallFilter = Everything;
     type FeeManager = ();
+    type Aliasers = ();
+}
+
+parameter_types! {
+    pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
 }
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type ChannelInfo = ParachainSystem;
     type VersionWrapper = PolkadotXcm;
-    type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
     type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToCallOrigin;
     type WeightInfo = ();
-    type PriceForSiblingDelivery = ();
+    type PriceForSiblingDelivery = NoPriceForMessageDelivery<ParaId>;
+    type MaxInboundSuspended = ConstU32<1_000>;
+    type XcmpQueue = ();
 }
 
 #[frame_support::pallet]
@@ -510,13 +520,14 @@ impl mock_msg_queue::Config for Runtime {
 impl cumulus_pallet_parachain_system::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type SelfParaId = parachain_info::Pallet<Runtime>;
-    type DmpMessageHandler = MsgQueue;
+    type DmpQueue = EnqueueWithOrigin<(), RelayOrigin>;
     type ReservedDmpWeight = ReservedDmpWeight;
     type OutboundXcmpMessageSource = XcmpQueue;
     type XcmpMessageHandler = XcmpQueue;
     type ReservedXcmpWeight = ReservedXcmpWeight;
     type OnSystemEvent = ();
     type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+    type WeightInfo = ();
 }
 
 pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, RelayNetwork>;
@@ -546,8 +557,6 @@ impl pallet_xcm::Config for Runtime {
     type MaxLockers = ConstU32<8>;
     type RemoteLockConsumerIdentifier = ();
     type WeightInfo = PalletXcmWeightInfo;
-    #[cfg(feature = "runtime-benchmarks")]
-    type ReachableDest = ReachableDest;
 }
 
 parameter_types! {
@@ -680,14 +689,11 @@ pub struct CurrencyIdtoMultiLocation<AssetXConverter>(sp_std::marker::PhantomDat
 impl<AssetXConverter> sp_runtime::traits::Convert<CurrencyId, Option<MultiLocation>>
     for CurrencyIdtoMultiLocation<AssetXConverter>
 where
-    AssetXConverter: xcm_executor::traits::Convert<MultiLocation, CalamariAssetId>,
+    AssetXConverter: sp_runtime::traits::MaybeEquivalence<MultiLocation, CalamariAssetId>,
 {
     fn convert(currency: CurrencyId) -> Option<MultiLocation> {
         match currency {
-            CurrencyId::MantaCurrency(asset_id) => match AssetXConverter::reverse_ref(asset_id) {
-                Ok(location) => Some(location),
-                Err(_) => None,
-            },
+            CurrencyId::MantaCurrency(asset_id) => AssetXConverter::convert_back(&asset_id),
         }
     }
 }
@@ -726,18 +732,14 @@ impl orml_xtokens::Config for Runtime {
 
 impl parachain_info::Config for Runtime {}
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
 pub const PALLET_ASSET_INDEX: u8 = 1;
 
 construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub enum Runtime
     {
-        System: frame_system::{Pallet, Call, Storage, Config, Event<T>} = 0,
+        System: frame_system::{Pallet, Call, Storage, Config<T>, Event<T>} = 0,
         Assets: pallet_assets::{Pallet, Storage, Event<T>} = 1,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>} = 2,
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 3,
@@ -745,9 +747,9 @@ construct_runtime!(
         PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin} = 5,
         XTokens: orml_xtokens::{Pallet, Call, Event<T>, Storage} = 6,
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 7,
-        ParachainInfo: parachain_info::{Pallet, Storage, Config} = 8,
+        ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 8,
         XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 9,
-        ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned} = 10,
+        ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned} = 10,
     }
 );
 
@@ -764,7 +766,7 @@ pub(crate) fn on_runtime_upgrade() {
     PolkadotXcm::on_runtime_upgrade();
 }
 
-pub(crate) fn para_roll_to(n: u32) {
+pub(crate) fn para_roll_to(n: u64) {
     while System::block_number() < n {
         PolkadotXcm::on_finalize(System::block_number());
         Balances::on_finalize(System::block_number());

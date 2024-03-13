@@ -17,11 +17,8 @@
 //! Mock for MantaSbt
 
 use frame_support::{
-    parameter_types,
-    traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU16, ConstU32, ConstU64, Everything, GenesisBuild,
-        IsInVec,
-    },
+    derive_impl, parameter_types,
+    traits::{AsEnsureOriginWithArg, ConstU128, ConstU16, ConstU32, ConstU64, Everything, IsInVec},
     weights::RuntimeDbWeight,
     PalletId,
 };
@@ -33,12 +30,12 @@ use manta_primitives::{
         AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, MANTA_PAY_PALLET_ID, MANTA_SBT_PALLET_ID},
-    types::{Balance, BlockNumber, Header},
+    types::{Balance, BlockNumber},
 };
 use sp_core::H256;
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
-    AccountId32, DispatchResult, MultiSignature, MultiSigner,
+    AccountId32, BuildStorage, DispatchResult, MultiSignature, MultiSigner,
 };
 use xcm::{
     prelude::{Parachain, X1},
@@ -50,23 +47,19 @@ use crate::StandardAssetId;
 
 pub const ALICE: AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub enum Test
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        MantaSBTPallet: crate::{Pallet, Call, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Assets: pallet_assets::{Pallet, Storage, Event<T>},
-        AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>},
-        TransactionPause: pallet_tx_pause::{Pallet, Storage, Call, Event<T>},
-        MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>},
+        System: frame_system,
+        Timestamp: pallet_timestamp,
+        MantaSBTPallet: crate,
+        Balances: pallet_balances,
+        Assets: pallet_assets,
+        AssetManager: pallet_asset_manager,
+        TransactionPause: pallet_tx_pause,
+        MantaPay: pallet_manta_pay,
     }
 );
 
@@ -79,6 +72,7 @@ parameter_types! {
     };
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type BlockWeights = ();
@@ -86,13 +80,12 @@ impl frame_system::Config for Test {
     type DbWeight = MockRocksDbWeight;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
+    type Block = Block;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId32;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
@@ -122,7 +115,8 @@ impl pallet_balances::Config for Test {
     type WeightInfo = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = ();
     type MaxFreezes = ConstU32<1>;
     type MaxHolds = ConstU32<1>;
@@ -326,8 +320,8 @@ impl pallet_timestamp::Config for Test {
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    let mut t = frame_system::GenesisConfig::default()
-        .build_storage::<Test>()
+    let mut t = frame_system::GenesisConfig::<Test>::default()
+        .build_storage()
         .unwrap();
 
     pallet_asset_manager::GenesisConfig::<Test>::default()

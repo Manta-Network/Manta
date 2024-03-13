@@ -42,6 +42,7 @@ use manta_support::manta_pay::{
     TransferPost as PalletTransferPost,
 };
 
+use base64::engine::{general_purpose::STANDARD as BASE64, Engine as _};
 use manta_crypto::accumulator::Accumulator;
 use manta_pay::config::{Asset, Authorization, FullParametersRef, Receiver, ToPrivate, ToPublic};
 use manta_primitives::{
@@ -773,12 +774,12 @@ fn pull_ledger_diff_should_work() {
         let dense_pull_response: manta_support::manta_pay::DensePullResponse =
             runtime_pull_response.clone().into();
 
-        let dense_receivers = base64::decode(dense_pull_response.receivers).unwrap();
+        let dense_receivers = BASE64.decode(dense_pull_response.receivers).unwrap();
         let mut slice_of = dense_receivers.as_slice();
         let decoded_receivers = <crate::ReceiverChunk as Decode>::decode(&mut slice_of).unwrap();
         assert_eq!(runtime_pull_response.receivers, decoded_receivers);
 
-        let dense_senders = base64::decode(dense_pull_response.senders).unwrap();
+        let dense_senders = BASE64.decode(dense_pull_response.senders).unwrap();
         let mut slice_of = dense_senders.as_slice();
         let decoded_senders = <crate::SenderChunk as Decode>::decode(&mut slice_of).unwrap();
         assert_eq!(runtime_pull_response.senders, decoded_senders);

@@ -20,10 +20,12 @@ use super::*;
 use crate::command::CALAMARI_PARACHAIN_ID;
 #[allow(unused_imports)]
 use calamari_runtime::{
-    currency::KMA, opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig,
-    LotteryConfig, ParachainStakingConfig, TechnicalCommitteeConfig,
+    currency::KMA, opaque::SessionKeys, CouncilConfig, DemocracyConfig, LotteryConfig,
+    ParachainStakingConfig, Runtime, RuntimeGenesisConfig, TechnicalCommitteeConfig, WASM_BINARY,
 };
+use core::marker::PhantomData;
 use session_key_primitives::util::unchecked_account_id;
+
 /// Calamari Protocol Identifier
 pub const CALAMARI_PROTOCOL_ID: &str = "calamari";
 
@@ -37,7 +39,7 @@ pub const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
 pub const CALAMARI_SAFE_XCM_VERSION: u32 = 3;
 
 /// Calamari Chain Spec
-pub type CalamariChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
+pub type CalamariChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig, Extensions>;
 
 /// Returns the [`Properties`] for the Calamari parachain.
 pub fn calamari_properties() -> Properties {
@@ -82,6 +84,7 @@ pub fn calamari_development_config() -> CalamariChainSpec {
             relay_chain: KUSAMA_RELAYCHAIN_DEV_NET.into(),
             para_id: CALAMARI_PARACHAIN_ID,
         },
+        &WASM_BINARY.expect("WASM binary was not build, please build it!"),
     )
 }
 
@@ -153,6 +156,7 @@ pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
             relay_chain: KUSAMA_RELAYCHAIN_LOCAL_NET.into(),
             para_id: CALAMARI_PARACHAIN_ID,
         },
+        WASM_BINARY.expect("WASM binary was not build, please build it!"),
     )
 }
 
@@ -160,12 +164,10 @@ fn calamari_dev_genesis(
     invulnerables: Vec<(AccountId, SessionKeys)>,
     delegations: Vec<(AccountId, AccountId, Balance)>,
     endowed_accounts: Vec<AccountId>,
-) -> GenesisConfig {
-    GenesisConfig {
+) -> RuntimeGenesisConfig {
+    RuntimeGenesisConfig {
         system: calamari_runtime::SystemConfig {
-            code: calamari_runtime::WASM_BINARY
-                .expect("WASM binary was not build, please build it!")
-                .to_vec(),
+            _config: PhantomData::<Runtime>,
         },
         balances: calamari_runtime::BalancesConfig {
             balances: endowed_accounts[..endowed_accounts.len() / 2]
@@ -199,6 +201,7 @@ fn calamari_dev_genesis(
         },
         parachain_info: calamari_runtime::ParachainInfoConfig {
             parachain_id: CALAMARI_PARACHAIN_ID.into(),
+            _config: PhantomData::<Runtime>,
         },
         collator_selection: calamari_runtime::CollatorSelectionConfig {
             invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
@@ -233,6 +236,7 @@ fn calamari_dev_genesis(
         parachain_system: Default::default(),
         polkadot_xcm: calamari_runtime::PolkadotXcmConfig {
             safe_xcm_version: Some(CALAMARI_SAFE_XCM_VERSION),
+            _config: PhantomData::<Runtime>,
         },
         lottery: LotteryConfig {
             min_deposit: 5_000 * KMA,

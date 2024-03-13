@@ -61,6 +61,9 @@ pub trait WeightInfo {
 	fn notify_target_migration_fail() -> Weight;
 	fn migrate_version_notify_targets() -> Weight;
 	fn migrate_and_notify_old_targets() -> Weight;
+	fn transfer_assets() -> Weight;
+	fn new_query() -> Weight;
+	fn take_response() -> Weight;
 }
 
 /// Weights for pallet_xcm using the Substrate node and recommended hardware.
@@ -285,6 +288,69 @@ impl<T: frame_system::Config> pallet_xcm::WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(9_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
+	/// Storage: PolkadotXcm VersionNotifyTargets (r:2 w:1)
+	/// Proof Skipped: PolkadotXcm VersionNotifyTargets (max_values: None, max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	/// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	/// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	/// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	/// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
+	/// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	fn transfer_assets() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `278`
+		//  Estimated: `6218`
+		// Minimum execution time: 33_577_000 picoseconds.
+		Weight::from_parts(34_417_000, 6218)
+			.saturating_add(T::DbWeight::get().reads(7_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
+	}
+	/// Storage: PolkadotXcm VersionNotifyTargets (r:2 w:1)
+	/// Proof Skipped: PolkadotXcm VersionNotifyTargets (max_values: None, max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	/// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	/// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	/// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	/// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
+	/// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	fn new_query() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `278`
+		//  Estimated: `6218`
+		// Minimum execution time: 33_577_000 picoseconds.
+		Weight::from_parts(34_417_000, 6218)
+			.saturating_add(T::DbWeight::get().reads(7_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
+	}
+	/// Storage: PolkadotXcm VersionNotifyTargets (r:2 w:1)
+	/// Proof Skipped: PolkadotXcm VersionNotifyTargets (max_values: None, max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	/// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	/// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	/// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	/// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
+	/// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	fn take_response() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `278`
+		//  Estimated: `6218`
+		// Minimum execution time: 33_577_000 picoseconds.
+		Weight::from_parts(34_417_000, 6218)
+			.saturating_add(T::DbWeight::get().reads(7_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
+	}
 }
 
 // For backwards compatibility and tests
@@ -507,5 +573,68 @@ impl WeightInfo for () {
 		Weight::from_parts(41_242_000, 11172)
 			.saturating_add(RocksDbWeight::get().reads(9_u64))
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
+	}
+	/// Storage: PolkadotXcm VersionNotifyTargets (r:2 w:1)
+	/// Proof Skipped: PolkadotXcm VersionNotifyTargets (max_values: None, max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	/// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	/// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	/// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	/// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
+	/// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	fn transfer_assets() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `278`
+		//  Estimated: `6218`
+		// Minimum execution time: 33_577_000 picoseconds.
+		Weight::from_parts(34_417_000, 6218)
+			.saturating_add(RocksDbWeight::get().reads(7_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
+	}
+	/// Storage: PolkadotXcm VersionNotifyTargets (r:2 w:1)
+	/// Proof Skipped: PolkadotXcm VersionNotifyTargets (max_values: None, max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	/// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	/// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	/// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	/// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
+	/// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	fn new_query() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `278`
+		//  Estimated: `6218`
+		// Minimum execution time: 33_577_000 picoseconds.
+		Weight::from_parts(34_417_000, 6218)
+			.saturating_add(RocksDbWeight::get().reads(7_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
+	}
+	/// Storage: PolkadotXcm VersionNotifyTargets (r:2 w:1)
+	/// Proof Skipped: PolkadotXcm VersionNotifyTargets (max_values: None, max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
+	/// Proof Skipped: PolkadotXcm SupportedVersion (max_values: None, max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
+	/// Proof Skipped: PolkadotXcm VersionDiscoveryQueue (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: PolkadotXcm SafeXcmVersion (r:1 w:0)
+	/// Proof Skipped: PolkadotXcm SafeXcmVersion (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainSystem HostConfiguration (r:1 w:0)
+	/// Proof Skipped: ParachainSystem HostConfiguration (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
+	/// Proof Skipped: ParachainSystem PendingUpwardMessages (max_values: Some(1), max_size: None, mode: Measured)
+	fn take_response() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `278`
+		//  Estimated: `6218`
+		// Minimum execution time: 33_577_000 picoseconds.
+		Weight::from_parts(34_417_000, 6218)
+			.saturating_add(RocksDbWeight::get().reads(7_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 }

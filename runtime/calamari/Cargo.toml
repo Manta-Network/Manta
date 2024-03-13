@@ -35,6 +35,7 @@ sp-version = { workspace = true }
 # Substrate frames
 frame-benchmarking = { workspace = true, optional = true }
 frame-executive = { workspace = true }
+frame-metadata = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 frame-system-benchmarking = { workspace = true, optional = true }
@@ -49,6 +50,7 @@ pallet-balances = { workspace = true }
 pallet-collective = { workspace = true }
 pallet-democracy = { workspace = true }
 pallet-membership = { workspace = true }
+pallet-message-queue = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-preimage = { workspace = true }
 pallet-scheduler = { workspace = true }
@@ -83,8 +85,10 @@ pallet-author-inherent = { workspace = true }
 # Polkadot dependencies
 pallet-xcm = { workspace = true }
 pallet-xcm-benchmarks = { workspace = true, optional = true }
-polkadot-parachain = { workspace = true }
+parachains-common = { workspace = true }
+polkadot-parachain-primitives = { workspace = true }
 polkadot-primitives = { workspace = true }
+polkadot-runtime-common = { workspace = true }
 xcm = { workspace = true }
 xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
@@ -184,6 +188,7 @@ runtime-benchmarks = [
   "pallet-conviction-voting/runtime-benchmarks",
   "pallet-referenda/runtime-benchmarks",
   "pallet-ranked-collective/runtime-benchmarks",
+  'parachains-common/runtime-benchmarks',
 ]
 try-runtime = [
   'frame-try-runtime/try-runtime',
@@ -253,12 +258,14 @@ std = [
   'sp-inherents/std',
   'frame-support/std',
   'frame-executive/std',
+  'frame-metadata/std',
   'frame-system/std',
   'frame-system-rpc-runtime-api/std',
   'frame-try-runtime/std',
   'frame-benchmarking/std',
   'pallet-authorship/std',
   'pallet-balances/std',
+  'pallet-message-queue/std',
   'pallet-multisig/std',
   'pallet-parachain-staking/std',
   'substrate-fixed/std',
@@ -287,12 +294,14 @@ std = [
   'pallet-aura-style-filter/std',
   'session-key-primitives/std',
   'scale-info/std',
-  'polkadot-parachain/std',
+  'polkadot-parachain-primitives/std',
   'log/std',
   'xcm/std',
   'xcm-builder/std',
   'xcm-executor/std',
   'polkadot-primitives/std',
+  'polkadot-runtime-common/std',
+  'parachains-common/std',
   'manta-collator-selection/std',
   'calamari-vesting/std',
   'pallet-tx-pause/std',

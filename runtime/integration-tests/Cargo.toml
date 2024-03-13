@@ -14,6 +14,7 @@ manta-runtime = { workspace = true, optional = true, features = ["std"] }
 
 [dev-dependencies]
 codec = { workspace = true }
+frame-metadata = { workspace = true, features = ["std"] }
 frame-support = { workspace = true, features = ["std"] }
 frame-system = { workspace = true, features = ["std"] }
 lazy_static = { workspace = true }
@@ -38,8 +39,10 @@ xcm = { workspace = true }
 xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
 
+parachains-common = { workspace = true, features = ["std"] }
 polkadot-core-primitives = { workspace = true, features = ["std"] }
-polkadot-parachain = { workspace = true, features = ["std"] }
+polkadot-parachain-primitives = { workspace = true, features = ["std"] }
+polkadot-runtime-common = { workspace = true, features = ["std"] }
 polkadot-runtime-parachains = { workspace = true, features = ["std"] }
 xcm-simulator = { workspace = true }
 

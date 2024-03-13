@@ -33,6 +33,12 @@ const REMARK_CALL: &<Runtime as frame_system::Config>::RuntimeCall =
 const SETCODE_CALL: &<Runtime as frame_system::Config>::RuntimeCall =
     &mock::RuntimeCall::System(frame_system::Call::set_code { code: vec![] });
 
+const SET_UNITS_CALL: &<Runtime as frame_system::Config>::RuntimeCall =
+    &mock::RuntimeCall::AssetManager(pallet_asset_manager::Call::set_units_per_second {
+        asset_id: 0,
+        units_per_second: 1_000,
+    });
+
 #[test]
 fn pause_transaction_work() {
     ExtBuilder.build().execute_with(|| {
@@ -261,47 +267,44 @@ fn pause_unpause_pallets_work() {
         // Although we can pause System in testcase, but BaseCallFilter still works because System is in front of TransactionPause.
         assert_ok!(TransactionPause::pause_pallets(
             RawOrigin::Root.into(),
-            vec![b"System".to_vec()]
+            vec![b"AssetManager".to_vec()]
         ));
         System::assert_last_event(Event::TransactionPause(crate::Event::PalletPaused(
-            b"System".to_vec(),
+            b"AssetManager".to_vec(),
         )));
         assert_eq!(
-            TransactionPause::paused_transactions((b"System".to_vec(), b"remark".to_vec())),
+            TransactionPause::paused_transactions((
+                b"AssetManager".to_vec(),
+                b"set_units_per_second".to_vec()
+            )),
             Some(())
         );
-        assert_eq!(
-            TransactionPause::paused_transactions((b"System".to_vec(), b"set_code".to_vec())),
-            Some(())
-        );
-        assert!(!<Runtime as frame_system::Config>::BaseCallFilter::contains(REMARK_CALL));
-        assert!(!<Runtime as frame_system::Config>::BaseCallFilter::contains(SETCODE_CALL));
+        assert!(!<Runtime as frame_system::Config>::BaseCallFilter::contains(SET_UNITS_CALL));
 
         // unpause pallets
         assert_noop!(
-            TransactionPause::unpause_pallets(RuntimeOrigin::signed(1), vec![b"System".to_vec()],),
+            TransactionPause::unpause_pallets(
+                RuntimeOrigin::signed(1),
+                vec![b"AssetManager".to_vec()],
+            ),
             BadOrigin
         );
         assert_ok!(TransactionPause::unpause_pallets(
             RawOrigin::Root.into(),
-            vec![b"System".to_vec()],
+            vec![b"AssetManager".to_vec()],
         ));
         System::assert_last_event(Event::TransactionPause(crate::Event::PalletUnpaused(
-            b"System".to_vec(),
+            b"AssetManager".to_vec(),
         )));
         assert_eq!(
-            TransactionPause::paused_transactions((b"System".to_vec(), b"remark".to_vec())),
-            None
-        );
-        assert_eq!(
-            TransactionPause::paused_transactions((b"System".to_vec(), b"set_code".to_vec())),
+            TransactionPause::paused_transactions((
+                b"AssetManager".to_vec(),
+                b"set_units_per_second".to_vec()
+            )),
             None
         );
         assert!(<Runtime as frame_system::Config>::BaseCallFilter::contains(
-            REMARK_CALL
-        ));
-        assert!(<Runtime as frame_system::Config>::BaseCallFilter::contains(
-            SETCODE_CALL
+            SET_UNITS_CALL
         ));
     });
 }
@@ -310,7 +313,7 @@ fn pause_unpause_pallets_work() {
 fn pause_pallets_weight_works() {
     ExtBuilder.build().execute_with(|| {
         let ps: DispatchResultWithPostInfo =
-            TransactionPause::pause_pallets(RawOrigin::Root.into(), vec![b"System".to_vec()]);
+            TransactionPause::pause_pallets(RawOrigin::Root.into(), vec![b"AssetManager".to_vec()]);
         let size: u32 = PausedTransactions::<Runtime>::iter().map(|_x| 1).sum();
 
         let max_call_len: u32 =
@@ -323,8 +326,10 @@ fn pause_pallets_weight_works() {
         assert_eq!(actual_weight, weight_per_tx.saturating_mul(size as u64));
         assert!(actual_weight.ref_time() < initial_weight.ref_time());
 
-        let ps2: DispatchResultWithPostInfo =
-            TransactionPause::unpause_pallets(RawOrigin::Root.into(), vec![b"System".to_vec()]);
+        let ps2: DispatchResultWithPostInfo = TransactionPause::unpause_pallets(
+            RawOrigin::Root.into(),
+            vec![b"AssetManager".to_vec()],
+        );
         let ps2 = ps2.unwrap();
         let actual_weight2 = ps2.actual_weight.unwrap();
         assert_eq!(actual_weight, actual_weight2);
@@ -367,17 +372,17 @@ fn paused_transaction_filter_work() {
         // pause pallet
         assert_ok!(TransactionPause::pause_pallets(
             RawOrigin::Root.into(),
-            vec![b"System".to_vec()]
+            vec![b"AssetManager".to_vec()]
         ));
-        assert!(PausedTransactionFilter::<Runtime>::contains(REMARK_CALL));
-        assert!(PausedTransactionFilter::<Runtime>::contains(SETCODE_CALL));
+        assert!(PausedTransactionFilter::<Runtime>::contains(SET_UNITS_CALL));
 
         // unpause pallet
         assert_ok!(TransactionPause::unpause_pallets(
             RawOrigin::Root.into(),
-            vec![b"System".to_vec()]
+            vec![b"AssetManager".to_vec()]
         ));
-        assert!(!PausedTransactionFilter::<Runtime>::contains(REMARK_CALL));
-        assert!(!PausedTransactionFilter::<Runtime>::contains(SETCODE_CALL));
+        assert!(!PausedTransactionFilter::<Runtime>::contains(
+            SET_UNITS_CALL
+        ));
     });
 }

@@ -18,13 +18,12 @@
 
 use super::{mock::ExtBuilder, *};
 use frame_support::{
-    dispatch::Dispatchable,
     traits::{PalletInfo, StorageInfo, StorageInfoTrait},
     StorageHasher, Twox128,
 };
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_runtime::{
-    traits::{Header as HeaderT, SignedExtension},
+    traits::{Dispatchable, Header as HeaderT, SignedExtension},
     Percent,
 };
 
@@ -146,7 +145,7 @@ fn verify_pallet_prefixes() {
                 storage_name: b"Holds".to_vec(),
                 prefix: prefix(b"Balances", b"Holds"),
                 max_values: None,
-                max_size: Some(849),
+                max_size: Some(949),
             },
             StorageInfo {
                 pallet_name: b"Balances".to_vec(),
@@ -236,7 +235,7 @@ fn reward_fees_to_block_author_and_treasury() {
             System::initialize(&1, &Default::default(), header.digest());
             assert_eq!(Authorship::author().unwrap(), author);
 
-            let call = RuntimeCall::Balances(pallet_balances::Call::transfer {
+            let call = RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death {
                 dest: sp_runtime::MultiAddress::Id(CHARLIE.clone()),
                 value: 10 * MANTA,
             });

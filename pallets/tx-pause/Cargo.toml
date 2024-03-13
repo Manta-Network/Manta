@@ -18,9 +18,13 @@ sp-std = { workspace = true }
 
 [dev-dependencies]
 manta-primitives = { workspace = true, features = ["std"] }
+manta-support = { workspace = true, features = ["std"] }
+pallet-asset-manager = { workspace = true, features = ["std"] }
+pallet-assets = { workspace = true, features = ["std"] }
 pallet-balances = { workspace = true, features = ["std"] }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
+xcm = { workspace = true, features = ["std"] }
 
 [features]
 default = ["std"]

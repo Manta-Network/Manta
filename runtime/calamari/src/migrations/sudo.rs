@@ -24,8 +24,8 @@ use frame_support::{
     pallet_prelude::Weight,
     traits::{Get, OnRuntimeUpgrade},
 };
+#[cfg(feature = "try-runtime")]
 use sp_runtime::DispatchError;
-use sp_std::vec::Vec;
 
 pub struct RemoveSudo<T>(PhantomData<T>);
 impl<T: frame_system::Config> OnRuntimeUpgrade for RemoveSudo<T> {

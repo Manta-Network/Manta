@@ -21,14 +21,14 @@ use crate::{
     AwardedPts, BalanceOf, Call, CandidateBondLessRequest, Config, DelegationAction, Pallet,
     Points, Range, Round, ScheduledRequest,
 };
-use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, vec};
+use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_support::traits::{
     tokens::{fungible::Inspect, Fortitude, Preservation},
     Currency, Get, OnFinalize, OnInitialize,
 };
-use frame_system::RawOrigin;
+use frame_system::{pallet_prelude::*, RawOrigin};
 use sp_runtime::{Perbill, Percent};
-use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
+use sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
 
 /// Minimum collator candidate stake
 pub fn min_candidate_stk<T: Config>() -> BalanceOf<T> {
@@ -116,7 +116,7 @@ pub fn parachain_staking_on_finalize<T: Config>(author: T::AccountId) {
 /// Run to end block and author
 pub fn roll_to_and_author<T: Config>(round_delay: u32, author: T::AccountId) {
     let total_rounds = round_delay + 1u32;
-    let round_length: T::BlockNumber = Pallet::<T>::round().length.into();
+    let round_length: BlockNumberFor<T> = Pallet::<T>::round().length.into();
     let mut now = <frame_system::Pallet<T>>::block_number() + 1u32.into();
     let end = Pallet::<T>::round().first + (round_length * total_rounds.into());
     while now < end {
@@ -940,7 +940,7 @@ benchmarks! {
         )> = delegators.iter().map(|x| (x.clone(), <T as Config>::Currency::free_balance(&x))).collect();
         // PREPARE RUN_TO_BLOCK LOOP
         let before_running_round_index = Pallet::<T>::round().current;
-        let round_length: T::BlockNumber = Pallet::<T>::round().length.into();
+        let round_length: BlockNumberFor<T> = Pallet::<T>::round().length.into();
         let reward_delay = <<T as Config>::RewardPaymentDelay as Get<u32>>::get() + 2u32;
         let mut now = <frame_system::Pallet<T>>::block_number() + 1u32.into();
         let mut counter = 0usize;
@@ -1097,10 +1097,11 @@ mod tests {
     use crate::{benchmarks::*, mock::Test};
     use frame_support::assert_ok;
     use sp_io::TestExternalities;
+    use sp_runtime::BuildStorage;
 
     pub fn new_test_ext() -> TestExternalities {
-        let t = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
+        let t = frame_system::GenesisConfig::<Test>::default()
+            .build_storage()
             .unwrap();
         TestExternalities::new(t)
     }

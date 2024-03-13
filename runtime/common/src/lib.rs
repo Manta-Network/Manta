@@ -19,8 +19,6 @@
 #![allow(clippy::upper_case_acronyms)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub mod migration;
-
 #[cfg(feature = "test-helpers")]
 pub mod test_helpers;
 

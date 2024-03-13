@@ -94,14 +94,15 @@ fn alice_vesting_for_bob_should_work() {
             )));
 
             assert_noop!(
-                Balances::transfer(RuntimeOrigin::signed(BOB), ALICE, vested + 1),
+                Balances::transfer(&BOB, &ALICE, vested + 1, ExistenceRequirement::AllowDeath),
                 TokenError::Frozen,
             );
 
             assert_ok!(Balances::transfer(
-                RuntimeOrigin::signed(BOB),
-                ALICE,
-                vested
+                &BOB,
+                &ALICE,
+                vested,
+                ExistenceRequirement::AllowDeath,
             ));
             assert_eq!(
                 Balances::free_balance(ALICE),
@@ -125,9 +126,10 @@ fn alice_vesting_for_bob_should_work() {
 
             // Now, Bob can transfer all his tokens.
             assert_ok!(Balances::transfer(
-                RuntimeOrigin::signed(BOB),
-                ALICE,
-                unvested - vested
+                &BOB,
+                &ALICE,
+                unvested - vested,
+                ExistenceRequirement::AllowDeath,
             ));
             assert_eq!(Balances::free_balance(ALICE), ALICE_DEPOSIT);
             assert_eq!(Balances::free_balance(BOB), 0);
@@ -180,14 +182,15 @@ fn alice_vesting_for_bob_claim_slowly_should_work() {
                 .fold(Percent::from_percent(0), |acc, p| acc.saturating_add(p))
                 * unvested;
             assert_noop!(
-                Balances::transfer(RuntimeOrigin::signed(BOB), ALICE, vested + 1),
+                Balances::transfer(&BOB, &ALICE, vested + 1, ExistenceRequirement::AllowDeath),
                 TokenError::Frozen,
             );
 
             assert_ok!(Balances::transfer(
-                RuntimeOrigin::signed(BOB),
-                ALICE,
-                vested
+                &BOB,
+                &ALICE,
+                vested,
+                ExistenceRequirement::AllowDeath
             ));
             assert_eq!(
                 Balances::free_balance(ALICE),
@@ -233,14 +236,15 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
             )));
 
             assert_noop!(
-                Balances::transfer(RuntimeOrigin::signed(BOB), ALICE, vested_1 + 1),
+                Balances::transfer(&BOB, &ALICE, vested_1 + 1, ExistenceRequirement::AllowDeath),
                 TokenError::Frozen,
             );
 
             assert_ok!(Balances::transfer(
-                RuntimeOrigin::signed(BOB),
-                ALICE,
-                vested_1
+                &BOB,
+                &ALICE,
+                vested_1,
+                ExistenceRequirement::AllowDeath
             ));
             assert_eq!(
                 Balances::free_balance(ALICE),
@@ -264,9 +268,10 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
                 * unvested;
             assert_noop!(
                 Balances::transfer(
-                    RuntimeOrigin::signed(BOB),
-                    ALICE,
-                    vested_0_to_4 + 1 - vested_1
+                    &BOB,
+                    &ALICE,
+                    vested_0_to_4 + 1 - vested_1,
+                    ExistenceRequirement::AllowDeath,
                 ),
                 TokenError::Frozen,
             );
@@ -284,9 +289,10 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
             );
 
             assert_ok!(Balances::transfer(
-                RuntimeOrigin::signed(BOB),
-                ALICE,
-                vested_0_to_4 - vested_1
+                &BOB,
+                &ALICE,
+                vested_0_to_4 - vested_1,
+                ExistenceRequirement::AllowDeath
             ));
             assert_eq!(Balances::free_balance(ALICE), ALICE_DEPOSIT - vested_5);
             assert_eq!(Balances::free_balance(BOB), vested_5);
@@ -321,7 +327,7 @@ fn vesting_complete_should_work() {
 
             // Now Bob cannot transfer locked tokens.
             assert_noop!(
-                Balances::transfer(RuntimeOrigin::signed(BOB), ALICE, 1),
+                Balances::transfer(&BOB, &ALICE, 1, ExistenceRequirement::AllowDeath),
                 TokenError::Frozen,
             );
 
@@ -342,9 +348,10 @@ fn vesting_complete_should_work() {
 
             // Now, Bob can transfer all his tokens.
             assert_ok!(Balances::transfer(
-                RuntimeOrigin::signed(BOB),
-                ALICE,
-                vested
+                &BOB,
+                &ALICE,
+                vested,
+                ExistenceRequirement::AllowDeath
             ));
             assert_eq!(Balances::free_balance(ALICE), ALICE_DEPOSIT);
             assert_eq!(Balances::free_balance(BOB), 0);

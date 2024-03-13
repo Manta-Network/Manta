@@ -105,8 +105,8 @@ where
 {
     async fn verify(
         &mut self,
-        block_params: BlockImportParams<Block, ()>,
-    ) -> Result<BlockImportParams<Block, ()>, String> {
+        block_params: BlockImportParams<Block>,
+    ) -> Result<BlockImportParams<Block>, String> {
         // We assume the outermost digest item is the block seal ( we have no two-step consensus )
         let seal = block_params
             .header
@@ -141,10 +141,9 @@ pub fn import_queue<Client, Block: BlockT, InnerBI>(
     spawner: &impl sp_core::traits::SpawnEssentialNamed,
     registry: Option<&substrate_prometheus_endpoint::Registry>,
     telemetry: Option<TelemetryHandle>,
-) -> ClientResult<BasicQueue<Block, InnerBI::Transaction>>
+) -> ClientResult<BasicQueue<Block>>
 where
     InnerBI: BlockImport<Block, Error = ConsensusError> + Send + Sync + 'static,
-    InnerBI::Transaction: Send,
     Client::Api: BlockBuilderApi<Block>,
     Client: ProvideRuntimeApi<Block> + Send + Sync + 'static,
     Client: sc_client_api::AuxStore + sc_client_api::UsageProvider<Block>,
