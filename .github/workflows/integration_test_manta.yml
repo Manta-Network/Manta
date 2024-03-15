@@ -10,7 +10,9 @@ concurrency:
   cancel-in-progress: true
 env:
   DEBIAN_FRONTEND: noninteractive
-  POLKADOT_BINARY: https://github.com/paritytech/polkadot-sdk/releases/download/polkadot-v1.8.0/polkadot
+  POLKADOT_BINARY: https://github.com/paritytech/polkadot-sdk/releases/download/polkadot-v1.7.0/polkadot
+  POLKADOT_EXECUTE: https://github.com/paritytech/polkadot-sdk/releases/download/polkadot-v1.7.0/polkadot-execute-worker
+  POLKADOT_PREPARE: https://github.com/paritytech/polkadot-sdk/releases/download/polkadot-v1.7.0/polkadot-prepare-worker
 jobs:
   print-rust-versions:
     if: contains(github.event.pull_request.labels.*.name, 'A-manta')
@@ -129,10 +131,12 @@ jobs:
         shell: bash
         run: |
           apt update && apt install -y curl jq wget git
-          if [[ ! -f "$HOME/.local/bin/polkadot" ]]; then
-            curl -L -o $HOME/.local/bin/polkadot ${{ env.POLKADOT_BINARY }}
-            chmod +x $HOME/.local/bin/polkadot
-          fi
+          curl -L -o $HOME/.local/bin/polkadot ${{ env.POLKADOT_BINARY }}
+          curl -L -o $HOME/.local/bin/polkadot-execute-worker ${{ env.POLKADOT_EXECUTE }}
+          curl -L -o $HOME/.local/bin/polkadot-prepare-worker ${{ env.POLKADOT_PREPARE }}
+          chmod +x $HOME/.local/bin/polkadot
+          chmod +x $HOME/.local/bin/polkadot-execute-worker
+          chmod +x $HOME/.local/bin/polkadot-prepare-worker
           ls -ahl $HOME/.local/bin/
           $HOME/.local/bin/polkadot --version
       - name: Install dasel cli
@@ -233,7 +237,7 @@ jobs:
         shell: bash
         run: |
           cd $GITHUB_WORKSPACE/zombienet-tool
-          git pull && git checkout v1.3.89
+          git pull && git checkout v1.3.92
           cd $GITHUB_WORKSPACE/zombienet-tool/javascript
           yarn
           npm run build
