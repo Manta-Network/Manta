@@ -670,6 +670,8 @@ impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<100_000>;
+    // false means async backing is disabled
+    // https://forum.polkadot.network/t/polkadot-release-analysis-v1-0-0/3585#pallet-aura-allow-multiple-blocks-per-slot-12
     type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
