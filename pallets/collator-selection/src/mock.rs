@@ -246,7 +246,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     };
     let session = pallet_session::GenesisConfig::<Test> { keys };
     balances.assimilate_storage(&mut t).unwrap();
-    // collator selection must be initialized before session.
+    // collator selection must be initialized before the session.
     collator_selection.assimilate_storage(&mut t).unwrap();
     session.assimilate_storage(&mut t).unwrap();
 

@@ -488,9 +488,9 @@ pub mod pallet {
             Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
         }
 
-        /// Remove an specified collator.
+        /// Remove a specified collator.
         ///
-        /// - `collator`: Who is going to be remove from collators set.
+        /// - `collator`: Who is going to be removed from collators set.
         #[pallet::call_index(6)]
         #[pallet::weight(T::WeightInfo::remove_collator(T::MaxCandidates::get()))]
         pub fn remove_collator(

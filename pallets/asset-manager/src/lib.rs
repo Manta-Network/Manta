@@ -121,7 +121,7 @@ pub mod pallet {
         /// Pallet ID
         type PalletId: Get<PalletId>;
 
-        /// Weight information for the extrinsics in this pallet.
+        /// Weight information for the extrinsic in this pallet.
         type WeightInfo: crate::weights::WeightInfo;
 
         /// AssetId where Permissionless Assets start, must be greater than `StartNonNativeAssetId`
