@@ -409,7 +409,7 @@ parameter_types! {
     pub const LotteryPotId: PalletId = LOTTERY_PALLET_ID;
     /// Time in blocks between lottery drawings
     pub DrawingInterval: BlockNumber = prod_or_fast!(7 * DAYS, 3 * MINUTES);
-    /// Time in blocks *before* a drawing in which modifications of the win-eligble pool are prevented
+    /// Time in blocks *before* a drawing in which modifications of the win-eligible pool are prevented
     pub DrawingFreezeout: BlockNumber = prod_or_fast!(1 * DAYS, 1 * MINUTES);
     /// Time in blocks until a collator is done unstaking
     pub UnstakeLockTime: BlockNumber = LeaveDelayRounds::get() * DefaultBlocksPerRound::get();
