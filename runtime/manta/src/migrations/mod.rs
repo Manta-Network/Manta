@@ -16,3 +16,4 @@
 
 pub mod asset_manager;
 pub mod assets_genesis;
+pub mod manta_pay;
