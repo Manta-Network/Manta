@@ -64,7 +64,6 @@ fn get_call_details(call: &crate::RuntimeCall) -> (DispatchInfo, u32) {
 }
 
 #[test]
-#[ignore]
 fn diff_tx_fees() {
     const CURRENT_PATH: &str = env!("CARGO_MANIFEST_DIR");
     let mut latest_version = String::new();
@@ -106,7 +105,7 @@ fn diff_tx_fees() {
             frame_support::metadata::RuntimeMetadata::V14(metadata) => metadata.pallets,
             _ => unreachable!(),
         };
-        assert_eq!(pallets.len(), 39);
+        assert_eq!(pallets.len(), 37);
     });
 
     let fee_multipliers = fee_multipliers();

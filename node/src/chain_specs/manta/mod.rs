@@ -91,8 +91,6 @@ pub fn manta_development_config() -> MantaChainSpec {
 
 // common helper to create the above configs
 fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
-    let root_key = genesis_collators.first().unwrap().acc.clone();
-
     const INITIAL_COLLATOR_BALANCE: Balance = 1_000_000_000 * MANTA;
     let endowments = genesis_collators
         .iter()
@@ -115,9 +113,6 @@ fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
         },
         // empty aura authorities, collators registered with parachain staking instead
         aura: Default::default(),
-        sudo: manta_runtime::SudoConfig {
-            key: Some(root_key),
-        },
         parachain_staking: ParachainStakingConfig {
             candidates: genesis_collators
                 .iter()

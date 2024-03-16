@@ -52,7 +52,6 @@ pallet-multisig = { workspace = true }
 pallet-preimage = { workspace = true }
 pallet-scheduler = { workspace = true }
 pallet-session = { workspace = true }
-pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
@@ -136,7 +135,6 @@ runtime-benchmarks = [
   'nimbus-primitives/runtime-benchmarks',
   'pallet-author-inherent/runtime-benchmarks',
   'pallet-balances/runtime-benchmarks',
-  'pallet-sudo/runtime-benchmarks',
   'pallet-aura-style-filter/runtime-benchmarks',
   'pallet-collective/runtime-benchmarks',
   'pallet-democracy/runtime-benchmarks',
@@ -193,7 +191,6 @@ try-runtime = [
   "cumulus-pallet-dmp-queue/try-runtime",
   'pallet-aura-style-filter/try-runtime',
   'manta-collator-selection/try-runtime',
-  'pallet-sudo/try-runtime',
   'cumulus-pallet-xcmp-queue/try-runtime',
   'cumulus-pallet-xcm/try-runtime',
   'pallet-assets/try-runtime',
@@ -248,7 +245,6 @@ std = [
   'pallet-transaction-payment-rpc-runtime-api/std',
   'pallet-timestamp/std',
   'pallet-session/std',
-  'pallet-sudo/std',
   'sp-application-crypto/std',
   'pallet-xcm/std',
   'pallet-transaction-payment/std',
