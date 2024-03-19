@@ -1700,7 +1700,7 @@ fn many_deposit_withdrawals_work() {
                 // ensure lottery doesnt run out of gas (it's not getting staking rewards in test)
                 assert_ok!(
                     <Test as pallet_parachain_staking::Config>::Currency::deposit_into_existing(
-                        crate::Pallet::<Test>::account_id(),
+                        &crate::Pallet::<Test>::account_id(),
                         crate::Pallet::<Test>::gas_reserve(),
                     )
                 );
