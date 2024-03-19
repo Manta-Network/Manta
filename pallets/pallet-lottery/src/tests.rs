@@ -870,7 +870,6 @@ fn multiround_withdraw_partial_with_two_collators_works() {
 fn delegator_less_than_bottom_cannot_deposit() {
     let reserve = 10_000 * UNIT;
     let balance = 500_000_000 * UNIT;
-    let quarter_balance = 125_000_000 * UNIT;
     let delegate_amt = 100_000_000 * UNIT;
     let delegate_amt_1 = 10_000_000 * UNIT;
     ExtBuilder::default()
@@ -924,7 +923,6 @@ fn delegator_more_than_bottom_can_deposit_twocollator_secondfailed() {
     let balance = 500_000_000 * UNIT;
     let quarter_balance = 125_000_000 * UNIT;
     let delegate_amt = 100_000_000 * UNIT;
-    let delegate_amt_1 = 10_000_000 * UNIT;
     ExtBuilder::default()
         .with_balances(vec![
             (ALICE, HIGH_BALANCE),
@@ -1030,7 +1028,6 @@ fn delegator_more_than_bottom_can_deposit_onecollator_secondok() {
 fn delegator_kicked_not_in_state_cannot_deposit() {
     let reserve = 10_000 * UNIT;
     let balance = 500_000_000 * UNIT;
-    let quarter_balance = 125_000_000 * UNIT;
     ExtBuilder::default()
         .with_balances(vec![
             (ALICE, HIGH_BALANCE),
@@ -1065,7 +1062,7 @@ fn delegator_kicked_not_in_state_cannot_deposit() {
             assert_eq!(crate::StakedCollators::<Test>::iter().count(), 1);
 
             // Check PotAmount state, exist!
-            let pot_state1 = ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id()).expect("just delegated => exists");
+            let pot_state1 = ParachainStaking::delegator_state(crate::Pallet::<Test>::account_id()).expect("just delegated => exists");
             assert_eq!(pot_state1.delegations.0[0].owner, BOB);
             assert_eq!(pot_state1.delegations.0[0].amount, 150_000_000 * UNIT);
 
@@ -1092,7 +1089,7 @@ fn delegator_kicked_not_in_state_cannot_deposit() {
             assert_eq!(charlie_state.delegations.0[0].amount, 160_000_000 * UNIT);
 
             // Check PotAmount state, not exist!
-            let _pot_state2 = ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id());
+            let _pot_state2 = ParachainStaking::delegator_state(crate::Pallet::<Test>::account_id());
             assert!(_pot_state2.is_none());
 
             // Delegator: Pot Account is not exist on DelegatorState.
@@ -1109,7 +1106,6 @@ fn delegator_kicked_not_in_state_cannot_deposit() {
 fn delegator_state_eq_lowest_top_choose_diff_collator() {
     let reserve = 10_000 * UNIT;
     let balance = 500_000_000 * UNIT;
-    let quarter_balance = 125_000_000 * UNIT;
     ExtBuilder::default()
         .with_balances(vec![
             (ALICE, HIGH_BALANCE),
@@ -1199,9 +1195,8 @@ fn delegator_kicked_when_reactivate_bottom_should_ignored() {
             assert_eq!(crate::StakedCollators::<Test>::iter().count(), 2);
 
             // Pot Account delegate to two collators.
-            let pot_state1 =
-                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
-                    .expect("just delegated => exists");
+            let pot_state1 = ParachainStaking::delegator_state(crate::Pallet::<Test>::account_id())
+                .expect("just delegated => exists");
             assert_eq!(pot_state1.delegations.len(), 2);
             assert_eq!(pot_state1.delegations.0[0].amount, 51_000_000 * UNIT);
             assert_eq!(pot_state1.delegations.0[1].amount, 51_000_000 * UNIT);
@@ -1243,18 +1238,17 @@ fn delegator_kicked_when_reactivate_bottom_should_ignored() {
             ));
             // Pot Account now is kicked from collator BOB's delegator list.
             // But Pot Account is still on the delegator list of CHARLIE.
-            let pot_state2 =
-                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
-                    .expect("just delegated => exists");
+            let pot_state2 = ParachainStaking::delegator_state(crate::Pallet::<Test>::account_id())
+                .expect("just delegated => exists");
             assert_eq!(pot_state2.delegations.len(), 1);
             assert_eq!(pot_state2.delegations.0[0].owner, CHARLIE);
             assert_eq!(pot_state2.delegations.0[0].amount, 51_000_000 * UNIT);
 
             // StakedCollators didn't remove BOB.
             assert_eq!(crate::StakedCollators::<Test>::iter().count(), 2);
-            assert_eq!(crate::StakedCollators::<Test>::get(&BOB), 51_000_000 * UNIT);
+            assert_eq!(crate::StakedCollators::<Test>::get(BOB), 51_000_000 * UNIT);
             assert_eq!(
-                crate::StakedCollators::<Test>::get(&CHARLIE),
+                crate::StakedCollators::<Test>::get(CHARLIE),
                 51_000_000 * UNIT
             );
 
@@ -1278,7 +1272,7 @@ fn delegator_kicked_when_reactivate_bottom_should_ignored() {
             );
 
             let _pot_state2 =
-                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                ParachainStaking::delegator_state(crate::Pallet::<Test>::account_id())
                     .expect("just delegated => exists");
             assert_eq!(_pot_state2.delegations.len(), 1);
             assert_eq!(_pot_state2.delegations.0[0].owner, CHARLIE);
@@ -1286,14 +1280,14 @@ fn delegator_kicked_when_reactivate_bottom_should_ignored() {
 
             // Deposit should only delegate to CHRALIE.
             assert_ok!(Lottery::deposit(Origin::signed(ALICE), 53_000_000 * UNIT));
-            assert_eq!(crate::StakedCollators::<Test>::get(&BOB), 51_000_000 * UNIT);
+            assert_eq!(crate::StakedCollators::<Test>::get(BOB), 51_000_000 * UNIT);
             assert_eq!(
-                crate::StakedCollators::<Test>::get(&CHARLIE),
+                crate::StakedCollators::<Test>::get(CHARLIE),
                 104_000_000 * UNIT
             );
 
             let _pot_state3 =
-                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                ParachainStaking::delegator_state(crate::Pallet::<Test>::account_id())
                     .expect("just delegated => exists");
             assert_eq!(_pot_state3.delegations.len(), 1);
             assert_eq!(_pot_state3.delegations.0[0].owner, CHARLIE);
@@ -1349,9 +1343,8 @@ fn delegator_unstaking_then_kicked_should_ignored() {
             assert_eq!(crate::UnstakingCollators::<Test>::get().len(), 1);
 
             // Pot Account delegate to two collators.
-            let pot_state1 =
-                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
-                    .expect("just delegated => exists");
+            let pot_state1 = ParachainStaking::delegator_state(crate::Pallet::<Test>::account_id())
+                .expect("just delegated => exists");
             assert_eq!(pot_state1.delegations.len(), 2);
             assert_eq!(pot_state1.delegations.0[0].amount, 51_000_000 * UNIT);
             assert_eq!(pot_state1.delegations.0[1].amount, 51_000_000 * UNIT);
@@ -1391,9 +1384,8 @@ fn delegator_unstaking_then_kicked_should_ignored() {
                 9,
                 0
             ));
-            let pot_state2 =
-                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
-                    .expect("just delegated => exists");
+            let pot_state2 = ParachainStaking::delegator_state(crate::Pallet::<Test>::account_id())
+                .expect("just delegated => exists");
             assert_eq!(pot_state2.delegations.len(), 1);
             assert_eq!(pot_state2.delegations.0[0].owner, CHARLIE);
             assert_eq!(pot_state2.delegations.0[0].amount, 51_000_000 * UNIT);
@@ -1421,7 +1413,7 @@ fn delegator_unstaking_then_kicked_should_ignored() {
 
             // Check PotAmount state, exist!
             let _pot_state2 =
-                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                ParachainStaking::delegator_state(crate::Pallet::<Test>::account_id())
                     .expect("just delegated => exists");
             assert_eq!(_pot_state2.delegations.len(), 1);
             assert_eq!(_pot_state2.delegations.0[0].owner, CHARLIE);
@@ -1437,7 +1429,7 @@ fn delegator_unstaking_then_kicked_should_ignored() {
 
             // Check PotAmount state, exist!
             let _pot_state3 =
-                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                ParachainStaking::delegator_state(crate::Pallet::<Test>::account_id())
                     .expect("just delegated => exists");
             assert_eq!(_pot_state3.delegations.len(), 1);
             assert_eq!(_pot_state3.delegations.0[0].owner, CHARLIE);
@@ -1493,16 +1485,16 @@ fn delegator_unstaking_kicked_same_collator_should_ignored() {
             assert_eq!(crate::UnstakingCollators::<Test>::get().len(), 1);
 
             // Pot Account delegate to two collators.
-            let pot_state1 =
-                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
-                    .expect("just delegated => exists");
+            let pot_state1 = ParachainStaking::delegator_state(crate::Pallet::<Test>::account_id())
+                .expect("just delegated => exists");
             assert_eq!(pot_state1.delegations.len(), 2);
 
-            let firstDepositStakedToBob = pot_state1.delegations.0[0].amount == 52_000_000 * UNIT;
+            let first_deposit_staked_to_bob =
+                pot_state1.delegations.0[0].amount == 52_000_000 * UNIT;
 
             // Can't ensure which collator accept which deposit.
             // Either Bob get 52 and Charlie get 51, or Bob get 51 and Charlie get 52.
-            if firstDepositStakedToBob {
+            if first_deposit_staked_to_bob {
                 assert_eq!(pot_state1.delegations.0[1].amount, 51_000_000 * UNIT);
             } else {
                 assert_eq!(pot_state1.delegations.0[1].amount, 52_000_000 * UNIT);
@@ -1543,13 +1535,12 @@ fn delegator_unstaking_kicked_same_collator_should_ignored() {
                 9,
                 0
             ));
-            let pot_state2 =
-                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
-                    .expect("just delegated => exists");
+            let pot_state2 = ParachainStaking::delegator_state(crate::Pallet::<Test>::account_id())
+                .expect("just delegated => exists");
             assert_eq!(pot_state2.delegations.len(), 1);
             // We can ensure that Pot Account now only staked to Charlie, but can't ensure the staked amount.
             assert_eq!(pot_state2.delegations.0[0].owner, CHARLIE);
-            if firstDepositStakedToBob {
+            if first_deposit_staked_to_bob {
                 assert_eq!(pot_state2.delegations.0[0].amount, 51_000_000 * UNIT);
             } else {
                 assert_eq!(pot_state2.delegations.0[0].amount, 52_000_000 * UNIT);
@@ -1559,7 +1550,7 @@ fn delegator_unstaking_kicked_same_collator_should_ignored() {
 
             let collator1_state = ParachainStaking::candidate_info(BOB).unwrap();
             let collator2_state = ParachainStaking::candidate_info(CHARLIE).unwrap();
-            if firstDepositStakedToBob {
+            if first_deposit_staked_to_bob {
                 assert_eq!(
                     collator1_state.lowest_top_delegation_amount,
                     53_000_000 * UNIT
@@ -1599,17 +1590,17 @@ fn delegator_unstaking_kicked_same_collator_should_ignored() {
 
             // Check PotAmount state, exist!
             let _pot_state2 =
-                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                ParachainStaking::delegator_state(crate::Pallet::<Test>::account_id())
                     .expect("just delegated => exists");
             assert_eq!(_pot_state2.delegations.len(), 1);
             assert_eq!(_pot_state2.delegations.0[0].owner, CHARLIE);
-            if firstDepositStakedToBob {
+            if first_deposit_staked_to_bob {
                 assert_eq!(_pot_state2.delegations.0[0].amount, 51_000_000 * UNIT);
             } else {
                 assert_eq!(_pot_state2.delegations.0[0].amount, 52_000_000 * UNIT);
             }
 
-            if firstDepositStakedToBob {
+            if first_deposit_staked_to_bob {
                 assert_ok!(Lottery::deposit(Origin::signed(ALICE), 53_000_000 * UNIT));
             } else {
                 assert_noop!(
@@ -1620,12 +1611,12 @@ fn delegator_unstaking_kicked_same_collator_should_ignored() {
 
             // Check PotAmount state, exist!
             let _pot_state3 =
-                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                ParachainStaking::delegator_state(crate::Pallet::<Test>::account_id())
                     .expect("just delegated => exists");
             assert_eq!(_pot_state3.delegations.len(), 1);
             assert_eq!(_pot_state3.delegations.0[0].owner, CHARLIE);
 
-            if firstDepositStakedToBob {
+            if first_deposit_staked_to_bob {
                 assert_eq!(_pot_state3.delegations.0[0].amount, 104_000_000 * UNIT);
             } else {
                 assert_eq!(_pot_state3.delegations.0[0].amount, 52_000_000 * UNIT);
@@ -1709,7 +1700,7 @@ fn many_deposit_withdrawals_work() {
                 // ensure lottery doesnt run out of gas (it's not getting staking rewards in test)
                 assert_ok!(
                     <Test as pallet_parachain_staking::Config>::Currency::deposit_into_existing(
-                        &crate::Pallet::<Test>::account_id(),
+                        crate::Pallet::<Test>::account_id(),
                         crate::Pallet::<Test>::gas_reserve(),
                     )
                 );
