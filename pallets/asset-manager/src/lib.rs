@@ -699,8 +699,8 @@ pub mod pallet {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(asset_0 != asset_1, Error::<T>::AssetIdNotDifferent);
             ensure!(
-                AssetIdLocation::<T>::contains_key(asset_0)
-                    && AssetIdLocation::<T>::contains_key(asset_1),
+                AssetIdMetadata::<T>::contains_key(asset_0)
+                    && AssetIdMetadata::<T>::contains_key(asset_1),
                 Error::<T>::AssetIdNotExist
             );
 
