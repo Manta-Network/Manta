@@ -29,7 +29,8 @@ strip = "symbols"
 panic = "unwind"
 
 [profile.test]
-debug = true
+inherits = "release"
+debug = 1
 
 [workspace.dependencies]
 anyhow = { version = "1.0.55", default-features = false }

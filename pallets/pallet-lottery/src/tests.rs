@@ -19,8 +19,9 @@ use crate::{
     mock::{
         roll_one_block, roll_to, roll_to_round_begin, roll_to_round_end, AccountId, Assets,
         Balance, Balances, ExtBuilder, Farming, Lottery, ParachainStaking, RuntimeOrigin as Origin,
-        System, Test, ALICE, BOB, CHARLIE, DAVE, EVE, INIT_JUMBO_AMOUNT, INIT_V_MANTA_AMOUNT,
-        JUMBO_ID, POOL_ID, V_MANTA_ID,
+        System, Test, ALICE, BOB, CHARLIE, DAVE, DELEGATOR1, DELEGATOR2, DELEGATOR3, DELEGATOR4,
+        DELEGATOR5, DELEGATOR6, DELEGATOR7, DELEGATOR8, EVE, INIT_JUMBO_AMOUNT,
+        INIT_V_MANTA_AMOUNT, JUMBO_ID, POOL_ID, V_MANTA_ID,
     },
     Config, Error, FarmingParameters,
 };
@@ -862,6 +863,773 @@ fn multiround_withdraw_partial_with_two_collators_works() {
             assert!(Lottery::withdrawal_request_queue().is_empty());
             assert_eq!(crate::StakedCollators::<Test>::iter().count(), 1);
             assert_eq!(crate::UnstakingCollators::<Test>::get().len(), 0);
+        });
+}
+
+#[test]
+fn delegator_less_than_bottom_cannot_deposit() {
+    let reserve = 10_000 * UNIT;
+    let balance = 500_000_000 * UNIT;
+    let quarter_balance = 125_000_000 * UNIT;
+    let delegate_amt = 100_000_000 * UNIT;
+    let delegate_amt_1 = 10_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE, HIGH_BALANCE),
+            (BOB, HIGH_BALANCE),
+            (CHARLIE, HIGH_BALANCE),
+            (DAVE, HIGH_BALANCE),
+            (DELEGATOR1, HIGH_BALANCE),
+            (DELEGATOR2, HIGH_BALANCE),
+            (DELEGATOR3, HIGH_BALANCE),
+            (DELEGATOR4, HIGH_BALANCE),
+            (DELEGATOR5, HIGH_BALANCE),
+            (DELEGATOR6, HIGH_BALANCE),
+            (DELEGATOR7, HIGH_BALANCE),
+            (DELEGATOR8, HIGH_BALANCE),
+        ])
+        .with_candidates(vec![(BOB, balance), (CHARLIE, balance)])
+        .with_delegations(vec![
+            (DELEGATOR1, BOB, delegate_amt),
+            (DELEGATOR2, BOB, delegate_amt),
+            (DELEGATOR3, BOB, delegate_amt),
+            (DELEGATOR4, BOB, delegate_amt),
+            (DELEGATOR5, BOB, delegate_amt),
+            (DELEGATOR6, BOB, delegate_amt),
+            (DELEGATOR7, BOB, delegate_amt),
+            (DELEGATOR8, BOB, delegate_amt),
+            (DELEGATOR1, CHARLIE, delegate_amt),
+            (DELEGATOR2, CHARLIE, delegate_amt),
+            (DELEGATOR3, CHARLIE, delegate_amt),
+            (DELEGATOR4, CHARLIE, delegate_amt),
+            (DELEGATOR5, CHARLIE, delegate_amt),
+            (DELEGATOR6, CHARLIE, delegate_amt),
+            (DELEGATOR7, CHARLIE, delegate_amt),
+            (DELEGATOR8, CHARLIE, delegate_amt),
+        ])
+        .with_funded_lottery_account(reserve)
+        .build()
+        .execute_with(|| {
+            assert_noop!(
+                Lottery::deposit(Origin::signed(ALICE), delegate_amt_1),
+                pallet_parachain_staking::Error::<Test>::CannotDelegateLessThanOrEqualToLowestBottomWhenFull
+            );
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 0);
+        });
+}
+
+#[test]
+fn delegator_more_than_bottom_can_deposit_twocollator_secondfailed() {
+    let reserve = 10_000 * UNIT;
+    let balance = 500_000_000 * UNIT;
+    let quarter_balance = 125_000_000 * UNIT;
+    let delegate_amt = 100_000_000 * UNIT;
+    let delegate_amt_1 = 10_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE, HIGH_BALANCE),
+            (BOB, HIGH_BALANCE),
+            (CHARLIE, HIGH_BALANCE),
+            (DAVE, HIGH_BALANCE),
+            (DELEGATOR1, HIGH_BALANCE),
+            (DELEGATOR2, HIGH_BALANCE),
+            (DELEGATOR3, HIGH_BALANCE),
+            (DELEGATOR4, HIGH_BALANCE),
+            (DELEGATOR5, HIGH_BALANCE),
+            (DELEGATOR6, HIGH_BALANCE),
+            (DELEGATOR7, HIGH_BALANCE),
+            (DELEGATOR8, HIGH_BALANCE),
+        ])
+        .with_candidates(vec![(BOB, balance), (CHARLIE, balance)])
+        .with_delegations(vec![
+            (DELEGATOR1, BOB, delegate_amt),
+            (DELEGATOR2, BOB, delegate_amt),
+            (DELEGATOR3, BOB, delegate_amt),
+            (DELEGATOR4, BOB, delegate_amt),
+            (DELEGATOR5, BOB, delegate_amt),
+            (DELEGATOR6, BOB, delegate_amt),
+            (DELEGATOR7, BOB, delegate_amt),
+            (DELEGATOR8, BOB, delegate_amt),
+            (DELEGATOR1, CHARLIE, delegate_amt),
+            (DELEGATOR2, CHARLIE, delegate_amt),
+            (DELEGATOR3, CHARLIE, delegate_amt),
+            (DELEGATOR4, CHARLIE, delegate_amt),
+            (DELEGATOR5, CHARLIE, delegate_amt),
+            (DELEGATOR6, CHARLIE, delegate_amt),
+            (DELEGATOR7, CHARLIE, delegate_amt),
+            (DELEGATOR8, CHARLIE, delegate_amt),
+        ])
+        .with_funded_lottery_account(reserve)
+        .build()
+        .execute_with(|| {
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), quarter_balance));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 1);
+            // After deposit, DELEGATOR8 is kicked cause he is the last one on bottom.
+
+            // staked:125, lowestTop=100
+            // If first deposit choose Bob as collator, then second will chose Charlie as collator.
+            // deposit failed cause his deposit balance is less than smallest bottom
+            assert_noop!(
+                Lottery::deposit(Origin::signed(DELEGATOR8), delegate_amt),
+                pallet_parachain_staking::Error::<Test>::CannotDelegateLessThanOrEqualToLowestBottomWhenFull
+            );
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 1);
+
+            assert_ok!(Lottery::deposit(Origin::signed(DELEGATOR8), delegate_amt+1));
+        });
+}
+
+#[test]
+fn delegator_more_than_bottom_can_deposit_onecollator_secondok() {
+    let reserve = 10_000 * UNIT;
+    let balance = 500_000_000 * UNIT;
+    let quarter_balance = 125_000_000 * UNIT;
+    let delegate_amt = 100_000_000 * UNIT;
+    let delegation_min = 5_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE, HIGH_BALANCE),
+            (BOB, HIGH_BALANCE),
+            (CHARLIE, HIGH_BALANCE),
+            (DAVE, HIGH_BALANCE),
+            (DELEGATOR1, HIGH_BALANCE),
+            (DELEGATOR2, HIGH_BALANCE),
+            (DELEGATOR3, HIGH_BALANCE),
+            (DELEGATOR4, HIGH_BALANCE),
+            (DELEGATOR5, HIGH_BALANCE),
+            (DELEGATOR6, HIGH_BALANCE),
+            (DELEGATOR7, HIGH_BALANCE),
+            (DELEGATOR8, HIGH_BALANCE),
+        ])
+        .with_candidates(vec![(BOB, balance)])
+        .with_delegations(vec![
+            (DELEGATOR1, BOB, delegate_amt),
+            (DELEGATOR2, BOB, delegate_amt),
+            (DELEGATOR3, BOB, delegate_amt),
+            (DELEGATOR4, BOB, delegate_amt),
+            (DELEGATOR5, BOB, delegate_amt),
+            (DELEGATOR6, BOB, delegate_amt),
+            (DELEGATOR7, BOB, delegate_amt),
+            (DELEGATOR8, BOB, delegate_amt),
+        ])
+        .with_funded_lottery_account(reserve)
+        .build()
+        .execute_with(|| {
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), quarter_balance));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 1);
+
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), delegate_amt));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 1);
+
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), delegation_min));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 1);
+        });
+}
+
+#[test]
+fn delegator_kicked_not_in_state_cannot_deposit() {
+    let reserve = 10_000 * UNIT;
+    let balance = 500_000_000 * UNIT;
+    let quarter_balance = 125_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE, HIGH_BALANCE),
+            (BOB, HIGH_BALANCE),
+            (CHARLIE, HIGH_BALANCE),
+            (DAVE, HIGH_BALANCE),
+            (DELEGATOR1, HIGH_BALANCE),
+            (DELEGATOR2, HIGH_BALANCE),
+            (DELEGATOR3, HIGH_BALANCE),
+            (DELEGATOR4, HIGH_BALANCE),
+            (DELEGATOR5, HIGH_BALANCE),
+            (DELEGATOR6, HIGH_BALANCE),
+            (DELEGATOR7, HIGH_BALANCE),
+            (DELEGATOR8, HIGH_BALANCE),
+        ])
+        .with_candidates(vec![(BOB, balance)])
+        .with_delegations(vec![
+            (DELEGATOR1, BOB, 800_000_000 * UNIT),
+            (DELEGATOR2, BOB, 700_000_000 * UNIT),
+            (DELEGATOR3, BOB, 600_000_000 * UNIT),
+            (DELEGATOR4, BOB, 500_000_000 * UNIT),
+            (DELEGATOR5, BOB, 400_000_000 * UNIT),
+            (DELEGATOR6, BOB, 300_000_000 * UNIT),
+            (DELEGATOR7, BOB, 200_000_000 * UNIT),
+            (DELEGATOR8, BOB, 100_000_000 * UNIT)
+        ])
+        .with_funded_lottery_account(reserve)
+        .build()
+        .execute_with(|| {
+            // Large than lowest bottom, kicked DELEGATOR8
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), 150_000_000 * UNIT));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 1);
+
+            // Check PotAmount state, exist!
+            let pot_state1 = ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id()).expect("just delegated => exists");
+            assert_eq!(pot_state1.delegations.0[0].owner, BOB);
+            assert_eq!(pot_state1.delegations.0[0].amount, 150_000_000 * UNIT);
+
+            // If delegator less than lowest bottom: 150, failed
+            assert_noop!(ParachainStaking::delegate(
+                Origin::signed(CHARLIE),
+                BOB,
+                100_000_000 * UNIT,
+                8,
+                0
+            ),pallet_parachain_staking::Error::<Test>::CannotDelegateLessThanOrEqualToLowestBottomWhenFull);
+
+            // If delegator large than lowest bottom: 150, ok 
+            assert_ok!(ParachainStaking::delegate(
+                Origin::signed(CHARLIE),
+                BOB,
+                160_000_000 * UNIT,
+                8,
+                0
+            ));
+            // Check Charlie state, exist!
+            let charlie_state = ParachainStaking::delegator_state(CHARLIE).expect("just delegated => exists");
+            assert_eq!(charlie_state.delegations.0[0].owner, BOB);
+            assert_eq!(charlie_state.delegations.0[0].amount, 160_000_000 * UNIT);
+
+            // Check PotAmount state, not exist!
+            let _pot_state2 = ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id());
+            assert!(_pot_state2.is_none());
+
+            // Delegator: Pot Account is not exist on DelegatorState.
+            // Now Pot account is kicked, try to deposit, failed!
+            // In this case, we should delegate instead bond more.
+            assert_noop!(
+                Lottery::deposit(Origin::signed(ALICE), 150_000_000 * UNIT),
+                pallet_parachain_staking::Error::<Test>::DelegatorDNE
+            );
+        });
+}
+
+#[test]
+fn delegator_state_eq_lowest_top_choose_diff_collator() {
+    let reserve = 10_000 * UNIT;
+    let balance = 500_000_000 * UNIT;
+    let quarter_balance = 125_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE, HIGH_BALANCE),
+            (BOB, HIGH_BALANCE),
+            (CHARLIE, HIGH_BALANCE),
+            (DAVE, HIGH_BALANCE),
+            (DELEGATOR1, HIGH_BALANCE),
+            (DELEGATOR2, HIGH_BALANCE),
+            (DELEGATOR3, HIGH_BALANCE),
+            (DELEGATOR4, HIGH_BALANCE),
+            (DELEGATOR5, HIGH_BALANCE),
+            (DELEGATOR6, HIGH_BALANCE),
+            (DELEGATOR7, HIGH_BALANCE),
+            (DELEGATOR8, HIGH_BALANCE),
+        ])
+        .with_candidates(vec![(BOB, balance), (CHARLIE, balance)])
+        .with_delegations(vec![
+            (DELEGATOR1, BOB, 80_000_000 * UNIT),
+            (DELEGATOR2, BOB, 70_000_000 * UNIT),
+            (DELEGATOR3, BOB, 60_000_000 * UNIT),
+            (DELEGATOR4, BOB, 50_000_000 * UNIT),
+            (DELEGATOR5, BOB, 40_000_000 * UNIT),
+            (DELEGATOR6, BOB, 30_000_000 * UNIT),
+            (DELEGATOR7, BOB, 20_000_000 * UNIT),
+            (DELEGATOR1, CHARLIE, 80_000_000 * UNIT),
+            (DELEGATOR2, CHARLIE, 70_000_000 * UNIT),
+            (DELEGATOR3, CHARLIE, 60_000_000 * UNIT),
+            (DELEGATOR4, CHARLIE, 50_000_000 * UNIT),
+            (DELEGATOR5, CHARLIE, 40_000_000 * UNIT),
+            (DELEGATOR6, CHARLIE, 30_000_000 * UNIT),
+            (DELEGATOR7, CHARLIE, 20_000_000 * UNIT),
+        ])
+        .with_funded_lottery_account(reserve)
+        .build()
+        .execute_with(|| {
+            // 51 large than top lowest 50, 50 will be top bottom now
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), 51_000_000 * UNIT));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 1);
+
+            // staked: 51 eq to lowest top: 51, choose another collator
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), 51_000_000 * UNIT));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 2);
+
+            // third deposit, both collator's staked and lowest top is 51, choose random one.
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), 51_000_000 * UNIT));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 2);
+        });
+}
+
+#[test]
+fn delegator_kicked_when_reactivate_bottom_should_ignored() {
+    let reserve = 10_000 * UNIT;
+    let balance = 500_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE, HIGH_BALANCE),
+            (BOB, HIGH_BALANCE),
+            (CHARLIE, HIGH_BALANCE),
+            (DAVE, HIGH_BALANCE),
+            (DELEGATOR1, HIGH_BALANCE),
+            (DELEGATOR2, HIGH_BALANCE),
+            (DELEGATOR3, HIGH_BALANCE),
+            (DELEGATOR4, HIGH_BALANCE),
+            (DELEGATOR5, HIGH_BALANCE),
+            (DELEGATOR6, HIGH_BALANCE),
+            (DELEGATOR7, HIGH_BALANCE),
+            (DELEGATOR8, HIGH_BALANCE),
+        ])
+        .with_candidates(vec![(BOB, balance), (CHARLIE, balance)])
+        .with_delegations(vec![
+            (DELEGATOR1, BOB, 80_000_000 * UNIT),
+            (DELEGATOR2, BOB, 70_000_000 * UNIT),
+            (DELEGATOR3, BOB, 60_000_000 * UNIT),
+            (DELEGATOR4, BOB, 50_000_000 * UNIT),
+            (DELEGATOR1, CHARLIE, 80_000_000 * UNIT),
+            (DELEGATOR2, CHARLIE, 70_000_000 * UNIT),
+            (DELEGATOR3, CHARLIE, 60_000_000 * UNIT),
+            (DELEGATOR4, CHARLIE, 50_000_000 * UNIT),
+        ])
+        .with_funded_lottery_account(reserve)
+        .build()
+        .execute_with(|| {
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), 51_000_000 * UNIT));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 1);
+
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), 51_000_000 * UNIT));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 2);
+
+            // Pot Account delegate to two collators.
+            let pot_state1 =
+                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                    .expect("just delegated => exists");
+            assert_eq!(pot_state1.delegations.len(), 2);
+            assert_eq!(pot_state1.delegations.0[0].amount, 51_000_000 * UNIT);
+            assert_eq!(pot_state1.delegations.0[1].amount, 51_000_000 * UNIT);
+
+            assert_ok!(ParachainStaking::delegate(
+                Origin::signed(DELEGATOR5),
+                BOB,
+                52_000_000 * UNIT,
+                5,
+                0
+            ));
+            assert_ok!(ParachainStaking::delegate(
+                Origin::signed(DELEGATOR6),
+                BOB,
+                52_000_000 * UNIT,
+                6,
+                0
+            ));
+            assert_ok!(ParachainStaking::delegate(
+                Origin::signed(DELEGATOR7),
+                BOB,
+                52_000_000 * UNIT,
+                7,
+                0
+            ));
+            assert_ok!(ParachainStaking::delegate(
+                Origin::signed(DELEGATOR8),
+                BOB,
+                52_000_000 * UNIT,
+                8,
+                0
+            ));
+            assert_ok!(ParachainStaking::delegate(
+                Origin::signed(DAVE),
+                BOB,
+                52_000_000 * UNIT,
+                9,
+                0
+            ));
+            // Pot Account now is kicked from collator BOB's delegator list.
+            // But Pot Account is still on the delegator list of CHARLIE.
+            let pot_state2 =
+                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                    .expect("just delegated => exists");
+            assert_eq!(pot_state2.delegations.len(), 1);
+            assert_eq!(pot_state2.delegations.0[0].owner, CHARLIE);
+            assert_eq!(pot_state2.delegations.0[0].amount, 51_000_000 * UNIT);
+
+            // StakedCollators didn't remove BOB.
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 2);
+            assert_eq!(crate::StakedCollators::<Test>::get(&BOB), 51_000_000 * UNIT);
+            assert_eq!(
+                crate::StakedCollators::<Test>::get(&CHARLIE),
+                51_000_000 * UNIT
+            );
+
+            let collator1_state = ParachainStaking::candidate_info(BOB).unwrap();
+            let collator2_state = ParachainStaking::candidate_info(CHARLIE).unwrap();
+            assert_eq!(
+                collator1_state.lowest_bottom_delegation_amount,
+                52_000_000 * UNIT
+            );
+            assert_eq!(
+                collator2_state.lowest_bottom_delegation_amount,
+                50_000_000 * UNIT
+            );
+            assert_eq!(
+                collator1_state.lowest_top_delegation_amount,
+                52_000_000 * UNIT
+            );
+            assert_eq!(
+                collator2_state.lowest_top_delegation_amount,
+                51_000_000 * UNIT
+            );
+
+            let _pot_state2 =
+                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                    .expect("just delegated => exists");
+            assert_eq!(_pot_state2.delegations.len(), 1);
+            assert_eq!(_pot_state2.delegations.0[0].owner, CHARLIE);
+            assert_eq!(_pot_state2.delegations.0[0].amount, 51_000_000 * UNIT);
+
+            // Deposit should only delegate to CHRALIE.
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), 53_000_000 * UNIT));
+            assert_eq!(crate::StakedCollators::<Test>::get(&BOB), 51_000_000 * UNIT);
+            assert_eq!(
+                crate::StakedCollators::<Test>::get(&CHARLIE),
+                104_000_000 * UNIT
+            );
+
+            let _pot_state3 =
+                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                    .expect("just delegated => exists");
+            assert_eq!(_pot_state3.delegations.len(), 1);
+            assert_eq!(_pot_state3.delegations.0[0].owner, CHARLIE);
+            assert_eq!(_pot_state3.delegations.0[0].amount, 104_000_000 * UNIT);
+        });
+}
+
+#[test]
+fn delegator_unstaking_then_kicked_should_ignored() {
+    let reserve = 10_000 * UNIT;
+    let balance = 500_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE, HIGH_BALANCE),
+            (BOB, HIGH_BALANCE),
+            (CHARLIE, HIGH_BALANCE),
+            (DAVE, HIGH_BALANCE),
+            (DELEGATOR1, HIGH_BALANCE),
+            (DELEGATOR2, HIGH_BALANCE),
+            (DELEGATOR3, HIGH_BALANCE),
+            (DELEGATOR4, HIGH_BALANCE),
+            (DELEGATOR5, HIGH_BALANCE),
+            (DELEGATOR6, HIGH_BALANCE),
+            (DELEGATOR7, HIGH_BALANCE),
+            (DELEGATOR8, HIGH_BALANCE),
+        ])
+        .with_candidates(vec![(BOB, balance), (CHARLIE, balance)])
+        .with_delegations(vec![
+            (DELEGATOR1, BOB, 80_000_000 * UNIT),
+            (DELEGATOR2, BOB, 70_000_000 * UNIT),
+            (DELEGATOR3, BOB, 60_000_000 * UNIT),
+            (DELEGATOR4, BOB, 50_000_000 * UNIT),
+            (DELEGATOR1, CHARLIE, 80_000_000 * UNIT),
+            (DELEGATOR2, CHARLIE, 70_000_000 * UNIT),
+            (DELEGATOR3, CHARLIE, 60_000_000 * UNIT),
+            (DELEGATOR4, CHARLIE, 50_000_000 * UNIT),
+        ])
+        .with_funded_lottery_account(reserve)
+        .build()
+        .execute_with(|| {
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), 51_000_000 * UNIT));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 1);
+
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), 51_000_000 * UNIT));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 2);
+
+            // unstaking from CHARLIE
+            assert_ok!(Lottery::request_withdraw(
+                Origin::signed(ALICE),
+                51_000_000 * UNIT
+            ));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 2);
+            assert_eq!(crate::UnstakingCollators::<Test>::get().len(), 1);
+
+            // Pot Account delegate to two collators.
+            let pot_state1 =
+                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                    .expect("just delegated => exists");
+            assert_eq!(pot_state1.delegations.len(), 2);
+            assert_eq!(pot_state1.delegations.0[0].amount, 51_000_000 * UNIT);
+            assert_eq!(pot_state1.delegations.0[1].amount, 51_000_000 * UNIT);
+
+            assert_ok!(ParachainStaking::delegate(
+                Origin::signed(DELEGATOR5),
+                BOB,
+                53_000_000 * UNIT,
+                5,
+                0
+            ));
+            assert_ok!(ParachainStaking::delegate(
+                Origin::signed(DELEGATOR6),
+                BOB,
+                53_000_000 * UNIT,
+                6,
+                0
+            ));
+            assert_ok!(ParachainStaking::delegate(
+                Origin::signed(DELEGATOR7),
+                BOB,
+                53_000_000 * UNIT,
+                7,
+                0
+            ));
+            assert_ok!(ParachainStaking::delegate(
+                Origin::signed(DELEGATOR8),
+                BOB,
+                53_000_000 * UNIT,
+                8,
+                0
+            ));
+            assert_ok!(ParachainStaking::delegate(
+                Origin::signed(DAVE),
+                BOB,
+                53_000_000 * UNIT,
+                9,
+                0
+            ));
+            let pot_state2 =
+                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                    .expect("just delegated => exists");
+            assert_eq!(pot_state2.delegations.len(), 1);
+            assert_eq!(pot_state2.delegations.0[0].owner, CHARLIE);
+            assert_eq!(pot_state2.delegations.0[0].amount, 51_000_000 * UNIT);
+
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 2);
+
+            let collator1_state = ParachainStaking::candidate_info(BOB).unwrap();
+            let collator2_state = ParachainStaking::candidate_info(CHARLIE).unwrap();
+            assert_eq!(
+                collator1_state.lowest_top_delegation_amount,
+                53_000_000 * UNIT
+            );
+            assert_eq!(
+                collator1_state.lowest_bottom_delegation_amount,
+                53_000_000 * UNIT
+            );
+            assert_eq!(
+                collator2_state.lowest_top_delegation_amount,
+                51_000_000 * UNIT
+            );
+            assert_eq!(
+                collator2_state.lowest_bottom_delegation_amount,
+                50_000_000 * UNIT
+            );
+
+            // Check PotAmount state, exist!
+            let _pot_state2 =
+                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                    .expect("just delegated => exists");
+            assert_eq!(_pot_state2.delegations.len(), 1);
+            assert_eq!(_pot_state2.delegations.0[0].owner, CHARLIE);
+            assert_eq!(_pot_state2.delegations.0[0].amount, 51_000_000 * UNIT);
+
+            // Staked to BOB was already kicked Pot Account.
+            // And staked to CHARLIE is unstaking, now there're no collators to deposit.
+            // If we choose random one which is BOB, then delegator_bond_more has error.
+            assert_noop!(
+                Lottery::deposit(Origin::signed(ALICE), 53_000_000 * UNIT),
+                pallet_parachain_staking::Error::<Test>::DelegationDNE
+            );
+
+            // Check PotAmount state, exist!
+            let _pot_state3 =
+                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                    .expect("just delegated => exists");
+            assert_eq!(_pot_state3.delegations.len(), 1);
+            assert_eq!(_pot_state3.delegations.0[0].owner, CHARLIE);
+            assert_eq!(_pot_state3.delegations.0[0].amount, 51_000_000 * UNIT);
+        });
+}
+
+#[test]
+fn delegator_unstaking_kicked_same_collator_should_ignored() {
+    let reserve = 10_000 * UNIT;
+    let balance = 500_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE, HIGH_BALANCE),
+            (BOB, HIGH_BALANCE),
+            (CHARLIE, HIGH_BALANCE),
+            (DAVE, HIGH_BALANCE),
+            (DELEGATOR1, HIGH_BALANCE),
+            (DELEGATOR2, HIGH_BALANCE),
+            (DELEGATOR3, HIGH_BALANCE),
+            (DELEGATOR4, HIGH_BALANCE),
+            (DELEGATOR5, HIGH_BALANCE),
+            (DELEGATOR6, HIGH_BALANCE),
+            (DELEGATOR7, HIGH_BALANCE),
+            (DELEGATOR8, HIGH_BALANCE),
+        ])
+        .with_candidates(vec![(BOB, balance), (CHARLIE, balance)])
+        .with_delegations(vec![
+            (DELEGATOR1, BOB, 80_000_000 * UNIT),
+            (DELEGATOR2, BOB, 70_000_000 * UNIT),
+            (DELEGATOR3, BOB, 60_000_000 * UNIT),
+            (DELEGATOR4, BOB, 50_000_000 * UNIT),
+            (DELEGATOR1, CHARLIE, 80_000_000 * UNIT),
+            (DELEGATOR2, CHARLIE, 70_000_000 * UNIT),
+            (DELEGATOR3, CHARLIE, 60_000_000 * UNIT),
+            (DELEGATOR4, CHARLIE, 50_000_000 * UNIT),
+        ])
+        .with_funded_lottery_account(reserve)
+        .build()
+        .execute_with(|| {
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), 52_000_000 * UNIT));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 1);
+
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE), 51_000_000 * UNIT));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 2);
+
+            // unstaking from BOB
+            assert_ok!(Lottery::request_withdraw(
+                Origin::signed(ALICE),
+                52_000_000 * UNIT
+            ));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 2);
+            assert_eq!(crate::UnstakingCollators::<Test>::get().len(), 1);
+
+            // Pot Account delegate to two collators.
+            let pot_state1 =
+                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                    .expect("just delegated => exists");
+            assert_eq!(pot_state1.delegations.len(), 2);
+
+            let firstDepositStakedToBob = pot_state1.delegations.0[0].amount == 52_000_000 * UNIT;
+
+            // Can't ensure which collator accept which deposit.
+            // Either Bob get 52 and Charlie get 51, or Bob get 51 and Charlie get 52.
+            if firstDepositStakedToBob {
+                assert_eq!(pot_state1.delegations.0[1].amount, 51_000_000 * UNIT);
+            } else {
+                assert_eq!(pot_state1.delegations.0[1].amount, 52_000_000 * UNIT);
+            }
+
+            assert_ok!(ParachainStaking::delegate(
+                Origin::signed(DELEGATOR5),
+                BOB,
+                53_000_000 * UNIT,
+                5,
+                0
+            ));
+            assert_ok!(ParachainStaking::delegate(
+                Origin::signed(DELEGATOR6),
+                BOB,
+                53_000_000 * UNIT,
+                6,
+                0
+            ));
+            assert_ok!(ParachainStaking::delegate(
+                Origin::signed(DELEGATOR7),
+                BOB,
+                53_000_000 * UNIT,
+                7,
+                0
+            ));
+            assert_ok!(ParachainStaking::delegate(
+                Origin::signed(DELEGATOR8),
+                BOB,
+                53_000_000 * UNIT,
+                8,
+                0
+            ));
+            assert_ok!(ParachainStaking::delegate(
+                Origin::signed(DAVE),
+                BOB,
+                53_000_000 * UNIT,
+                9,
+                0
+            ));
+            let pot_state2 =
+                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                    .expect("just delegated => exists");
+            assert_eq!(pot_state2.delegations.len(), 1);
+            // We can ensure that Pot Account now only staked to Charlie, but can't ensure the staked amount.
+            assert_eq!(pot_state2.delegations.0[0].owner, CHARLIE);
+            if firstDepositStakedToBob {
+                assert_eq!(pot_state2.delegations.0[0].amount, 51_000_000 * UNIT);
+            } else {
+                assert_eq!(pot_state2.delegations.0[0].amount, 52_000_000 * UNIT);
+            }
+
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 2);
+
+            let collator1_state = ParachainStaking::candidate_info(BOB).unwrap();
+            let collator2_state = ParachainStaking::candidate_info(CHARLIE).unwrap();
+            if firstDepositStakedToBob {
+                assert_eq!(
+                    collator1_state.lowest_top_delegation_amount,
+                    53_000_000 * UNIT
+                );
+                assert_eq!(
+                    collator1_state.lowest_bottom_delegation_amount,
+                    53_000_000 * UNIT
+                );
+
+                assert_eq!(
+                    collator2_state.lowest_top_delegation_amount,
+                    51_000_000 * UNIT
+                );
+                assert_eq!(
+                    collator2_state.lowest_bottom_delegation_amount,
+                    50_000_000 * UNIT
+                );
+            } else {
+                assert_eq!(
+                    collator1_state.lowest_top_delegation_amount,
+                    53_000_000 * UNIT
+                );
+                assert_eq!(
+                    collator1_state.lowest_bottom_delegation_amount,
+                    53_000_000 * UNIT
+                );
+
+                assert_eq!(
+                    collator2_state.lowest_top_delegation_amount,
+                    52_000_000 * UNIT
+                );
+                assert_eq!(
+                    collator2_state.lowest_bottom_delegation_amount,
+                    50_000_000 * UNIT
+                );
+            }
+
+            // Check PotAmount state, exist!
+            let _pot_state2 =
+                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                    .expect("just delegated => exists");
+            assert_eq!(_pot_state2.delegations.len(), 1);
+            assert_eq!(_pot_state2.delegations.0[0].owner, CHARLIE);
+            if firstDepositStakedToBob {
+                assert_eq!(_pot_state2.delegations.0[0].amount, 51_000_000 * UNIT);
+            } else {
+                assert_eq!(_pot_state2.delegations.0[0].amount, 52_000_000 * UNIT);
+            }
+
+            if firstDepositStakedToBob {
+                assert_ok!(Lottery::deposit(Origin::signed(ALICE), 53_000_000 * UNIT));
+            } else {
+                assert_noop!(
+                    Lottery::deposit(Origin::signed(ALICE), 53_000_000 * UNIT),
+                    pallet_parachain_staking::Error::<Test>::DelegationDNE
+                );
+            }
+
+            // Check PotAmount state, exist!
+            let _pot_state3 =
+                ParachainStaking::delegator_state(&crate::Pallet::<Test>::account_id())
+                    .expect("just delegated => exists");
+            assert_eq!(_pot_state3.delegations.len(), 1);
+            assert_eq!(_pot_state3.delegations.0[0].owner, CHARLIE);
+
+            if firstDepositStakedToBob {
+                assert_eq!(_pot_state3.delegations.0[0].amount, 104_000_000 * UNIT);
+            } else {
+                assert_eq!(_pot_state3.delegations.0[0].amount, 52_000_000 * UNIT);
+            }
         });
 }
 
