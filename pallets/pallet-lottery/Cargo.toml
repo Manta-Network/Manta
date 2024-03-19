@@ -53,7 +53,7 @@ rand = { workspace = true }
 similar-asserts = { workspace = true }
 sp-staking = { workspace = true, features = ["std"] }
 xcm = { workspace = true, features = ["std"] }
-env_logger = "0.8.3"
+# env_logger = "0.8.3"
 
 [features]
 default = ["std"]
