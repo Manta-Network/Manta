@@ -69,6 +69,7 @@ runtime-benchmarks = [
   'rand/std_rng',
 ]
 std = [
+  "log/std",
   "manta-primitives/std",
   "pallet-parachain-staking/std",
   "pallet-randomness/std",
@@ -87,7 +88,6 @@ std = [
   "runtime-common/std",
   "codec/std",
   "scale-info/std",
-  "log/std",
   "sp-staking/std",
 ]
 try-runtime = [

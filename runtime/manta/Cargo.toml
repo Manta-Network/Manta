@@ -10,7 +10,7 @@ version.workspace = true
 [dependencies]
 codec = { workspace = true }
 hex-literal = { workspace = true, optional = true }
-log = { workspace = true }
+log = { workspace = true, optional = true }
 scale-info = { workspace = true }
 serde = { workspace = true, optional = true }
 smallvec = { workspace = true }

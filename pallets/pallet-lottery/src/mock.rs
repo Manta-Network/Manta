@@ -60,6 +60,14 @@ pub const BOB: AccountId = 2;
 pub const CHARLIE: AccountId = 3;
 pub const DAVE: AccountId = 4;
 pub const EVE: AccountId = 5;
+pub const DELEGATOR1: AccountId = 6;
+pub const DELEGATOR2: AccountId = 7;
+pub const DELEGATOR3: AccountId = 8;
+pub const DELEGATOR4: AccountId = 9;
+pub const DELEGATOR5: AccountId = 11;
+pub const DELEGATOR6: AccountId = 12;
+pub const DELEGATOR7: AccountId = 13;
+pub const DELEGATOR8: AccountId = 14;
 pub const TREASURY_ACCOUNT: AccountId = 10;
 
 pub const JUMBO: Balance = 1_000_000_000_000;
@@ -287,9 +295,9 @@ impl pallet_parachain_staking::Config for Test {
     /// Minimum collators selected per round, default at genesis and minimum forever after
     type MinSelectedCandidates = ConstU32<5>;
     /// Maximum top delegations per candidate
-    type MaxTopDelegationsPerCandidate = ConstU32<100>;
+    type MaxTopDelegationsPerCandidate = ConstU32<4>;
     /// Maximum bottom delegations per candidate
-    type MaxBottomDelegationsPerCandidate = ConstU32<50>;
+    type MaxBottomDelegationsPerCandidate = ConstU32<4>;
     /// Maximum delegations per delegator
     type MaxDelegationsPerDelegator = ConstU32<25>;
     type DefaultCollatorCommission = DefaultCollatorCommission;
@@ -604,6 +612,14 @@ impl ExtBuilder {
 
     pub(crate) fn with_candidates(mut self, collators: Vec<(AccountId, Balance)>) -> Self {
         self.collators = collators;
+        self
+    }
+
+    pub(crate) fn with_delegations(
+        mut self,
+        delegations: Vec<(AccountId, AccountId, Balance)>,
+    ) -> Self {
+        self.delegations = delegations;
         self
     }
 

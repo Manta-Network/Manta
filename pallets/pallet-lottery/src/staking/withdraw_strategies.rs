@@ -83,7 +83,7 @@ pub(super) fn unstake_least_apy_collators<T: Config>(
         binfo.total_counted.cmp(&ainfo.total_counted)
     });
     log::debug!(
-        "Active collators: {:?}",
+        "Active collators size: {:?}",
         apy_ordered_active_collators_we_are_staked_with.len()
     );
     for c in apy_ordered_active_collators_we_are_staked_with {

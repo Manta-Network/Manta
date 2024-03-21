@@ -40,11 +40,44 @@ pub(super) fn reactivate_bottom_collators<T: Config>(
         let staked = StakedCollators::<T>::get(collator.clone());
         let info = pallet_parachain_staking::Pallet::<T>::candidate_info(collator.clone())
             .expect("is active collator, therefore it has collator info. qed");
+
+        // If collator not exist in delegatorState(PotAccount).delegations, ignore
+        if let Some(state) =
+            pallet_parachain_staking::Pallet::<T>::delegator_state(crate::Pallet::<T>::account_id())
+        {
+            let mut is_kick = true;
+            for x in &state.delegations.0 {
+                if x.owner == collator {
+                    is_kick = false;
+                    break;
+                }
+            }
+            if is_kick {
+                log::debug!(
+                    "Staked collator:{:?} is kicked off from delegator state, ignore.",
+                    collator
+                );
+                continue;
+            }
+        }
+        log::debug!(
+            "check collator:{:?} staked:{:?}, lowest top: {:?}",
+            collator,
+            staked,
+            info.lowest_top_delegation_amount
+        );
+
         if staked < info.lowest_top_delegation_amount {
             // TODO: Small optimization: sort collators ascending by missing amount so we get the largest amount of collators active before running out of funds
             let this_deposit = core::cmp::min(
                 remaining_deposit,
                 info.lowest_top_delegation_amount - staked + 1u32.into(),
+            );
+            log::debug!(
+                "remaining:{:?}, deposit:{:?}, diff:{:?}",
+                remaining_deposit,
+                this_deposit,
+                remaining_deposit - this_deposit
             );
             // Ensure we don't try to stake a smaller than allowed delegation to a collator
             if remaining_deposit.saturating_sub(this_deposit) < crate::Pallet::<T>::min_deposit() {
