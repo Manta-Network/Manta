@@ -184,9 +184,10 @@ jobs:
         with:
           name: ${{ matrix.runtime.name }}-srtool-json
       - name: ruby setup
-        uses: actions/setup-ruby@v1
+        uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 2.7
+          ruby-version: '2.7'
+          bundler-cache: true
       - name: get runtime version
         id: get-runtime-version
         run: |
