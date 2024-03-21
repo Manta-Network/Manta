@@ -77,6 +77,10 @@ impl<T: Config> Pallet<T> {
             .cloned()
             .collect::<Vec<_>>();
 
+        log::debug!(
+            "deposit_eligible_collators size: {:?}",
+            deposit_eligible_collators.len()
+        );
         // first concern: If we fell out of the active set on one or more collators, we need to get back into it
         deposits.append(&mut deposit_strategies::reactivate_bottom_collators::<T>(
             deposit_eligible_collators.as_slice(),
@@ -89,21 +93,46 @@ impl<T: Config> Pallet<T> {
             .reduce(|sum, elem| sum + elem)
             .unwrap_or_else(|| 0u32.into());
 
+        log::debug!(
+            "after reactivate_bottom_collators deposits: {:?}, remaining: ${:?}",
+            deposits.len(),
+            remaining_deposit
+        );
         // If we have re-activated any collators and have leftover funds, we just distribute all surplus tokens to them evenly and call it a day
         if !deposits.is_empty() {
             if !remaining_deposit.is_zero() {
+                log::debug!(
+                    "deposits:{:?} not null and remaining:{:?} not zero",
+                    deposits,
+                    remaining_deposit
+                );
                 let deposit_per_collator =
                     Percent::from_rational(1, deposits.len() as u32).mul_ceil(remaining_deposit); // this overshoots the amount if there's a remainder
                 for deposit in &mut deposits {
                     let add = remaining_deposit.saturating_sub(deposit_per_collator); // we correct the overshoot here
+                    log::debug!(
+                        "deposit_per_collator:{:?}, add:{:?}",
+                        deposit_per_collator,
+                        add
+                    );
                     deposit.1 += add;
                     remaining_deposit -= add;
                 }
             }
+            log::debug!(
+                "deposits:{:?} not null and remaining:{:?}",
+                deposits,
+                remaining_deposit
+            );
             return deposits;
         }
 
         // second concern: We want to maximize staking APY earned, so we want to balance the staking pools with our deposits while conserving gas
+        log::debug!(
+            "deposit_eligible_collators size:{:?}, remaining_deposit:{:?}",
+            deposit_eligible_collators.len(),
+            remaining_deposit
+        );
         deposits.append(
             &mut deposit_strategies::split_to_underallocated_collators::<T>(
                 deposit_eligible_collators.as_slice(),
@@ -115,6 +144,10 @@ impl<T: Config> Pallet<T> {
             .map(|deposit| deposit.1)
             .reduce(|sum, elem| sum + elem)
             .unwrap_or_else(|| 0u32.into());
+        log::debug!(
+            "after split_to_underallocated_collators, remain: ${:?}",
+            remaining_deposit
+        );
         // fallback: just assign to a random active collator ( choose a different collator for each invocation )
         if !remaining_deposit.is_zero() {
             log::warn!(
@@ -238,8 +271,12 @@ impl<T: Config> Pallet<T> {
         };
         let delegation_count = StakedCollators::<T>::iter_keys().count() as u32;
 
-        // If we're already delegated to this collator, we must call `delegate_more`
+        // If we're already delegated to this collator, we must call `delegator_bond_more`.
         if StakedCollators::<T>::get(&collator).is_zero() {
+            log::debug!(
+                "delegator not staked on collator:{:?}, use delegate",
+                collator
+            );
             // Ensure the pallet has enough gas to pay for this
             let fee_estimate: BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(
                 &pallet_parachain_staking::Call::delegate {
@@ -271,6 +308,10 @@ impl<T: Config> Pallet<T> {
                 e.error
             })?;
         } else {
+            log::debug!(
+                "delegator already staked on collator:{:?}, use delegator_bond_more",
+                collator
+            );
             // Ensure the pallet has enough gas to pay for this
             let fee_estimate: BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(
                 &pallet_parachain_staking::Call::delegator_bond_more {
