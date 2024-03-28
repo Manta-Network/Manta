@@ -50,6 +50,7 @@ pallet-democracy = { workspace = true }
 pallet-membership = { workspace = true }
 pallet-multisig = { workspace = true }
 pallet-preimage = { workspace = true }
+pallet-proxy = { workspace = true }
 pallet-scheduler = { workspace = true }
 pallet-session = { workspace = true }
 pallet-sudo = { workspace = true }
@@ -150,6 +151,7 @@ runtime-benchmarks = [
   'pallet-treasury/runtime-benchmarks',
   'pallet-parachain-staking/runtime-benchmarks',
   'pallet-preimage/runtime-benchmarks',
+  "pallet-proxy/runtime-benchmarks",
   'pallet-assets/runtime-benchmarks',
   'pallet-asset-manager/runtime-benchmarks',
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
@@ -175,6 +177,7 @@ try-runtime = [
   'pallet-balances/try-runtime',
   'pallet-parachain-staking/try-runtime',
   'pallet-preimage/try-runtime',
+  "pallet-proxy/try-runtime",
   'pallet-multisig/try-runtime',
   'pallet-session/try-runtime',
   'pallet-scheduler/try-runtime',
@@ -244,6 +247,7 @@ std = [
   'pallet-randomness/std',
   'pallet-lottery/std',
   'pallet-preimage/std',
+  "pallet-proxy/std",
   'pallet-utility/std',
   'pallet-transaction-payment-rpc-runtime-api/std',
   'pallet-timestamp/std',
