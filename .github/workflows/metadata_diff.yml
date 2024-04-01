@@ -78,8 +78,9 @@ jobs:
           chmod +x $HOME/manta
       - name: Fetch and chmod old release binary
         run: |
-          curl -L -o $HOME/polkadot https://github.com/paritytech/polkadot/releases/download/v1.3.0/polkadot
+          curl -L -o $HOME/polkadot https://github.com/paritytech/polkadot-sdk/releases/download/polkadot-v1.8.0/polkadot
           chmod +x $HOME/polkadot
+          $HOME/polkadot --version
           ls -ahl $HOME/
       - name: stop sccache server
         run: sccache --stop-server || true

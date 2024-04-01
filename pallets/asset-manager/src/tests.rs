@@ -596,6 +596,7 @@ fn register_lp_asset_should_work() {
     new_test_ext().execute_with(|| {
         // Register first non native token.
         let (manta_asset_metadata8, manta_location8) = create_asset_and_location("Asset8");
+        // Create Asset-8
         assert_ok!(AssetManager::register_asset(
             RuntimeOrigin::root(),
             manta_location8.clone(),
@@ -618,6 +619,7 @@ fn register_lp_asset_should_work() {
         );
 
         let (manta_asset_metadata9, manta_location9) = create_asset_and_location("Asset9");
+        // Create Asset-9
         assert_ok!(AssetManager::register_asset(
             RuntimeOrigin::root(),
             manta_location9.clone(),
@@ -626,6 +628,7 @@ fn register_lp_asset_should_work() {
         assert_eq!(AssetIdLocation::<Runtime>::get(9), Some(manta_location9));
 
         let manta_asset_metadata10 = create_asset_metadata("LP10", "LP10", 12, 1u128, false, false);
+        // Create LP Asset-10
         assert_ok!(AssetManager::register_lp_asset(
             RuntimeOrigin::root(),
             8,
@@ -650,6 +653,7 @@ fn register_lp_asset_should_work() {
             Error::<Runtime>::AssetAlreadyRegistered
         );
 
+        // Create Asset-11
         assert_ok!(AssetManager::register_asset(
             RuntimeOrigin::root(),
             manta_location11,
@@ -657,6 +661,7 @@ fn register_lp_asset_should_work() {
         ));
         let manta_asset_metadata12 = create_asset_metadata("LP12", "LP12", 12, 1u128, false, false);
         // sort asset by order
+        // Create LP Asset-12
         assert_ok!(AssetManager::register_lp_asset(
             RuntimeOrigin::root(),
             11,
@@ -667,11 +672,52 @@ fn register_lp_asset_should_work() {
         assert_eq!(AssetIdPairToLp::<Runtime>::get((11, 8)), None);
         assert_eq!(LpToAssetIdPair::<Runtime>::get(12), Some((8, 11)));
 
+        // Create LP Asset-13
         let manta_asset_metadata13 = create_asset_metadata("LP13", "LP13", 12, 1u128, false, false);
-        assert_noop!(
-            AssetManager::register_lp_asset(RuntimeOrigin::root(), 12, 8, manta_asset_metadata13),
-            Error::<Runtime>::AssetIdNotExist
+        assert_ok!(AssetManager::register_lp_asset(
+            RuntimeOrigin::root(),
+            12,
+            8,
+            manta_asset_metadata13
+        ),);
+    });
+}
+
+#[test]
+fn permissionless_lp_asset_works() {
+    new_test_ext().execute_with(|| {
+        let amount = 1_000_000;
+        let native_asset_id = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
+        assert_ok!(
+            <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::deposit_minting(
+                native_asset_id,
+                &ALICE,
+                amount,
+            )
         );
+
+        let asset_id = <Runtime as crate::pallet::Config>::PermissionlessStartId::get();
+        // Create PermissionAsset-1000000
+        assert_ok!(AssetManager::permissionless_register_asset(
+            RuntimeOrigin::signed(ALICE),
+            "dog token".as_bytes().to_vec().try_into().unwrap(),
+            "dog".as_bytes().to_vec().try_into().unwrap(),
+            12,
+            1_000_000_000_000_000,
+        ));
+
+        let metadata = create_asset_metadata("LP", "LP", 12, 1u128, false, false);
+        // Create LP Asset-8
+        assert_ok!(AssetManager::register_lp_asset(
+            RuntimeOrigin::root(),
+            1,
+            asset_id,
+            metadata.clone()
+        ),);
+
+        assert_eq!(AssetIdPairToLp::<Runtime>::get((1, 1_000_000)), Some(8));
+        assert_eq!(LpToAssetIdPair::<Runtime>::get(8), Some((1, 1_000_000)));
+        assert_eq!(AssetIdMetadata::<Runtime>::get(8), Some(metadata));
     });
 }
 
