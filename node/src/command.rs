@@ -26,6 +26,7 @@ use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::info;
 use manta_primitives::types::Header;
+use polkadot_service::IdentifyVariant;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
     NetworkParams, SharedParams, SubstrateCli,
@@ -188,10 +189,11 @@ impl SubstrateCli for RelayChainCli {
 macro_rules! construct_benchmark_partials {
     ($config:expr, |$partials:ident| $code:expr) => {
         if $config.chain_spec.is_manta() {
-            let $partials = new_partial::<MantaRuntimeApi>(&$config)?;
+            let $partials = new_partial::<MantaRuntimeApi>(&$config, $config.chain_spec.is_dev())?;
             $code
         } else if $config.chain_spec.is_calamari() {
-            let $partials = new_partial::<CalamariRuntimeApi>(&$config)?;
+            let $partials =
+                new_partial::<CalamariRuntimeApi>(&$config, $config.chain_spec.is_dev())?;
             $code
         } else {
             Err("The chain is not supported".into())
@@ -206,6 +208,7 @@ macro_rules! construct_async_run {
                 runner.async_run(|$config| {
                     let $components = crate::service::new_partial::<MantaRuntimeApi>(
                         &$config,
+                        $config.chain_spec.is_dev(),
                     )?;
                     let task_manager = $components.task_manager;
                     { $( $code )* }.map(|v| (v, task_manager))
@@ -214,6 +217,7 @@ macro_rules! construct_async_run {
                 runner.async_run(|$config| {
                     let $components = new_partial::<CalamariRuntimeApi>(
                         &$config,
+                        $config.chain_spec.is_dev(),
                     )?;
                     let task_manager = $components.task_manager;
                     { $( $code )* }.map(|v| (v, task_manager))
@@ -281,10 +285,12 @@ pub fn run_with(cli: Cli) -> Result {
             let runner = cli.create_runner(cmd)?;
             runner.sync_run(|config| {
                 if config.chain_spec.is_manta() {
-                    let partials = new_partial::<MantaRuntimeApi>(&config)?;
+                    let partials =
+                        new_partial::<MantaRuntimeApi>(&config, config.chain_spec.is_dev())?;
                     cmd.run(partials.client)
                 } else if config.chain_spec.is_calamari() {
-                    let partials = new_partial::<CalamariRuntimeApi>(&config)?;
+                    let partials =
+                        new_partial::<CalamariRuntimeApi>(&config, config.chain_spec.is_dev())?;
                     cmd.run(partials.client)
                 } else {
                     Err("Must be either calamari or manta runtime".into())
@@ -430,26 +436,34 @@ pub fn run_with(cli: Cli) -> Result {
                     }
                 );
 
+                // hard code async backing off
+                let async_backing = false;
+                let is_dev = config.chain_spec.is_dev();
+
                 if config.chain_spec.is_manta() {
-                    crate::service::start_parachain_node::<MantaRuntimeApi, _, _>(
+                    crate::service::start_parachain_node::<MantaRuntimeApi, _>(
                         config,
                         polkadot_config,
                         collator_options,
                         id,
                         create_manta_full,
-                        crate::builder::build_nimbus_consensus::<MantaRuntimeApi>,
+                        cli.block_authoring_duration,
+                        async_backing,
+                        is_dev,
                     )
                     .await
                     .map(|r| r.0)
                     .map_err(Into::into)
                 } else if config.chain_spec.is_calamari() {
-                    crate::service::start_parachain_node::<CalamariRuntimeApi, _, _>(
+                    crate::service::start_parachain_node::<CalamariRuntimeApi, _>(
                         config,
                         polkadot_config,
                         collator_options,
                         id,
                         create_calamari_full,
-                        crate::builder::build_nimbus_consensus::<CalamariRuntimeApi>,
+                        cli.block_authoring_duration,
+                        async_backing,
+                        is_dev,
                     )
                     .await
                     .map(|r| r.0)

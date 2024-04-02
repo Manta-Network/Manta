@@ -17,10 +17,12 @@ targets = ['x86_64-unknown-linux-gnu']
 async-trait = { workspace = true }
 cfg-if = { workspace = true }
 clap = { workspace = true }
+clap-num = { workspace = true }
 codec = { workspace = true }
 futures = { workspace = true }
 hex-literal = { workspace = true }
 log = { workspace = true }
+schnorrkel = { workspace = true }
 serde = { workspace = true }
 
 # Substrate frames
@@ -89,8 +91,10 @@ substrate-prometheus-endpoint = { workspace = true }
 
 # Cumulus dependencies
 cumulus-client-cli = { workspace = true }
+cumulus-client-collator = { workspace = true }
 cumulus-client-consensus-aura = { workspace = true }
 cumulus-client-consensus-common = { workspace = true }
+cumulus-client-consensus-proposer = { workspace = true }
 cumulus-client-consensus-relay-chain = { workspace = true }
 cumulus-client-network = { workspace = true }
 cumulus-client-parachain-inherent = { workspace = true }
@@ -103,9 +107,11 @@ cumulus-relay-chain-minimal-node = { workspace = true }
 cumulus-relay-chain-rpc-interface = { workspace = true }
 
 # Nimbus dependencies
+async-backing-primitives = { workspace = true, features = ["std"] }
 nimbus-consensus = { workspace = true }
 nimbus-primitives = { workspace = true, features = ["std"] }
 pallet-author-inherent = { workspace = true, features = ["std"] }
+session-keys-primitives = { workspace = true, features = ["std"] }
 
 # Polkadot dependencies
 polkadot-cli = { workspace = true }

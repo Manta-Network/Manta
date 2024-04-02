@@ -78,9 +78,11 @@ cumulus-primitives-utility = { workspace = true }
 parachain-info = { workspace = true }
 
 # Nimbus Dependencies
+async-backing-primitives = { workspace = true }
 nimbus-primitives = { workspace = true }
 pallet-aura-style-filter = { workspace = true }
 pallet-author-inherent = { workspace = true }
+session-keys-primitives = { workspace = true }
 
 # Polkadot dependencies
 pallet-xcm = { workspace = true }
@@ -157,7 +159,6 @@ runtime-benchmarks = [
   'manta-collator-selection/runtime-benchmarks',
   'nimbus-primitives/runtime-benchmarks',
   'pallet-author-inherent/runtime-benchmarks',
-  'pallet-aura-style-filter/runtime-benchmarks',
   'pallet-balances/runtime-benchmarks',
   'pallet-multisig/runtime-benchmarks',
   'pallet-scheduler/runtime-benchmarks',
@@ -243,6 +244,8 @@ std = [
   'pallet-aura/std',
   'sp-api/std',
   'sp-arithmetic/std',
+  'session-keys-primitives/std',
+  'async-backing-primitives/std',
   'sp-std/std',
   'sp-io/std',
   'sp-core/std',

@@ -69,6 +69,7 @@ use manta_primitives::{
 };
 use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
 pub use pallet_parachain_staking::{InflationInfo, Range};
+use pallet_randomness::RequestType;
 use pallet_session::ShouldEndSession;
 use runtime_common::{
     prod_or_fast, BlockExecutionWeight, BlockHashCount, CalamariSlowAdjustingFeeUpdate,
@@ -881,7 +882,7 @@ impl pallet_aura::Config for Runtime {
     type MaxAuthorities = ConstU32<100_000>;
     // false means async backing is disabled
     // https://forum.polkadot.network/t/polkadot-release-analysis-v1-0-0/3585#pallet-aura-allow-multiple-blocks-per-slot-12
-    type AllowMultipleBlocksPerSlot = ConstBool<false>; 
+    type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 parameter_types! {
@@ -1365,6 +1366,29 @@ impl_runtime_apis! {
                 // We're not changing rounds, `PotentialAuthors` is not changing, just use can_author
                 <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
             }
+        }
+    }
+
+    impl session_keys_primitives::VrfApi<Block> for Runtime {
+        fn get_last_vrf_output() -> Option<<Block as BlockT>::Hash> {
+            let relay_epoch = pallet_randomness::Pallet::<Self>::relay_epoch();
+            pallet_randomness::Pallet::<Self>::randomness_results(RequestType::BabeEpoch(relay_epoch)).map(|x| x.randomness).flatten()
+        }
+        fn vrf_key_lookup(
+            nimbus_id: nimbus_primitives::NimbusId
+        ) -> Option<session_keys_primitives::VrfId> {
+           None
+        }
+    }
+
+    impl async_backing_primitives::UnincludedSegmentApi<Block> for Runtime {
+        fn can_build_upon(
+            _included_hash: <Block as BlockT>::Hash,
+            _slot: async_backing_primitives::Slot,
+        ) -> bool {
+            // This runtime API can be called only when asynchronous backing is enabled client-side
+            // We return false here to force the client to not use async backing in moonbeam.
+            false
         }
     }
 

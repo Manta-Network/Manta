@@ -36,6 +36,7 @@ base64 = { version = "0.21.5", default-features = false, features = ["alloc"] }
 cfg-if = "1.0.0"
 chrono = "0.4"
 clap = { version = "4.1.8", features = ["derive"] }
+clap-num = "=1.1.1"
 csv = "1.2.1"
 derive_more = "0.99"
 function_name = "0.3"
@@ -51,6 +52,9 @@ rand = { version = "0.8.5", default-features = false }
 rand_chacha = { version = "0.3.1", default-features = false }
 reqwest = { version = "0.11.6", features = ["blocking"] }
 safe_regex = { package = "safe-regex", version = "0.2.5", default-features = false }
+schnorrkel = { version = "0.11.4", default-features = false, features = [
+  "preaudit_deprecated",
+] }
 serde = { version = "1.0.193", default-features = false, features = ["alloc", "derive"] }
 serde_json = "1.0"
 sha3 = { version = "0.10.6", default-features = false }
@@ -155,8 +159,10 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", b
 
 # Cumulus dependencies
 cumulus-client-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0" }
+cumulus-client-collator = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0" }
 cumulus-client-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0" }
 cumulus-client-consensus-common = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0" }
+cumulus-client-consensus-proposer = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0" }
 cumulus-client-consensus-relay-chain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0" }
 cumulus-client-network = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0" }
 cumulus-client-parachain-inherent = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0" }
@@ -178,10 +184,12 @@ cumulus-test-relay-sproof-builder = { git = "https://github.com/paritytech/polka
 parachain-info = { package = "staging-parachain-info", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 
 # Nimbus dependencies
-nimbus-consensus = { git = "https://github.com/manta-network/nimbus.git", branch = "polkadot-v1.6.0" }
-nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "polkadot-v1.6.0", default-features = false }
-pallet-aura-style-filter = { git = "https://github.com/manta-network/nimbus.git", branch = "polkadot-v1.6.0", default-features = false }
-pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", branch = "polkadot-v1.6.0", default-features = false }
+async-backing-primitives = { git = "https://github.com/Moonsong-Labs/moonkit.git", rev = "73d48d726c472dc1100e11197d4412661fe86c3e", default-features = false }
+nimbus-consensus = { git = "https://github.com/Moonsong-Labs/moonkit.git", rev = "73d48d726c472dc1100e11197d4412661fe86c3e" }
+nimbus-primitives = { git = "https://github.com/Moonsong-Labs/moonkit.git", rev = "73d48d726c472dc1100e11197d4412661fe86c3e", default-features = false }
+pallet-aura-style-filter = { git = "https://github.com/Moonsong-Labs/moonkit.git", rev = "73d48d726c472dc1100e11197d4412661fe86c3e", default-features = false }
+pallet-author-inherent = { git = "https://github.com/Moonsong-Labs/moonkit.git", rev = "73d48d726c472dc1100e11197d4412661fe86c3e", default-features = false }
+session-keys-primitives = { git = "https://github.com/Moonsong-Labs/moonkit.git", rev = "73d48d726c472dc1100e11197d4412661fe86c3e", default-features = false }
 
 # Polkadot dependencies
 pallet-xcm = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
