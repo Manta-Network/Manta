@@ -844,7 +844,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 [[package]]
 name = "async-backing-primitives"
 version = "0.9.0"
-source = "git+https://github.com/Moonsong-Labs/moonkit.git?rev=73d48d726c472dc1100e11197d4412661fe86c3e#73d48d726c472dc1100e11197d4412661fe86c3e"
+source = "git+https://github.com/Moonsong-Labs/moonkit.git?rev=2ceb4a9541ccf0111b38f6ec8645ebb67b105913#2ceb4a9541ccf0111b38f6ec8645ebb67b105913"
 dependencies = [
  "sp-api",
  "sp-consensus-slots",
@@ -6995,7 +6995,7 @@ dependencies = [
 [[package]]
 name = "nimbus-consensus"
 version = "0.9.0"
-source = "git+https://github.com/Moonsong-Labs/moonkit.git?rev=73d48d726c472dc1100e11197d4412661fe86c3e#73d48d726c472dc1100e11197d4412661fe86c3e"
+source = "git+https://github.com/Moonsong-Labs/moonkit.git?rev=2ceb4a9541ccf0111b38f6ec8645ebb67b105913#2ceb4a9541ccf0111b38f6ec8645ebb67b105913"
 dependencies = [
  "async-backing-primitives",
  "async-trait",
@@ -7035,7 +7035,7 @@ dependencies = [
 [[package]]
 name = "nimbus-primitives"
 version = "0.9.0"
-source = "git+https://github.com/Moonsong-Labs/moonkit.git?rev=73d48d726c472dc1100e11197d4412661fe86c3e#73d48d726c472dc1100e11197d4412661fe86c3e"
+source = "git+https://github.com/Moonsong-Labs/moonkit.git?rev=2ceb4a9541ccf0111b38f6ec8645ebb67b105913#2ceb4a9541ccf0111b38f6ec8645ebb67b105913"
 dependencies = [
  "async-trait",
  "frame-benchmarking",
@@ -7491,7 +7491,7 @@ dependencies = [
 [[package]]
 name = "pallet-aura-style-filter"
 version = "0.9.0"
-source = "git+https://github.com/Moonsong-Labs/moonkit.git?rev=73d48d726c472dc1100e11197d4412661fe86c3e#73d48d726c472dc1100e11197d4412661fe86c3e"
+source = "git+https://github.com/Moonsong-Labs/moonkit.git?rev=2ceb4a9541ccf0111b38f6ec8645ebb67b105913#2ceb4a9541ccf0111b38f6ec8645ebb67b105913"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7507,7 +7507,7 @@ dependencies = [
 [[package]]
 name = "pallet-author-inherent"
 version = "0.9.0"
-source = "git+https://github.com/Moonsong-Labs/moonkit.git?rev=73d48d726c472dc1100e11197d4412661fe86c3e#73d48d726c472dc1100e11197d4412661fe86c3e"
+source = "git+https://github.com/Moonsong-Labs/moonkit.git?rev=2ceb4a9541ccf0111b38f6ec8645ebb67b105913#2ceb4a9541ccf0111b38f6ec8645ebb67b105913"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -13011,7 +13011,7 @@ dependencies = [
 [[package]]
 name = "session-keys-primitives"
 version = "0.1.0"
-source = "git+https://github.com/Moonsong-Labs/moonkit.git?rev=73d48d726c472dc1100e11197d4412661fe86c3e#73d48d726c472dc1100e11197d4412661fe86c3e"
+source = "git+https://github.com/Moonsong-Labs/moonkit.git?rev=2ceb4a9541ccf0111b38f6ec8645ebb67b105913#2ceb4a9541ccf0111b38f6ec8645ebb67b105913"
 dependencies = [
  "async-trait",
  "frame-support",

@@ -128,7 +128,7 @@ pub type StateBackend = sc_client_api::StateBackendFor<FullBackend, Block>;
 /// be able to perform chain operations.
 pub fn new_partial<RuntimeApi>(
     config: &Configuration,
-    dev_service: bool,
+    local_dev_service: bool,
 ) -> Result<PartialComponents<RuntimeApi>, Error>
 where
     RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
@@ -180,14 +180,13 @@ where
         task_manager.spawn_essential_handle(),
         client.clone(),
     );
-
-    let block_import = ParachainBlockImport::new(client.clone(), backend.clone());
     let create_inherent_data_providers = move |_, _| async move {
         let time = sp_timestamp::InherentDataProvider::from_system_time();
         Ok((time,))
     };
 
-    let (import_queue, block_import) = if dev_service {
+    let (import_queue, block_import) = if local_dev_service {
+        let block_import = ParachainBlockImport::new(client.clone(), backend.clone());
         (
             nimbus_consensus::import_queue(
                 client.clone(),
@@ -195,21 +194,23 @@ where
                 create_inherent_data_providers,
                 &task_manager.spawn_essential_handle(),
                 config.prometheus_registry(),
-                !dev_service,
+                !local_dev_service,
             )?,
             block_import,
         )
     } else {
+        let parachain_block_import =
+            ParachainBlockImport::new_with_delayed_best_block(client.clone(), backend.clone());
         (
             nimbus_consensus::import_queue(
                 client.clone(),
-                block_import.clone(),
+                parachain_block_import.clone(),
                 create_inherent_data_providers,
                 &task_manager.spawn_essential_handle(),
                 config.prometheus_registry(),
-                !dev_service,
+                !local_dev_service,
             )?,
-            block_import,
+            parachain_block_import,
         )
     };
 
@@ -237,7 +238,8 @@ pub async fn start_parachain_node<RuntimeApi, RB>(
     rpc_ext_builder: RB,
     block_authoring_duration: Duration,
     async_backing: bool,
-    dev: bool,
+    // determines if chain is standalone
+    local_dev: bool,
 ) -> sc_service::error::Result<(TaskManager, Arc<FullClient<RuntimeApi>>)>
 where
     RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
@@ -249,7 +251,7 @@ where
 {
     let parachain_config = prepare_node_config(parachain_config);
 
-    let params = new_partial::<RuntimeApi>(&parachain_config, dev)?;
+    let params = new_partial::<RuntimeApi>(&parachain_config, local_dev)?;
     let (block_import, mut telemetry, telemetry_worker_handle) = params.other;
 
     let mut task_manager = params.task_manager;
@@ -335,7 +337,11 @@ where
         announce_block: announce_block.clone(),
         client: client.clone(),
         task_manager: &mut task_manager,
-        da_recovery_profile: DARecoveryProfile::FullNode,
+        da_recovery_profile: if collator {
+            DARecoveryProfile::Collator
+        } else {
+            DARecoveryProfile::FullNode
+        },
         relay_chain_interface: relay_chain_interface.clone(),
         import_queue,
         relay_chain_slot_duration,
@@ -392,7 +398,7 @@ fn start_consensus<RuntimeApi, SO>(
 ) -> Result<(), sc_service::Error>
 where
     RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: RuntimeApiCommon,
+    RuntimeApi::RuntimeApi: RuntimeApiCommon + sp_consensus_aura::AuraApi<Block, AuraId>,
     sc_client_api::StateBackendFor<FullBackend, Block>: sc_client_api::StateBackend<BlakeTwo256>,
     SO: SyncOracle + Send + Sync + Clone + 'static,
 {

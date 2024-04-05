@@ -1316,7 +1316,7 @@ impl_runtime_apis! {
             _slot: async_backing_primitives::Slot,
         ) -> bool {
             // This runtime API can be called only when asynchronous backing is enabled client-side
-            // We return false here to force the client to not use async backing in moonbeam.
+            // We return false here to force the client to not use async backing.
             false
         }
     }
