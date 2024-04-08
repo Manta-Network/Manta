@@ -71,7 +71,6 @@ use manta_primitives::{
 };
 use manta_support::manta_pay::{PullResponse, RawCheckpoint};
 pub use pallet_parachain_staking::{InflationInfo, Range};
-use pallet_randomness::RequestType;
 use pallet_session::ShouldEndSession;
 use runtime_common::{
     prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight,
@@ -1304,7 +1303,7 @@ impl_runtime_apis! {
             None
         }
         fn vrf_key_lookup(
-            nimbus_id: nimbus_primitives::NimbusId
+            _nimbus_id: nimbus_primitives::NimbusId
         ) -> Option<session_keys_primitives::VrfId> {
             // no vrf used in consensus
             None

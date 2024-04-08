@@ -20,7 +20,7 @@ use frame_rpc_system::SystemApiServer;
 use manta_primitives::types::{AccountId, Balance, Block, Hash, Nonce};
 use polkadot_service::SubstrateServiceError;
 use sc_client_api::AuxStore;
-use sc_consensus_manual_seal::rpc::{EngineCommand, ManualSealApiServer};
+use sc_consensus_manual_seal::rpc::EngineCommand;
 pub use sc_rpc::{dev::Dev, DenyUnsafe, SubscriptionTaskExecutor};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;

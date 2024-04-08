@@ -115,13 +115,17 @@ fn sign_vrf(last_vrf_output: H256, key: VrfId, keystore: &KeystorePtr) -> Option
     }
 }
 
+/// Implementation for Vrf Digest call, our runtimes will just return None
 pub struct VrfDigestsProvider<B, C> {
-    client: Arc<C>,
-    keystore: Arc<dyn Keystore>,
+    /// client
+    pub client: Arc<C>,
+    /// keystore
+    pub keystore: Arc<dyn Keystore>,
     _marker: std::marker::PhantomData<B>,
 }
 
 impl<B, C> VrfDigestsProvider<B, C> {
+    /// New instance of `VrfDigestsProvider`
     pub fn new(client: Arc<C>, keystore: Arc<dyn Keystore>) -> Self {
         Self {
             client,
@@ -139,7 +143,8 @@ where
 {
     type Digests = Option<sp_runtime::generic::DigestItem>;
 
-    fn provide_digests(&self, nimbus_id: NimbusId, parent: H256) -> Self::Digests {
-        vrf_pre_digest::<B, C>(&self.client, &self.keystore, nimbus_id, parent)
+    // vrf is not used
+    fn provide_digests(&self, _nimbus_id: NimbusId, _parent: H256) -> Self::Digests {
+        None
     }
 }

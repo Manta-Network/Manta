@@ -26,7 +26,6 @@ use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::info;
 use manta_primitives::types::Header;
-use polkadot_service::IdentifyVariant;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
     NetworkParams, SharedParams, SubstrateCli,
