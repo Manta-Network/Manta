@@ -1300,12 +1300,13 @@ impl_runtime_apis! {
 
     impl session_keys_primitives::VrfApi<Block> for Runtime {
         fn get_last_vrf_output() -> Option<<Block as BlockT>::Hash> {
-            let relay_epoch = pallet_randomness::Pallet::<Self>::relay_epoch();
-            pallet_randomness::Pallet::<Self>::randomness_results(RequestType::BabeEpoch(relay_epoch)).map(|x| x.randomness).flatten()
+            // We don't use vrf in consensus right now
+            None
         }
         fn vrf_key_lookup(
             nimbus_id: nimbus_primitives::NimbusId
         ) -> Option<session_keys_primitives::VrfId> {
+            // no vrf used in consensus
             None
         }
     }

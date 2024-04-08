@@ -254,6 +254,9 @@ where
     let params = new_partial::<RuntimeApi>(&parachain_config, local_dev)?;
     let (block_import, mut telemetry, telemetry_worker_handle) = params.other;
 
+    let client = params.client.clone();
+    let backend = params.backend.clone();
+
     let mut task_manager = params.task_manager;
     let (relay_chain_interface, collator_key) = crate::builder::build_relay_chain_interface(
         polkadot_config,
@@ -265,14 +268,11 @@ where
     .await
     .map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
-    let client = params.client.clone();
-    let backend = params.backend.clone();
-
     let force_authoring = parachain_config.force_authoring;
     let collator = parachain_config.role.is_authority();
     let prometheus_registry = parachain_config.prometheus_registry().cloned();
     let transaction_pool = params.transaction_pool.clone();
-    let import_queue = params.import_queue.service();
+    let import_queue_service = params.import_queue.service();
     let net_config = sc_network::config::FullNetworkConfiguration::new(&parachain_config.network);
 
     let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
@@ -343,7 +343,7 @@ where
             DARecoveryProfile::FullNode
         },
         relay_chain_interface: relay_chain_interface.clone(),
-        import_queue,
+        import_queue: import_queue_service,
         relay_chain_slot_duration,
         recovery_handle: Box::new(overseer_handle.clone()),
         sync_service: sync_service.clone(),
