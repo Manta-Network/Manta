@@ -52,9 +52,6 @@ rand = { version = "0.8.5", default-features = false }
 rand_chacha = { version = "0.3.1", default-features = false }
 reqwest = { version = "0.11.6", features = ["blocking"] }
 safe_regex = { package = "safe-regex", version = "0.2.5", default-features = false }
-schnorrkel = { version = "0.11.4", default-features = false, features = [
-  "preaudit_deprecated",
-] }
 serde = { version = "1.0.193", default-features = false, features = ["alloc", "derive"] }
 serde_json = "1.0"
 sha3 = { version = "0.10.6", default-features = false }
@@ -168,7 +165,9 @@ cumulus-client-network = { git = "https://github.com/paritytech/polkadot-sdk", b
 cumulus-client-parachain-inherent = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0" }
 cumulus-client-service = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0" }
 cumulus-pallet-dmp-queue = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
-cumulus-pallet-parachain-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
+cumulus-pallet-parachain-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false, features = [
+  "parameterized-consensus-hook",
+] }
 cumulus-pallet-session-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 cumulus-pallet-xcmp-queue = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }

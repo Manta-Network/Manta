@@ -22,7 +22,6 @@ codec = { workspace = true }
 futures = { workspace = true }
 hex-literal = { workspace = true }
 log = { workspace = true }
-schnorrkel = { workspace = true }
 serde = { workspace = true }
 
 # Substrate frames

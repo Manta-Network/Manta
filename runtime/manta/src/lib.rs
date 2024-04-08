@@ -1608,5 +1608,5 @@ impl_runtime_apis! {
 register_validate_block! {
     Runtime = Runtime,
     BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
-    CheckInherents = CheckInherentsStruct,
+    CheckInherents = CheckInherentsStruct
 }

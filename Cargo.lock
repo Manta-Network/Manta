@@ -6182,7 +6182,6 @@ dependencies = [
  "sc-tracing",
  "sc-transaction-pool",
  "sc-transaction-pool-api",
- "schnorrkel 0.11.4",
  "serde",
  "session-key-primitives",
  "session-keys-primitives",

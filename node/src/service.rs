@@ -420,11 +420,11 @@ where
     let create_inherent_data_providers = |_, _| async move {
         let time = sp_timestamp::InherentDataProvider::from_system_time();
 
-        let author = nimbus_primitives::InherentDataProvider;
+        let nimbus = nimbus_primitives::InherentDataProvider;
 
-        let randomness = session_key_primitives::inherent::InherentDataProvider;
+        let session = session_key_primitives::inherent::InherentDataProvider;
 
-        Ok((time, author, randomness))
+        Ok((time, nimbus, session))
     };
 
     let client_clone = client.clone();
@@ -490,23 +490,31 @@ where
         task_manager.spawn_essential_handle().spawn(
             "nimbus",
             None,
-            nimbus_consensus::collators::basic::run::<Block, _, _, FullBackend, _, _, _, _, _>(
-                nimbus_consensus::collators::basic::Params {
-                    additional_digests_provider: maybe_provide_vrf_digest,
-                    //authoring_duration: Duration::from_millis(500),
-                    block_import,
-                    collator_key,
-                    collator_service,
-                    create_inherent_data_providers,
-                    force_authoring,
-                    keystore,
-                    overseer_handle,
-                    para_id,
-                    para_client: client,
-                    proposer,
-                    relay_client: relay_chain_interface,
-                },
-            ),
+            nimbus_consensus::collators::basic::run::<
+                Block,
+                _,
+                _,
+                FullBackend,
+                FullClient<RuntimeApi>,
+                _,
+                _,
+                _,
+                _,
+            >(nimbus_consensus::collators::basic::Params {
+                additional_digests_provider: maybe_provide_vrf_digest,
+                //authoring_duration: Duration::from_millis(500),
+                block_import,
+                collator_key,
+                collator_service,
+                create_inherent_data_providers,
+                force_authoring,
+                keystore,
+                overseer_handle,
+                para_id,
+                para_client: client,
+                proposer,
+                relay_client: relay_chain_interface,
+            }),
         );
     };
 
