@@ -184,13 +184,12 @@ cumulus-test-relay-sproof-builder = { git = "https://github.com/paritytech/polka
 parachain-info = { package = "staging-parachain-info", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 
 # Nimbus dependencies
-async-backing-primitives = { git = "https://github.com/Moonsong-Labs/moonkit.git", rev = "2ceb4a9541ccf0111b38f6ec8645ebb67b105913", default-features = false }
-
-nimbus-consensus = { git = "https://github.com/Moonsong-Labs/moonkit.git", rev = "2ceb4a9541ccf0111b38f6ec8645ebb67b105913" }
-nimbus-primitives = { git = "https://github.com/Moonsong-Labs/moonkit.git", rev = "2ceb4a9541ccf0111b38f6ec8645ebb67b105913", default-features = false }
-pallet-aura-style-filter = { git = "https://github.com/Moonsong-Labs/moonkit.git", rev = "2ceb4a9541ccf0111b38f6ec8645ebb67b105913", default-features = false }
-pallet-author-inherent = { git = "https://github.com/Moonsong-Labs/moonkit.git", rev = "2ceb4a9541ccf0111b38f6ec8645ebb67b105913", default-features = false }
-session-keys-primitives = { git = "https://github.com/Moonsong-Labs/moonkit.git", rev = "2ceb4a9541ccf0111b38f6ec8645ebb67b105913", default-features = false }
+async-backing-primitives = { git = "https://github.com/Manta-Network/moonkit.git", branch = "manta-polkadot-1.6.0", default-features = false }
+nimbus-consensus = { git = "https://github.com/Manta-Network/moonkit.git", branch = "manta-polkadot-1.6.0" }
+nimbus-primitives = { git = "https://github.com/Manta-Network/moonkit.git", branch = "manta-polkadot-1.6.0", default-features = false }
+pallet-aura-style-filter = { git = "https://github.com/Manta-Network/moonkit.git", branch = "manta-polkadot-1.6.0", default-features = false }
+pallet-author-inherent = { git = "https://github.com/Manta-Network/moonkit.git", branch = "manta-polkadot-1.6.0", default-features = false }
+session-keys-primitives = { git = "https://github.com/Manta-Network/moonkit.git", branch = "manta-polkadot-1.6.0", default-features = false }
 
 # Polkadot dependencies
 pallet-xcm = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
