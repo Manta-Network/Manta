@@ -55,6 +55,7 @@ pub fn calamari_properties() -> Properties {
 
 /// Returns the Calamari development chainspec.
 pub fn calamari_development_config() -> CalamariChainSpec {
+    #[allow(deprecated)]
     CalamariChainSpec::from_genesis(
         "Calamari Parachain Development",
         "calamari_dev",
@@ -95,6 +96,7 @@ pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
     } else {
         "calamari_local"
     };
+    #[allow(deprecated)]
     CalamariChainSpec::from_genesis(
         "Calamari Parachain Local",
         id,

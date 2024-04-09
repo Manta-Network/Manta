@@ -1478,7 +1478,7 @@ impl_runtime_apis! {
                 pub ExistentialDepositAsset: Option<MultiAsset> = Some(MultiAsset {
                     id: Concrete(MultiLocation::parent()),
                     fun: Fungible(NativeTokenExistentialDeposit::get())
-                }).into();
+                });
 
             }
 

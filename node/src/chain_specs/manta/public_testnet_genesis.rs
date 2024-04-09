@@ -68,6 +68,7 @@ pub fn genesis_spec() -> MantaChainSpec {
     ];
     let genesis_collators_clone = genesis_collators.clone(); // so we can move it into the constructor closure
 
+    #[allow(deprecated)]
     MantaChainSpec::from_genesis(
         "Manta Parachain Staging",
         "manta",

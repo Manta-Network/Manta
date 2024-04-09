@@ -125,7 +125,7 @@ impl<T: frame_system::Config> frame_system::WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(18_373_000, 0)
 			// Standard Error: 1_613
 			.saturating_add(Weight::from_parts(1_158_786, 0))
-			.saturating_add(T::DbWeight::get().writes((1_u64)))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: Skipped Metadata (r:0 w:0)
 	/// The range of component `p` is `[0, 1000]`.
@@ -134,7 +134,7 @@ impl<T: frame_system::Config> frame_system::WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(18_373_000, 0)
 			// Standard Error: 1_613
 			.saturating_add(Weight::from_parts(1_158_786, 0))
-			.saturating_add(T::DbWeight::get().writes((1_u64)))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
 
@@ -205,7 +205,7 @@ impl WeightInfo for () {
 		Weight::from_parts(18_373_000, 0)
 			// Standard Error: 1_613
 			.saturating_add(Weight::from_parts(1_158_786, 0))
-			.saturating_add(RocksDbWeight::get().writes((1_u64)))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	// Storage: Skipped Metadata (r:0 w:0)
 	/// The range of component `p` is `[0, 1000]`.
@@ -214,6 +214,6 @@ impl WeightInfo for () {
 		Weight::from_parts(18_373_000, 0)
 			// Standard Error: 1_613
 			.saturating_add(Weight::from_parts(1_158_786, 0))
-			.saturating_add(RocksDbWeight::get().writes((1_u64)))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

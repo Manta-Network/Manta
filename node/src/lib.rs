@@ -26,6 +26,5 @@ pub mod cli;
 pub mod client;
 pub mod command;
 mod fake_runtime_api;
-mod instant_finalize;
 pub mod rpc;
 pub mod service;
