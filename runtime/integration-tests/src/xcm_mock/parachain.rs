@@ -527,6 +527,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type ReservedXcmpWeight = ReservedXcmpWeight;
     type OnSystemEvent = ();
     type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+    type ConsensusHook = cumulus_pallet_parachain_system::ExpectParentIncluded;
     type WeightInfo = ();
 }
 

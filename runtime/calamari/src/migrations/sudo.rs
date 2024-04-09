@@ -21,7 +21,7 @@ use core::marker::PhantomData;
 use frame_support::migration::remove_storage_prefix;
 use frame_support::{
     migration::have_storage_value,
-    pallet_prelude::Weight,
+    pallet_prelude::*,
     traits::{Get, OnRuntimeUpgrade},
 };
 #[cfg(feature = "try-runtime")]

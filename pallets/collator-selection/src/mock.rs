@@ -145,7 +145,7 @@ impl pallet_session::SessionHandler<u64> for TestSessionHandler {
         SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
     }
     fn on_new_session<Ks: OpaqueKeys>(_: bool, keys: &[(u64, Ks)], _: &[(u64, Ks)]) {
-        SessionChangeBlock::set(System::block_number() as u64);
+        SessionChangeBlock::set(System::block_number());
         SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
     }
     fn on_before_session_ending() {}
