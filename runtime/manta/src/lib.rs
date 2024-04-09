@@ -1261,6 +1261,11 @@ impl_runtime_apis! {
         fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool {
             let next_block_number = parent_header.number + 1;
             let slot = relay_parent;
+            if cumulus_pallet_parachain_system::Pallet::<Self>::last_relay_block_number() + 1 == relay_parent {
+                log::debug!("Cannot Author blocks on consecutive slots");
+                return false
+            }
+
             // Because the staking solution calculates the next staking set at the beginning
             // of the first block in the new round, the only way to accurately predict the
             // authors is to compute the selection during prediction.
