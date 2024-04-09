@@ -84,7 +84,7 @@ pub fn calamari_development_config() -> CalamariChainSpec {
             relay_chain: KUSAMA_RELAYCHAIN_DEV_NET.into(),
             para_id: CALAMARI_PARACHAIN_ID,
         },
-        &WASM_BINARY.expect("WASM binary was not build, please build it!"),
+        WASM_BINARY.expect("WASM binary was not build, please build it!"),
     )
 }
 

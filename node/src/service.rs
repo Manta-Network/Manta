@@ -228,6 +228,7 @@ where
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
+#[allow(clippy::too_many_arguments)]
 pub async fn start_parachain_node<RuntimeApi, RB>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
@@ -374,6 +375,7 @@ where
     Ok((task_manager, client))
 }
 
+#[allow(clippy::too_many_arguments)]
 fn start_consensus<RuntimeApi, SO>(
     async_backing: bool,
     backend: Arc<FullBackend>,

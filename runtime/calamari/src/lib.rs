@@ -968,6 +968,7 @@ impl pallet_name_service::Config for Runtime {
 }
 
 struct CheckInherents;
+#[allow(deprecated)]
 impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
     fn check_inherents(
         block: &Block,
@@ -1663,5 +1664,5 @@ impl_runtime_apis! {
 cumulus_pallet_parachain_system::register_validate_block! {
     Runtime = Runtime,
     BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
-    CheckInherents = CheckInherentsStruct
+    CheckInherents = CheckInherents
 }

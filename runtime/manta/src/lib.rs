@@ -41,8 +41,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use cumulus_pallet_parachain_system::{
-    register_validate_block, CheckInherents, ParachainSetCode, RelayChainStateProof,
-    RelaychainDataProvider,
+    register_validate_block, ParachainSetCode, RelayChainStateProof, RelaychainDataProvider,
 };
 use frame_support::{
     construct_runtime,
@@ -925,7 +924,8 @@ impl pallet_name_service::Config for Runtime {
 impl parachain_info::Config for Runtime {}
 
 struct CheckInherentsStruct;
-impl CheckInherents<Block> for CheckInherentsStruct {
+#[allow(deprecated)]
+impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherentsStruct {
     fn check_inherents(
         block: &Block,
         relay_state_proof: &RelayChainStateProof,
