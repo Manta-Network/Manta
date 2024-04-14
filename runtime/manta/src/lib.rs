@@ -1065,7 +1065,7 @@ mod benches {
         [pallet_multisig, Multisig]
         // always get this error ValidationDataNotAvailable while benchmarking
         // we disable frame_system in this release, and will fix it in next release
-        // [frame_system, SystemBench::<Runtime>]
+        [frame_system, SystemBench::<Runtime>]
         [pallet_timestamp, Timestamp]
         [pallet_utility, Utility]
         [pallet_preimage, Preimage]
@@ -1078,7 +1078,7 @@ mod benches {
         [cumulus_pallet_xcmp_queue, XcmpQueue]
         // always get this error(Unimplemented) while benchmarking pallet_xcm_benchmarks::fungible::initiate_teleport
         // so this time we will use statemint's fungible weights
-        // [pallet_xcm_benchmarks::fungible, XcmBalances]
+        [pallet_xcm_benchmarks::fungible, XcmBalances]
         [pallet_xcm_benchmarks::generic, XcmGeneric]
         [pallet_session, SessionBench::<Runtime>]
         // Manta pallets
@@ -1437,8 +1437,9 @@ impl_runtime_apis! {
             use frame_benchmarking::{Benchmarking, BenchmarkList};
             use frame_support::traits::StorageInfoTrait;
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
+            use frame_system_benchmarking::Pallet as SystemBench;
 
-            // type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+            type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
             type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
             let mut list = Vec::<BenchmarkList>::new();
@@ -1454,7 +1455,17 @@ impl_runtime_apis! {
             use frame_benchmarking::{Benchmarking, BenchmarkBatch, BenchmarkError};
             use frame_support::traits::TrackedStorageKey;
 
-            impl frame_system_benchmarking::Config for Runtime {}
+            use frame_system_benchmarking::Pallet as SystemBench;
+            impl frame_system_benchmarking::Config for Runtime {
+                fn setup_set_code_requirements(code: &sp_std::vec::Vec<u8>) -> Result<(), BenchmarkError> {
+                    ParachainSystem::initialize_for_set_code_benchmark(code.len() as u32);
+                    Ok(())
+                }
+
+                fn verify_set_code() {
+                    System::assert_last_event(cumulus_pallet_parachain_system::Event::<Runtime>::ValidationFunctionStored.into());
+                }
+            }
 
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
             impl cumulus_pallet_session_benchmarking::Config for Runtime {}
@@ -1581,7 +1592,7 @@ impl_runtime_apis! {
                 }
             }
 
-            // type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+            type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
             type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
             let whitelist: Vec<TrackedStorageKey> = vec![

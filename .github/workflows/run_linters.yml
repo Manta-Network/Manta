@@ -77,9 +77,10 @@ jobs:
           SCCACHE_CACHE_SIZE: 2G
           SCCACHE_DIR: ~/.cache/sccache
         shell: bash
+        # It's pointless to use no-default features.
         run: |
           source ${HOME}/.cargo/env
-          SKIP_WASM_BUILD=1 cargo check --no-default-features
+          SKIP_WASM_BUILD=1 cargo check --all-targets --all-features
           SKIP_WASM_BUILD=1 cargo clippy --all-targets --all-features -- -D warnings
       - name: stop sccache server
         run: sccache --stop-server || true

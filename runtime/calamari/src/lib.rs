@@ -48,14 +48,14 @@ use frame_support::{
         fungible::HoldConsideration,
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
         ConstBool, ConstU128, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, IsInVec,
-        LinearStoragePrice, NeverEnsureOrigin, PrivilegeCmp,
+        LinearStoragePrice, PrivilegeCmp,
     },
     weights::{ConstantMultiplier, Weight},
     PalletId,
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureRoot, EnsureSigned,
+    EnsureRoot, EnsureSigned, EnsureWithSuccess,
 };
 use manta_primitives::{
     constants::{
@@ -470,6 +470,8 @@ impl pallet_authorship::Config for Runtime {
 
 parameter_types! {
     pub const NativeTokenExistentialDeposit: u128 = 10 * cKMA; // 0.1 KMA
+    #[cfg(feature = "runtime-benchmarks")]
+    pub const BenchmarksNativeTokenExistentialDeposit: u128 = 10;
 }
 impl pallet_balances::Config for Runtime {
     type MaxLocks = ConstU32<50>;
@@ -478,6 +480,9 @@ impl pallet_balances::Config for Runtime {
     type Balance = Balance;
     type DustRemoval = ();
     type RuntimeEvent = RuntimeEvent;
+    #[cfg(not(feature = "runtime-benchmarks"))]
+    type ExistentialDeposit = NativeTokenExistentialDeposit;
+    #[cfg(feature = "runtime-benchmarks")]
     type ExistentialDeposit = NativeTokenExistentialDeposit;
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
@@ -669,6 +674,7 @@ parameter_types! {
     pub const Burn: Permill = Permill::from_percent(0);
     pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
     pub const PayoutSpendPeriod: BlockNumber = 30 * DAYS;
+    pub const MaxBalance: Balance = Balance::max_value();
 }
 
 type EnsureRootOrThreeFifthsCouncil = EitherOfDiverse<
@@ -699,7 +705,7 @@ impl pallet_treasury::Config for Runtime {
     type SpendFunds = ();
     // Expects an implementation of `EnsureOrigin` with a `Success` generic,
     // which is the the maximum amount that this origin is allowed to spend at a time.
-    type SpendOrigin = NeverEnsureOrigin<Balance>;
+    type SpendOrigin = EnsureWithSuccess<EnsureRoot<AccountId>, AccountId, MaxBalance>;
     type Beneficiary = AccountId;
     type BeneficiaryLookup = IdentityLookup<Self::Beneficiary>;
     type Paymaster = PayFromAccount<Balances, TreasuryAccount>;
@@ -1111,7 +1117,7 @@ mod benches {
         [pallet_multisig, Multisig]
         // always get this error ValidationDataNotAvailable while benchmarking
         // we disable frame_system in this release, and will fix it in next release
-        // [frame_system, SystemBench::<Runtime>]
+        [frame_system, SystemBench::<Runtime>]
         [pallet_timestamp, Timestamp]
         [pallet_utility, Utility]
         [pallet_democracy, Democracy]
@@ -1496,6 +1502,7 @@ impl_runtime_apis! {
             use frame_benchmarking::{Benchmarking, BenchmarkList};
             use frame_support::traits::StorageInfoTrait;
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
+            use frame_system_benchmarking::Pallet as SystemBench;
 
             let mut list = Vec::<BenchmarkList>::new();
             list_benchmarks!(list, extra);
@@ -1510,8 +1517,18 @@ impl_runtime_apis! {
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
             use frame_benchmarking::{Benchmarking, BenchmarkBatch, BenchmarkError};
             use frame_support::traits::TrackedStorageKey;
+            use frame_system_benchmarking::Pallet as SystemBench;
 
-            impl frame_system_benchmarking::Config for Runtime {}
+            impl frame_system_benchmarking::Config for Runtime {
+                fn setup_set_code_requirements(code: &sp_std::vec::Vec<u8>) -> Result<(), BenchmarkError> {
+                    ParachainSystem::initialize_for_set_code_benchmark(code.len() as u32);
+                    Ok(())
+                }
+
+                fn verify_set_code() {
+                    System::assert_last_event(cumulus_pallet_parachain_system::Event::<Runtime>::ValidationFunctionStored.into());
+                }
+            }
 
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
             impl cumulus_pallet_session_benchmarking::Config for Runtime {}
