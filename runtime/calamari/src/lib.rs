@@ -468,11 +468,16 @@ impl pallet_authorship::Config for Runtime {
     type EventHandler = (CollatorSelection,);
 }
 
+#[cfg(not(feature = "runtime-benchmarks"))]
 parameter_types! {
     pub const NativeTokenExistentialDeposit: u128 = 10 * cKMA; // 0.1 KMA
-    #[cfg(feature = "runtime-benchmarks")]
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+parameter_types! {
     pub const BenchmarksNativeTokenExistentialDeposit: u128 = 10;
 }
+
 impl pallet_balances::Config for Runtime {
     type MaxLocks = ConstU32<50>;
     type MaxReserves = ConstU32<50>;
@@ -483,7 +488,7 @@ impl pallet_balances::Config for Runtime {
     #[cfg(not(feature = "runtime-benchmarks"))]
     type ExistentialDeposit = NativeTokenExistentialDeposit;
     #[cfg(feature = "runtime-benchmarks")]
-    type ExistentialDeposit = NativeTokenExistentialDeposit;
+    type ExistentialDeposit = BenchmarksNativeTokenExistentialDeposit;
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
     type FreezeIdentifier = ();

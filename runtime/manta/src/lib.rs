@@ -436,8 +436,14 @@ impl pallet_authorship::Config for Runtime {
     type EventHandler = (CollatorSelection,);
 }
 
+#[cfg(not(feature = "runtime-benchmarks"))]
 parameter_types! {
     pub const NativeTokenExistentialDeposit: u128 = 10 * cMANTA; // 0.1 MANTA
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+parameter_types! {
+    pub const BenchmarksNativeTokenExistentialDeposit: u128 = 10;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -447,7 +453,10 @@ impl pallet_balances::Config for Runtime {
     type Balance = Balance;
     type DustRemoval = ();
     type RuntimeEvent = RuntimeEvent;
+    #[cfg(not(feature = "runtime-benchmarks"))]
     type ExistentialDeposit = NativeTokenExistentialDeposit;
+    #[cfg(feature = "runtime-benchmarks")]
+    type ExistentialDeposit = BenchmarksNativeTokenExistentialDeposit;
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
     type FreezeIdentifier = ();
