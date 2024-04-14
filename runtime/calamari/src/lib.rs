@@ -468,7 +468,6 @@ impl pallet_authorship::Config for Runtime {
     type EventHandler = (CollatorSelection,);
 }
 
-#[cfg(not(feature = "runtime-benchmarks"))]
 parameter_types! {
     pub const NativeTokenExistentialDeposit: u128 = 10 * cKMA; // 0.1 KMA
 }
