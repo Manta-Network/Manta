@@ -353,12 +353,12 @@ pub fn run_with(cli: Cli) -> Result {
         None => {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let chain_spec = &runner.config().chain_spec;
-            let is_dev = chain_spec.is_localdev();
+            let is_localdev = chain_spec.is_localdev();
             info!("id:{}", chain_spec.id());
             let collator_options = cli.run.collator_options();
 
             runner.run_node_until_exit(|config| async move {
-                if is_dev {
+                if is_localdev {
                     info!("⚠️  DEV STANDALONE MODE.");
                     return Err("Dev mode not support for current chain".into());
                 }
