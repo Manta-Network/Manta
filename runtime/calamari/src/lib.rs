@@ -472,6 +472,8 @@ parameter_types! {
     pub const NativeTokenExistentialDeposit: u128 = 10 * cKMA; // 0.1 KMA
 }
 
+// It's for fixing benchmarking pallet-treasury, 100 will be deposited into an
+// account in the pallet_treasury::payout, so we have to set a smaller ED.
 #[cfg(feature = "runtime-benchmarks")]
 parameter_types! {
     pub const BenchmarksNativeTokenExistentialDeposit: u128 = 10;
@@ -931,11 +933,19 @@ parameter_types! {
     pub const MinVestedTransfer: Balance = KMA;
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+parameter_types! {
+    pub const BenchmarksMinVestedTransfer: Balance = 10;
+}
+
 impl calamari_vesting::Config for Runtime {
     type Currency = Balances;
     type RuntimeEvent = RuntimeEvent;
     type Timestamp = Timestamp;
+    #[cfg(not(feature = "runtime-benchmarks"))]
     type MinVestedTransfer = MinVestedTransfer;
+    #[cfg(feature = "runtime-benchmarks")]
+    type MinVestedTransfer = BenchmarksMinVestedTransfer;
     type MaxScheduleLength = ConstU32<6>;
     type WeightInfo = weights::calamari_vesting::SubstrateWeight<Runtime>;
 }
@@ -1152,7 +1162,9 @@ mod benches {
         // always get this error(Unimplemented) while benchmarking pallet_xcm_benchmarks::fungible::initiate_teleport
         // so this time we will use statemint's fungible weights
         // and actually we don't support teleport now
-        // [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
+        // [pallet_xcm_benchmarks::fungible, XcmBalances]
+        [pallet_xcm_benchmarks::generic, XcmGeneric]
+        [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
         [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
@@ -1508,6 +1520,9 @@ impl_runtime_apis! {
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
             use frame_system_benchmarking::Pallet as SystemBench;
 
+            type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+            type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
+
             let mut list = Vec::<BenchmarkList>::new();
             list_benchmarks!(list, extra);
 
@@ -1655,6 +1670,9 @@ impl_runtime_apis! {
                     Err(BenchmarkError::Skip)
                 }
             }
+
+            type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+            type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
             let whitelist: Vec<TrackedStorageKey> = vec![
                 // Block Number
