@@ -27,6 +27,7 @@ use manta_primitives::{
     },
     types::Balance,
 };
+use scale_info::prelude::*;
 use sp_std::vec;
 use xcm::latest::prelude::*;
 

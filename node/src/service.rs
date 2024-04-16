@@ -21,15 +21,20 @@ use cumulus_client_cli::CollatorOptions;
 use cumulus_client_collator::service::CollatorService;
 use cumulus_client_consensus_common::ParachainBlockImport as TParachainBlockImport;
 use cumulus_client_consensus_proposer::Proposer;
+use cumulus_client_parachain_inherent::{MockValidationDataInherentDataProvider, MockXcmConfig};
 use cumulus_client_service::{
     build_network, prepare_node_config, start_relay_chain_tasks, CollatorSybilResistance,
     DARecoveryProfile, StartRelayChainTasksParams,
 };
 use cumulus_primitives_core::{relay_chain::CollatorPair, ParaId};
 use cumulus_relay_chain_interface::{OverseerHandle, RelayChainInterface};
+use futures::{Stream, StreamExt};
 use hex_literal::hex;
 pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Nonce};
-use sc_consensus::ImportQueue;
+use nimbus_consensus::NimbusManualSealConsensusDataProvider;
+use polkadot_service::HeaderBackend;
+use sc_consensus::{ImportQueue, LongestChain};
+use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use sc_network::NetworkBlock;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
@@ -38,6 +43,7 @@ use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerH
 use session_key_primitives::{AuraId, NimbusId};
 use sp_api::ConstructRuntimeApi;
 use sp_consensus::SyncOracle;
+use sp_core::H256;
 use sp_keystore::KeystorePtr;
 use sp_runtime::traits::BlakeTwo256;
 use std::{sync::Arc, time::Duration};
@@ -107,7 +113,7 @@ pub type ParachainBlockImport<RuntimeApi> =
 pub type PartialComponents<RuntimeApi> = sc_service::PartialComponents<
     FullClient<RuntimeApi>,
     FullBackend,
-    (),
+    Option<LongestChain<FullBackend, Block>>,
     DefaultImportQueue,
     TransactionPool<RuntimeApi>,
     (
@@ -183,6 +189,12 @@ where
         Ok((time,))
     };
 
+    let maybe_select_chain = if local_dev_service {
+        Some(sc_consensus::LongestChain::new(backend.clone()))
+    } else {
+        None
+    };
+
     let (import_queue, block_import) = if local_dev_service {
         let block_import = ParachainBlockImport::new(client.clone(), backend.clone());
         (
@@ -219,7 +231,7 @@ where
         keystore_container,
         task_manager,
         transaction_pool,
-        select_chain: (),
+        select_chain: maybe_select_chain,
         other: (block_import, telemetry, telemetry_worker_handle),
     })
 }
@@ -237,8 +249,6 @@ pub async fn start_parachain_node<RuntimeApi, RB>(
     rpc_ext_builder: RB,
     block_authoring_duration: Duration,
     async_backing: bool,
-    // determines if chain is standalone
-    local_dev: bool,
 ) -> sc_service::error::Result<(TaskManager, Arc<FullClient<RuntimeApi>>)>
 where
     RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
@@ -250,7 +260,7 @@ where
 {
     let parachain_config = prepare_node_config(parachain_config);
 
-    let params = new_partial::<RuntimeApi>(&parachain_config, local_dev)?;
+    let params = new_partial::<RuntimeApi>(&parachain_config, false)?;
     let (block_import, mut telemetry, telemetry_worker_handle) = params.other;
 
     let client = params.client.clone();
@@ -372,6 +382,184 @@ where
     }
 
     start_network.start_network();
+    Ok((task_manager, client))
+}
+
+/// Start node with dev config
+#[sc_tracing::logging::prefix_logs_with("Parachain")]
+#[allow(clippy::too_many_arguments)]
+pub async fn start_dev_node<RuntimeApi, RB>(
+    parachain_config: Configuration,
+    rpc_ext_builder: RB,
+) -> sc_service::error::Result<(TaskManager, Arc<FullClient<RuntimeApi>>)>
+where
+    RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi::RuntimeApi: RuntimeApiCommon + sp_consensus_aura::AuraApi<Block, AuraId>,
+    RB: Fn(
+            rpc::FullDeps<FullClient<RuntimeApi>, TransactionPool<RuntimeApi>>,
+        ) -> Result<jsonrpsee::RpcModule<()>, sc_service::Error>
+        + 'static,
+{
+    let params = new_partial::<RuntimeApi>(&parachain_config, true)?;
+    let (block_import, mut telemetry, _telemetry_worker_handle) = params.other;
+
+    let transaction_pool = params.transaction_pool.clone();
+    let import_queue = params.import_queue;
+    let client = params.client.clone();
+    let backend = params.backend.clone();
+
+    let keystore_container = params.keystore_container;
+    let mut task_manager = params.task_manager;
+    let net_config = sc_network::config::FullNetworkConfiguration::new(&parachain_config.network);
+
+    let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
+        sc_service::build_network(sc_service::BuildNetworkParams {
+            config: &parachain_config,
+            client: client.clone(),
+            transaction_pool: transaction_pool.clone(),
+            spawn_handle: task_manager.spawn_handle(),
+            import_queue,
+            block_announce_validator_builder: None,
+            warp_sync_params: None,
+            net_config,
+            block_relay: None,
+        })?;
+
+    let prometheus_registry = parachain_config.prometheus_registry().cloned();
+    let collator = parachain_config.role.is_authority();
+
+    if collator {
+        log::info!("Is running as Collator");
+        let env = sc_basic_authorship::ProposerFactory::with_proof_recording(
+            task_manager.spawn_handle(),
+            client.clone(),
+            transaction_pool.clone(),
+            prometheus_registry.as_ref(),
+            telemetry.as_ref().map(|x| x.handle()),
+        );
+
+        let commands_stream: Box<dyn Stream<Item = EngineCommand<H256>> + Send + Sync + Unpin> =
+            Box::new(
+                // This bit cribbed from the implementation of instant seal.
+                transaction_pool
+                    .pool()
+                    .validated_pool()
+                    .import_notification_stream()
+                    .map(|_| EngineCommand::SealNewBlock {
+                        create_empty: false,
+                        finalize: false,
+                        parent_hash: None,
+                        sender: None,
+                    }),
+            );
+
+        let select_chain = params.select_chain.expect(
+            "`new_partial` builds a `LongestChainRule` when building dev service.\
+				We specified the dev service when calling `new_partial`.\
+				Therefore, a `LongestChainRule` is present. qed.",
+        );
+
+        let client_set_aside_for_cidp = client.clone();
+        let client_clone = client.clone();
+        let keystore_clone = keystore_container.keystore().clone();
+
+        let maybe_provide_vrf_digest =
+            move |nimbus_id: NimbusId, parent: Hash| -> Option<sp_runtime::generic::DigestItem> {
+                crate::client::vrf_pre_digest::<Block, FullClient<RuntimeApi>>(
+                    &client_clone,
+                    &keystore_clone,
+                    nimbus_id,
+                    parent,
+                )
+            };
+
+        task_manager.spawn_essential_handle().spawn_blocking(
+            "authorship_task",
+            Some("block-authoring"),
+            run_manual_seal(ManualSealParams {
+                block_import,
+                env,
+                client: client.clone(),
+                pool: transaction_pool.clone(),
+                commands_stream,
+                select_chain,
+                consensus_data_provider: Some(Box::new(NimbusManualSealConsensusDataProvider {
+                    keystore: keystore_container.keystore(),
+                    client: client.clone(),
+                    additional_digests_provider: maybe_provide_vrf_digest,
+                    _phantom: Default::default(),
+                })),
+                create_inherent_data_providers: move |block: H256, ()| {
+                    let maybe_current_para_block = client_set_aside_for_cidp.number(block);
+
+                    let client_for_xcm = client_set_aside_for_cidp.clone();
+                    async move {
+                        let time = sp_timestamp::InherentDataProvider::from_system_time();
+
+                        let current_para_block = maybe_current_para_block?
+                            .ok_or(sp_blockchain::Error::UnknownBlock(block.to_string()))?;
+
+                        let mocked_parachain = MockValidationDataInherentDataProvider {
+                            current_para_block,
+                            relay_offset: 1000,
+                            relay_blocks_per_para_block: 2,
+                            // TODO: Recheck
+                            para_blocks_per_relay_epoch: 10,
+                            relay_randomness_config: (),
+                            xcm_config: MockXcmConfig::new(
+                                &*client_for_xcm,
+                                block,
+                                Default::default(),
+                                Default::default(),
+                            ),
+                            raw_downward_messages: Default::default(),
+                            raw_horizontal_messages: Default::default(),
+                            additional_key_values: None,
+                        };
+
+                        let randomness = session_key_primitives::inherent::InherentDataProvider;
+
+                        Ok((time, mocked_parachain, randomness))
+                    }
+                },
+            }),
+        );
+    }
+
+    let rpc_builder = {
+        let client = client.clone();
+        let transaction_pool = transaction_pool.clone();
+
+        Box::new(move |deny_unsafe, _| {
+            let deps = crate::rpc::FullDeps {
+                client: client.clone(),
+                pool: transaction_pool.clone(),
+                deny_unsafe,
+                command_sink: None,
+            };
+
+            rpc_ext_builder(deps)
+        })
+    };
+
+    sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+        rpc_builder,
+        client: client.clone(),
+        transaction_pool: transaction_pool.clone(),
+        task_manager: &mut task_manager,
+        config: parachain_config,
+        keystore: keystore_container.keystore(),
+        backend: backend.clone(),
+        network: network.clone(),
+        system_rpc_tx,
+        tx_handler_controller,
+        telemetry: telemetry.as_mut(),
+        sync_service: sync_service.clone(),
+    })?;
+
+    log::info!("Development Service Ready");
+
+    network_starter.start_network();
     Ok((task_manager, client))
 }
 

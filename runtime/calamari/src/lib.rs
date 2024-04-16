@@ -1520,7 +1520,7 @@ impl_runtime_apis! {
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
             use frame_system_benchmarking::Pallet as SystemBench;
 
-            type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+            //type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
             type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
             let mut list = Vec::<BenchmarkList>::new();
@@ -1671,7 +1671,7 @@ impl_runtime_apis! {
                 }
             }
 
-            type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+            //type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
             type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
             let whitelist: Vec<TrackedStorageKey> = vec![

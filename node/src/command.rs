@@ -353,16 +353,10 @@ pub fn run_with(cli: Cli) -> Result {
         None => {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let chain_spec = &runner.config().chain_spec;
-            let is_localdev = chain_spec.is_localdev();
             info!("id:{}", chain_spec.id());
             let collator_options = cli.run.collator_options();
 
             runner.run_node_until_exit(|config| async move {
-                if is_localdev {
-                    info!("⚠️  DEV STANDALONE MODE.");
-                    return Err("Dev mode not support for current chain".into());
-                }
-
                 let para_id = crate::chain_specs::Extensions::try_get(&*config.chain_spec)
                     .map(|e| e.para_id)
                     .ok_or("Could not find parachain extension in chain-spec.")?;
@@ -382,9 +376,6 @@ pub fn run_with(cli: Cli) -> Result {
                     );
 
                 let tokio_handle = config.tokio_handle.clone();
-                let polkadot_config =
-                    SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
-                        .map_err(|err| format!("Relay chain argument error: {err}"))?;
 
                 info!("Parachain id: {:?}", id);
                 info!("Parachain Account: {}", parachain_account);
@@ -402,33 +393,65 @@ pub fn run_with(cli: Cli) -> Result {
                 let is_localdev = config.chain_spec.is_localdev();
 
                 if config.chain_spec.is_manta() {
-                    crate::service::start_parachain_node::<MantaRuntimeApi, _>(
-                        config,
-                        polkadot_config,
-                        collator_options,
-                        id,
-                        create_manta_full,
-                        cli.block_authoring_duration,
-                        async_backing,
-                        is_localdev,
-                    )
-                    .await
-                    .map(|r| r.0)
-                    .map_err(Into::into)
+                    if is_localdev {
+                        crate::service::start_dev_node::<MantaRuntimeApi, _>(
+                            config,
+                            create_manta_full,
+                        )
+                        .await
+                        .map(|r| r.0)
+                        .map_err(Into::into)
+                    } else {
+                        let polkadot_config = SubstrateCli::create_configuration(
+                            &polkadot_cli,
+                            &polkadot_cli,
+                            tokio_handle,
+                        )
+                        .map_err(|err| format!("Relay chain argument error: {err}"))?;
+
+                        crate::service::start_parachain_node::<MantaRuntimeApi, _>(
+                            config,
+                            polkadot_config,
+                            collator_options,
+                            id,
+                            create_manta_full,
+                            cli.block_authoring_duration,
+                            async_backing,
+                        )
+                        .await
+                        .map(|r| r.0)
+                        .map_err(Into::into)
+                    }
                 } else if config.chain_spec.is_calamari() {
-                    crate::service::start_parachain_node::<CalamariRuntimeApi, _>(
-                        config,
-                        polkadot_config,
-                        collator_options,
-                        id,
-                        create_calamari_full,
-                        cli.block_authoring_duration,
-                        async_backing,
-                        is_localdev,
-                    )
-                    .await
-                    .map(|r| r.0)
-                    .map_err(Into::into)
+                    if is_localdev {
+                        crate::service::start_dev_node::<CalamariRuntimeApi, _>(
+                            config,
+                            create_calamari_full,
+                        )
+                        .await
+                        .map(|r| r.0)
+                        .map_err(Into::into)
+                    } else {
+                        let polkadot_config = SubstrateCli::create_configuration(
+                            &polkadot_cli,
+                            &polkadot_cli,
+                            tokio_handle,
+                        )
+                        .map_err(|err| format!("Relay chain argument error: {err}"))?;
+
+                        crate::service::start_parachain_node::<CalamariRuntimeApi, _>(
+                            config,
+                            polkadot_config,
+                            collator_options,
+                            id,
+                            create_calamari_full,
+                            cli.block_authoring_duration,
+                            async_backing,
+                        )
+                        .await
+                        .map(|r| r.0)
+                        .map_err(Into::into)
+                    }
                 } else {
                     Err("chain spec error: must be one of manta or calamari chain specs".into())
                 }
