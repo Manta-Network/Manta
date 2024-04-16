@@ -557,7 +557,7 @@ where
         sync_service: sync_service.clone(),
     })?;
 
-    log::info!("Development Service Ready");
+    log::info!("⚠️  DEV STANDALONE MODE.");
 
     network_starter.start_network();
     Ok((task_manager, client))

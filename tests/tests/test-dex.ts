@@ -34,7 +34,7 @@ describeWithManta("Manta RPC (Dex)", (context) => {
         callData = api.tx.zenlinkProtocol.createPair([parachainId,2,8], [parachainId,2,9]);
         await executeTx(context, callData, true);
 
-        callData = api.tx.balances.transfer(bob, MANTA_1K);
+        callData = api.tx.balances.transferAllowDeath(bob, MANTA_1K);
         await executeTx(context, callData);
 
         callData = api.tx.assetManager.mintAsset(8, alice, USDT_20M);

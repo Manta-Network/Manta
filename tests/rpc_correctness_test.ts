@@ -19,7 +19,7 @@ const test_config = {
     timeout: 2000000
 }
 
-describe('Node RPC Test', () => { 
+describe('Node RPC Test', () => {
     it('Check RPC result', async () => {
 
         let nodeAddress = "";
@@ -32,7 +32,7 @@ describe('Node RPC Test', () => {
         console.log("using address %s", nodeAddress);
 
         const wsProvider = new WsProvider(nodeAddress);
-        const api = await ApiPromise.create({ 
+        const api = await ApiPromise.create({
             provider: wsProvider,
             types: manta_pay_types,
             rpc: rpc_api});
@@ -46,11 +46,11 @@ describe('Node RPC Test', () => {
             data.receivers.forEach((value: any, index:number) => {
                 let is_transparent = 0;
                 let payload = new Uint8Array([
-                    ...numberToU8a(is_transparent), 
+                    ...numberToU8a(is_transparent),
                     ...value[0].public_asset.id,
                     ...value[0].public_asset.value,
-                    ...value[0].commitment, 
-                    ...numberToU8a(value[1].address_partition, 1 * 8), 
+                    ...value[0].commitment,
+                    ...numberToU8a(value[1].address_partition, 1 * 8),
                     ... value[1].incoming_note.ephemeral_public_key,
                     ... value[1].incoming_note.tag,
                     ... value[1].incoming_note.ciphertext[0],
@@ -68,7 +68,7 @@ describe('Node RPC Test', () => {
         });
         expect(data.senders.length).to.not.equal(0);
         data.senders.forEach((value: any, index: number)=>{
-            let payload = new Uint8Array([...value[0], ...value[1].ephemeral_public_key, ...value[1].ciphertext[0], ...value[1].ciphertext[1]]);  
+            let payload = new Uint8Array([...value[0], ...value[1].ephemeral_public_key, ...value[1].ciphertext[0], ...value[1].ciphertext[1]]);
             expect(payload).to.deep.equal(generate_nullifier_set_entry(index));
         });
         api.disconnect();
