@@ -931,7 +931,7 @@ fn calculate_all_current_extrinsic_tx_fee() -> (
     }
 
     // orml_xtokens
-    // cannot run this part out side of mock runtime.
+    // cannot run this part outside of mock runtime.
     t.execute_with(|| {
         assert_eq!(
             crate::RuntimeCall::get_call_names("XTokens").len(),

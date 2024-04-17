@@ -206,7 +206,7 @@ impl Contains<RuntimeCall> for MantaFilter {
             RuntimeCall::Timestamp(_) | RuntimeCall::ParachainSystem(_) | RuntimeCall::System(_)
         ) {
             // always allow core call
-            // pallet-timestamp and parachainSystem could not be filtered because they are used in communication between releychain and parachain.
+            // pallet-timestamp and parachainSystem could not be filtered because they are used in communication between relaychain and parachain.
             return true;
         }
 

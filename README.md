@@ -43,7 +43,7 @@ This is the mono-repo for Manta/Calamari nodes.
   ```bash
   cargo run -- --chain=calamari-localdev --alice --tmp
   ```
-> Tip: The chain only produces blocks when you submit extrinsics
+> Tip: The chain only produces blocks when you submit extrinsic
 
 ## Semantic Versioning
 Manta/Calamari's version number:
