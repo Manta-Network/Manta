@@ -844,7 +844,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 [[package]]
 name = "async-backing-primitives"
 version = "0.9.0"
-source = "git+https://github.com/Manta-Network/moonkit.git?branch=manta-polkadot-1.6.0#7e1958e91198a6ee5cf2d5d3291a62d017a77880"
+source = "git+https://github.com/Manta-Network/moonkit.git?branch=manta-polkadot-1.6.0#f426837a93b3d72b96c7fd07ab09a9163fe85ee6"
 dependencies = [
  "sp-api",
  "sp-consensus-slots",
@@ -7003,7 +7003,7 @@ dependencies = [
 [[package]]
 name = "nimbus-consensus"
 version = "0.9.0"
-source = "git+https://github.com/Manta-Network/moonkit.git?branch=manta-polkadot-1.6.0#7e1958e91198a6ee5cf2d5d3291a62d017a77880"
+source = "git+https://github.com/Manta-Network/moonkit.git?branch=manta-polkadot-1.6.0#f426837a93b3d72b96c7fd07ab09a9163fe85ee6"
 dependencies = [
  "async-backing-primitives",
  "async-trait",
@@ -7043,7 +7043,7 @@ dependencies = [
 [[package]]
 name = "nimbus-primitives"
 version = "0.9.0"
-source = "git+https://github.com/Manta-Network/moonkit.git?branch=manta-polkadot-1.6.0#7e1958e91198a6ee5cf2d5d3291a62d017a77880"
+source = "git+https://github.com/Manta-Network/moonkit.git?branch=manta-polkadot-1.6.0#f426837a93b3d72b96c7fd07ab09a9163fe85ee6"
 dependencies = [
  "async-trait",
  "frame-benchmarking",
@@ -7515,7 +7515,7 @@ dependencies = [
 [[package]]
 name = "pallet-aura-style-filter"
 version = "0.9.0"
-source = "git+https://github.com/Manta-Network/moonkit.git?branch=manta-polkadot-1.6.0#7e1958e91198a6ee5cf2d5d3291a62d017a77880"
+source = "git+https://github.com/Manta-Network/moonkit.git?branch=manta-polkadot-1.6.0#f426837a93b3d72b96c7fd07ab09a9163fe85ee6"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7531,7 +7531,7 @@ dependencies = [
 [[package]]
 name = "pallet-author-inherent"
 version = "0.9.0"
-source = "git+https://github.com/Manta-Network/moonkit.git?branch=manta-polkadot-1.6.0#7e1958e91198a6ee5cf2d5d3291a62d017a77880"
+source = "git+https://github.com/Manta-Network/moonkit.git?branch=manta-polkadot-1.6.0#f426837a93b3d72b96c7fd07ab09a9163fe85ee6"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -13035,7 +13035,7 @@ dependencies = [
 [[package]]
 name = "session-keys-primitives"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/moonkit.git?branch=manta-polkadot-1.6.0#7e1958e91198a6ee5cf2d5d3291a62d017a77880"
+source = "git+https://github.com/Manta-Network/moonkit.git?branch=manta-polkadot-1.6.0#f426837a93b3d72b96c7fd07ab09a9163fe85ee6"
 dependencies = [
  "async-trait",
  "frame-support",
@@ -13726,7 +13726,7 @@ dependencies = [
 [[package]]
 name = "sp-crypto-ec-utils"
 version = "0.10.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#59f868d1e9502cb4e434127cac6e439d01d7dd2b"
+source = "git+https://github.com/paritytech/polkadot-sdk#76719da221d33117aadf6b7b9cc74e4fbeb25b34"
 dependencies = [
  "ark-bls12-377",
  "ark-bls12-377-ext",
@@ -13765,7 +13765,7 @@ dependencies = [
 [[package]]
 name = "sp-debug-derive"
 version = "14.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#59f868d1e9502cb4e434127cac6e439d01d7dd2b"
+source = "git+https://github.com/paritytech/polkadot-sdk#76719da221d33117aadf6b7b9cc74e4fbeb25b34"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -13786,7 +13786,7 @@ dependencies = [
 [[package]]
 name = "sp-externalities"
 version = "0.25.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#59f868d1e9502cb4e434127cac6e439d01d7dd2b"
+source = "git+https://github.com/paritytech/polkadot-sdk#76719da221d33117aadf6b7b9cc74e4fbeb25b34"
 dependencies = [
  "environmental",
  "parity-scale-codec",
@@ -14003,7 +14003,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface"
 version = "24.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#59f868d1e9502cb4e434127cac6e439d01d7dd2b"
+source = "git+https://github.com/paritytech/polkadot-sdk#76719da221d33117aadf6b7b9cc74e4fbeb25b34"
 dependencies = [
  "bytes",
  "impl-trait-for-tuples",
@@ -14035,7 +14035,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface-proc-macro"
 version = "17.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#59f868d1e9502cb4e434127cac6e439d01d7dd2b"
+source = "git+https://github.com/paritytech/polkadot-sdk#76719da221d33117aadf6b7b9cc74e4fbeb25b34"
 dependencies = [
  "Inflector",
  "expander 2.0.0",
@@ -14127,7 +14127,7 @@ source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot
 [[package]]
 name = "sp-std"
 version = "14.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#59f868d1e9502cb4e434127cac6e439d01d7dd2b"
+source = "git+https://github.com/paritytech/polkadot-sdk#76719da221d33117aadf6b7b9cc74e4fbeb25b34"
 
 [[package]]
 name = "sp-storage"
@@ -14145,7 +14145,7 @@ dependencies = [
 [[package]]
 name = "sp-storage"
 version = "19.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#59f868d1e9502cb4e434127cac6e439d01d7dd2b"
+source = "git+https://github.com/paritytech/polkadot-sdk#76719da221d33117aadf6b7b9cc74e4fbeb25b34"
 dependencies = [
  "impl-serde",
  "parity-scale-codec",
@@ -14182,7 +14182,7 @@ dependencies = [
 [[package]]
 name = "sp-tracing"
 version = "16.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#59f868d1e9502cb4e434127cac6e439d01d7dd2b"
+source = "git+https://github.com/paritytech/polkadot-sdk#76719da221d33117aadf6b7b9cc74e4fbeb25b34"
 dependencies = [
  "parity-scale-codec",
  "tracing",
@@ -14282,7 +14282,7 @@ dependencies = [
 [[package]]
 name = "sp-wasm-interface"
 version = "20.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk#59f868d1e9502cb4e434127cac6e439d01d7dd2b"
+source = "git+https://github.com/paritytech/polkadot-sdk#76719da221d33117aadf6b7b9cc74e4fbeb25b34"
 dependencies = [
  "impl-trait-for-tuples",
  "log",

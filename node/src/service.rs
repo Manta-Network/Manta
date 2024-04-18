@@ -184,10 +184,6 @@ where
         task_manager.spawn_essential_handle(),
         client.clone(),
     );
-    let create_inherent_data_providers = move |_, _| async move {
-        let time = sp_timestamp::InherentDataProvider::from_system_time();
-        Ok((time,))
-    };
 
     let maybe_select_chain = if local_dev_service {
         Some(sc_consensus::LongestChain::new(backend.clone()))
@@ -198,12 +194,13 @@ where
     let (import_queue, block_import) = if local_dev_service {
         let block_import = ParachainBlockImport::new(client.clone(), backend.clone());
         (
-            nimbus_consensus::import_queue(
+            crate::aura_or_nimbus_consensus::import_queue(
                 client.clone(),
-                block_import.clone(),
-                create_inherent_data_providers,
+                client.clone(),
+                backend.clone(),
                 &task_manager.spawn_essential_handle(),
                 config.prometheus_registry(),
+                telemetry.as_ref().map(|telemetry| telemetry.handle()),
                 !local_dev_service,
             )?,
             block_import,
@@ -212,12 +209,13 @@ where
         let parachain_block_import =
             ParachainBlockImport::new_with_delayed_best_block(client.clone(), backend.clone());
         (
-            nimbus_consensus::import_queue(
+            crate::aura_or_nimbus_consensus::import_queue(
                 client.clone(),
-                parachain_block_import.clone(),
-                create_inherent_data_providers,
+                client.clone(),
+                backend.clone(),
                 &task_manager.spawn_essential_handle(),
                 config.prometheus_registry(),
+                telemetry.as_ref().map(|telemetry| telemetry.handle()),
                 !local_dev_service,
             )?,
             parachain_block_import,
