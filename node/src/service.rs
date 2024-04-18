@@ -128,7 +128,7 @@ pub type StateBackend = sc_client_api::StateBackendFor<FullBackend, Block>;
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
-/// Use this macro if you don't actually need the full service, but just the builder in order to
+/// Use this function if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
 pub fn new_partial<RuntimeApi>(
     config: &Configuration,

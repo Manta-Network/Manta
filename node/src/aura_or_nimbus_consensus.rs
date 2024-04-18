@@ -182,10 +182,12 @@ where
             //       If in the future either of them diverge from this,
             //       we'll have to adapt to the change here and in
             //       node/src/service.rs:L467 aka. BuildNimbusConsensusParams
-            Box::new(cumulus_client_consensus_common::ParachainBlockImport::new(
-                block_import,
-                backend,
-            )),
+            Box::new(
+                cumulus_client_consensus_common::ParachainBlockImport::new_with_delayed_best_block(
+                    block_import,
+                    backend,
+                ),
+            ),
             None,
             spawner,
             registry,
