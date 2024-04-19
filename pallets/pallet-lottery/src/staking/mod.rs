@@ -212,11 +212,15 @@ impl<T: Config> Pallet<T> {
         if let Some(state) =
             pallet_parachain_staking::Pallet::<T>::delegator_state(crate::Pallet::<T>::account_id())
         {
-            let owners: Vec<_> = state.delegations.0.iter()
+            let owners: Vec<_> = state
+                .delegations
+                .0
+                .iter()
                 .cloned()
                 .map(|uc| uc.owner)
                 .collect();
-            eligible_collators = withdrawal_eligible_collators.iter()
+            eligible_collators = withdrawal_eligible_collators
+                .iter()
                 .filter(|account| owners.contains(account))
                 .cloned()
                 .collect();
