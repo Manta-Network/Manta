@@ -51,7 +51,7 @@ use frame_support::{
         fungible::HoldConsideration,
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
         ConstBool, ConstU128, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse,
-        LinearStoragePrice, NeverEnsureOrigin, PrivilegeCmp,
+        LinearStoragePrice, PrivilegeCmp,
     },
     weights::{ConstantMultiplier, Weight},
     PalletId,
@@ -59,7 +59,7 @@ use frame_support::{
 
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureRoot, EnsureSigned,
+    EnsureRoot, EnsureSigned, EnsureWithSuccess,
 };
 use manta_primitives::{
     constants::{
@@ -851,6 +851,7 @@ parameter_types! {
     pub const Burn: Permill = Permill::from_percent(0);
     pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
     pub const PayoutSpendPeriod: BlockNumber = 30 * DAYS;
+    pub const MaxBalance: Balance = Balance::max_value();
 }
 
 type EnsureRootOrThreeFifthsCouncil = EitherOfDiverse<
@@ -881,7 +882,7 @@ impl pallet_treasury::Config for Runtime {
     type SpendFunds = ();
     // Expects an implementation of `EnsureOrigin` with a `Success` generic,
     // which is the the maximum amount that this origin is allowed to spend at a time.
-    type SpendOrigin = NeverEnsureOrigin<Balance>;
+    type SpendOrigin = EnsureWithSuccess<EnsureRoot<AccountId>, AccountId, MaxBalance>;
     type Beneficiary = AccountId;
     type BeneficiaryLookup = IdentityLookup<Self::Beneficiary>;
     type Paymaster = PayFromAccount<Balances, TreasuryAccount>;
