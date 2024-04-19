@@ -1297,7 +1297,6 @@ fn delegator_kicked_when_reactivate_bottom_should_ignored() {
 
 #[test]
 fn delegator_unstaking_then_kicked_should_ignored() {
-    let reserve = 10_000 * UNIT;
     let balance = 500_000_000 * UNIT;
     ExtBuilder::default()
         .with_balances(vec![
@@ -1455,7 +1454,7 @@ fn delegator_unstaking_then_kicked_should_ignored() {
 
             assert_eq!(crate::StakedCollators::<Test>::iter().count(), 1);
             assert_eq!(crate::UnstakingCollators::<Test>::get().len(), 0);
-            assert_eq!(crate::StakedCollators::<Test>::get(&BOB), 51_000_000 * UNIT);
+            assert_eq!(crate::StakedCollators::<Test>::get(BOB), 51_000_000 * UNIT);
 
             // DelegatorState of PotAccount is empty
             let _pot_state4 =
