@@ -1087,7 +1087,7 @@ mod benches {
         // always get this error(Unimplemented) while benchmarking pallet_xcm_benchmarks::fungible::initiate_teleport
         // so this time we will use statemint's fungible weights
         // [pallet_xcm_benchmarks::fungible, XcmBalances]
-        //[pallet_xcm_benchmarks::generic, XcmGeneric]
+        // [pallet_xcm_benchmarks::generic, XcmGeneric]
         [pallet_session, SessionBench::<Runtime>]
         // Manta pallets
         [pallet_tx_pause, TransactionPause]
@@ -1102,7 +1102,7 @@ mod benches {
         // [zenlink_protocol, ZenlinkProtocol]
         [pallet_farming, Farming]
         // Nimbus pallets
-        [pallet_author_inherent, AuthorInherent]
+        // [pallet_author_inherent, AuthorInherent]
     );
 }
 
