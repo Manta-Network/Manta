@@ -10,7 +10,7 @@ version.workspace = true
 
 [dependencies]
 log = { workspace = true }
-serde = { workspace = true }
+serde = { workspace = true, optional = true }
 
 # Substrate
 codec = { workspace = true }
