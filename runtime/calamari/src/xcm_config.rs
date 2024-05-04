@@ -164,7 +164,7 @@ pub type Barrier = (
     // Allows execution of Transact XCM instruction from configurable set of origins
     // as long as the message is in the format DescendOrigin + WithdrawAsset + BuyExecution
     AllowTopLevelPaidExecutionDescendOriginFirst<Everything>,
-    // Allows non-local origin messages, for example from from the xcmp queue,
+    // Allows non-local origin messages, for example from the xcmp queue,
     // which have the ability to deposit assets and pay for their own execution.
     AllowTopLevelPaidExecutionFrom<Everything>,
     // Parent root gets free execution
