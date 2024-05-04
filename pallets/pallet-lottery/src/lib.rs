@@ -21,7 +21,7 @@
 //! This pallet implements a no-loss-lottery by taking user deposits, generating excess funds by staking funds with [`pallet_parachain_staking`]
 //! and periodically selects a winner from participating users weighted by their deposit amount to receive a claim to the
 //! accrued excess funds.
-//! Funds withdrawn from the the lottery are subject to a timelock determined by parachain-staking before they can be claimed.
+//! Funds withdrawn from the lottery are subject to a timelock determined by parachain-staking before they can be claimed.
 //!
 //! ### Lottery Rules
 //! 1. A drawing is scheduled to happen every [`Config::DrawingInterval`] blocks.
