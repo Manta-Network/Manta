@@ -252,7 +252,7 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// Started new round.
         NewRound {
-            starting_block: T::BlockNumber,
+            starting_block: BlockNumberFor<T>,
             round: RoundIndex,
             selected_collators_number: u32,
             total_balance: BalanceOf<T>,
@@ -423,7 +423,7 @@ pub mod pallet {
         /// Set blocks per round
         BlocksPerRoundSet {
             current_round: RoundIndex,
-            first_block: T::BlockNumber,
+            first_block: BlockNumberFor<T>,
             old: u32,
             new: u32,
             new_per_round_inflation_min: Perbill,
@@ -434,7 +434,7 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(n: T::BlockNumber) -> Weight {
+        fn on_initialize(n: BlockNumberFor<T>) -> Weight {
             let mut weight = <T as Config>::WeightInfo::base_on_initialize();
 
             let mut round = <Round<T>>::get();
@@ -478,7 +478,7 @@ pub mod pallet {
             );
             weight
         }
-        fn on_finalize(_n: T::BlockNumber) {
+        fn on_finalize(_n: BlockNumberFor<T>) {
             Self::award_points_to_block_author();
         }
     }
@@ -502,7 +502,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn round)]
     /// Current round index and next round scheduled transition
-    pub(crate) type Round<T: Config> = StorageValue<_, RoundInfo<T::BlockNumber>, ValueQuery>;
+    pub(crate) type Round<T: Config> = StorageValue<_, RoundInfo<BlockNumberFor<T>>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn delegator_state)]
@@ -625,7 +625,6 @@ pub mod pallet {
         pub inflation_config: InflationInfo<BalanceOf<T>>,
     }
 
-    #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
@@ -637,7 +636,7 @@ pub mod pallet {
     }
 
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
         fn build(&self) {
             <InflationConfig<T>>::put(self.inflation_config.clone());
             let mut candidate_count = 0u32;
@@ -711,13 +710,13 @@ pub mod pallet {
             // Choose top TotalSelected collator candidates
             let (v_count, _, total_staked) = <Pallet<T>>::select_top_candidates(1u32);
             // Start Round 1 at Block 0
-            let round: RoundInfo<T::BlockNumber> =
+            let round: RoundInfo<BlockNumberFor<T>> =
                 RoundInfo::new(1u32, 0u32.into(), T::DefaultBlocksPerRound::get());
             <Round<T>>::put(round);
             // Snapshot total stake
             <Staked<T>>::insert(1u32, <Total<T>>::get());
             <Pallet<T>>::deposit_event(Event::NewRound {
-                starting_block: T::BlockNumber::zero(),
+                starting_block: BlockNumberFor::<T>::zero(),
                 round: 1u32,
                 selected_collators_number: v_count,
                 total_balance: total_staked,
@@ -1405,7 +1404,7 @@ pub mod pallet {
         }
         /// One-off fn that initializes pallet parameters to onboard the pallet after genesis
         pub fn initialize_pallet(
-            starting_block: <T as frame_system::Config>::BlockNumber,
+            starting_block: BlockNumberFor<T>,
             candidates: Vec<T::AccountId>,
             inflation: InflationInfo<BalanceOf<T>>,
         ) -> Result<(), Error<T>> {
@@ -1465,7 +1464,7 @@ pub mod pallet {
             // Choose top TotalSelected collator candidates
             let (v_count, _, total_staked) = <Pallet<T>>::select_top_candidates(1u32);
             // Start Round 1 at the given starting block
-            let round: RoundInfo<T::BlockNumber> =
+            let round: RoundInfo<BlockNumberFor<T>> =
                 RoundInfo::new(1u32, starting_block, T::DefaultBlocksPerRound::get());
             <Round<T>>::put(round);
             // Snapshot total stake

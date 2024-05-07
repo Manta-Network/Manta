@@ -46,7 +46,12 @@ use core::marker::PhantomData;
 /// Weight functions needed for cumulus_pallet_xcmp_queue.
 pub trait WeightInfo {
 	fn set_config_with_u32() -> Weight;
-	fn set_config_with_weight() -> Weight;
+	fn enqueue_xcmp_message() -> Weight;
+	fn suspend_channel() -> Weight;
+	fn resume_channel() -> Weight;
+	fn take_first_concatenated_xcm() -> Weight;
+	fn on_idle_good_msg() -> Weight;
+	fn on_idle_large_msg() -> Weight;
 }
 
 /// Weights for cumulus_pallet_xcmp_queue using the Substrate node and recommended hardware.
@@ -63,14 +68,69 @@ impl<T: frame_system::Config> cumulus_pallet_xcmp_queue::WeightInfo for Substrat
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	/// Storage: XcmpQueue QueueConfig (r:1 w:1)
+		/// Storage: XcmpQueue QueueConfig (r:1 w:1)
 	/// Proof Skipped: XcmpQueue QueueConfig (max_values: Some(1), max_size: None, mode: Measured)
-	fn set_config_with_weight() -> Weight {
+	fn enqueue_xcmp_message() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `109`
 		//  Estimated: `1594`
-		// Minimum execution time: 6_365_000 picoseconds.
-		Weight::from_parts(6_583_000, 1594)
+		// Minimum execution time: 6_338_000 picoseconds.
+		Weight::from_parts(6_559_000, 1594)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: XcmpQueue QueueConfig (r:1 w:1)
+	/// Proof Skipped: XcmpQueue QueueConfig (max_values: Some(1), max_size: None, mode: Measured)
+	fn suspend_channel() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `109`
+		//  Estimated: `1594`
+		// Minimum execution time: 6_338_000 picoseconds.
+		Weight::from_parts(6_559_000, 1594)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: XcmpQueue QueueConfig (r:1 w:1)
+	/// Proof Skipped: XcmpQueue QueueConfig (max_values: Some(1), max_size: None, mode: Measured)
+	fn resume_channel() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `109`
+		//  Estimated: `1594`
+		// Minimum execution time: 6_338_000 picoseconds.
+		Weight::from_parts(6_559_000, 1594)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: XcmpQueue QueueConfig (r:1 w:1)
+	/// Proof Skipped: XcmpQueue QueueConfig (max_values: Some(1), max_size: None, mode: Measured)
+	fn take_first_concatenated_xcm() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `109`
+		//  Estimated: `1594`
+		// Minimum execution time: 6_338_000 picoseconds.
+		Weight::from_parts(6_559_000, 1594)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: XcmpQueue QueueConfig (r:1 w:1)
+	/// Proof Skipped: XcmpQueue QueueConfig (max_values: Some(1), max_size: None, mode: Measured)
+	fn on_idle_good_msg() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `109`
+		//  Estimated: `1594`
+		// Minimum execution time: 6_338_000 picoseconds.
+		Weight::from_parts(6_559_000, 1594)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: XcmpQueue QueueConfig (r:1 w:1)
+	/// Proof Skipped: XcmpQueue QueueConfig (max_values: Some(1), max_size: None, mode: Measured)
+	fn on_idle_large_msg() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `109`
+		//  Estimated: `1594`
+		// Minimum execution time: 6_338_000 picoseconds.
+		Weight::from_parts(6_559_000, 1594)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
@@ -91,12 +151,67 @@ impl WeightInfo for () {
 	}
 	/// Storage: XcmpQueue QueueConfig (r:1 w:1)
 	/// Proof Skipped: XcmpQueue QueueConfig (max_values: Some(1), max_size: None, mode: Measured)
-	fn set_config_with_weight() -> Weight {
+	fn enqueue_xcmp_message() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `109`
 		//  Estimated: `1594`
-		// Minimum execution time: 6_365_000 picoseconds.
-		Weight::from_parts(6_583_000, 1594)
+		// Minimum execution time: 6_338_000 picoseconds.
+		Weight::from_parts(6_559_000, 1594)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: XcmpQueue QueueConfig (r:1 w:1)
+	/// Proof Skipped: XcmpQueue QueueConfig (max_values: Some(1), max_size: None, mode: Measured)
+	fn suspend_channel() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `109`
+		//  Estimated: `1594`
+		// Minimum execution time: 6_338_000 picoseconds.
+		Weight::from_parts(6_559_000, 1594)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: XcmpQueue QueueConfig (r:1 w:1)
+	/// Proof Skipped: XcmpQueue QueueConfig (max_values: Some(1), max_size: None, mode: Measured)
+	fn resume_channel() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `109`
+		//  Estimated: `1594`
+		// Minimum execution time: 6_338_000 picoseconds.
+		Weight::from_parts(6_559_000, 1594)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: XcmpQueue QueueConfig (r:1 w:1)
+	/// Proof Skipped: XcmpQueue QueueConfig (max_values: Some(1), max_size: None, mode: Measured)
+	fn take_first_concatenated_xcm() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `109`
+		//  Estimated: `1594`
+		// Minimum execution time: 6_338_000 picoseconds.
+		Weight::from_parts(6_559_000, 1594)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: XcmpQueue QueueConfig (r:1 w:1)
+	/// Proof Skipped: XcmpQueue QueueConfig (max_values: Some(1), max_size: None, mode: Measured)
+	fn on_idle_good_msg() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `109`
+		//  Estimated: `1594`
+		// Minimum execution time: 6_338_000 picoseconds.
+		Weight::from_parts(6_559_000, 1594)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: XcmpQueue QueueConfig (r:1 w:1)
+	/// Proof Skipped: XcmpQueue QueueConfig (max_values: Some(1), max_size: None, mode: Measured)
+	fn on_idle_large_msg() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `109`
+		//  Estimated: `1594`
+		// Minimum execution time: 6_338_000 picoseconds.
+		Weight::from_parts(6_559_000, 1594)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}

@@ -57,6 +57,7 @@ pub trait WeightInfo {
 	fn unrequest_preimage() -> Weight;
 	fn unrequest_unnoted_preimage() -> Weight;
 	fn unrequest_multi_referenced_preimage() -> Weight;
+	fn ensure_updated(s: u32, ) -> Weight;
 }
 
 /// Weights for pallet_preimage using the Substrate node and recommended hardware.
@@ -215,6 +216,22 @@ impl<T: frame_system::Config> pallet_preimage::WeightInfo for SubstrateWeight<T>
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+	/// Storage: Preimage StatusFor (r:1 w:1)
+	/// Proof: Preimage StatusFor (max_values: None, max_size: Some(91), added: 2566, mode: MaxEncodedLen)
+	/// Storage: Preimage PreimageFor (r:0 w:1)
+	/// Proof: Preimage PreimageFor (max_values: None, max_size: Some(4194344), added: 4196819, mode: MaxEncodedLen)
+	/// The range of component `s` is `[0, 4194304]`.
+	fn ensure_updated(s: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `140`
+		//  Estimated: `3556`
+		// Minimum execution time: 17_136_000 picoseconds.
+		Weight::from_parts(17_519_000, 3556)
+			// Standard Error: 6
+			.saturating_add(Weight::from_parts(2_496, 0).saturating_mul(s.into()))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
+	}
 }
 
 // For backwards compatibility and tests
@@ -371,5 +388,21 @@ impl WeightInfo for () {
 		Weight::from_parts(15_026_000, 3556)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: Preimage StatusFor (r:1 w:1)
+	/// Proof: Preimage StatusFor (max_values: None, max_size: Some(91), added: 2566, mode: MaxEncodedLen)
+	/// Storage: Preimage PreimageFor (r:0 w:1)
+	/// Proof: Preimage PreimageFor (max_values: None, max_size: Some(4194344), added: 4196819, mode: MaxEncodedLen)
+	/// The range of component `s` is `[0, 4194304]`.
+	fn ensure_updated(s: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `140`
+		//  Estimated: `3556`
+		// Minimum execution time: 17_136_000 picoseconds.
+		Weight::from_parts(17_519_000, 3556)
+			// Standard Error: 6
+			.saturating_add(Weight::from_parts(2_496, 0).saturating_mul(s.into()))
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
 }

@@ -1315,7 +1315,7 @@ where
         domain_seperator_msg.extend_from_slice(&sha3_256("1")); // version
         domain_seperator_msg.extend_from_slice(&to_bytes(chain_id)); // chain id
         domain_seperator_msg.extend_from_slice(
-            frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero()).as_ref(),
+            frame_system::Pallet::<T>::block_hash(BlockNumberFor::<T>::zero()).as_ref(),
         ); // genesis block hash
         keccak_256(domain_seperator_msg.as_slice())
     }

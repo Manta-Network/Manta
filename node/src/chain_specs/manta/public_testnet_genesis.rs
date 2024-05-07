@@ -21,6 +21,8 @@ use hex_literal::hex;
 use sc_telemetry::TelemetryEndpoints;
 use sp_core::crypto::UncheckedInto;
 
+use manta_runtime::WASM_BINARY;
+
 pub fn genesis_spec() -> MantaChainSpec {
     let genesis_collators: Vec<Collator> = vec![
         Collator::new(
@@ -66,6 +68,7 @@ pub fn genesis_spec() -> MantaChainSpec {
     ];
     let genesis_collators_clone = genesis_collators.clone(); // so we can move it into the constructor closure
 
+    #[allow(deprecated)]
     MantaChainSpec::from_genesis(
         "Manta Parachain Staging",
         "manta",
@@ -89,5 +92,6 @@ pub fn genesis_spec() -> MantaChainSpec {
             relay_chain: POLKADOT_STAGING_NET.into(),
             para_id: MANTA_PARACHAIN_ID,
         },
+        WASM_BINARY.expect("WASM binary was not build, please build it!"),
     )
 }

@@ -17,6 +17,7 @@
 //! Type Definitions for Manta Pay
 
 use alloc::{boxed::Box, vec::Vec};
+use base64::engine::{general_purpose::STANDARD as BASE64, Engine as _};
 use codec::{Decode, Encode, Error, MaxEncodedLen};
 use core::ops::Add;
 use frame_support::sp_runtime::traits::Zero;
@@ -998,8 +999,8 @@ impl From<InitialSyncResponse> for DenseInitialSyncResponse {
     fn from(resp: InitialSyncResponse) -> DenseInitialSyncResponse {
         Self {
             should_continue: resp.should_continue,
-            utxo_data: base64::encode(resp.utxo_data.encode()),
-            membership_proof_data: base64::encode(resp.membership_proof_data.encode()),
+            utxo_data: BASE64.encode(resp.utxo_data.encode()),
+            membership_proof_data: BASE64.encode(resp.membership_proof_data.encode()),
             nullifier_count: resp.nullifier_count,
         }
     }
@@ -1069,8 +1070,8 @@ impl From<PullResponse> for DensePullResponse {
     fn from(resp: PullResponse) -> DensePullResponse {
         Self {
             should_continue: resp.should_continue,
-            receivers: base64::encode(resp.receivers.encode()),
-            senders: base64::encode(resp.senders.encode()),
+            receivers: BASE64.encode(resp.receivers.encode()),
+            senders: BASE64.encode(resp.senders.encode()),
             senders_receivers_total: resp.senders_receivers_total,
             next_checkpoint: None,
         }

@@ -53,8 +53,8 @@ jobs:
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
-          rustup toolchain install 1.71.0
-          rustup default 1.71.0
+          rustup toolchain install 1.74.0
+          rustup default 1.74.0
           cargo install taplo-cli --locked
       - name: cache cargo
         uses: Swatinem/rust-cache@v2
@@ -77,9 +77,10 @@ jobs:
           SCCACHE_CACHE_SIZE: 2G
           SCCACHE_DIR: ~/.cache/sccache
         shell: bash
+        # It's pointless to use no-default features.
         run: |
           source ${HOME}/.cargo/env
-          SKIP_WASM_BUILD=1 cargo check --no-default-features
+          SKIP_WASM_BUILD=1 cargo check --all-targets --all-features
           SKIP_WASM_BUILD=1 cargo clippy --all-targets --all-features -- -D warnings
       - name: stop sccache server
         run: sccache --stop-server || true

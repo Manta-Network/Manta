@@ -33,9 +33,10 @@ use zenlink_protocol_rpc::{ZenlinkProtocol, ZenlinkProtocolApiServer};
 use zenlink_protocol_runtime_api::ZenlinkProtocolApi as ZenlinkProtocolRuntimeApi;
 
 /// Instantiate all RPC extensions for manta.
-pub fn create_manta_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, sc_service::Error>
+pub fn create_manta_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, SubstrateServiceError>
 where
     C: ProvideRuntimeApi<Block>
+        + sc_client_api::BlockBackend<Block>
         + HeaderBackend<Block>
         + AuxStore
         + HeaderMetadata<Block, Error = BlockChainError>
@@ -51,7 +52,7 @@ where
     C::Api: ZenlinkProtocolRuntimeApi<Block, AccountId, ZenlinkAssetId>,
     P: TransactionPool + Sync + Send + 'static,
 {
-    use frame_rpc_system::{System, SystemApiServer};
+    use frame_rpc_system::System;
     use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 
     let mut module = RpcExtension::new(());
@@ -59,6 +60,7 @@ where
         client,
         pool,
         deny_unsafe,
+        ..
     } = deps;
 
     module

@@ -16,8 +16,13 @@
 
 //! RuntimeApi for client
 
-use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
-use sp_runtime::traits::BlakeTwo256;
+use async_backing_primitives::UnincludedSegmentApi;
+use manta_primitives::types::{AccountId, Balance, Block, Nonce};
+use nimbus_primitives::{DigestsProvider, NimbusApi, NimbusId};
+use session_keys_primitives::VrfApi;
+use sp_core::H256;
+use sp_keystore::{Keystore, KeystorePtr};
+use std::sync::Arc;
 
 /// RuntimeApiCommon + RuntimeApiNimbus: nimbus
 ///
@@ -31,19 +36,14 @@ pub trait RuntimeApiCommon:
     + sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
     + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
     + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
-where
-    <Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
+    + cumulus_primitives_core::CollectCollationInfo<Block>
+    + VrfApi<Block>
+    + NimbusApi<Block>
+    + UnincludedSegmentApi<Block>
 {
 }
 
-/// Extend RuntimeApi trait bound for Nimbus
-pub trait RuntimeApiNimbus:
-    cumulus_primitives_core::CollectCollationInfo<Block> + nimbus_primitives::NimbusApi<Block>
-{
-}
-
-impl<Api> RuntimeApiCommon for Api
-where
+impl<Api> RuntimeApiCommon for Api where
     Api: sp_api::Metadata<Block>
         + sp_api::ApiExt<Block>
         + sp_block_builder::BlockBuilder<Block>
@@ -51,12 +51,60 @@ where
         + sp_session::SessionKeys<Block>
         + sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-        + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
-    <Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
+        + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+        + cumulus_primitives_core::CollectCollationInfo<Block>
+        + VrfApi<Block>
+        + NimbusApi<Block>
+        + UnincludedSegmentApi<Block>
 {
 }
 
-impl<Api> RuntimeApiNimbus for Api where
-    Api: cumulus_primitives_core::CollectCollationInfo<Block> + nimbus_primitives::NimbusApi<Block>
+/// Uses the runtime API to get the VRF inputs and sign them with the VRF key that
+/// corresponds to the authoring NimbusId.
+pub fn vrf_pre_digest<B, C>(
+    _client: &C,
+    _keystore: &KeystorePtr,
+    _nimbus_id: NimbusId,
+    _parent: H256,
+) -> Option<sp_runtime::generic::DigestItem>
+where
+    B: sp_runtime::traits::Block<Hash = sp_core::H256>,
+    C: sp_api::ProvideRuntimeApi<B>,
+    C::Api: VrfApi<B>,
 {
+    None
+}
+
+/// Implementation for Vrf Digest call, our runtimes will just return None
+pub struct VrfDigestsProvider<B, C> {
+    /// client
+    pub client: Arc<C>,
+    /// keystore
+    pub keystore: Arc<dyn Keystore>,
+    _marker: std::marker::PhantomData<B>,
+}
+
+impl<B, C> VrfDigestsProvider<B, C> {
+    /// New instance of `VrfDigestsProvider`
+    pub fn new(client: Arc<C>, keystore: Arc<dyn Keystore>) -> Self {
+        Self {
+            client,
+            keystore,
+            _marker: Default::default(),
+        }
+    }
+}
+
+impl<B, C> DigestsProvider<NimbusId, H256> for VrfDigestsProvider<B, C>
+where
+    B: sp_runtime::traits::Block<Hash = sp_core::H256>,
+    C: sp_api::ProvideRuntimeApi<B>,
+    C::Api: VrfApi<B>,
+{
+    type Digests = Option<sp_runtime::generic::DigestItem>;
+
+    // vrf is not used
+    fn provide_digests(&self, _nimbus_id: NimbusId, _parent: H256) -> Self::Digests {
+        None
+    }
 }

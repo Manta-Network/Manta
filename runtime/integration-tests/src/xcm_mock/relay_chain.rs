@@ -30,13 +30,8 @@ use sp_runtime::{
     AccountId32,
 };
 
-#[cfg(feature = "runtime-benchmarks")]
-use super::ReachableDest;
-use manta_primitives::{
-    types::{BlockNumber, Header},
-    xcm::AllowTopLevelPaidExecutionFrom,
-};
-use polkadot_parachain::primitives::Id as ParaId;
+use cumulus_primitives_core::ParaId;
+use manta_primitives::{types::BlockNumber, xcm::AllowTopLevelPaidExecutionFrom};
 use polkadot_runtime_parachains::{
     configuration,
     inclusion::{AggregateMessageOrigin, UmpQueueId},
@@ -46,7 +41,7 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
     ChildParachainAsNative, ChildParachainConvertsVia, ChildSystemParachainAsSuperuser,
-    CurrencyAdapter as XcmCurrencyAdapter, FixedRateOfFungible, FixedWeightBounds, IsConcrete,
+    FixedRateOfFungible, FixedWeightBounds, FungibleAdapter as XcmCurrencyAdapter, IsConcrete,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::{Config, XcmExecutor};
@@ -69,13 +64,13 @@ parameter_types! {
 impl frame_system::Config for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
+    type Block = Block;
+    type RuntimeTask = RuntimeTask;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type BlockWeights = ();
@@ -111,7 +106,8 @@ impl pallet_balances::Config for Runtime {
     type ReserveIdentifier = [u8; 8];
     type FreezeIdentifier = ();
     type MaxFreezes = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type MaxHolds = ConstU32<50>;
 }
 
@@ -195,6 +191,7 @@ impl Config for XcmExecutorConfig {
     type CallDispatcher = RuntimeCall;
     type SafeCallFilter = Everything;
     type FeeManager = ();
+    type Aliasers = ();
 }
 
 pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, KusamaNetwork>;
@@ -224,8 +221,6 @@ impl pallet_xcm::Config for Runtime {
     type MaxLockers = ConstU32<8>;
     type RemoteLockConsumerIdentifier = ();
     type WeightInfo = PalletXcmWeightInfo;
-    #[cfg(feature = "runtime-benchmarks")]
-    type ReachableDest = ReachableDest;
 }
 
 parameter_types! {
@@ -242,6 +237,7 @@ impl pallet_message_queue::Config for Runtime {
     type MaxStale = MessageQueueMaxStale;
     type ServiceWeight = MessageQueueServiceWeight;
     type MessageProcessor = MessageProcessor;
+    type QueuePausedQuery = ();
     type QueueChangeHandler = ();
     type WeightInfo = ();
 }
@@ -274,16 +270,12 @@ parameter_types! {
 
 impl origin::Config for Runtime {}
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
 construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
+    pub enum Runtime
     {
-        System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
+        System: frame_system::{Pallet, Call, Storage, Config<T>, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         ParasOrigin: origin::{Pallet, Origin},
         XcmPallet: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
@@ -301,7 +293,7 @@ pub(crate) fn relay_events() -> Vec<RuntimeEvent> {
 }
 
 use frame_support::traits::{OnFinalize, OnInitialize};
-pub(crate) fn relay_roll_to(n: BlockNumber) {
+pub(crate) fn relay_roll_to(n: u64) {
     while System::block_number() < n {
         XcmPallet::on_finalize(System::block_number());
         Balances::on_finalize(System::block_number());

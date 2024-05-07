@@ -61,4 +61,4 @@ where:
 
 ## Minimum supported rust compiler
 
-This project's MSRV is `rustc 1.62`
+This project's MSRV is `rustc 1.74`

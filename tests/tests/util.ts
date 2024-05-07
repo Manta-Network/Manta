@@ -33,7 +33,6 @@ export async function startMantaNode(): Promise<{ binary: ChildProcess; } & Test
         `--chain=manta-localdev`,
         `--alice`,
         `-lruntime=debug`,
-        `--execution=native`, // Faster execution using native
         `--no-telemetry`,
         `--no-prometheus`,
         `--port=${P2P_PORT}`,
@@ -50,7 +49,7 @@ export async function startMantaNode(): Promise<{ binary: ChildProcess; } & Test
     binary.on("error", (err) => {
         if ((err as any).errno == "ENOENT") {
             console.error(
-                `\x1b[31mMissing Acala binary (${BINARY_PATH}).\nPlease compile the Acala project:\nmake test-ts\x1b[0m`
+                `\x1b[31mMissing Manta binary (${BINARY_PATH}).\nPlease compile the Manta project:\nmake test-ts\x1b[0m`
             );
         } else {
             console.error(err);
@@ -61,7 +60,7 @@ export async function startMantaNode(): Promise<{ binary: ChildProcess; } & Test
     const binaryLogs = [] as any;
     const { api, alice, bob } = await new Promise<TestContext>((resolve, reject) => {
         const timer = setTimeout(() => {
-            console.error(`\x1b[31m Failed to start Acala Node.\x1b[0m`);
+            console.error(`\x1b[31m Failed to start Manta Node.\x1b[0m`);
             console.error(`Command: ${cmd} ${args.join(" ")}`);
             console.error(`Logs:`);
             console.error(binaryLogs.map((chunk: any) => chunk.toString()).join("\n"));
@@ -136,7 +135,7 @@ export const getTestUtils = async (
     const api = await ApiPromise.create({provider: provider});
     await cryptoWaitReady();
     await api.isReady;
-    
+
     const alice = new Keyring({type: 'sr25519'}).addFromUri("//Alice");
     const bob = new Keyring({type: 'sr25519'}).addFromUri("//Bob");
 

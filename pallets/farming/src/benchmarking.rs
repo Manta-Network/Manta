@@ -18,7 +18,7 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use crate::{Pallet as Farming, *};
-use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
+use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::{assert_ok, sp_runtime::traits::UniqueSaturatedFrom};
 use frame_system::{Pallet as System, RawOrigin};
 use manta_primitives::{
@@ -26,12 +26,13 @@ use manta_primitives::{
     types::Balance,
 };
 use pallet_asset_manager::Pallet as AssetManager;
+use sp_std::vec;
 
 pub const INITIAL_VALUE: u128 = 1_000_000_000_000_000_000_000u128;
 
 benchmarks! {
     where_clause { where T: pallet_assets::Config + pallet_asset_manager::Config, <T as pallet_asset_manager::Config>::AssetId: From<u32> }
-    on_initialize {}:{Farming::<T>::on_initialize(T::BlockNumber::from(10u32));}
+    on_initialize {}:{Farming::<T>::on_initialize(BlockNumberFor::<T>::from(10u32));}
 
     create_farming_pool {
         let ksm_asset_id = CurrencyIdOf::<T>::unique_saturated_from(8u128);

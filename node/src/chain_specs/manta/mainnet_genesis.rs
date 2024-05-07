@@ -33,7 +33,7 @@ impl Collator {
     }
 }
 
-fn genesis_config(genesis_collators: Vec<Collator>) -> GenesisConfig {
+fn genesis_config(genesis_collators: Vec<Collator>) -> RuntimeGenesisConfig {
     const TOTAL_ISSUANCE: Balance = 1_000_000_000 * MANTA;
     const INITIAL_CONTROLLER_BALANCE: Balance = 5_000 * MANTA;
     const INITIAL_COLLATOR_BALANCE: Balance = 100 * MANTA;
@@ -83,7 +83,7 @@ fn genesis_config(genesis_collators: Vec<Collator>) -> GenesisConfig {
         "won't be able to register collator, balance in account set too low"
     );
 
-    GenesisConfig {
+    RuntimeGenesisConfig {
         system: manta_runtime::SystemConfig {
             code: manta_runtime::WASM_BINARY
                 .expect("WASM binary was not build, please build it!")

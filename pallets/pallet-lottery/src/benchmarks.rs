@@ -18,17 +18,17 @@
 
 //! Benchmarking
 use crate::{Call, Config, Pallet, Request};
-use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, Zero};
+use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
 use frame_support::{
     assert_ok,
     traits::{Currency, EstimateCallFee, Get, OnFinalize, OnInitialize},
 };
-use frame_system::RawOrigin;
+use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use pallet_parachain_staking::{
     benchmarks::{create_funded_collator, create_funded_user, parachain_staking_on_finalize},
     BalanceOf, Pallet as Staking,
 };
-use sp_runtime::Saturating;
+use sp_runtime::{traits::Zero, Saturating};
 
 const MAX_COLLATOR_COUNT: u32 = 63;
 const USER_SEED: u32 = 696969;
@@ -36,7 +36,7 @@ const USER_SEED: u32 = 696969;
 /// Run to end block and author
 fn roll_rounds_and_author<T: Config>(rounds: u32) {
     let total_rounds = rounds + 1u32;
-    let round_length: T::BlockNumber = Staking::<T>::round().length.into();
+    let round_length: BlockNumberFor<T> = Staking::<T>::round().length.into();
     let mut now = <frame_system::Pallet<T>>::block_number() + 1u32.into();
     let end = Staking::<T>::round().first + (round_length * total_rounds.into());
     while now < end {

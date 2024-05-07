@@ -35,6 +35,8 @@ runtime-benchmarks = [
   'frame-system/runtime-benchmarks',
   'pallet-timestamp/runtime-benchmarks',
   'pallet-balances/runtime-benchmarks',
+  'sp-runtime/runtime-benchmarks',
+  'manta-primitives/runtime-benchmarks',
 ]
 std = [
   "codec/std",

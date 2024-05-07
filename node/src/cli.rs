@@ -19,7 +19,7 @@
 
 use crate::chain_specs;
 use clap::Parser;
-use std::path::PathBuf;
+use std::{path::PathBuf, time::Duration};
 
 /// Sub-commands supported by the collator.
 #[derive(Debug, clap::Subcommand)]
@@ -46,7 +46,8 @@ pub enum Subcommand {
     PurgeChain(cumulus_client_cli::PurgeChainCmd),
 
     /// Export the genesis state of the parachain.
-    ExportGenesisState(cumulus_client_cli::ExportGenesisStateCommand),
+    #[command(alias = "export-genesis-state")]
+    ExportGenesisHead(cumulus_client_cli::ExportGenesisHeadCommand),
 
     /// Export the genesis wasm of the parachain.
     ExportGenesisWasm(cumulus_client_cli::ExportGenesisWasmCommand),
@@ -95,6 +96,16 @@ pub struct Cli {
     /// Relay chain arguments
     #[arg(raw = true)]
     pub relaychain_args: Vec<String>,
+
+    /// Maximum duration in milliseconds to produce a block
+    #[clap(long, default_value = "1500", value_parser=block_authoring_duration_parser)]
+    pub block_authoring_duration: Duration,
+}
+
+fn block_authoring_duration_parser(s: &str) -> Result<Duration, String> {
+    Ok(Duration::from_millis(clap_num::number_range(
+        s, 250, 2_000,
+    )?))
 }
 
 /// Relay Chain CLI

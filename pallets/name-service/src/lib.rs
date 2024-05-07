@@ -69,7 +69,7 @@ pub mod pallet {
         type Currency: ReservableCurrency<Self::AccountId>;
 
         #[pallet::constant]
-        type RegisterWaitingPeriod: Get<Self::BlockNumber>;
+        type RegisterWaitingPeriod: Get<BlockNumberFor<Self>>;
 
         #[pallet::constant]
         type RegisterPrice: Get<BalanceOf<Self>>;
@@ -134,7 +134,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn pending_register)]
     pub type PendingRegister<T: Config> =
-        StorageMap<_, Twox64Concat, T::Hash, (T::Hash, T::BlockNumber), OptionQuery>;
+        StorageMap<_, Twox64Concat, T::Hash, (T::Hash, BlockNumberFor<T>), OptionQuery>;
 
     /// Primary Records, 1 AccountID may have only one primary name
     #[pallet::storage]
@@ -148,7 +148,7 @@ pub mod pallet {
     pub struct Pallet<T>(_);
 
     #[pallet::hooks]
-    impl<T: Config> Hooks<T::BlockNumber> for Pallet<T> {}
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {

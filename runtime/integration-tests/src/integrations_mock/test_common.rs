@@ -20,13 +20,14 @@
 #![allow(clippy::identity_op)] // keep e.g. 1 * DAYS for legibility
 
 use super::{mock::*, *};
+use codec::Encode;
 use frame_support::{
     assert_err, assert_noop, assert_ok,
     error::BadOrigin,
     traits::{
         fungibles::Inspect,
         tokens::{ExistenceRequirement, Provenance},
-        Get, PalletsInfoAccess,
+        Currency, Get, PalletsInfoAccess,
     },
 };
 use runtime_common::test_helpers::{
@@ -336,9 +337,10 @@ fn balances_operations_should_work() {
 
             // Basic transfer should work
             assert_ok!(Balances::transfer(
-                RuntimeOrigin::signed(ALICE.clone()),
-                sp_runtime::MultiAddress::Id(CHARLIE.clone()),
+                &ALICE,
+                &CHARLIE,
                 transfer_amount,
+                ExistenceRequirement::AllowDeath,
             ));
             assert_eq!(
                 Balances::free_balance(ALICE.clone()),
@@ -1139,7 +1141,7 @@ fn test_sender_side_xcm_weights() {
 
 mod governance_tests {
     use super::{super::mock::ExtBuilder, *};
-    use frame_support::{codec::Encode, traits::StorePreimage};
+    use frame_support::traits::StorePreimage;
     use sp_core::H256;
     use sp_runtime::traits::{BlakeTwo256, Hash};
 

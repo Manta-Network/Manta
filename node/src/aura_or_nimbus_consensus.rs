@@ -43,6 +43,7 @@ use sp_runtime::{
 };
 use std::sync::Arc;
 
+use nimbus_consensus::NimbusBlockImport;
 use nimbus_primitives::CompatibleDigestItem as NimbusDigestItem;
 use sc_consensus_aura::CompatibleDigestItem as AuraDigestItem;
 
@@ -105,8 +106,8 @@ where
 {
     async fn verify(
         &mut self,
-        block_params: BlockImportParams<Block, ()>,
-    ) -> Result<BlockImportParams<Block, ()>, String> {
+        block_params: BlockImportParams<Block>,
+    ) -> Result<BlockImportParams<Block>, String> {
         // We assume the outermost digest item is the block seal ( we have no two-step consensus )
         let seal = block_params
             .header
@@ -134,6 +135,7 @@ where
     }
 }
 
+#[allow(missing_docs)]
 pub fn import_queue<Client, Block: BlockT, InnerBI>(
     client: Arc<Client>,
     block_import: InnerBI,
@@ -141,10 +143,10 @@ pub fn import_queue<Client, Block: BlockT, InnerBI>(
     spawner: &impl sp_core::traits::SpawnEssentialNamed,
     registry: Option<&substrate_prometheus_endpoint::Registry>,
     telemetry: Option<TelemetryHandle>,
-) -> ClientResult<BasicQueue<Block, InnerBI::Transaction>>
+    parachain: bool,
+) -> ClientResult<BasicQueue<Block>>
 where
     InnerBI: BlockImport<Block, Error = ConsensusError> + Send + Sync + 'static,
-    InnerBI::Transaction: Send,
     Client::Api: BlockBuilderApi<Block>,
     Client: ProvideRuntimeApi<Block> + Send + Sync + 'static,
     Client: sc_client_api::AuxStore + sc_client_api::UsageProvider<Block>,
@@ -172,19 +174,31 @@ where
         },
         telemetry,
     );
-    Ok(BasicQueue::new(
-        verifier,
-        // NOTE: As of Aug2022, nimbus and aura simply delegate block import
-        //       to cumulus. We're skipping wrapping both by using this directly.
-        //       If in the future either of them diverge from this,
-        //       we'll have to adapt to the change here and in
-        //       node/src/service.rs:L467 aka. BuildNimbusConsensusParams
-        Box::new(cumulus_client_consensus_common::ParachainBlockImport::new(
-            block_import,
-            backend,
-        )),
-        None,
-        spawner,
-        registry,
-    ))
+    if parachain {
+        Ok(BasicQueue::new(
+            verifier,
+            // NOTE: As of Aug2022, nimbus and aura simply delegate block import
+            //       to cumulus. We're skipping wrapping both by using this directly.
+            //       If in the future either of them diverge from this,
+            //       we'll have to adapt to the change here and in
+            //       node/src/service.rs:L467 aka. BuildNimbusConsensusParams
+            Box::new(
+                cumulus_client_consensus_common::ParachainBlockImport::new_with_delayed_best_block(
+                    block_import,
+                    backend,
+                ),
+            ),
+            None,
+            spawner,
+            registry,
+        ))
+    } else {
+        Ok(BasicQueue::new(
+            verifier,
+            Box::new(NimbusBlockImport::new(block_import, false)),
+            None,
+            spawner,
+            registry,
+        ))
+    }
 }

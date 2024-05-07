@@ -23,14 +23,30 @@
 
 use super::*;
 use frame_support::{
-    construct_runtime, ord_parameter_types, parameter_types,
-    traits::{ConstU32, IsInVec},
+    construct_runtime, derive_impl, ord_parameter_types, parameter_types,
+    traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64, IsInVec},
+    PalletId,
 };
-use frame_system::EnsureRoot;
-use manta_primitives::types::{Balance, BlockNumber, Header};
-
+use frame_system::{EnsureNever, EnsureRoot};
+use manta_primitives::{
+    assets::{
+        AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
+        AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
+    },
+    constants::ASSET_MANAGER_PALLET_ID,
+    types::Balance,
+};
+use manta_support::manta_pay::StandardAssetId;
 use sp_core::H256;
-use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
+use sp_runtime::{
+    traits::{BlakeTwo256, IdentityLookup},
+    BuildStorage,
+};
+use xcm::{
+    prelude::{Parachain, X1},
+    v3::MultiLocation,
+    VersionedMultiLocation,
+};
 
 pub type AccountId = u128;
 
@@ -46,18 +62,18 @@ impl Contains<RuntimeCall> for BaseFilter {
     }
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
-    type Index = u64;
-    type BlockNumber = BlockNumber;
+    type Nonce = u64;
+    type Block = Block;
     type RuntimeCall = RuntimeCall;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
-    type BlockHashCount = ConstU32<250>;
+    type BlockHashCount = ConstU64<250>;
     type BlockWeights = ();
     type BlockLength = ();
     type Version = ();
@@ -87,10 +103,161 @@ impl pallet_balances::Config for Runtime {
     type MaxReserves = ConstU32<50>;
     type ReserveIdentifier = ();
     type WeightInfo = ();
-    type HoldIdentifier = ();
+    type RuntimeHoldReason = RuntimeHoldReason;
+    type RuntimeFreezeReason = RuntimeFreezeReason;
     type FreezeIdentifier = ();
     type MaxFreezes = ConstU32<1>;
     type MaxHolds = ConstU32<1>;
+}
+
+parameter_types! {
+    // Does not really matter as this will be only called by root
+    pub const AssetDeposit: Balance = 0;
+    pub const AssetAccountDeposit: Balance = 0;
+    pub const ApprovalDeposit: Balance = 0;
+    pub const AssetsStringLimit: u32 = 50;
+    pub const MetadataDepositBase: Balance = 0;
+    pub const MetadataDepositPerByte: Balance = 0;
+}
+
+impl pallet_assets::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Balance = Balance;
+    type AssetId = StandardAssetId;
+    type Currency = Balances;
+    type ForceOrigin = EnsureRoot<AccountId>;
+    type AssetDeposit = AssetDeposit;
+    type AssetAccountDeposit = AssetAccountDeposit;
+    type MetadataDepositBase = MetadataDepositBase;
+    type MetadataDepositPerByte = MetadataDepositPerByte;
+    type ApprovalDeposit = ApprovalDeposit;
+    type StringLimit = AssetsStringLimit;
+    type Freezer = ();
+    type Extra = ();
+    type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+    type RemoveItemsLimit = ConstU32<1000>;
+    type AssetIdParameter = StandardAssetId;
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureNever<AccountId>>;
+    type CallbackHandle = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
+}
+
+pub struct MantaAssetRegistry;
+impl BalanceType for MantaAssetRegistry {
+    type Balance = Balance;
+}
+impl AssetIdType for MantaAssetRegistry {
+    type AssetId = StandardAssetId;
+}
+impl AssetRegistry for MantaAssetRegistry {
+    type Metadata = AssetStorageMetadata;
+    type Error = sp_runtime::DispatchError;
+
+    fn create_asset(
+        asset_id: StandardAssetId,
+        metadata: AssetStorageMetadata,
+        min_balance: Balance,
+        is_sufficient: bool,
+    ) -> DispatchResult {
+        Assets::force_create(
+            RuntimeOrigin::root(),
+            asset_id,
+            AssetManager::account_id(),
+            is_sufficient,
+            min_balance,
+        )?;
+
+        Assets::force_set_metadata(
+            RuntimeOrigin::root(),
+            asset_id,
+            metadata.name,
+            metadata.symbol,
+            metadata.decimals,
+            metadata.is_frozen,
+        )?;
+
+        Assets::force_asset_status(
+            RuntimeOrigin::root(),
+            asset_id,
+            AssetManager::account_id(),
+            AssetManager::account_id(),
+            AssetManager::account_id(),
+            AssetManager::account_id(),
+            min_balance,
+            is_sufficient,
+            metadata.is_frozen,
+        )
+    }
+
+    fn update_asset_metadata(
+        asset_id: &StandardAssetId,
+        metadata: AssetStorageMetadata,
+    ) -> DispatchResult {
+        Assets::force_set_metadata(
+            RuntimeOrigin::root(),
+            *asset_id,
+            metadata.name,
+            metadata.symbol,
+            metadata.decimals,
+            metadata.is_frozen,
+        )
+    }
+}
+
+parameter_types! {
+    pub const DummyAssetId: StandardAssetId = 0;
+    pub const NativeAssetId: StandardAssetId = 1;
+    pub const StartNonNativeAssetId: StandardAssetId = 8;
+    pub NativeAssetLocation: AssetLocation = AssetLocation(
+        VersionedMultiLocation::V3(MultiLocation::new(1, X1(Parachain(1024)))));
+    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
+        metadata: AssetStorageMetadata {
+            name: b"Calamari".to_vec(),
+            symbol: b"KMA".to_vec(),
+            decimals: 18,
+            is_frozen: false,
+        },
+        min_balance: 1u128,
+        is_sufficient: true,
+    };
+    pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
+}
+
+/// AssetConfig implementations for this runtime
+#[derive(Clone, Eq, PartialEq)]
+pub struct MantaAssetConfig;
+impl LocationType for MantaAssetConfig {
+    type Location = AssetLocation;
+}
+impl AssetIdType for MantaAssetConfig {
+    type AssetId = StandardAssetId;
+}
+impl BalanceType for MantaAssetConfig {
+    type Balance = Balance;
+}
+impl AssetConfig<Runtime> for MantaAssetConfig {
+    type NativeAssetId = NativeAssetId;
+    type StartNonNativeAssetId = StartNonNativeAssetId;
+    type NativeAssetLocation = NativeAssetLocation;
+    type NativeAssetMetadata = NativeAssetMetadata;
+    type AssetRegistry = MantaAssetRegistry;
+    type FungibleLedger = NativeAndNonNative<Runtime, MantaAssetConfig, Balances, Assets>;
+}
+
+impl pallet_asset_manager::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type AssetId = StandardAssetId;
+    type Location = AssetLocation;
+    type AssetConfig = MantaAssetConfig;
+    type ModifierOrigin = EnsureRoot<AccountId>;
+    type SuspenderOrigin = EnsureRoot<AccountId>;
+    type PalletId = AssetManagerPalletId;
+    type WeightInfo = ();
+    type PermissionlessStartId = ConstU128<100>;
+    type TokenNameMaxLen = ConstU32<100>;
+    type TokenSymbolMaxLen = ConstU32<100>;
+    type PermissionlessAssetRegistryCost = ConstU128<1000>;
 }
 
 ord_parameter_types! {
@@ -111,18 +278,16 @@ impl Config for Runtime {
     type WeightInfo = ();
 }
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
 construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic
+    pub enum Runtime
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        TransactionPause: tx_pause::{Pallet, Storage, Call, Event<T>},
-        Balances: pallet_balances::{Pallet, Storage, Call, Event<T>},
+        System: frame_system,
+        TransactionPause: tx_pause,
+        Balances: pallet_balances,
+        Assets: pallet_assets,
+        AssetManager: pallet_asset_manager,
     }
 );
 
@@ -136,8 +301,8 @@ impl Default for ExtBuilder {
 
 impl ExtBuilder {
     pub fn build(self) -> sp_io::TestExternalities {
-        let t = frame_system::GenesisConfig::default()
-            .build_storage::<Runtime>()
+        let t = frame_system::GenesisConfig::<Runtime>::default()
+            .build_storage()
             .unwrap();
 
         t.into()

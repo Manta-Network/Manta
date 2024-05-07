@@ -17,6 +17,7 @@
 //! Manta Local Dev Network Configurations
 
 use super::*;
+use manta_runtime::WASM_BINARY;
 use session_key_primitives::util::unchecked_account_id;
 
 pub fn genesis_spec_dev() -> MantaChainSpec {
@@ -27,10 +28,11 @@ pub fn genesis_spec_dev() -> MantaChainSpec {
     )];
     let genesis_collators_clone = genesis_collators.clone(); // so we can move it into the constructor closure
 
+    #[allow(deprecated)]
     MantaChainSpec::from_genesis(
         "Manta Parachain Dev",
-        "manta",
-        ChainType::Local,
+        "manta-dev",
+        ChainType::Development,
         move || manta_devnet_genesis(genesis_collators_clone.clone()),
         genesis_collators
             .into_iter()
@@ -44,6 +46,7 @@ pub fn genesis_spec_dev() -> MantaChainSpec {
             relay_chain: POLKADOT_RELAYCHAIN_LOCAL_NET.into(),
             para_id: MANTA_PARACHAIN_ID,
         },
+        WASM_BINARY.expect("WASM binary was not build, please build it!"),
     )
 }
 
@@ -89,6 +92,7 @@ pub fn genesis_spec_local(localdev: bool) -> MantaChainSpec {
     } else {
         "manta_local"
     };
+    #[allow(deprecated)]
     MantaChainSpec::from_genesis(
         "Manta Parachain Local",
         id,
@@ -106,5 +110,6 @@ pub fn genesis_spec_local(localdev: bool) -> MantaChainSpec {
             relay_chain: POLKADOT_RELAYCHAIN_LOCAL_NET.into(),
             para_id: MANTA_PARACHAIN_ID,
         },
+        WASM_BINARY.expect("WASM binary was not build, please build it!"),
     )
 }

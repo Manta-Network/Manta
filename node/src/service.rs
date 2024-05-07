@@ -16,38 +16,42 @@
 
 //! Nimbus-based Parachain Node Service
 
-use crate::{
-    client::{RuntimeApiCommon, RuntimeApiNimbus},
-    rpc,
-};
-use codec::Decode;
+use crate::{client::RuntimeApiCommon, rpc};
 use cumulus_client_cli::CollatorOptions;
-use cumulus_client_consensus_common::ParachainConsensus;
-use cumulus_client_network::BlockAnnounceValidator;
+use cumulus_client_collator::service::CollatorService;
+use cumulus_client_consensus_common::ParachainBlockImport as TParachainBlockImport;
+use cumulus_client_consensus_proposer::Proposer;
+use cumulus_client_parachain_inherent::{MockValidationDataInherentDataProvider, MockXcmConfig};
 use cumulus_client_service::{
-    prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
+    build_network, prepare_node_config, start_relay_chain_tasks, CollatorSybilResistance,
+    DARecoveryProfile, StartRelayChainTasksParams,
 };
-use cumulus_primitives_core::ParaId;
-use cumulus_relay_chain_interface::RelayChainInterface;
-use futures::{channel::oneshot, FutureExt, StreamExt};
-use jsonrpsee::RpcModule;
-pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
-use sc_consensus::ImportQueue;
+use cumulus_primitives_core::{relay_chain::CollatorPair, ParaId};
+use cumulus_relay_chain_interface::{OverseerHandle, RelayChainInterface};
+use futures::{Stream, StreamExt};
+use hex_literal::hex;
+pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Nonce};
+use nimbus_consensus::NimbusManualSealConsensusDataProvider;
+use polkadot_service::HeaderBackend;
+use sc_consensus::{ImportQueue, LongestChain};
+use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
-use sc_network::{config::SyncMode, NetworkBlock, NetworkService};
+use sc_network::NetworkBlock;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
-use sc_service::{
-    Configuration, Error, SpawnTaskHandle, TFullBackend, TFullClient, TaskManager, WarpSyncParams,
-};
+use sc_service::{Configuration, Error, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
-use session_key_primitives::AuraId;
+use session_key_primitives::{AuraId, NimbusId};
 use sp_api::ConstructRuntimeApi;
+use sp_consensus::SyncOracle;
+use sp_core::H256;
 use sp_keystore::KeystorePtr;
-use sp_runtime::traits::Block as BlockT;
-use std::sync::Arc;
+use sp_runtime::traits::BlakeTwo256;
+use std::{sync::Arc, time::Duration};
 use substrate_prometheus_endpoint::Registry;
 
-const LOG_TARGET_SYNC: &str = "sync::cumulus";
+/// Relaychain raw storage key for timestamp
+pub const TIMESTAMP_NOW: &[u8] =
+    &hex!["f0c365c3cf59d671eb72da0e7a4113c49f1f0515f462cdcf84e0f1d6045dfcbb"];
 
 #[cfg(not(feature = "runtime-benchmarks"))]
 type HostFunctions = sp_io::SubstrateHostFunctions;
@@ -89,40 +93,50 @@ impl sc_executor::NativeExecutionDispatch for CalamariRuntimeExecutor {
 /// We use wasm executor only now.
 pub type DefaultExecutorType = WasmExecutor<HostFunctions>;
 
+/// Backend Type
+pub type FullBackend = TFullBackend<Block>;
+
 /// Full Client Implementation Type
-pub type Client<RuntimeApi> = TFullClient<Block, RuntimeApi, DefaultExecutorType>;
+pub type FullClient<RuntimeApi> = TFullClient<Block, RuntimeApi, DefaultExecutorType>;
 
 /// Default Import Queue Type
-pub type DefaultImportQueue<RuntimeApi> =
-    sc_consensus::DefaultImportQueue<Block, Client<RuntimeApi>>;
+pub type DefaultImportQueue = sc_consensus::DefaultImportQueue<Block>;
 
 /// Full Transaction Pool Type
-pub type TransactionPool<RuntimeApi> = sc_transaction_pool::FullPool<Block, Client<RuntimeApi>>;
+pub type TransactionPool<RuntimeApi> = sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi>>;
+
+/// Block Import type
+pub type ParachainBlockImport<RuntimeApi> =
+    TParachainBlockImport<Block, Arc<FullClient<RuntimeApi>>, FullBackend>;
 
 /// Components Needed for Chain Ops Subcommands
 pub type PartialComponents<RuntimeApi> = sc_service::PartialComponents<
-    Client<RuntimeApi>,
-    TFullBackend<Block>,
-    (),
-    DefaultImportQueue<RuntimeApi>,
+    FullClient<RuntimeApi>,
+    FullBackend,
+    Option<LongestChain<FullBackend, Block>>,
+    DefaultImportQueue,
     TransactionPool<RuntimeApi>,
-    (Option<Telemetry>, Option<TelemetryWorkerHandle>),
+    (
+        ParachainBlockImport<RuntimeApi>,
+        Option<Telemetry>,
+        Option<TelemetryWorkerHandle>,
+    ),
 >;
 
 /// State Backend Type
-pub type StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>;
+pub type StateBackend = sc_client_api::StateBackendFor<FullBackend, Block>;
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
-/// Use this macro if you don't actually need the full service, but just the builder in order to
+/// Use this function if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
 pub fn new_partial<RuntimeApi>(
     config: &Configuration,
+    local_dev_service: bool,
 ) -> Result<PartialComponents<RuntimeApi>, Error>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi:
-        RuntimeApiCommon<StateBackend = StateBackend> + sp_consensus_aura::AuraApi<Block, AuraId>,
+    RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi::RuntimeApi: RuntimeApiCommon + sp_consensus_aura::AuraApi<Block, AuraId>,
 {
     let telemetry = config
         .telemetry_endpoints
@@ -171,15 +185,42 @@ where
         client.clone(),
     );
 
-    let import_queue = crate::aura_or_nimbus_consensus::import_queue(
-        // single step block import pipeline, after nimbus/aura seal, import block into client
-        client.clone(),
-        client.clone(),
-        backend.clone(),
-        &task_manager.spawn_essential_handle(),
-        config.prometheus_registry(),
-        telemetry.as_ref().map(|telemetry| telemetry.handle()),
-    )?;
+    let maybe_select_chain = if local_dev_service {
+        Some(sc_consensus::LongestChain::new(backend.clone()))
+    } else {
+        None
+    };
+
+    let (import_queue, block_import) = if local_dev_service {
+        let block_import = ParachainBlockImport::new(client.clone(), backend.clone());
+        (
+            crate::aura_or_nimbus_consensus::import_queue(
+                client.clone(),
+                client.clone(),
+                backend.clone(),
+                &task_manager.spawn_essential_handle(),
+                config.prometheus_registry(),
+                telemetry.as_ref().map(|telemetry| telemetry.handle()),
+                !local_dev_service,
+            )?,
+            block_import,
+        )
+    } else {
+        let parachain_block_import =
+            ParachainBlockImport::new_with_delayed_best_block(client.clone(), backend.clone());
+        (
+            crate::aura_or_nimbus_consensus::import_queue(
+                client.clone(),
+                client.clone(),
+                backend.clone(),
+                &task_manager.spawn_essential_handle(),
+                config.prometheus_registry(),
+                telemetry.as_ref().map(|telemetry| telemetry.handle()),
+                !local_dev_service,
+            )?,
+            parachain_block_import,
+        )
+    };
 
     Ok(PartialComponents {
         backend,
@@ -188,8 +229,8 @@ where
         keystore_container,
         task_manager,
         transaction_pool,
-        select_chain: (),
-        other: (telemetry, telemetry_worker_handle),
+        select_chain: maybe_select_chain,
+        other: (block_import, telemetry, telemetry_worker_handle),
     })
 }
 
@@ -197,42 +238,31 @@ where
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
-async fn start_node_impl<RuntimeApi, BIC, FullRpc>(
+#[allow(clippy::too_many_arguments)]
+pub async fn start_parachain_node<RuntimeApi, RB>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
-    full_rpc: FullRpc,
-    build_consensus: BIC,
-    hwbench: Option<sc_sysinfo::HwBench>,
-) -> sc_service::error::Result<(TaskManager, Arc<Client<RuntimeApi>>)>
+    rpc_ext_builder: RB,
+    block_authoring_duration: Duration,
+    async_backing: bool,
+) -> sc_service::error::Result<(TaskManager, Arc<FullClient<RuntimeApi>>)>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend>
-        + RuntimeApiNimbus
-        + sp_consensus_aura::AuraApi<Block, AuraId>,
-    FullRpc: Fn(
-            rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
-        ) -> Result<RpcModule<()>, Error>
+    RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi::RuntimeApi: RuntimeApiCommon + sp_consensus_aura::AuraApi<Block, AuraId>,
+    RB: Fn(
+            rpc::FullDeps<FullClient<RuntimeApi>, TransactionPool<RuntimeApi>>,
+        ) -> Result<jsonrpsee::RpcModule<()>, sc_service::Error>
         + 'static,
-    BIC: FnOnce(
-        ParaId,
-        Arc<Client<RuntimeApi>>,
-        Arc<sc_client_db::Backend<Block>>,
-        Option<&Registry>,
-        Option<TelemetryHandle>,
-        &TaskManager,
-        Arc<dyn RelayChainInterface>,
-        Arc<TransactionPool<RuntimeApi>>,
-        Arc<NetworkService<Block, Hash>>,
-        KeystorePtr,
-        bool,
-    ) -> Result<Box<dyn ParachainConsensus<Block>>, Error>,
 {
     let parachain_config = prepare_node_config(parachain_config);
 
-    let params = new_partial::<RuntimeApi>(&parachain_config)?;
-    let (mut telemetry, telemetry_worker_handle) = params.other;
+    let params = new_partial::<RuntimeApi>(&parachain_config, false)?;
+    let (block_import, mut telemetry, telemetry_worker_handle) = params.other;
+
+    let client = params.client.clone();
+    let backend = params.backend.clone();
 
     let mut task_manager = params.task_manager;
     let (relay_chain_interface, collator_key) = crate::builder::build_relay_chain_interface(
@@ -241,47 +271,30 @@ where
         telemetry_worker_handle,
         &mut task_manager,
         collator_options.clone(),
-        hwbench.clone(),
     )
     .await
     .map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
-
-    let client = params.client.clone();
-    let backend = params.backend.clone();
-    let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
 
     let force_authoring = parachain_config.force_authoring;
     let collator = parachain_config.role.is_authority();
     let prometheus_registry = parachain_config.prometheus_registry().cloned();
     let transaction_pool = params.transaction_pool.clone();
-    let import_queue = params.import_queue.service();
+    let import_queue_service = params.import_queue.service();
     let net_config = sc_network::config::FullNetworkConfiguration::new(&parachain_config.network);
 
-    let warp_sync_params = match parachain_config.network.sync_mode {
-        SyncMode::Warp => {
-            let target_block = warp_sync_get::<Block, _>(
-                id,
-                relay_chain_interface.clone(),
-                task_manager.spawn_handle(),
-            );
-            Some(WarpSyncParams::WaitForTarget(target_block))
-        }
-        _ => None,
-    };
-
     let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
-        sc_service::build_network(sc_service::BuildNetworkParams {
-            config: &parachain_config,
+        build_network(cumulus_client_service::BuildNetworkParams {
+            parachain_config: &parachain_config,
+            net_config,
             client: client.clone(),
             transaction_pool: transaction_pool.clone(),
             spawn_handle: task_manager.spawn_handle(),
             import_queue: params.import_queue,
-            block_announce_validator_builder: Some(Box::new(|_| {
-                Box::new(block_announce_validator)
-            })),
-            warp_sync_params,
-            net_config,
-        })?;
+            relay_chain_interface: relay_chain_interface.clone(),
+            para_id: id,
+            sybil_resistance_level: CollatorSybilResistance::Resistant,
+        })
+        .await?;
 
     let rpc_builder = {
         let client = client.clone();
@@ -292,9 +305,10 @@ where
                 client: client.clone(),
                 pool: transaction_pool.clone(),
                 deny_unsafe,
+                command_sink: None,
             };
 
-            full_rpc(deps)
+            rpc_ext_builder(deps)
         })
     };
 
@@ -319,215 +333,86 @@ where
     };
 
     let overseer_handle = relay_chain_interface
+        .clone()
         .overseer_handle()
         .map_err(|e| sc_service::Error::Application(Box::new(e)))?;
 
     let relay_chain_slot_duration = core::time::Duration::from_secs(6);
+
+    start_relay_chain_tasks(StartRelayChainTasksParams {
+        para_id: id,
+        announce_block: announce_block.clone(),
+        client: client.clone(),
+        task_manager: &mut task_manager,
+        da_recovery_profile: if collator {
+            DARecoveryProfile::Collator
+        } else {
+            DARecoveryProfile::FullNode
+        },
+        relay_chain_interface: relay_chain_interface.clone(),
+        import_queue: import_queue_service,
+        relay_chain_slot_duration,
+        recovery_handle: Box::new(overseer_handle.clone()),
+        sync_service: sync_service.clone(),
+    })?;
+
     if collator {
-        let parachain_consensus = build_consensus(
-            id,
+        start_consensus::<RuntimeApi, _>(
+            async_backing,
+            backend.clone(),
             client.clone(),
-            backend,
+            block_import,
             prometheus_registry.as_ref(),
             telemetry.as_ref().map(|t| t.handle()),
             &task_manager,
             relay_chain_interface.clone(),
             transaction_pool,
-            network,
             params.keystore_container.keystore(),
+            id,
+            collator_key.expect("Command line arguments do not allow this. qed"),
+            overseer_handle,
+            announce_block,
             force_authoring,
+            relay_chain_slot_duration,
+            block_authoring_duration,
+            sync_service.clone(),
         )?;
-        let spawner = task_manager.spawn_handle();
-        start_collator(StartCollatorParams {
-            para_id: id,
-            block_status: client.clone(),
-            announce_block,
-            client: client.clone(),
-            task_manager: &mut task_manager,
-            relay_chain_interface,
-            spawner,
-            parachain_consensus,
-            import_queue,
-            collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
-            relay_chain_slot_duration,
-            recovery_handle: Box::new(overseer_handle),
-            sync_service,
-        })
-        .await?;
-    } else {
-        start_full_node(StartFullNodeParams {
-            client: client.clone(),
-            announce_block,
-            task_manager: &mut task_manager,
-            para_id: id,
-            relay_chain_interface,
-            relay_chain_slot_duration,
-            import_queue,
-            recovery_handle: Box::new(overseer_handle),
-            sync_service,
-        })?;
     }
 
     start_network.start_network();
     Ok((task_manager, client))
 }
 
-/// Creates a new background task to wait for the relay chain to sync up and retrieve the parachain header
-fn warp_sync_get<B, RCInterface>(
-    para_id: ParaId,
-    relay_chain_interface: RCInterface,
-    spawner: SpawnTaskHandle,
-) -> oneshot::Receiver<<B as BlockT>::Header>
-where
-    B: BlockT + 'static,
-    RCInterface: RelayChainInterface + 'static,
-{
-    let (sender, receiver) = oneshot::channel::<B::Header>();
-    spawner.spawn(
-        "cumulus-parachain-wait-for-target-block",
-        None,
-        async move {
-            log::debug!(
-                target: "calamari-network",
-                "waiting for announce block in a background task...",
-            );
-
-            let _ = wait_for_target_block::<B, _>(sender, para_id, relay_chain_interface)
-                .await
-                .map_err(|e| {
-                    log::error!(
-                        target: LOG_TARGET_SYNC,
-                        "Unable to determine parachain target block {:?}",
-                        e
-                    )
-                });
-        }
-        .boxed(),
-    );
-
-    receiver
-}
-
-/// Waits for the relay chain to have finished syncing and then gets the parachain header that corresponds to the last finalized relay chain block.
-async fn wait_for_target_block<B, RCInterface>(
-    sender: oneshot::Sender<<B as BlockT>::Header>,
-    para_id: ParaId,
-    relay_chain_interface: RCInterface,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>>
-where
-    B: BlockT + 'static,
-    RCInterface: RelayChainInterface + Send + 'static,
-{
-    let mut imported_blocks = relay_chain_interface
-        .import_notification_stream()
-        .await?
-        .fuse();
-    while imported_blocks.next().await.is_some() {
-        let is_syncing = relay_chain_interface
-            .is_major_syncing()
-            .await
-            .map_err(|e| {
-                Box::<dyn std::error::Error + Send + Sync>::from(format!(
-                    "Unable to determine sync status. {e}"
-                ))
-            })?;
-
-        if !is_syncing {
-            let relay_chain_best_hash = relay_chain_interface
-                .finalized_block_hash()
-                .await
-                .map_err(|e| Box::new(e) as Box<_>)?;
-
-            let validation_data = relay_chain_interface
-                .persisted_validation_data(
-                    relay_chain_best_hash,
-                    para_id,
-                    polkadot_primitives::OccupiedCoreAssumption::TimedOut,
-                )
-                .await
-                .map_err(|e| format!("{e:?}"))?
-                .ok_or("Could not find parachain head in relay chain")?;
-
-            let target_block = B::Header::decode(&mut &validation_data.parent_head.0[..])
-                .map_err(|e| format!("Failed to decode parachain head: {e}"))?;
-
-            log::debug!(
-                target: LOG_TARGET_SYNC,
-                "Target block reached {:?}",
-                target_block
-            );
-            let _ = sender.send(target_block);
-            return Ok(());
-        }
-    }
-
-    Err("Stopping following imported blocks. Could not determine parachain target block".into())
-}
-
-/// Start a calamari parachain node.
-pub async fn start_parachain_node<RuntimeApi, FullRpc>(
+/// Start node with dev config
+#[sc_tracing::logging::prefix_logs_with("Parachain")]
+#[allow(clippy::too_many_arguments)]
+pub async fn start_dev_node<RuntimeApi, RB>(
     parachain_config: Configuration,
-    polkadot_config: Configuration,
-    collator_options: CollatorOptions,
-    id: ParaId,
-    hwbench: Option<sc_sysinfo::HwBench>,
-    full_rpc: FullRpc,
-) -> sc_service::error::Result<(TaskManager, Arc<Client<RuntimeApi>>)>
+    rpc_ext_builder: RB,
+) -> sc_service::error::Result<(TaskManager, Arc<FullClient<RuntimeApi>>)>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend>
-        + RuntimeApiNimbus
-        + sp_consensus_aura::AuraApi<Block, AuraId>,
-    FullRpc: Fn(
-            rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
-        ) -> Result<RpcModule<()>, Error>
+    RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi::RuntimeApi: RuntimeApiCommon + sp_consensus_aura::AuraApi<Block, AuraId>,
+    RB: Fn(
+            rpc::FullDeps<FullClient<RuntimeApi>, TransactionPool<RuntimeApi>>,
+        ) -> Result<jsonrpsee::RpcModule<()>, sc_service::Error>
         + 'static,
 {
-    start_node_impl::<RuntimeApi, _, _>(
-        parachain_config,
-        polkadot_config,
-        collator_options,
-        id,
-        full_rpc,
-        crate::builder::build_nimbus_consensus,
-        hwbench,
-    )
-    .await
-}
+    let params = new_partial::<RuntimeApi>(&parachain_config, true)?;
+    let (block_import, mut telemetry, _telemetry_worker_handle) = params.other;
 
-/// Start a dev node using nimbus instant-sealing consensus without relaychain attached.
-pub async fn start_dev_nimbus_node<RuntimeApi, FullRpc>(
-    config: Configuration,
-    full_rpc: FullRpc,
-) -> sc_service::error::Result<TaskManager>
-where
-    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend>
-        + RuntimeApiNimbus
-        + sp_consensus_aura::AuraApi<Block, AuraId>,
-    FullRpc: Fn(
-            rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
-        ) -> Result<RpcModule<()>, Error>
-        + 'static,
-{
-    use sc_consensus::LongestChain;
+    let transaction_pool = params.transaction_pool.clone();
+    let import_queue = params.import_queue;
+    let client = params.client.clone();
+    let backend = params.backend.clone();
 
-    let sc_service::PartialComponents {
-        client,
-        backend,
-        mut task_manager,
-        import_queue,
-        keystore_container,
-        select_chain: _maybe_select_chain,
-        transaction_pool,
-        other: (_, _),
-    } = new_partial::<RuntimeApi>(&config)?;
-
-    let net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
+    let keystore_container = params.keystore_container;
+    let mut task_manager = params.task_manager;
+    let net_config = sc_network::config::FullNetworkConfiguration::new(&parachain_config.network);
 
     let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
         sc_service::build_network(sc_service::BuildNetworkParams {
-            config: &config,
+            config: &parachain_config,
             client: client.clone(),
             transaction_pool: transaction_pool.clone(),
             spawn_handle: task_manager.spawn_handle(),
@@ -535,24 +420,107 @@ where
             block_announce_validator_builder: None,
             warp_sync_params: None,
             net_config,
+            block_relay: None,
         })?;
 
-    let role = config.role.clone();
-    let select_chain = LongestChain::new(backend.clone());
+    let prometheus_registry = parachain_config.prometheus_registry().cloned();
+    let collator = parachain_config.role.is_authority();
 
-    if role.is_authority() {
-        let dev_consensus = crate::builder::build_dev_nimbus_consensus(
+    if collator {
+        log::info!("Is running as Collator");
+        let env = sc_basic_authorship::ProposerFactory::with_proof_recording(
+            task_manager.spawn_handle(),
             client.clone(),
             transaction_pool.clone(),
-            &keystore_container,
-            select_chain,
-            &task_manager,
-        )?;
+            prometheus_registry.as_ref(),
+            telemetry.as_ref().map(|x| x.handle()),
+        );
+
+        let commands_stream: Box<dyn Stream<Item = EngineCommand<H256>> + Send + Sync + Unpin> =
+            Box::new(
+                // This bit cribbed from the implementation of instant seal.
+                transaction_pool
+                    .pool()
+                    .validated_pool()
+                    .import_notification_stream()
+                    .map(|_| EngineCommand::SealNewBlock {
+                        create_empty: false,
+                        finalize: false,
+                        parent_hash: None,
+                        sender: None,
+                    }),
+            );
+
+        let select_chain = params.select_chain.expect(
+            "`new_partial` builds a `LongestChainRule` when building dev service.\
+				We specified the dev service when calling `new_partial`.\
+				Therefore, a `LongestChainRule` is present. qed.",
+        );
+
+        let client_set_aside_for_cidp = client.clone();
+        let client_clone = client.clone();
+        let keystore_clone = keystore_container.keystore().clone();
+
+        let maybe_provide_vrf_digest =
+            move |nimbus_id: NimbusId, parent: Hash| -> Option<sp_runtime::generic::DigestItem> {
+                crate::client::vrf_pre_digest::<Block, FullClient<RuntimeApi>>(
+                    &client_clone,
+                    &keystore_clone,
+                    nimbus_id,
+                    parent,
+                )
+            };
 
         task_manager.spawn_essential_handle().spawn_blocking(
             "authorship_task",
             Some("block-authoring"),
-            dev_consensus,
+            run_manual_seal(ManualSealParams {
+                block_import,
+                env,
+                client: client.clone(),
+                pool: transaction_pool.clone(),
+                commands_stream,
+                select_chain,
+                consensus_data_provider: Some(Box::new(NimbusManualSealConsensusDataProvider {
+                    keystore: keystore_container.keystore(),
+                    client: client.clone(),
+                    additional_digests_provider: maybe_provide_vrf_digest,
+                    _phantom: Default::default(),
+                })),
+                create_inherent_data_providers: move |block: H256, ()| {
+                    let maybe_current_para_block = client_set_aside_for_cidp.number(block);
+
+                    let client_for_xcm = client_set_aside_for_cidp.clone();
+                    async move {
+                        let time = sp_timestamp::InherentDataProvider::from_system_time();
+
+                        let current_para_block = maybe_current_para_block?
+                            .ok_or(sp_blockchain::Error::UnknownBlock(block.to_string()))?;
+
+                        let mocked_parachain = MockValidationDataInherentDataProvider {
+                            current_para_block,
+                            relay_offset: 1000,
+                            relay_blocks_per_para_block: 2,
+                            // TODO: Recheck
+                            para_blocks_per_relay_epoch: 10,
+                            relay_randomness_config: (),
+                            xcm_config: MockXcmConfig::new(
+                                &*client_for_xcm,
+                                block,
+                                Default::default(),
+                                Default::default(),
+                            ),
+                            raw_downward_messages: Default::default(),
+                            raw_horizontal_messages: Default::default(),
+                            additional_key_values: None,
+                        };
+
+                        let randomness = session_key_primitives::inherent::InherentDataProvider;
+
+                        Ok((time, mocked_parachain, randomness))
+                    }
+                },
+            }),
         );
     }
 
@@ -561,32 +529,182 @@ where
         let transaction_pool = transaction_pool.clone();
 
         Box::new(move |deny_unsafe, _| {
-            let deps = rpc::FullDeps {
+            let deps = crate::rpc::FullDeps {
                 client: client.clone(),
                 pool: transaction_pool.clone(),
                 deny_unsafe,
+                command_sink: None,
             };
 
-            full_rpc(deps)
+            rpc_ext_builder(deps)
         })
     };
 
     sc_service::spawn_tasks(sc_service::SpawnTasksParams {
         rpc_builder,
-        client,
-        transaction_pool,
+        client: client.clone(),
+        transaction_pool: transaction_pool.clone(),
         task_manager: &mut task_manager,
-        config,
+        config: parachain_config,
         keystore: keystore_container.keystore(),
-        backend,
-        network,
+        backend: backend.clone(),
+        network: network.clone(),
         system_rpc_tx,
         tx_handler_controller,
-        telemetry: None,
-        sync_service,
+        telemetry: telemetry.as_mut(),
+        sync_service: sync_service.clone(),
     })?;
 
-    network_starter.start_network();
+    log::info!("⚠️  DEV STANDALONE MODE.");
 
-    Ok(task_manager)
+    network_starter.start_network();
+    Ok((task_manager, client))
+}
+
+#[allow(clippy::too_many_arguments)]
+fn start_consensus<RuntimeApi, SO>(
+    async_backing: bool,
+    backend: Arc<FullBackend>,
+    client: Arc<FullClient<RuntimeApi>>,
+    block_import: ParachainBlockImport<RuntimeApi>,
+    prometheus_registry: Option<&Registry>,
+    telemetry: Option<TelemetryHandle>,
+    task_manager: &TaskManager,
+    relay_chain_interface: Arc<dyn RelayChainInterface>,
+    transaction_pool: Arc<sc_transaction_pool::FullPool<Block, FullClient<RuntimeApi>>>,
+    keystore: KeystorePtr,
+    para_id: ParaId,
+    collator_key: CollatorPair,
+    overseer_handle: OverseerHandle,
+    announce_block: Arc<dyn Fn(Hash, Option<Vec<u8>>) + Send + Sync>,
+    force_authoring: bool,
+    relay_chain_slot_duration: Duration,
+    block_authoring_duration: Duration,
+    sync_oracle: SO,
+) -> Result<(), sc_service::Error>
+where
+    RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi::RuntimeApi: RuntimeApiCommon + sp_consensus_aura::AuraApi<Block, AuraId>,
+    sc_client_api::StateBackendFor<FullBackend, Block>: sc_client_api::StateBackend<BlakeTwo256>,
+    SO: SyncOracle + Send + Sync + Clone + 'static,
+{
+    let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
+        task_manager.spawn_handle(),
+        client.clone(),
+        transaction_pool,
+        prometheus_registry,
+        telemetry.clone(),
+    );
+
+    let proposer = Proposer::new(proposer_factory);
+
+    let collator_service = CollatorService::new(
+        client.clone(),
+        Arc::new(task_manager.spawn_handle()),
+        announce_block,
+        client.clone(),
+    );
+
+    let create_inherent_data_providers = |_, _| async move {
+        let time = sp_timestamp::InherentDataProvider::from_system_time();
+
+        let nimbus = nimbus_primitives::InherentDataProvider;
+
+        let session = session_key_primitives::inherent::InherentDataProvider;
+
+        Ok((time, nimbus, session))
+    };
+
+    let client_clone = client.clone();
+    let keystore_clone = keystore.clone();
+    let maybe_provide_vrf_digest =
+        move |nimbus_id: NimbusId, parent: Hash| -> Option<sp_runtime::generic::DigestItem> {
+            crate::client::vrf_pre_digest::<Block, FullClient<RuntimeApi>>(
+                &client_clone,
+                &keystore_clone,
+                nimbus_id,
+                parent,
+            )
+        };
+
+    if async_backing {
+        log::info!("Collator started with asynchronous backing.");
+        let client_clone = client.clone();
+        let code_hash_provider = move |block_hash| {
+            client_clone
+                .code_at(block_hash)
+                .ok()
+                .map(polkadot_primitives::ValidationCode)
+                .map(|c| c.hash())
+        };
+        task_manager.spawn_essential_handle().spawn(
+            "nimbus",
+            None,
+            nimbus_consensus::collators::lookahead::run::<
+                Block,
+                _,
+                _,
+                _,
+                FullBackend,
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
+            >(nimbus_consensus::collators::lookahead::Params {
+                additional_digests_provider: maybe_provide_vrf_digest,
+                authoring_duration: block_authoring_duration,
+                block_import,
+                code_hash_provider,
+                collator_key,
+                collator_service,
+                create_inherent_data_providers,
+                force_authoring,
+                keystore,
+                overseer_handle,
+                para_backend: backend,
+                para_client: client,
+                para_id,
+                proposer,
+                relay_chain_slot_duration,
+                relay_client: relay_chain_interface,
+                slot_duration: None,
+                sync_oracle,
+            }),
+        );
+    } else {
+        log::info!("Collator started without asynchronous backing.");
+        task_manager.spawn_essential_handle().spawn(
+            "nimbus",
+            None,
+            nimbus_consensus::collators::basic::run::<
+                Block,
+                _,
+                _,
+                FullBackend,
+                FullClient<RuntimeApi>,
+                _,
+                _,
+                _,
+                _,
+            >(nimbus_consensus::collators::basic::Params {
+                additional_digests_provider: maybe_provide_vrf_digest,
+                //authoring_duration: Duration::from_millis(500),
+                block_import,
+                collator_key,
+                collator_service,
+                create_inherent_data_providers,
+                force_authoring,
+                keystore,
+                overseer_handle,
+                para_id,
+                para_client: client,
+                proposer,
+                relay_client: relay_chain_interface,
+            }),
+        );
+    };
+
+    Ok(())
 }

@@ -17,13 +17,18 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use crate::{Call, Config, Pallet};
-use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, vec, whitelisted_caller};
+use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::traits::Get;
 use frame_system::{EventRecord, RawOrigin};
 use manta_primitives::{
-    assets::{AssetConfig, AssetRegistryMetadata, FungibleLedger, TestingDefault, UnitsPerSecond},
+    assets::{
+        AssetConfig, AssetRegistryMetadata, AssetStorageMetadata, FungibleLedger, TestingDefault,
+        UnitsPerSecond,
+    },
     types::Balance,
 };
+use scale_info::prelude::*;
+use sp_std::vec;
 use xcm::latest::prelude::*;
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
@@ -31,6 +36,27 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
     let system_event: <T as frame_system::Config>::RuntimeEvent = generic_event.into();
     let EventRecord { event, .. } = &events[events.len() - 1];
     assert_eq!(event, &system_event);
+}
+
+pub fn register_asset_helper<T: Config>(location: MultiLocation, i: u32) {
+    let metadata = AssetRegistryMetadata::<Balance> {
+        metadata: AssetStorageMetadata {
+            name: format!("{}-name", i).into(),
+            symbol: format!("{}-symbol", i).into(),
+            decimals: 12,
+            is_frozen: false,
+        },
+        min_balance: 1,
+        is_sufficient: true,
+    };
+    Pallet::<T>::register_asset(RawOrigin::Root.into(), location.into(), metadata)
+        .expect("Filed to register asset");
+    Pallet::<T>::set_units_per_second(
+        RawOrigin::Root.into(),
+        <T as Config>::AssetId::from(i),
+        i.into(),
+    )
+    .expect("Filed to set ups");
 }
 
 benchmarks! {
