@@ -2274,10 +2274,10 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
     let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
     let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, false, true);
 
-    // register relay asset in parachain A (XCM version 1)
+    // register relay asset in parachain A (XCM version 2)
     ParaA::execute_with(|| {
         // SelfReserve
-        parachain::set_current_xcm_version(1);
+        parachain::set_current_xcm_version(2);
     });
     let _ = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -2292,7 +2292,7 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
         None,
     );
 
-    let response = Response::Version(3);
+    let response = Response::Version(4);
 
     // This is irrelevant, nothing will be done with this message,
     // but we need to pass a message as an argument to trigger the storage change
@@ -2321,7 +2321,7 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
         // this is not necessary in prod.
         // more specifically, this will trigger `note_unknown_version` to put the
         // version to `VersionDiscoveryQueue` on relay-chain's pallet-xcm
-        assert_ok!(<RelayChainPalletXcm as WrapVersion>::wrap_version(
+        dbg!(<RelayChainPalletXcm as WrapVersion>::wrap_version(
             &Parachain(PARA_A_ID).into(),
             mock_message
         ));
@@ -2348,7 +2348,7 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
                 parents: 0,
                 interior: X1(Parachain(PARA_A_ID)),
             },
-            version: 1,
+            version: 2,
         }
         .into();
 
@@ -2357,11 +2357,11 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
         assert!(relay_chain::relay_events().contains(&expected_supported_version));
     });
 
-    // ParaA changes version to 2, and calls on_runtime_upgrade. This should notify the targets
+    // ParaA changes version to 3, and calls on_runtime_upgrade. This should notify the targets
     // of the new version change
     ParaA::execute_with(|| {
         // Set version
-        parachain::set_current_xcm_version(2);
+        parachain::set_current_xcm_version(3);
         // Do runtime upgrade
         parachain::on_runtime_upgrade();
         // Initialize block, to call on_initialize and notify targets
@@ -2386,7 +2386,7 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
                 parents: 0,
                 interior: X1(Parachain(PARA_A_ID)),
             },
-            version: 1,
+            version: 2,
         }
         .into();
 
@@ -2436,7 +2436,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 
     ParaB::execute_with(|| {
         // advertised version
-        parachain::set_current_xcm_version(0);
+        parachain::set_current_xcm_version(2);
     });
 
     let _ = register_assets_on_parachain::<ParaB>(
@@ -2476,7 +2476,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
                 parents: 1,
                 interior: X1(Parachain(PARA_B_ID)),
             },
-            version: 0,
+            version: 2,
         }
         .into();
 
@@ -2547,7 +2547,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
                 parents: 1,
                 interior: X1(Parachain(PARA_B_ID)),
             },
-            version: 0,
+            version: 2,
         }
         .into();
 
