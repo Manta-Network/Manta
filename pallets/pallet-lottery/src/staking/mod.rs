@@ -209,9 +209,26 @@ impl<T: Config> Pallet<T> {
         if withdrawal_eligible_collators.is_empty() {
             return vec![];
         }
+        let mut eligible_collators: Vec<_> = collators_we_are_unstaking_from;
+        if let Some(state) =
+            pallet_parachain_staking::Pallet::<T>::delegator_state(crate::Pallet::<T>::account_id())
+        {
+            let owners: Vec<_> = state
+                .delegations
+                .0
+                .iter()
+                .cloned()
+                .map(|uc| uc.owner)
+                .collect();
+            eligible_collators = withdrawal_eligible_collators
+                .iter()
+                .filter(|account| owners.contains(account))
+                .cloned()
+                .collect();
+        }
         // first concern: If there are inactive collators we are staked with, prefer these
         let (mut collators, balance_unstaked) = withdraw_strategies::unstake_inactive_collators::<T>(
-            &withdrawal_eligible_collators,
+            &eligible_collators,
             remaining_balance,
         );
         withdrawals.append(&mut collators);
@@ -222,7 +239,7 @@ impl<T: Config> Pallet<T> {
         // If we have balance to withdraw left over, we have to unstake some healthy collator.
         // Unstake starting from the highest overallocated collator ( since that yields the lowest APY ) going down until request is satisfied
         let (mut collators, balance_unstaked) = withdraw_strategies::unstake_least_apy_collators::<T>(
-            &withdrawal_eligible_collators
+            &eligible_collators
                 .into_iter()
                 .filter(|collator| !withdrawals.contains(collator))
                 .collect(),

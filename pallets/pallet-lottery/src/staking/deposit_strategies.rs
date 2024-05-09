@@ -42,9 +42,11 @@ pub(super) fn reactivate_bottom_collators<T: Config>(
             .expect("is active collator, therefore it has collator info. qed");
 
         // If collator not exist in delegatorState(PotAccount).delegations, ignore
+        // delegations has other active collator to stake.
         if let Some(state) =
             pallet_parachain_staking::Pallet::<T>::delegator_state(crate::Pallet::<T>::account_id())
         {
+            log::debug!("delegator PotAccount has state.");
             let mut is_kick = true;
             for x in &state.delegations.0 {
                 if x.owner == collator {

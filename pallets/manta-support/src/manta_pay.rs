@@ -212,7 +212,7 @@ pub type AssetValue = u128;
 pub type AccountId = [u8; 32];
 
 /// Transfer Proof encoded value
-/// Compatability for JS u128 and Encode/Decode from parity_codec
+/// Compatibility for JS u128 and Encode/Decode from parity_codec
 pub type EncodedAssetValue = [u8; 16];
 
 /// Asset

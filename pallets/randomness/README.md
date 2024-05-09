@@ -111,5 +111,5 @@ Additionally, the Babe consensus can sometime allow multiple validator to produc
 
 ### Asynchronous Backing
 
-This solution is **safe** even after the asynchronous backing is supported as the pseudo-random is not dependant on which relay block the parachain block is referencing.
+This solution is **safe** even after the asynchronous backing is supported as the pseudo-random is not dependent on which relay block the parachain block is referencing.
 A collator being able to choose the relay block on top of which it builds the parachain block will not influence the pseudo-random word.
