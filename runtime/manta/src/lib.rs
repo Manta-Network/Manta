@@ -1479,7 +1479,6 @@ impl_runtime_apis! {
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
             impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
-            use pallet_xcm_benchmarks::asset_instance_from;
             use xcm_config::{LocationToAccountId, XcmExecutorConfig};
 
             parameter_types! {
@@ -1513,10 +1512,6 @@ impl_runtime_apis! {
 
                 fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
                     let mut assets = vec![];
-                    assets.push(MultiAsset {
-                        id: Concrete(DotLocation::get()),
-                        fun: Fungible(1_000_000 * MANTA),
-                    });
 
                     for (i, asset) in assets.iter().enumerate() {
                         if let MultiAsset {
@@ -1526,6 +1521,10 @@ impl_runtime_apis! {
                             pallet_asset_manager::benchmarking::register_asset_helper::<Runtime>(*location, i as u32);
                         }
                     }
+                    assets.push(MultiAsset {
+                        id: Concrete(DotLocation::get()),
+                        fun: Fungible(1_000_000 * MANTA),
+                    });
                     Ok(DotLocation::get())
                 }
 

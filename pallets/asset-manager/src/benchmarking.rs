@@ -40,7 +40,7 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
 }
 
 pub fn register_asset_helper<T: Config>(location: MultiLocation, i: u32) {
-    if crate::LocationAssetId::<T>::contains_key(T::Location::from(location.clone())) {
+    if crate::LocationAssetId::<T>::contains_key(T::Location::from(location)) {
         return;
     }
     let metadata = AssetRegistryMetadata::<Balance> {

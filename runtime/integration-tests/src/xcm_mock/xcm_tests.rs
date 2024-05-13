@@ -2321,7 +2321,7 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
         // this is not necessary in prod.
         // more specifically, this will trigger `note_unknown_version` to put the
         // version to `VersionDiscoveryQueue` on relay-chain's pallet-xcm
-        dbg!(<RelayChainPalletXcm as WrapVersion>::wrap_version(
+        assert_ok!(<RelayChainPalletXcm as WrapVersion>::wrap_version(
             &Parachain(PARA_A_ID).into(),
             mock_message
         ));

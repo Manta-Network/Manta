@@ -1518,9 +1518,6 @@ impl_runtime_apis! {
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
             use frame_system_benchmarking::Pallet as SystemBench;
 
-            type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
-            type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
-
             let mut list = Vec::<BenchmarkList>::new();
             list_benchmarks!(list, extra);
 
@@ -1550,7 +1547,6 @@ impl_runtime_apis! {
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
             impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
-            use pallet_xcm_benchmarks::asset_instance_from;
             use xcm_config::{LocationToAccountId, XcmExecutorConfig};
 
             parameter_types! {
@@ -1580,10 +1576,6 @@ impl_runtime_apis! {
 
                 fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
                     let mut assets = vec![];
-                    assets.push(MultiAsset {
-                        id: Concrete(KsmLocation::get()),
-                        fun: Fungible(1_000_000 * KMA),
-                    });
 
                     for (i, asset) in assets.iter().enumerate() {
                         if let MultiAsset {
@@ -1593,6 +1585,10 @@ impl_runtime_apis! {
                             pallet_asset_manager::benchmarking::register_asset_helper::<Runtime>(*location, i as u32);
                         }
                     }
+                    assets.push(MultiAsset {
+                        id: Concrete(KsmLocation::get()),
+                        fun: Fungible(1_000_000 * KMA),
+                    });
                     Ok(KsmLocation::get())
                 }
 
@@ -1691,9 +1687,6 @@ impl_runtime_apis! {
                     Err(BenchmarkError::Skip)
                 }
             }
-
-            type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
-            type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
             let whitelist: Vec<TrackedStorageKey> = vec![
                 // Block Number
