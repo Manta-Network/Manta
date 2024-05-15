@@ -1575,7 +1575,12 @@ impl_runtime_apis! {
                 >;
 
                 fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
-                    let mut assets = vec![];
+                    let assets = vec![
+                        MultiAsset {
+                            id: Concrete(KsmLocation::get()),
+                            fun: Fungible(1_000_000 * KMA),
+                        }
+                    ];
 
                     for (i, asset) in assets.iter().enumerate() {
                         if let MultiAsset {
@@ -1585,10 +1590,6 @@ impl_runtime_apis! {
                             pallet_asset_manager::benchmarking::register_asset_helper::<Runtime>(*location, i as u32);
                         }
                     }
-                    assets.push(MultiAsset {
-                        id: Concrete(KsmLocation::get()),
-                        fun: Fungible(1_000_000 * KMA),
-                    });
                     Ok(KsmLocation::get())
                 }
 
