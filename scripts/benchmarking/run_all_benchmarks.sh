@@ -79,7 +79,6 @@ MANTA=./target/production/manta
 # Will fix it in next release
 # currently, both pallets have problems on benchmarking
 EXCLUDED_PALLETS=(
-  "zenlink_protocol"
 )
 
 # Load all pallet names in an array.
