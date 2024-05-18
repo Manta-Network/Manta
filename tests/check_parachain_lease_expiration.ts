@@ -19,7 +19,7 @@ export async function createPromiseApi(nodeAddress: string) {
 
 describe('Check Parachain_Lease_Expiration', () => {
     it('Check Manta Parachain Lease', async () => {
-        const polkadotNode = 'wss://1rpc.io/dot';
+        const polkadotNode = 'wss://polkadot.api.onfinality.io/public-ws';
         const polkadotApi = await createPromiseApi(polkadotNode);
         const mantaParaId = 2104;
         const oneDay = 3600 * 24;

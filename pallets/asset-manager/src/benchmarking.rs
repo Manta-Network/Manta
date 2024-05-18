@@ -28,6 +28,7 @@ use manta_primitives::{
     types::Balance,
 };
 use scale_info::prelude::*;
+use sp_runtime::traits::One;
 use sp_std::vec;
 use xcm::latest::prelude::*;
 
@@ -39,6 +40,9 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
 }
 
 pub fn register_asset_helper<T: Config>(location: MultiLocation, i: u32) {
+    if crate::LocationAssetId::<T>::contains_key(T::Location::from(location)) {
+        return;
+    }
     let metadata = AssetRegistryMetadata::<Balance> {
         metadata: AssetStorageMetadata {
             name: format!("{}-name", i).into(),
@@ -51,12 +55,9 @@ pub fn register_asset_helper<T: Config>(location: MultiLocation, i: u32) {
     };
     Pallet::<T>::register_asset(RawOrigin::Root.into(), location.into(), metadata)
         .expect("Filed to register asset");
-    Pallet::<T>::set_units_per_second(
-        RawOrigin::Root.into(),
-        <T as Config>::AssetId::from(i),
-        i.into(),
-    )
-    .expect("Filed to set ups");
+    let current_asset_id = crate::NextAssetId::<T>::get() - One::one();
+    Pallet::<T>::set_units_per_second(RawOrigin::Root.into(), current_asset_id, i.into())
+        .expect("Filed to set ups");
 }
 
 benchmarks! {

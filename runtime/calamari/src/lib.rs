@@ -1162,9 +1162,8 @@ mod benches {
         // always get this error(Unimplemented) while benchmarking pallet_xcm_benchmarks::fungible::initiate_teleport
         // so this time we will use statemint's fungible weights
         // and actually we don't support teleport now
-        // [pallet_xcm_benchmarks::generic, XcmGeneric]
         // [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
-        // [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
+        [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
         // Nimbus pallets
         // [pallet_author_inherent, AuthorInherent]
     );
@@ -1519,9 +1518,6 @@ impl_runtime_apis! {
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
             use frame_system_benchmarking::Pallet as SystemBench;
 
-            //type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
-            //type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
-
             let mut list = Vec::<BenchmarkList>::new();
             list_benchmarks!(list, extra);
 
@@ -1551,7 +1547,6 @@ impl_runtime_apis! {
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
             impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
-            use pallet_xcm_benchmarks::asset_instance_from;
             use xcm_config::{LocationToAccountId, XcmExecutorConfig};
 
             parameter_types! {
@@ -1580,7 +1575,22 @@ impl_runtime_apis! {
                 >;
 
                 fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
-                 Ok(KsmLocation::get())
+                    let assets = vec![
+                        MultiAsset {
+                            id: Concrete(KsmLocation::get()),
+                            fun: Fungible(1_000_000 * KMA),
+                        }
+                    ];
+
+                    for (i, asset) in assets.iter().enumerate() {
+                        if let MultiAsset {
+                            id: Concrete(location),
+                            fun: Fungible(_)
+                        } = asset {
+                            pallet_asset_manager::benchmarking::register_asset_helper::<Runtime>(*location, i as u32);
+                        }
+                    }
+                    Ok(KsmLocation::get())
                 }
 
                 fn worst_case_holding(depositable_count: u32) -> MultiAssets {
@@ -1596,16 +1606,25 @@ impl_runtime_apis! {
                             }
                         })
                         .chain(core::iter::once(MultiAsset { id: Concrete(Here.into()), fun: Fungible(u128::MAX) }))
-                        .chain((0..holding_non_fungibles).map(|i| MultiAsset {
-                            id: Concrete(GeneralIndex(i as u128).into()),
-                            fun: NonFungible(asset_instance_from(i)),
-                        }))
                         .collect::<Vec<_>>();
 
-                    assets.push(MultiAsset {
-                        id: Concrete(KmaLocation::get()),
-                        fun: Fungible(1_000_000 * KMA),
-                    });
+                        assets.push(MultiAsset {
+                            id: Concrete(KsmLocation::get()),
+                            fun: Fungible(1_000_000 * KMA),
+                        });
+                        assets.push(MultiAsset {
+                            id: Concrete(KmaLocation::get()),
+                            fun: Fungible(1_000_000 * KMA),
+                        });
+
+                        for (i, asset) in assets.iter().enumerate() {
+                            if let MultiAsset {
+                                id: Concrete(location),
+                                fun: Fungible(_)
+                            } = asset {
+                                pallet_asset_manager::benchmarking::register_asset_helper::<Runtime>(*location, i as u32);
+                            }
+                        }
                     assets.into()
                 }
             }
@@ -1669,9 +1688,6 @@ impl_runtime_apis! {
                     Err(BenchmarkError::Skip)
                 }
             }
-
-            //type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
-            //type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
             let whitelist: Vec<TrackedStorageKey> = vec![
                 // Block Number
