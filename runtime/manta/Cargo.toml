@@ -62,7 +62,6 @@ pallet-treasury = { workspace = true }
 pallet-utility = { workspace = true }
 
 # Cumulus dependencies
-cumulus-pallet-dmp-queue = { workspace = true }
 cumulus-pallet-parachain-system = { workspace = true }
 cumulus-pallet-session-benchmarking = { workspace = true, optional = true }
 cumulus-pallet-xcm = { workspace = true }
@@ -197,7 +196,6 @@ try-runtime = [
   "parachain-info/try-runtime",
   'pallet-aura/try-runtime',
   'pallet-xcm/try-runtime',
-  "cumulus-pallet-dmp-queue/try-runtime",
   'pallet-aura-style-filter/try-runtime',
   'manta-collator-selection/try-runtime',
   'pallet-sudo/try-runtime',
@@ -266,7 +264,6 @@ std = [
   'runtime-common/std',
   'parachain-info/std',
   'cumulus-pallet-parachain-system/std',
-  'cumulus-pallet-dmp-queue/std',
   "cumulus-pallet-xcmp-queue/std",
   "cumulus-pallet-xcm/std",
   "cumulus-primitives-core/std",

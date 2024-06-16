@@ -350,12 +350,6 @@ parameter_types! {
     pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
 }
 
-impl cumulus_pallet_dmp_queue::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type DmpSink = EnqueueWithOrigin<MessageQueue, RelayOrigin>;
-    type WeightInfo = cumulus_pallet_dmp_queue::weights::SubstrateWeight<Self>;
-}
-
 /// We wrap AssetId for XToken
 #[derive(Clone, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
 pub enum CurrencyId {

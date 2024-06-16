@@ -1526,7 +1526,6 @@ dependencies = [
  "async-backing-primitives",
  "calamari-vesting",
  "csv",
- "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
@@ -2589,24 +2588,6 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-transaction-pool",
-]
-
-[[package]]
-name = "cumulus-pallet-dmp-queue"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.6.0#61801ce324f18eacb9c29e2f674f0d262a00bd4d"
-dependencies = [
- "cumulus-primitives-core",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-io",
- "sp-runtime",
- "sp-std 8.0.0",
- "staging-xcm",
 ]
 
 [[package]]
@@ -5035,7 +5016,6 @@ dependencies = [
  "calamari-runtime",
  "calamari-vesting",
  "cfg-if",
- "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
@@ -6342,7 +6322,6 @@ version = "4.7.0"
 dependencies = [
  "async-backing-primitives",
  "csv",
- "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
  "cumulus-pallet-xcm",
@@ -11235,7 +11214,6 @@ dependencies = [
 name = "runtime-common"
 version = "4.7.0"
 dependencies = [
- "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
