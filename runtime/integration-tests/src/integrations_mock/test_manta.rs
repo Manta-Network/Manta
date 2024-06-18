@@ -66,7 +66,6 @@ fn verify_pallet_prefixes() {
     is_pallet_prefix::<XcmpQueue>("XcmpQueue");
     is_pallet_prefix::<PolkadotXcm>("PolkadotXcm");
     is_pallet_prefix::<CumulusXcm>("CumulusXcm");
-    is_pallet_prefix::<DmpQueue>("DmpQueue");
     is_pallet_prefix::<XTokens>("XTokens");
 
     is_pallet_prefix::<Utility>("Utility");
@@ -192,7 +191,6 @@ fn verify_manta_pallet_indices() {
     is_pallet_index::<XcmpQueue>(30);
     is_pallet_index::<PolkadotXcm>(31);
     is_pallet_index::<CumulusXcm>(32);
-    is_pallet_index::<DmpQueue>(33);
     is_pallet_index::<XTokens>(34);
 
     is_pallet_index::<Utility>(40);

@@ -103,7 +103,6 @@ fn verify_pallet_prefixes() {
     is_pallet_prefix::<calamari_runtime::XcmpQueue>("XcmpQueue");
     is_pallet_prefix::<calamari_runtime::PolkadotXcm>("PolkadotXcm");
     is_pallet_prefix::<calamari_runtime::CumulusXcm>("CumulusXcm");
-    is_pallet_prefix::<calamari_runtime::DmpQueue>("DmpQueue");
     is_pallet_prefix::<calamari_runtime::XTokens>("XTokens");
 
     is_pallet_prefix::<calamari_runtime::Utility>("Utility");
@@ -304,7 +303,6 @@ fn verify_calamari_pallet_indices() {
     is_pallet_index::<calamari_runtime::XcmpQueue>(30);
     is_pallet_index::<calamari_runtime::PolkadotXcm>(31);
     is_pallet_index::<calamari_runtime::CumulusXcm>(32);
-    is_pallet_index::<calamari_runtime::DmpQueue>(33);
     is_pallet_index::<calamari_runtime::XTokens>(34);
 
     is_pallet_index::<calamari_runtime::Utility>(40);
