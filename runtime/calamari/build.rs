@@ -14,10 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+#[cfg(not(feature = "metadata-hash"))]
 fn main() {
     substrate_wasm_builder::WasmBuilder::new()
         .with_current_project()
         .export_heap_base()
         .import_memory()
+        .build()
+}
+
+#[cfg(feature = "metadata-hash")]
+fn main() {
+    substrate_wasm_builder::WasmBuilder::new()
+        .with_current_project()
+        .export_heap_base()
+        .import_memory()
+        .enable_metadata_hash("KMA", 12)
         .build()
 }

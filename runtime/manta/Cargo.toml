@@ -16,6 +16,7 @@ serde = { workspace = true, optional = true }
 smallvec = { workspace = true }
 
 # Substrate primitives
+frame-metadata-hash-extension = { workspace = true }
 sp-api = { workspace = true }
 sp-application-crypto = { workspace = true }
 sp-arithmetic = { workspace = true }
@@ -239,6 +240,7 @@ std = [
   'frame-support/std',
   'frame-executive/std',
   'frame-metadata/std',
+  "frame-metadata-hash-extension/std",
   'frame-system/std',
   'frame-system-rpc-runtime-api/std',
   'frame-try-runtime/std',
