@@ -17,7 +17,7 @@
 #[cfg(all(feature = "std", feature = "metadata-hash"))]
 fn main() {
     substrate_wasm_builder::WasmBuilder::init_with_defaults()
-        .enable_metadata_hash("CALAMARI", 12)
+        .enable_metadata_hash("KMA", 12)
         .build();
 }
 
