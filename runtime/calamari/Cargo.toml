@@ -125,7 +125,7 @@ zenlink-protocol-runtime-api = { workspace = true }
 targets = ['x86_64-unknown-linux-gnu']
 
 [build-dependencies]
-substrate-wasm-builder = { workspace = true }
+substrate-wasm-builder = { workspace = true, optional = true }
 
 [dev-dependencies]
 # Generic 3rd-party dependencies
@@ -241,6 +241,7 @@ fast-runtime = []
 std = [
   'codec/std',
   'serde/std',
+  'substrate-wasm-builder',
   'sp-consensus-aura/std',
   'pallet-aura/std',
   'sp-api/std',
@@ -327,6 +328,10 @@ std = [
   "pallet-referenda/std",
   "pallet-ranked-collective/std",
 ]
+
+# Enable the metadata hash generation in the wasm-builder
+metadata-hash = ["substrate-wasm-builder?/metadata-hash"]
+
 # A feature that should be enabled when the runtime should be build for on-chain
 # deployment. This will disable stuff that shouldn't be part of the on-chain wasm
 # to make it smaller like logging for example.
@@ -334,5 +339,3 @@ on-chain-release-build = [
   "sp-api/disable-logging",
   "metadata-hash",
 ]
-
-metadata-hash = ["substrate-wasm-builder/metadata-hash"]

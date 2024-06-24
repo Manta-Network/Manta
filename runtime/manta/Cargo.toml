@@ -16,7 +16,6 @@ serde = { workspace = true, optional = true }
 smallvec = { workspace = true }
 
 # Substrate primitives
-frame-metadata-hash-extension = { workspace = true }
 sp-api = { workspace = true }
 sp-application-crypto = { workspace = true }
 sp-arithmetic = { workspace = true }
@@ -36,6 +35,7 @@ sp-version = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-executive = { workspace = true }
 frame-metadata = { workspace = true }
+frame-metadata-hash-extension = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 frame-system-benchmarking = { workspace = true, optional = true }
@@ -127,7 +127,7 @@ xcm-simulator = { workspace = true }
 targets = ['x86_64-unknown-linux-gnu']
 
 [build-dependencies]
-substrate-wasm-builder = { workspace = true }
+substrate-wasm-builder = { workspace = true, optional = true }
 
 [features]
 default = ['std']
@@ -219,6 +219,8 @@ fast-runtime = []
 std = [
   'codec/std',
   'serde',
+  'substrate-wasm-builder',
+  'frame-metadata-hash-extension/std',
   'sp-consensus-aura/std',
   'pallet-aura/std',
   'sp-api/std',
@@ -240,7 +242,6 @@ std = [
   'frame-support/std',
   'frame-executive/std',
   'frame-metadata/std',
-  "frame-metadata-hash-extension/std",
   'frame-system/std',
   'frame-system-rpc-runtime-api/std',
   'frame-try-runtime/std',
@@ -302,6 +303,12 @@ std = [
   "pallet-farming/std",
   "pallet-farming-rpc-runtime-api/std",
 ]
+
+# Enable the metadata hash generation in the wasm-builder
+metadata-hash = [
+  "substrate-wasm-builder?/metadata-hash",
+]
+
 # A feature that should be enabled when the runtime should be build for on-chain
 # deployment. This will disable stuff that shouldn't be part of the on-chain wasm
 # to make it smaller like logging for example.
@@ -309,5 +316,3 @@ on-chain-release-build = [
   "sp-api/disable-logging",
   "metadata-hash",
 ]
-
-metadata-hash = ["substrate-wasm-builder/metadata-hash"]
