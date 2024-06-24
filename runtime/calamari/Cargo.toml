@@ -332,4 +332,7 @@ std = [
 # to make it smaller like logging for example.
 on-chain-release-build = [
   "sp-api/disable-logging",
+  "metadata-hash",
 ]
+
+metadata-hash = ["substrate-wasm-builder/metadata-hash"]
