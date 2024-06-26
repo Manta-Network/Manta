@@ -38,7 +38,7 @@ export async function execute_with_root_via_governance(
     nonce = nonce.addn(1) as Index;
     console.log("Runtime upgrade governance proposed ...");
     let fastTrackCall = api.tx.democracy.fastTrack(encodedCallDataHash, 1, 1);
-    await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
+    await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce});
     nonce = nonce.addn(1) as Index;
     console.log("Runtime upgrade governance fast tracked ...");
     const parachainId = Number(await api.query.parachainInfo.parachainId());
@@ -60,7 +60,7 @@ export async function execute_via_governance(
 ) {
     let nonce = await api.rpc.system.accountNextIndex(keyring.address);
     const encodedCallData = extrinsicData.method.toHex();
-    await api.tx.preimage.notePreimage(encodedCallData).signAndSend(keyring, {nonce: -1});
+    await api.tx.preimage.notePreimage(encodedCallData).signAndSend(keyring, {nonce});
     nonce = nonce.addn(1) as Index;
 
     let encodedCallDataHash = blake2AsHex(encodedCallData);
@@ -70,11 +70,12 @@ export async function execute_via_governance(
         }
     });
     const encodedExternalProposeDefault = externalProposeDefault.method.toHex();
-    await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce: -1});
+    await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce});
     nonce = nonce.addn(1) as Index;
 
     let fastTrackCall = await api.tx.democracy.fastTrack(encodedCallDataHash, 3, 2);
-    await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
+    await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce});
+    nonce = nonce.addn(1) as Index;
 
     // vote balance based on current network
     const parachainId = Number(await api.query.parachainInfo.parachainId());
@@ -85,7 +86,7 @@ export async function execute_via_governance(
 
     await api.tx.democracy.vote(referendumIndexObject.referendumIndex, {
         Standard: { balance, vote: { aye: true, conviction: 1 } },
-    }).signAndSend(keyring, {nonce: -1});
+    }).signAndSend(keyring, {nonce});
     referendumIndexObject.referendumIndex++;
 
     // time passing 5 block.
