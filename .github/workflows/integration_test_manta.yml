@@ -113,7 +113,7 @@ jobs:
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v3
         with:
-          node-version: 18.x
+          node-version: 18.12.x
       - run: |
           mkdir -p $HOME/.local/share/calamari-pc
           mkdir -p $HOME/.local/bin
