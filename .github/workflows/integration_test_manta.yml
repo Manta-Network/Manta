@@ -310,7 +310,7 @@ jobs:
             '.parachains.[0].id'
           cat $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml
           cat $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.zndsl
-          node packages/cli/dist/cli.js -f -p native test $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.zndsl
+          ./zombienet -f -p native test $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.zndsl
       - if: always()
         uses: actions/upload-artifact@v2
         with:
