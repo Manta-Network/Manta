@@ -207,7 +207,7 @@ jobs:
         shell: bash
         run: |
           cd $GITHUB_WORKSPACE
-          mkdir ./zombienet-tool
+          mkdir -p ./zombienet-tool
           curl -L -o $GITHUB_WORKSPACE/zombienet-tool/zombienet ${{ env.ZOMBIENET_BINARY }}
           cd $GITHUB_WORKSPACE/zombienet-tool
           chmod +x zombienet
