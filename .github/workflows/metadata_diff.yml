@@ -95,9 +95,8 @@ jobs:
       - name: fetch and chmod zombienet
         shell: bash
         run: |
-          curl -L -o $GITHUB_WORKSPACE/zombienet-tool/zombienet-linux-x64 ${{ env.ZOMBIENET_BINARY }}
+          curl -L -o $GITHUB_WORKSPACE/zombienet-tool/zombienet ${{ env.ZOMBIENET_BINARY }}
           cd $GITHUB_WORKSPACE/zombienet-tool
-          mv zombienet-linux-x64 zombienet
           chmod +x zombienet
           ./zombienet version
       - name: create launch config
