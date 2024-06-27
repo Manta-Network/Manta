@@ -104,16 +104,17 @@ export async function execute_transaction(
     extrinsicData: any,
     sudo: boolean = true
 ) {
+    let nonce = await api.rpc.system.accountNextIndex(alice.address);
     if (sudo) {
         const rootCall = api.tx.sudo.sudo(extrinsicData);
-        await rootCall.signAndSend(alice, {nonce: -1}, async ({ events = [], status, txHash, dispatchError }) => {
+        await rootCall.signAndSend(alice, {nonce}, async ({ events = [], status, txHash, dispatchError }) => {
             if (dispatchError) {
                 console.log(`sudo extrinsic has error: ${dispatchError.toString()}`);
             }
         });
     } else {
         // @ts-ignore
-        await extrinsicData.signAndSend(alice, {nonce: -1}, async ({ events = [], status, txHash, dispatchError }) => {
+        await extrinsicData.signAndSend(alice, {nonce}, async ({ events = [], status, txHash, dispatchError }) => {
             if (dispatchError) {
                 console.log(`extrinsic has error: ${dispatchError.toString()}, hex:${extrinsicData.toHex()}`);
             }
