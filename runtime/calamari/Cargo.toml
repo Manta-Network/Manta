@@ -17,6 +17,7 @@ serde = { workspace = true, optional = true }
 smallvec = { workspace = true }
 
 # Substrate primitives
+frame-metadata-hash-extension = { workspace = true }
 sp-api = { workspace = true }
 sp-application-crypto = { workspace = true }
 sp-arithmetic = { workspace = true }
@@ -67,7 +68,6 @@ pallet-ranked-collective = { workspace = true }
 pallet-referenda = { workspace = true }
 
 # Cumulus dependencies
-cumulus-pallet-dmp-queue = { workspace = true }
 cumulus-pallet-parachain-system = { workspace = true, features = ["parameterized-consensus-hook"] }
 cumulus-pallet-session-benchmarking = { workspace = true, optional = true }
 cumulus-pallet-xcm = { workspace = true }
@@ -124,7 +124,7 @@ zenlink-protocol-runtime-api = { workspace = true }
 targets = ['x86_64-unknown-linux-gnu']
 
 [build-dependencies]
-substrate-wasm-builder = { workspace = true }
+substrate-wasm-builder = { workspace = true, optional = true }
 
 [dev-dependencies]
 # Generic 3rd-party dependencies
@@ -220,7 +220,6 @@ try-runtime = [
   'parachain-info/try-runtime',
   'cumulus-pallet-parachain-system/try-runtime',
   'cumulus-pallet-xcmp-queue/try-runtime',
-  'cumulus-pallet-dmp-queue/try-runtime',
   'pallet-aura-style-filter/try-runtime',
   'manta-collator-selection/try-runtime',
   'cumulus-pallet-xcm/try-runtime',
@@ -240,6 +239,7 @@ fast-runtime = []
 std = [
   'codec/std',
   'serde/std',
+  'substrate-wasm-builder',
   'sp-consensus-aura/std',
   'pallet-aura/std',
   'sp-api/std',
@@ -262,6 +262,7 @@ std = [
   'frame-support/std',
   'frame-executive/std',
   'frame-metadata/std',
+  "frame-metadata-hash-extension/std",
   'frame-system/std',
   'frame-system-rpc-runtime-api/std',
   'frame-try-runtime/std',
@@ -287,7 +288,6 @@ std = [
   'runtime-common/std',
   'parachain-info/std',
   'cumulus-pallet-parachain-system/std',
-  'cumulus-pallet-dmp-queue/std',
   "cumulus-pallet-xcmp-queue/std",
   'cumulus-pallet-xcm/std',
   'cumulus-primitives-core/std',
@@ -325,9 +325,14 @@ std = [
   "pallet-referenda/std",
   "pallet-ranked-collective/std",
 ]
+
+# Enable the metadata hash generation in the wasm-builder
+metadata-hash = ["substrate-wasm-builder?/metadata-hash"]
+
 # A feature that should be enabled when the runtime should be build for on-chain
 # deployment. This will disable stuff that shouldn't be part of the on-chain wasm
 # to make it smaller like logging for example.
 on-chain-release-build = [
   "sp-api/disable-logging",
+  "metadata-hash",
 ]

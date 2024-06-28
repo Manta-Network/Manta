@@ -21,6 +21,7 @@ env:
   RUNTIME_SPEC: ${{github.event.inputs.runtime}}-local
   POLKADOT_BINARY: ${{github.event.inputs.polkadot_url}}
   MANTA_BINARY: ${{github.event.inputs.manta_base_url}}
+  ZOMBIENET_BINARY: https://github.com/paritytech/zombienet/releases/download/v1.3.106/zombienet-linux-x64
 jobs:
   build-runtimes:
     timeout-minutes: 120
@@ -135,10 +136,15 @@ jobs:
               '.parachains.[0].chain'
           fi;
           cat ${{ github.workspace }}/zombienet/tests/0002-runtime-upgrade.toml
-      - uses: actions/checkout@v2
-        with:
-          repository: paritytech/zombienet
-          path: zombienet-tool
+      - name: fetch and chmod zombienet
+        shell: bash
+        run: |
+          cd $GITHUB_WORKSPACE
+          mkdir zombienet-tool
+          curl -L -o $GITHUB_WORKSPACE/zombienet-tool/zombienet ${{ env.ZOMBIENET_BINARY }}
+          cd $GITHUB_WORKSPACE/zombienet-tool
+          chmod +x zombienet
+          ./zombienet version
       - uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
@@ -148,11 +154,7 @@ jobs:
           sudo apt update
           sudo apt install -y pkg-config libssl-dev protobuf-compiler curl build-essential clang git
           cd ${{ github.workspace }}/zombienet-tool
-          git pull && git checkout v1.3.89
-          cd ${{ github.workspace }}/zombienet-tool/javascript
-          yarn
-          npm run build
-          pm2 start packages/cli/dist/cli.js --name zombienet \
+          pm2 start ./zombienet --name zombienet \
             --output ${{ github.workspace }}/zombienet-for-${{ env.RUNTIME_SPEC }}-stdout.log \
             --error ${{ github.workspace }}/zombienet-for-${{ env.RUNTIME_SPEC }}-stderr.log \
             -- spawn --provider native ${{ github.workspace }}/zombienet/tests/0002-runtime-upgrade.toml

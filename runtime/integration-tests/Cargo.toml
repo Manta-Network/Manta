@@ -47,7 +47,6 @@ polkadot-runtime-parachains = { workspace = true, features = ["std"] }
 xcm-simulator = { workspace = true }
 
 # Cumulus dependencies
-cumulus-pallet-dmp-queue = { workspace = true, features = ["std"] }
 cumulus-pallet-parachain-system = { workspace = true, features = ["std"] }
 cumulus-pallet-xcm = { workspace = true, features = ["std"] }
 cumulus-pallet-xcmp-queue = { workspace = true, features = ["std"] }

@@ -62,7 +62,7 @@ cfg_if::cfg_if! {
             RuntimeOrigin, ParachainStaking, PolkadotXcm, Range, Runtime, Session, System, Timestamp, TransactionPause,
             TransactionPayment, Treasury, Utility, TechnicalCommittee, Council, EnactmentPeriod, VotingPeriod,
             LaunchPeriod, Preimage, Democracy, Scheduler, Aura, Multisig, ParachainSystem, ParachainInfo,
-            XTokens, DmpQueue, CumulusXcm, XcmpQueue, AuraAuthorFilter, NonPausablePallets, AllPalletsWithSystem
+            XTokens, CumulusXcm, XcmpQueue, AuraAuthorFilter, NonPausablePallets, AllPalletsWithSystem
         };
         type RuntimeAssetConfig = manta_runtime::assets_config::MantaAssetConfig;
         type RuntimeConcreteFungibleLedger = manta_runtime::assets_config::MantaConcreteFungibleLedger;

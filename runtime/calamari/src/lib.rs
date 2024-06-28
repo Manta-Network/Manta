@@ -273,7 +273,7 @@ impl Contains<RuntimeCall> for BaseFilter {
                                 | pallet_democracy::Call::clear_public_proposals {..})
             | RuntimeCall::Treasury(_) // Treasury calls are filtered while it is accumulating funds.
             // Filter callables from XCM pallets, we use XTokens exclusively
-            | RuntimeCall::XcmpQueue(_) | RuntimeCall::DmpQueue(_) => false,
+            | RuntimeCall::XcmpQueue(_) => false,
 
             // Explicitly ALLOWED calls
             | RuntimeCall::Multisig(_)
@@ -1057,7 +1057,7 @@ construct_runtime!(
         XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
         PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config<T>} = 31,
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
-        DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
+        // DMP queue pallet used to occupy 33
         XTokens: orml_xtokens::{Pallet, Call, Event<T>, Storage} = 34,
         MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>} = 35,
 
@@ -1103,6 +1103,7 @@ pub type SignedExtra = (
     frame_system::CheckNonce<Runtime>,
     frame_system::CheckWeight<Runtime>,
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+    frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
@@ -1112,7 +1113,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, Si
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = cumulus_pallet_xcmp_queue::migration::v4::MigrationToV4<Runtime>;
+pub type OnRuntimeUpgradeHooks = ();
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,

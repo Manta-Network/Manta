@@ -2,6 +2,7 @@ import {ApiPromise} from "@polkadot/api";
 import {KeyringPair} from "@polkadot/keyring/types";
 import {blake2AsHex} from "@polkadot/util-crypto";
 import {BN} from "@polkadot/util";
+import { Index } from "@polkadot/types/interfaces";
 
 export const timer = (ms: number) => new Promise(res => setTimeout(res, ms))
 
@@ -20,19 +21,25 @@ export async function execute_with_root_via_governance(
     extrinsicData: any,
 ) {
     const encodedCallData = extrinsicData.method.toHex();
-    await api.tx.preimage.notePreimage(encodedCallData).signAndSend(keyring, {nonce: -1});
+    let nonce = await api.rpc.system.accountNextIndex(keyring.address);
+
+    await api.tx.preimage.notePreimage(encodedCallData).signAndSend(keyring, {nonce});
+    nonce = nonce.addn(1) as Index;
+
     console.log("Runtime upgrade preimage noted ...");
     let encodedCallDataHash = blake2AsHex(encodedCallData);
-    let externalProposeDefault = await api.tx.democracy.externalProposeDefault({
+    let externalProposeDefault = api.tx.democracy.externalProposeDefault({
         Legacy: {
             hash: encodedCallDataHash
         }
     });
     const encodedExternalProposeDefault = externalProposeDefault.method.toHex();
-    await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce: -1});
+    await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce});
+    nonce = nonce.addn(1) as Index;
     console.log("Runtime upgrade governance proposed ...");
-    let fastTrackCall = await api.tx.democracy.fastTrack(encodedCallDataHash, 1, 1);
-    await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
+    let fastTrackCall = api.tx.democracy.fastTrack(encodedCallDataHash, 1, 1);
+    await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce});
+    nonce = nonce.addn(1) as Index;
     console.log("Runtime upgrade governance fast tracked ...");
     const parachainId = Number(await api.query.parachainInfo.parachainId());
     let balance = new BN("1000000000000"); // Calamari: 12
@@ -41,7 +48,7 @@ export async function execute_with_root_via_governance(
     }
     await api.tx.democracy.vote(referendumIndexObject.referendumIndex, {
         Standard: { balance, vote: { aye: true, conviction: 1 } },
-    }).signAndSend(keyring, {nonce: -1});
+    }).signAndSend(keyring, {nonce});
     console.log("Runtime upgrade governance voted on ...");
     referendumIndexObject.referendumIndex++;
 }
@@ -51,8 +58,10 @@ export async function execute_via_governance(
     keyring: KeyringPair,
     extrinsicData: any,
 ) {
+    let nonce = await api.rpc.system.accountNextIndex(keyring.address);
     const encodedCallData = extrinsicData.method.toHex();
-    await api.tx.preimage.notePreimage(encodedCallData).signAndSend(keyring, {nonce: -1});
+    await api.tx.preimage.notePreimage(encodedCallData).signAndSend(keyring, {nonce});
+    nonce = nonce.addn(1) as Index;
 
     let encodedCallDataHash = blake2AsHex(encodedCallData);
     let externalProposeDefault = await api.tx.democracy.externalProposeDefault({
@@ -61,10 +70,12 @@ export async function execute_via_governance(
         }
     });
     const encodedExternalProposeDefault = externalProposeDefault.method.toHex();
-    await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce: -1});
+    await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce});
+    nonce = nonce.addn(1) as Index;
 
     let fastTrackCall = await api.tx.democracy.fastTrack(encodedCallDataHash, 3, 2);
-    await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
+    await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce});
+    nonce = nonce.addn(1) as Index;
 
     // vote balance based on current network
     const parachainId = Number(await api.query.parachainInfo.parachainId());
@@ -75,7 +86,7 @@ export async function execute_via_governance(
 
     await api.tx.democracy.vote(referendumIndexObject.referendumIndex, {
         Standard: { balance, vote: { aye: true, conviction: 1 } },
-    }).signAndSend(keyring, {nonce: -1});
+    }).signAndSend(keyring, {nonce});
     referendumIndexObject.referendumIndex++;
 
     // time passing 5 block.
@@ -93,16 +104,17 @@ export async function execute_transaction(
     extrinsicData: any,
     sudo: boolean = true
 ) {
+    let nonce = await api.rpc.system.accountNextIndex(alice.address);
     if (sudo) {
         const rootCall = api.tx.sudo.sudo(extrinsicData);
-        await rootCall.signAndSend(alice, {nonce: -1}, async ({ events = [], status, txHash, dispatchError }) => {
+        await rootCall.signAndSend(alice, {nonce}, async ({ events = [], status, txHash, dispatchError }) => {
             if (dispatchError) {
                 console.log(`sudo extrinsic has error: ${dispatchError.toString()}`);
             }
         });
     } else {
         // @ts-ignore
-        await extrinsicData.signAndSend(alice, {nonce: -1}, async ({ events = [], status, txHash, dispatchError }) => {
+        await extrinsicData.signAndSend(alice, {nonce}, async ({ events = [], status, txHash, dispatchError }) => {
             if (dispatchError) {
                 console.log(`extrinsic has error: ${dispatchError.toString()}, hex:${extrinsicData.toHex()}`);
             }
