@@ -31,7 +31,7 @@ inherits = "release"
 
 [workspace.dependencies]
 anyhow = { version = "1.0.55", default-features = false }
-async-trait = "0.1.71"
+async-trait = "0.1.79"
 base64 = { version = "0.21.5", default-features = false, features = ["alloc"] }
 cfg-if = "1.0.0"
 chrono = "0.4"
@@ -80,6 +80,7 @@ zenlink-protocol-runtime-api = { git = 'https://github.com/manta-network/Zenlink
 
 # Substrate pallets
 frame-metadata = { version = "16.0.0", default-features = false, features = ["current"] }
+frame-metadata-hash-extension = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
@@ -130,6 +131,7 @@ codec = { package = "parity-scale-codec", version = '3.4.0', default-features = 
 frame-executive = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
 sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
+sp-api-proc-macro = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 sp-application-crypto = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 sp-arithmetic = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 sp-block-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
@@ -152,7 +154,7 @@ sp-transaction-pool = { git = "https://github.com/paritytech/polkadot-sdk", bran
 sp-version = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0" }
-substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0" }
+substrate-wasm-builder = { version = "23.0.0" }
 
 # Cumulus dependencies
 cumulus-client-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0" }
