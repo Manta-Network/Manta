@@ -22,7 +22,7 @@ RUN apt-get install -yq openssl libssl-dev
 RUN mkdir -p /usr/local/bin
 RUN mkdir -p /usr/share
 
-# Dowload latest calamari binary
+# Download latest calamari binary
 ADD $PARA_BINARY_URL $PARA_BINARY_PATH
 RUN chmod +x $PARA_BINARY_PATH
 RUN ldd $PARA_BINARY_PATH

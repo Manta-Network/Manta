@@ -1737,7 +1737,7 @@ fn many_deposit_withdrawals_work() {
                 roll_to_round_begin(round_count * 2);
                 reward_collators_for_round(round_count * 2 - 1, all_collators);
                 // drawing happens (twice), all unstaking collators have finished unstaking
-                // ensure lottery doesnt run out of gas (it's not getting staking rewards in test)
+                // ensure lottery doesn't run out of gas (it's not getting staking rewards in test)
                 assert_ok!(
                     <Test as pallet_parachain_staking::Config>::Currency::deposit_into_existing(
                         &crate::Pallet::<Test>::account_id(),

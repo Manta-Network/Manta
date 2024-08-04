@@ -6,7 +6,7 @@
 
 FILE=$1
 
-# Higlight indexes that were deleted
+# Highlight indexes that were deleted
 function find_deletions() {
     echo "\n## Deletions\n"
     RES=$(cat "$FILE" | grep -n '\[\-\]' | tr -s " ")
