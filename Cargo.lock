@@ -1549,7 +1549,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-runtime"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "async-backing-primitives",
  "calamari-vesting",
@@ -1658,7 +1658,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-vesting"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -5090,7 +5090,7 @@ dependencies = [
 
 [[package]]
 name = "integration-tests"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "calamari-runtime",
  "calamari-vesting",
@@ -6171,7 +6171,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "async-backing-primitives",
  "async-trait",
@@ -6290,7 +6290,7 @@ dependencies = [
 
 [[package]]
 name = "manta-collator-selection"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6377,7 +6377,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6398,7 +6398,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "async-backing-primitives",
  "csv",
@@ -7500,7 +7500,7 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 
 [[package]]
 name = "pallet-asset-manager"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7940,7 +7940,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-farming"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7964,7 +7964,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-farming-rpc-api"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "jsonrpsee",
  "manta-primitives",
@@ -7980,7 +7980,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-farming-rpc-runtime-api"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "manta-primitives",
  "parity-scale-codec",
@@ -8086,7 +8086,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-lottery"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "calamari-runtime",
  "frame-benchmarking",
@@ -8127,7 +8127,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-pay"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "anyhow",
  "base64 0.21.5",
@@ -8162,7 +8162,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-sbt"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "anyhow",
  "base64 0.21.5",
@@ -8202,7 +8202,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-support"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "anyhow",
  "base64 0.21.5",
@@ -8297,7 +8297,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-name-service"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8423,7 +8423,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-parachain-staking"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8480,7 +8480,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-randomness"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "derive_more",
  "frame-benchmarking",
@@ -8833,7 +8833,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -11383,7 +11383,7 @@ dependencies = [
 
 [[package]]
 name = "runtime-common"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
@@ -13287,7 +13287,7 @@ dependencies = [
 
 [[package]]
 name = "session-key-primitives"
-version = "4.7.2"
+version = "4.7.3"
 dependencies = [
  "async-trait",
  "manta-primitives",
