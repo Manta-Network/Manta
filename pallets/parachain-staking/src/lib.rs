@@ -1374,6 +1374,31 @@ pub mod pallet {
             let delegator = ensure_signed(origin)?;
             Self::delegation_cancel_request(candidate, delegator)
         }
+
+        #[pallet::call_index(27)]
+        #[pallet::weight(<T as Config>::WeightInfo::schedule_revoke_delegation())]
+        /// Root only. Request to revoke an existing delegation. If successful, the delegation is scheduled
+        /// to be allowed to be revoked via the `execute_delegation_request` extrinsic.
+        pub fn force_schedule_revoke_delegation(
+            origin: OriginFor<T>,
+            delegator: T::AccountId,
+            collator: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            frame_system::ensure_root(origin)?;
+            Self::delegation_schedule_revoke(collator, delegator)
+        }
+
+        #[pallet::call_index(28)]
+        #[pallet::weight(<T as Config>::WeightInfo::execute_delegator_bond_less())]
+        /// Root only. Execute pending request to change an existing delegation
+        pub fn force_execute_delegation_request(
+            origin: OriginFor<T>,
+            delegator: T::AccountId,
+            candidate: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            frame_system::ensure_root(origin)?;
+            Self::delegation_execute_scheduled_request(candidate, delegator)
+        }
     }
 
     impl<T: Config> Pallet<T> {

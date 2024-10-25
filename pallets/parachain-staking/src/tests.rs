@@ -34,7 +34,10 @@ use crate::{
     DelegatorStatus, Error, Event, Range, DELEGATOR_LOCK_ID,
 };
 use frame_support::{assert_noop, assert_ok};
-use sp_runtime::{traits::Zero, DispatchError, ModuleError, Perbill, Percent};
+use sp_runtime::{
+    traits::{BadOrigin, Zero},
+    DispatchError, ModuleError, Perbill, Percent,
+};
 
 // ~~ ROOT ~~
 
@@ -2851,6 +2854,72 @@ fn cannot_cancel_leave_delegators_if_single_delegation_revoke_manually_cancelled
 }
 
 // SCHEDULE REVOKE DELEGATION
+
+#[test]
+fn force_revoke_delegation_event_emits_correctly() {
+    ExtBuilder::default()
+        .with_balances(vec![(1, 30), (2, 20), (3, 30)])
+        .with_candidates(vec![(1, 30), (3, 30)])
+        .with_delegations(vec![(2, 1, 10), (2, 3, 10)])
+        .build()
+        .execute_with(|| {
+            // non root signer cannot trigger this extrinsic
+            assert_noop!(
+                ParachainStaking::force_schedule_revoke_delegation(
+                    RuntimeOrigin::signed(2),
+                    2, // delegator
+                    1  // collator
+                ),
+                BadOrigin
+            );
+            // invalid delegatot will fail as well
+            assert_noop!(
+                ParachainStaking::force_schedule_revoke_delegation(
+                    RuntimeOrigin::root(),
+                    5, // invalid delegator
+                    1  // collator
+                ),
+                Error::<Test>::DelegatorDNE
+            );
+            // only root can trigger this extrinsic
+            assert_ok!(ParachainStaking::force_schedule_revoke_delegation(
+                RuntimeOrigin::root(),
+                2, // delegator
+                1  // collator
+            ));
+            assert_last_event!(MetaEvent::ParachainStaking(
+                Event::DelegationRevocationScheduled {
+                    round: 1,
+                    delegator: 2,
+                    candidate: 1,
+                    scheduled_exit: 3,
+                }
+            ));
+            roll_to(10);
+            // non root signer cannot trigger this extrinsic
+            assert_noop!(
+                ParachainStaking::force_execute_delegation_request(RuntimeOrigin::signed(2), 2, 1),
+                BadOrigin
+            );
+            // invalid delegatot will fail as well
+            assert_noop!(
+                ParachainStaking::force_execute_delegation_request(RuntimeOrigin::root(), 5, 1),
+                Error::<Test>::DelegatorDNE
+            );
+            // only root can trigger this extrinsic
+            assert_ok!(ParachainStaking::force_execute_delegation_request(
+                RuntimeOrigin::root(),
+                2,
+                1
+            ));
+            assert_event_emitted!(Event::DelegatorLeftCandidate {
+                delegator: 2,
+                candidate: 1,
+                unstaked_amount: 10,
+                total_candidate_staked: 30
+            });
+        });
+}
 
 #[test]
 fn revoke_delegation_event_emits_correctly() {
