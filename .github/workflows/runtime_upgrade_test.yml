@@ -109,7 +109,7 @@ jobs:
           ls -ahl $HOME/.local/share/${{ env.RUNTIME }}-pc/
           manta-base export-state --chain $HOME/.local/share/${{ env.RUNTIME }}-pc/${{ env.RUNTIME_SPEC }}-base-spec.json > $HOME/.local/share/${{ env.RUNTIME }}-pc/${{ env.RUNTIME_SPEC }}-state.json || true
       - name: fetch config-for-runtime-upgrade-test
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: config-for-runtime-upgrade-test
       - name: Install dasel cli
@@ -159,7 +159,7 @@ jobs:
             --error ${{ github.workspace }}/zombienet-for-${{ env.RUNTIME_SPEC }}-stderr.log \
             -- spawn --provider native ${{ github.workspace }}/zombienet/tests/0002-runtime-upgrade.toml
       - name: fetch new ${{ env.RUNTIME }}_runtime.compact.compressed.wasm
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: ${{ env.RUNTIME }}-runtime
       - uses: actions/checkout@v2

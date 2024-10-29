@@ -123,7 +123,7 @@ jobs:
           mkdir -p $HOME/.local/bin
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
       - name: fetch manta
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: manta
       - name: mv and chmod manta
@@ -397,7 +397,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v3
       - name: fetch manta
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: manta
       - name: build docker image
