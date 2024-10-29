@@ -50,13 +50,13 @@ jobs:
           jq > ${{ env.RUNTIME }}-srtool-output.json
       - if: always()
         name: upload srtool json
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.RUNTIME }}-srtool-json
           path: ${{ env.RUNTIME }}-srtool-output.json
       - if: always()
         name: upload runtime
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.RUNTIME }}-runtime
           path: |
@@ -64,7 +64,7 @@ jobs:
             ${{ steps.srtool-build.outputs.wasm_compressed }}
       - if: always()
         name: upload
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: config-for-runtime-upgrade-test
           path: .github/resources/config-for-runtime-upgrade-test.json
@@ -175,7 +175,7 @@ jobs:
           yarn
           yarn runtime_upgrade_test --address=ws://127.0.0.1:9921 --exit
           if [ $? != 0 ]; then echo "Runtime upgrade failed!"; exit 1; fi
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.RUNTIME_SPEC }}-alice.log
           path: ${{ github.workspace }}/zombienet-for-${{ env.RUNTIME_SPEC }}-stdout.log

@@ -32,17 +32,17 @@ jobs:
           sha256sum $CHAIN-genesis.json $CHAIN-genesis.state $CHAIN-genesis.wasm | tee $CHAIN-genesis.sha256
       # upload artifacts
       - name: upload genesis
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{env.CHAIN}}-genesis.json
           path: ${{env.CHAIN}}-genesis.json
       - name: upload state
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{env.CHAIN}}-genesis.state
           path: ${{env.CHAIN}}-genesis.state
       - name: upload wasm
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{env.CHAIN}}-genesis.wasm
           path: ${{env.CHAIN}}-genesis.wasm

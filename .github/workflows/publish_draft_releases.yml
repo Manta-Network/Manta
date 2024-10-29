@@ -61,13 +61,13 @@ jobs:
           jq > ${{ matrix.runtime.name }}-srtool-output.json
       - if: always()
         name: upload srtool json
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.runtime.name }}-srtool-json
           path: ${{ matrix.runtime.name }}-srtool-output.json
       - if: always()
         name: upload runtime
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.runtime.name }}-runtime
           path: |
@@ -135,19 +135,19 @@ jobs:
         run: sccache --stop-server || true
       - if: always()
         name: upload
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: manta
           path: target/production/manta
       - if: always()
         name: upload
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: config-for-integration-test
           path: .github/resources/config-for-integration-test.json
       - if: always()
         name: upload
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: config-for-runtime-upgrade-test
           path: .github/resources/config-for-runtime-upgrade-test.json

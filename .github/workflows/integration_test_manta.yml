@@ -86,7 +86,7 @@ jobs:
         run: sccache --stop-server || true
       - if: always()
         name: upload
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: manta
           path: target/production/manta
@@ -169,17 +169,17 @@ jobs:
           repository: Manta-Network/Manta
           path: Manta
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.chain-spec.id }}-state.json
           path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.chain-spec.id }}-spec.json
           path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
           path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
@@ -214,7 +214,7 @@ jobs:
             '.parachains.[0].id'
           cat $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.toml
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-launch-config.json
           path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-launch-config.json
@@ -312,32 +312,32 @@ jobs:
           cat $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.zndsl
           ./zombienet -f -p native test $GITHUB_WORKSPACE/Manta/zombienet/tests/0001-block-production.zndsl
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: zombienet-for-${{ matrix.chain-spec.id }}-stdout.log
           path: $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: zombienet-for-${{ matrix.chain-spec.id }}-stderr.log
           path: $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stderr.log
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
           path: $GITHUB_WORKSPACE/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
           path: $GITHUB_WORKSPACE/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
           path: $GITHUB_WORKSPACE/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
           path: $GITHUB_WORKSPACE/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
@@ -361,7 +361,7 @@ jobs:
           cd $GITHUB_WORKSPACE/zombienet-tool
           pm2 stop zombienet
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.chain-spec.id }}-alice-stress.log
           path: $GITHUB_WORKSPACE/zombienet-for-${{ matrix.chain-spec.id }}-stdout.log
