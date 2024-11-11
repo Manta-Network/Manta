@@ -35,6 +35,7 @@ These checks should be performed on the codebase prior to freezing our release c
   - [ ] Check that build artifacts have been added to the draft-release
   - [ ] Promote the draft to a Pre-Release on github
   - [ ] If there's any new extrinsic or pallet introduced, please add it to [runtime/calamari/src/diff_tx_fees.rs](../../runtime/calamari/src/diff_tx_fees.rs), then follow [tx-fees-data/README](../../runtime/calamari/tx-fees-data/README.md) to generate a new tx fees sheet.
+  - [ ] Do runtime upgrade by [chopstick](../../chop/).
 
 # Deploy to internal testnets ( fast runtime )
 

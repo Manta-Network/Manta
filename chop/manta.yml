@@ -1,0 +1,20 @@
+endpoint: wss://ws.manta.systems
+mock-signature-host: true
+block: ${env.MANTA_BLOCK_NUMBER}
+db: ./db.sqlite
+
+import-storage:
+  Sudo:
+   Key: dfbMFtQXqiKHH4d2y4CFcVQCpopqKcaEiYv2DCUpVCphoz8kB # Alice
+  System:
+    Account:
+      -
+        -
+          - dfbMFtQXqiKHH4d2y4CFcVQCpopqKcaEiYv2DCUpVCphoz8kB # Alice
+        - data:
+            free: "100000000000000000000000"
+  ParachainStaking:
+    # NOTE: MANTA_BLOCK_NUMBER should set to 2170792 in .env file.
+    # If you change the block number, you need to also change here.
+    # The value should be `authorInherent.author` storage correspond to your block number.
+    SelectedCandidates: [dfbE3LfJAvdnNWBQmNv9bBUW3ieAjwijWZYRXx26uK3o2gTJZ]
