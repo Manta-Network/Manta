@@ -55,10 +55,54 @@ where:
 * `<y>` is the middle version, i.e. adding major features.
 * `<z>` is the minor version, i.e. performance improvement and bug fixes.
 
-## Contributing
-* please submit your code through PR.
-* please run `cargo +nightly fmt` before pushing your code.
+## Project Structure
+```
+├── scripts/         # Setup and deployment scripts
+├── src/            # Source code
+├── target/         # Compiled files
+└── tests/          # Test files
+```
 
-## Minimum supported rust compiler
+## System Requirements
+- Rust 1.74 or higher
+- Linux/MacOS/Windows
+- Minimum 2 GB RAM
+- Minimum 20 GB free disk space
 
-This project's MSRV is `rustc 1.74`
+## Development
+
+### Development Environment Setup
+1. Install Rust:
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+2. Install required components:
+```bash
+rustup default stable
+rustup update nightly
+rustup target add wasm32-unknown-unknown --toolchain nightly
+```
+
+### Testing
+Run tests:
+```bash
+cargo test --all
+```
+
+### Linting and Formatting
+```bash
+cargo +nightly fmt
+cargo clippy
+```
+
+## Contribution Process
+1. Fork the repository
+2. Create a new branch for your changes
+3. Make changes and ensure all tests pass
+4. Submit a PR with description of your changes
+
+## Useful Resources
+- [Development Guide](https://docs.manta.network/docs/guides/Development)
+- [API Documentation](https://docs.manta.network/docs/api)
+- [Developer Discord Channel](https://discord.gg/n4QFj4n5vg)
