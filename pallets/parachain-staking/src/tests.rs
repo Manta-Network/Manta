@@ -1578,6 +1578,48 @@ fn cannot_go_offline_if_already_offline() {
         });
 }
 
+// Force go offline
+#[test]
+fn force_go_offline_event_emits_correctly() {
+    let collator = 1;
+    ExtBuilder::default()
+        .with_balances(vec![(collator, 20)])
+        .with_candidates(vec![(collator, 20)])
+        .build()
+        .execute_with(|| {
+            assert_ok!(ParachainStaking::force_go_offline(
+                RuntimeOrigin::root(),
+                collator
+            ));
+            assert_last_event!(MetaEvent::ParachainStaking(Event::CandidateWentOffline {
+                candidate: collator
+            }));
+        });
+}
+
+// Force go online
+#[test]
+fn force_go_online_event_emits_correctly() {
+    let collator = 1;
+    ExtBuilder::default()
+        .with_balances(vec![(collator, 20)])
+        .with_candidates(vec![(collator, 20)])
+        .build()
+        .execute_with(|| {
+            assert_ok!(ParachainStaking::force_go_offline(
+                RuntimeOrigin::root(),
+                collator
+            ));
+            assert_ok!(ParachainStaking::force_go_online(
+                RuntimeOrigin::root(),
+                collator
+            ));
+            assert_last_event!(MetaEvent::ParachainStaking(Event::CandidateBackOnline {
+                candidate: collator
+            }));
+        });
+}
+
 // GO ONLINE
 
 #[test]

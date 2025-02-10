@@ -1399,6 +1399,56 @@ pub mod pallet {
             frame_system::ensure_root(origin)?;
             Self::delegation_execute_scheduled_request(candidate, delegator)
         }
+
+        #[pallet::call_index(29)]
+        #[pallet::weight(<T as Config>::WeightInfo::go_offline())]
+        /// Temporarily leave the set of collator candidates without unbonding
+        pub fn force_go_offline(
+            origin: OriginFor<T>,
+            collator: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            frame_system::ensure_root(origin)?;
+            let mut state = <CandidateInfo<T>>::get(&collator).ok_or(Error::<T>::CandidateDNE)?;
+            ensure!(state.is_active(), Error::<T>::AlreadyOffline);
+            state.go_offline();
+            let mut candidates = <CandidatePool<T>>::get();
+            if candidates.remove(&Bond::from_owner(collator.clone())) {
+                <CandidatePool<T>>::put(candidates);
+            }
+            <CandidateInfo<T>>::insert(&collator, state);
+            Self::deposit_event(Event::CandidateWentOffline {
+                candidate: collator,
+            });
+            Ok(().into())
+        }
+
+        #[pallet::call_index(30)]
+        #[pallet::weight(<T as Config>::WeightInfo::go_online())]
+        /// Rejoin the set of collator candidates if previously had called `go_offline`
+        pub fn force_go_online(
+            origin: OriginFor<T>,
+            collator: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            frame_system::ensure_root(origin)?;
+            let mut state = <CandidateInfo<T>>::get(&collator).ok_or(Error::<T>::CandidateDNE)?;
+            ensure!(!state.is_active(), Error::<T>::AlreadyActive);
+            ensure!(!state.is_leaving(), Error::<T>::CannotGoOnlineIfLeaving);
+            state.go_online();
+            let mut candidates = <CandidatePool<T>>::get();
+            ensure!(
+                candidates.insert(Bond {
+                    owner: collator.clone(),
+                    amount: state.total_counted
+                }),
+                Error::<T>::AlreadyActive
+            );
+            <CandidatePool<T>>::put(candidates);
+            <CandidateInfo<T>>::insert(&collator, state);
+            Self::deposit_event(Event::CandidateBackOnline {
+                candidate: collator,
+            });
+            Ok(().into())
+        }
     }
 
     impl<T: Config> Pallet<T> {
