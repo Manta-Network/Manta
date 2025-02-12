@@ -1403,50 +1403,76 @@ pub mod pallet {
         #[pallet::call_index(29)]
         #[pallet::weight(<T as Config>::WeightInfo::go_offline())]
         /// Temporarily leave the set of collator candidates without unbonding
-        pub fn force_go_offline(
+        pub fn force_go_offline_collators(
             origin: OriginFor<T>,
-            collator: T::AccountId,
+            candidates: Vec<T::AccountId>,
         ) -> DispatchResultWithPostInfo {
             frame_system::ensure_root(origin)?;
-            let mut state = <CandidateInfo<T>>::get(&collator).ok_or(Error::<T>::CandidateDNE)?;
-            ensure!(state.is_active(), Error::<T>::AlreadyOffline);
-            state.go_offline();
-            let mut candidates = <CandidatePool<T>>::get();
-            if candidates.remove(&Bond::from_owner(collator.clone())) {
-                <CandidatePool<T>>::put(candidates);
+            for candidate in candidates {
+                let state = <CandidateInfo<T>>::get(&candidate).ok_or(Error::<T>::CandidateDNE)?;
+                // ensure!(
+                //     state.delegation_count <= candidate_delegation_count,
+                //     Error::<T>::TooLowCandidateDelegationCountToLeaveCandidates
+                // );
+                // state.can_leave::<T>()?;
+                let return_stake = |bond: Bond<T::AccountId, BalanceOf<T>>| -> DispatchResult {
+                    // remove delegation from delegator state
+                    let mut delegator =
+                        DelegatorState::<T>::get(&bond.owner).ok_or(Error::<T>::InvalidState)?;
+    
+                    if let Some(remaining) = delegator.rm_delegation::<T>(&candidate) {
+                        Self::delegation_remove_request_with_state(
+                            &candidate,
+                            &bond.owner,
+                            &mut delegator,
+                        );
+    
+                        if remaining.is_zero() {
+                            // we do not remove the scheduled delegation requests from other collators
+                            // since it is assumed that they were removed incrementally before only the
+                            // last delegation was left.
+                            <DelegatorState<T>>::remove(&bond.owner);
+                            <T as Config>::Currency::remove_lock(DELEGATOR_LOCK_ID, &bond.owner);
+                        } else {
+                            <DelegatorState<T>>::insert(&bond.owner, delegator);
+                        }
+                    } else {
+                        // TODO: review. we assume here that this delegator has no remaining staked
+                        // balance, so we ensure the lock is cleared
+                        <T as Config>::Currency::remove_lock(DELEGATOR_LOCK_ID, &bond.owner);
+                    }
+                    Ok(())
+                };
+                // total backing stake is at least the candidate self bond
+                let mut total_backing = state.bond;
+                // return all top delegations
+                let top_delegations =
+                    <TopDelegations<T>>::take(&candidate).ok_or(Error::<T>::InvalidState)?;
+                for bond in top_delegations.delegations {
+                    return_stake(bond)?;
+                }
+                total_backing = total_backing.saturating_add(top_delegations.total);
+                // return all bottom delegations
+                let bottom_delegations =
+                    <BottomDelegations<T>>::take(&candidate).ok_or(Error::<T>::InvalidState)?;
+                for bond in bottom_delegations.delegations {
+                    return_stake(bond)?;
+                }
+                total_backing = total_backing.saturating_add(bottom_delegations.total);
+                // return stake to collator
+                <T as Config>::Currency::remove_lock(COLLATOR_LOCK_ID, &candidate);
+                <CandidateInfo<T>>::remove(&candidate);
+                <DelegationScheduledRequests<T>>::remove(&candidate);
+                <TopDelegations<T>>::remove(&candidate);
+                <BottomDelegations<T>>::remove(&candidate);
+                let new_total_staked = <Total<T>>::get().saturating_sub(total_backing);
+                <Total<T>>::put(new_total_staked);
+                Self::deposit_event(Event::CandidateLeft {
+                    ex_candidate: candidate,
+                    unlocked_amount: total_backing,
+                    new_total_amt_locked: new_total_staked,
+                });
             }
-            <CandidateInfo<T>>::insert(&collator, state);
-            Self::deposit_event(Event::CandidateWentOffline {
-                candidate: collator,
-            });
-            Ok(().into())
-        }
-
-        #[pallet::call_index(30)]
-        #[pallet::weight(<T as Config>::WeightInfo::go_online())]
-        /// Rejoin the set of collator candidates if previously had called `go_offline`
-        pub fn force_go_online(
-            origin: OriginFor<T>,
-            collator: T::AccountId,
-        ) -> DispatchResultWithPostInfo {
-            frame_system::ensure_root(origin)?;
-            let mut state = <CandidateInfo<T>>::get(&collator).ok_or(Error::<T>::CandidateDNE)?;
-            ensure!(!state.is_active(), Error::<T>::AlreadyActive);
-            ensure!(!state.is_leaving(), Error::<T>::CannotGoOnlineIfLeaving);
-            state.go_online();
-            let mut candidates = <CandidatePool<T>>::get();
-            ensure!(
-                candidates.insert(Bond {
-                    owner: collator.clone(),
-                    amount: state.total_counted
-                }),
-                Error::<T>::AlreadyActive
-            );
-            <CandidatePool<T>>::put(candidates);
-            <CandidateInfo<T>>::insert(&collator, state);
-            Self::deposit_event(Event::CandidateBackOnline {
-                candidate: collator,
-            });
             Ok(().into())
         }
     }
