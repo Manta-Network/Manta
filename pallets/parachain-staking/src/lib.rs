@@ -129,6 +129,8 @@ pub mod pallet {
             + Inspect<Self::AccountId>;
         /// The origin for monetary governance
         type MonetaryGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+        /// The origin for removing collators
+        type RemoveCollatorOrigin: EnsureOrigin<Self::RuntimeOrigin>;
         /// Minimum number of blocks per round
         #[pallet::constant]
         type MinBlocksPerRound: Get<u32>;
@@ -1407,7 +1409,9 @@ pub mod pallet {
             origin: OriginFor<T>,
             candidates: Vec<T::AccountId>,
         ) -> DispatchResultWithPostInfo {
-            frame_system::ensure_root(origin)?;
+            T::RemoveCollatorOrigin::ensure_origin(origin)?;
+
+            let mut collators = <CandidatePool<T>>::get();
             for candidate in candidates {
                 let state = <CandidateInfo<T>>::get(&candidate).ok_or(Error::<T>::CandidateDNE)?;
                 // ensure!(
@@ -1419,14 +1423,14 @@ pub mod pallet {
                     // remove delegation from delegator state
                     let mut delegator =
                         DelegatorState::<T>::get(&bond.owner).ok_or(Error::<T>::InvalidState)?;
-    
+
                     if let Some(remaining) = delegator.rm_delegation::<T>(&candidate) {
                         Self::delegation_remove_request_with_state(
                             &candidate,
                             &bond.owner,
                             &mut delegator,
                         );
-    
+
                         if remaining.is_zero() {
                             // we do not remove the scheduled delegation requests from other collators
                             // since it is assumed that they were removed incrementally before only the
@@ -1467,12 +1471,16 @@ pub mod pallet {
                 <BottomDelegations<T>>::remove(&candidate);
                 let new_total_staked = <Total<T>>::get().saturating_sub(total_backing);
                 <Total<T>>::put(new_total_staked);
+
+                collators.remove(&Bond::from_owner(candidate.clone()));
+
                 Self::deposit_event(Event::CandidateLeft {
                     ex_candidate: candidate,
                     unlocked_amount: total_backing,
                     new_total_amt_locked: new_total_staked,
                 });
             }
+            <CandidatePool<T>>::put(collators);
             Ok(().into())
         }
     }

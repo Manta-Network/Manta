@@ -21,7 +21,7 @@ use crate::{
 };
 use frame_support::{
     construct_runtime, derive_impl, parameter_types,
-    traits::{Everything, LockIdentifier, OnFinalize, OnInitialize},
+    traits::{EitherOfDiverse, Everything, LockIdentifier, OnFinalize, OnInitialize},
 };
 use manta_primitives::types::BlockNumber;
 use sp_core::H256;
@@ -125,10 +125,17 @@ parameter_types! {
     pub const MinDelegatorStk: u128 = 5;
     pub const MinDelegation: u128 = 3;
 }
+
+ord_parameter_types! {
+    pub const One: AccountId = 1;
+}
+
 impl Config for Test {
     type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type MonetaryGovernanceOrigin = frame_system::EnsureRoot<AccountId>;
+    type RemoveCollatorOrigin =
+        EitherOfDiverse<frame_system::EnsureRoot<AccountId>, EnsureSignedBy<One, AccountId>>;
     type MinBlocksPerRound = MinBlocksPerRound;
     type DefaultBlocksPerRound = DefaultBlocksPerRound;
     type LeaveCandidatesDelay = LeaveCandidatesDelay;
