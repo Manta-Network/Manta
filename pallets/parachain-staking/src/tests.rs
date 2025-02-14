@@ -1578,6 +1578,31 @@ fn cannot_go_offline_if_already_offline() {
         });
 }
 
+// Force go offline
+#[test]
+fn force_go_offline_event_emits_correctly() {
+    let collator = 1;
+    ExtBuilder::default()
+        .with_balances(vec![(collator, 20), (2, 40)])
+        .with_candidates(vec![(collator, 20), (2, 20)])
+        .build()
+        .execute_with(|| {
+            assert_ok!(ParachainStaking::schedule_leave_candidates(
+                RuntimeOrigin::signed(1),
+                100,
+            ));
+            assert_ok!(ParachainStaking::force_go_offline_collators(
+                RuntimeOrigin::root(),
+                vec![collator]
+            ));
+            assert_last_event!(MetaEvent::ParachainStaking(Event::CandidateLeft {
+                ex_candidate: collator,
+                unlocked_amount: 20,
+                new_total_amt_locked: 20,
+            }));
+        });
+}
+
 // GO ONLINE
 
 #[test]
