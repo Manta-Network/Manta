@@ -849,7 +849,7 @@ fn remove_collator_should_work() {
 #[test]
 fn increase_bond_after_register_candidate() {
     // It's a corner case:
-    // 1. Set orignal bond as 10KMA.
+    // 1. Set original bond as 10KMA.
     // 2. Register candidate.
     // 3. Increase bond to 15KMA.
     // 3. Unregister candidate.
