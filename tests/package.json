@@ -11,6 +11,7 @@
     "parachain_lease_test": "mocha -r ts-node/register check_parachain_lease_expiration.ts",
     "test_farming": "mocha -r ts-node/register test-farming.ts",
     "reconstruct_pallet_storages": "mocha -r ts-node/register reconstruct_pallet_storages.ts",
+    "metadata_hash": "mocha -r ts-node/register check_metadata_hash.ts",
     "tests": "mocha -r ts-node/register --timeout 50000 tests/test-*.ts",
     "lint": "eslint ."
   },
@@ -24,6 +25,7 @@
     "@types/minimist": "^1.2.2",
     "@types/yargs": "^17.0.0",
     "big-json": "^3.2.0",
+    "merkleized-metadata": "^0.1.0",
     "minimist": "^1.2.5",
     "ts-node": "^10.8.0",
     "typescript": "^4.7.4"

@@ -1461,6 +1461,18 @@ merge2@^1.3.0, merge2@^1.4.1:
   resolved "https://registry.npmjs.org/merge2/-/merge2-1.4.1.tgz"
   integrity sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==
 
+merkleized-metadata-sys@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/merkleized-metadata-sys/-/merkleized-metadata-sys-0.1.0.tgz#90a84fcd7f148034a1d3f51299137b3b3a0cd9f7"
+  integrity sha512-hgm/tyayePap4/BxbHNG477LswfIZEn8/8bTMS+d2t5ER47soCQPJ11AMqDHWDZHKI8lttOvuosGtOupF3W2hQ==
+
+merkleized-metadata@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/merkleized-metadata/-/merkleized-metadata-0.1.0.tgz#6d0c4edc2512e489f4554f421cb9006d5ae7e424"
+  integrity sha512-pZAMhe8u0Ob9NxijPKbPp5JurPXROpnIDqCcOdNPuGQ6he6I7dDn2qV61/IcKKkc8rI76wo5uxcX3S8waHpRsw==
+  dependencies:
+    merkleized-metadata-sys "^0.1.0"
+
 micromatch@^4.0.4:
   version "4.0.5"
   resolved "https://registry.npmjs.org/micromatch/-/micromatch-4.0.5.tgz"
