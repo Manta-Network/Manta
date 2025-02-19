@@ -31,14 +31,11 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, IdentityLookup},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, Perbill, Percent, Permill,
+    ApplyExtrinsicResult, Perbill, Percent, Permill, RuntimeDebug,
 };
 use sp_std::{cmp::Ordering, prelude::*};
 
-#[cfg(feature = "std")]
-use sp_version::NativeVersion;
-use sp_version::RuntimeVersion;
-
+use codec::{Decode, Encode, MaxEncodedLen};
 use cumulus_primitives_core::relay_chain::MAX_POV_SIZE;
 use frame_support::{
     construct_runtime,
@@ -47,8 +44,8 @@ use frame_support::{
     traits::{
         fungible::HoldConsideration,
         tokens::{PayFromAccount, UnityAssetBalanceConversion},
-        ConstBool, ConstU128, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, IsInVec,
-        LinearStoragePrice, PrivilegeCmp,
+        ConstBool, ConstU128, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse,
+        InstanceFilter, IsInVec, LinearStoragePrice, PrivilegeCmp,
     },
     weights::{ConstantMultiplier, Weight},
     PalletId,
@@ -75,6 +72,9 @@ use runtime_common::{
     ExtrinsicBaseWeight,
 };
 use session_key_primitives::{AuraId, NimbusId, VrfId};
+#[cfg(feature = "std")]
+use sp_version::NativeVersion;
+use sp_version::RuntimeVersion;
 use zenlink_protocol::{AssetBalance, AssetId as ZenlinkAssetId, MultiAssetsHandler, PairInfo};
 
 use xcm::latest::prelude::*;
@@ -277,6 +277,7 @@ impl Contains<RuntimeCall> for BaseFilter {
 
             // Explicitly ALLOWED calls
             | RuntimeCall::Multisig(_)
+            | RuntimeCall::Proxy(_)
             | RuntimeCall::Democracy(pallet_democracy::Call::vote {..}
                                 | pallet_democracy::Call::emergency_cancel {..}
                                 | pallet_democracy::Call::external_propose {..}
@@ -374,6 +375,93 @@ impl frame_system::Config for Runtime {
     type SS58Prefix = SS58Prefix;
     type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
     type MaxConsumers = ConstU32<16>;
+}
+
+parameter_types! {
+    // One storage item; key size 32, value size 8; .
+    pub const ProxyDepositBase: Balance = deposit(1, 8);
+    // Additional storage item size of 33 bytes.
+    pub const ProxyDepositFactor: Balance = deposit(0, 33);
+    pub const AnnouncementDepositBase: Balance = deposit(1, 8);
+    pub const AnnouncementDepositFactor: Balance = deposit(0, 66);
+}
+
+/// The type used to represent the kinds of proxying allowed.
+#[derive(
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Encode,
+    Decode,
+    RuntimeDebug,
+    MaxEncodedLen,
+    scale_info::TypeInfo,
+)]
+pub enum ProxyType {
+    Any,
+    TransferNotDie,
+    Governance,
+    Delegation,
+}
+
+impl Default for ProxyType {
+    fn default() -> Self {
+        Self::Any
+    }
+}
+
+impl InstanceFilter<RuntimeCall> for ProxyType {
+    fn filter(&self, c: &RuntimeCall) -> bool {
+        match self {
+            ProxyType::Any => true,
+            ProxyType::TransferNotDie => !matches!(
+                c,
+                RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death { .. })
+            ), // proxy account cannot transfer all
+            ProxyType::Governance => !matches!(
+                c,
+                RuntimeCall::Democracy(..)
+                    | RuntimeCall::TechnicalCommittee(..)
+                    | RuntimeCall::Council(..)
+            ), // we don't allow proxy call in governance
+            ProxyType::Delegation => matches!(
+                c,
+                RuntimeCall::ParachainStaking(pallet_parachain_staking::Call::delegate { .. })
+                    | RuntimeCall::ParachainStaking(
+                        pallet_parachain_staking::Call::schedule_revoke_delegation { .. }
+                    )
+                    | RuntimeCall::ParachainStaking(
+                        pallet_parachain_staking::Call::execute_delegation_request { .. }
+                    )
+            ), // only allow delegation & undelegation in staking
+        }
+    }
+    fn is_superset(&self, o: &Self) -> bool {
+        match (self, o) {
+            (x, y) if x == y => true,
+            (ProxyType::Any, _) => true,
+            (_, ProxyType::Any) => false,
+            _ => false,
+        }
+    }
+}
+
+impl pallet_proxy::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
+    type Currency = Balances;
+    type ProxyType = ProxyType;
+    type ProxyDepositBase = ProxyDepositBase;
+    type ProxyDepositFactor = ProxyDepositFactor;
+    type MaxProxies = ConstU32<32>;
+    type WeightInfo = weights::pallet_proxy::SubstrateWeight<Runtime>;
+    type MaxPending = ConstU32<32>;
+    type CallHasher = BlakeTwo256;
+    type AnnouncementDepositBase = AnnouncementDepositBase;
+    type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
 parameter_types! {
@@ -1070,6 +1158,7 @@ construct_runtime!(
         Utility: pallet_utility::{Pallet, Call, Event} = 40,
         Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
         // 42 was occupied by pallet-sudo, we should discuss it if another pallet takes 42 in the future.
+        Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 43,
 
         // Assets management
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
@@ -1145,6 +1234,7 @@ mod benches {
         [pallet_membership, CouncilMembership]
         [pallet_treasury, Treasury]
         [pallet_preimage, Preimage]
+        [pallet_proxy, Proxy]
         [pallet_scheduler, Scheduler]
         [pallet_session, SessionBench::<Runtime>]
         [pallet_assets, Assets]

@@ -35,6 +35,7 @@ pub mod pallet_multisig;
 pub mod pallet_name_service;
 pub mod pallet_parachain_staking;
 pub mod pallet_preimage;
+pub mod pallet_proxy;
 pub mod pallet_randomness;
 pub mod pallet_scheduler;
 pub mod pallet_session;
