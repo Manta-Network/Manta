@@ -120,7 +120,7 @@
 - [\#1126](https://github.com/Manta-Network/Manta/pull/1126) Unfilter outgoing assets extrinsic [MACA]
 
 ### Fixed
-- [\#1104](https://github.com/Manta-Network/Manta/pull/1104) Fix off by 1 erorrs in pull-ledger-diff rpc [MACA]
+- [\#1104](https://github.com/Manta-Network/Manta/pull/1104) Fix off by 1 errors in pull-ledger-diff rpc [MACA]
 - [\#1113](https://github.com/Manta-Network/Manta/pull/1113) Fix integration test compile options, deps cleanup & clippy [MACA]
 - [\#1112](https://github.com/Manta-Network/Manta/pull/1112) Manta assets genesis storage migration [MA]
 - [\#1121](https://github.com/Manta-Network/Manta/pull/1121) Cleanup Integration Test Import
