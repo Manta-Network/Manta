@@ -503,7 +503,7 @@ pub mod pallet {
         /// Transfer Ledger Wrong Checksum Error
         TransferLedgerChecksumError,
 
-        /// Transfer Ledger `VerifyingContext` cannont be decoded
+        /// Transfer Ledger `VerifyingContext` can not be decoded
         TransferLedgerVerifyingContextDecodeError,
 
         /// Transer Ledger Field Element Encoding Error
