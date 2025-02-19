@@ -13,7 +13,7 @@ According to your platform, download the latest pre-compiled binary from [zombin
 
 ## Start network
 
-### Start one paracahin network locally by zombienet
+### Start one parachain network locally by zombienet
 1. Go to [small-network](./small-network.toml), make the `command` point to the polkadot binary and manta binary.
 2. Start the network.
     ```shell
@@ -27,7 +27,7 @@ According to your platform, download the latest pre-compiled binary from [zombin
     ```shell
     zombienet spawn --provider native two-parachains.toml
     ```
-    After a while, two paracahins(`2084` and `2104`) will be started.
+    After a while, two parachains(`2084` and `2104`) will be started.
 
 ## Testing
 
