@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## v4.7.0
+### Changed
+- [\#1268](https://github.com/Manta-Network/Manta/pull/1268) Bump eps to polkadot v0.9.43 [MACA]
+- [\#1290](https://github.com/Manta-Network/Manta/pull/1290) Happy ew year🥂 [MACA]
+- [\#1291](https://github.com/Manta-Network/Manta/pull/1291) Organize eps by workspace [MACA]
+- [\#1297](https://github.com/Manta-Network/Manta/pull/1297) Release .6.1 [MACA]
+- [\#1320](https://github.com/Manta-Network/Manta/pull/1320) unfilter Tokens on Manta [MACA]
+- [\#1313](https://github.com/Manta-Network/Manta/pull/1313) :wrench: pdate `manta-genosis`
+- [\#1317](https://github.com/Manta-Network/Manta/pull/1317) Unfilter ransfer for assets [MA]
+- [\#1310](https://github.com/Manta-Network/Manta/pull/1310) Polkadot 1.6.0 [MACA]
+
+### Fixed
+- [\#1277](https://github.com/Manta-Network/Manta/pull/1277) Release 4.6.0 [MACA]
+- [\#1287](https://github.com/Manta-Network/Manta/pull/1287) :bug: ix messed up github history
+- [\#1288](https://github.com/Manta-Network/Manta/pull/1288) Fix torage migration for assets-manager [MACA]
+- [\#1296](https://github.com/Manta-Network/Manta/pull/1296) Fix aura lot [MACA]
+- [\#1299](https://github.com/Manta-Network/Manta/pull/1299) allow ermissionless asset [MA]
+- [\#1301](https://github.com/Manta-Network/Manta/pull/1301) Unfilter et_staking_expectations [MACA]
+- [\#1303](https://github.com/Manta-Network/Manta/pull/1303) Release 4.6.1-1 [MA]
+- [\#1315](https://github.com/Manta-Network/Manta/pull/1315) change p asset check [MA]
+- [\#1328](https://github.com/Manta-Network/Manta/pull/1328) fix kick ottery [MA]
+- [\#1326](https://github.com/Manta-Network/Manta/pull/1326) Release 4.6.2 [MACA]
+- [\#1329](https://github.com/Manta-Network/Manta/pull/1329) Fix ruby etup in ci
+- [\#1331](https://github.com/Manta-Network/Manta/pull/1331) fix ottery withdraw issue [MA]
+- [\#1333](https://github.com/Manta-Network/Manta/pull/1333) Fix xcm benchmark tests [MACA]
+
 ## v4.5.0
 ### Added
 - [\#1240](https://github.com/Manta-Network/Manta/pull/1240) :sparkle: org `arc-runner` patch 1 [MACA]
