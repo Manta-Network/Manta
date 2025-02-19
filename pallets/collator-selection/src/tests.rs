@@ -495,7 +495,7 @@ fn kick_mechanism_parity() {
         assert_eq!(CollatorSelection::candidates().len(), 2);
         assert_eq!(Session::validators().len(), 4); // all candidates active
         initialize_to_block(30);
-        // 4 authored all blocks in this the past session, gets to stay 3 was kicked on session change
+        // 4 authored all blocks in this past session, gets to stay 3 was kicked on a session change
         assert_eq!(CollatorSelection::candidates().len(), 1);
         // 3 will be kicked after 1 session delay
         assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 3, 4]);

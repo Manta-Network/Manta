@@ -194,7 +194,7 @@ pub mod pallet {
         GaugePoolNotExist,
         /// Gauge info not exist
         GaugeInfoNotExist,
-        /// Share info is not exist
+        /// Share info does not exist
         ShareInfoNotExists,
         /// Pool state is invalid
         InvalidPoolState,

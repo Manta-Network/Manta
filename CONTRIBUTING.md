@@ -59,7 +59,7 @@ Enhancement suggestions are tracked as [GitHub issues](https://guides.github.com
 * **Provide a step-by-step description of the suggested enhancement** in as many details as possible.
 * **Provide specific examples to demonstrate the steps**. Include copy/pasteable snippets which you use in those examples, as [Markdown code blocks](https://help.github.com/articles/markdown-basics/#multiple-lines).
 * **Describe the current behavior** and **explain which behavior you expected to see instead** and why.
-* **Include screenshots or video** which help you demonstrate the steps or point out the part of Manta/Calamari which the suggestion is related to.
+* **Include screenshots or video** which help you demonstrate the steps or point out the part of Manta/Calamari to which the suggestion is related to.
 * **Explain why this enhancement would be useful** to most Manta users.
 * **List some other places where this enhancement exists.**
 
