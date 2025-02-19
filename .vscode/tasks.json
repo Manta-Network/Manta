@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Build Manta (debug symbols)",
+        "type": "shell",
+        "command": "RUSTFLAGS=-g cargo build --release",
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        }
+      }
+    ]
+  }
+  

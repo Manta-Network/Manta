@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Build & Launch Manta Node (Linux)",
+            "preLaunchTask": "Build Manta (debug symbols)",
+            "program": "${workspaceFolder}/target/release/manta",
+            "args": [
+              "--execution=Native",
+              "--no-telemetry",
+              "--no-prometheus",
+              "--chain=${dbgconfig:para_chain}",
+              "-linfo",
+              "--port=${dbgconfig:port_p2p}",
+              "--rpc-port=${dbgconfig:port_rpc}",
+              "--ws-port=${dbgconfig:port_ws}",
+              "--tmp",
+              "--",
+              "--execution=Native",
+              "--chain=${dbgconfig:relay_chain}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "sourceLanguages": ["rust"],
+            "sourceMap": {
+              "/rustc/*": "${dbgconfig:rustc_path}"
+            }
+        }
+    ]
+}
