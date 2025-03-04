@@ -173,7 +173,7 @@ pub mod pallet {
             Self::do_register(&username, registrant)
         }
 
-        /// After Pending Register has passed its block wait time, finish regiser
+        /// After Pending Register has passed its block wait time, finish register
         #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::accept_register())]
         #[transactional]
@@ -246,7 +246,7 @@ impl<T: Config> Pallet<T> {
         T::PalletId::get().into_account_truncating()
     }
 
-    /// Queue username for regiser
+    /// Queue username for register
     fn do_register(username: &UserName, registrant: ZkAddressType) -> DispatchResult {
         // Username checks
         username_validation(username).ok_or(Error::<T>::InvalidUsernameFormat)?;

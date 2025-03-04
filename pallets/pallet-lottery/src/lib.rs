@@ -162,7 +162,7 @@ pub mod pallet {
         type DrawingInterval: Get<BlockNumberFor<Self>>;
         /// Time in blocks *before* a drawing in
         /// Depending on the randomness source, the winner might be established before the drawing, this prevents modification of the eligible winning set after the winner
-        /// has been established but before it is selected by [`Call::draw_lottery`] which modifications of the win-eligble pool are prevented
+        /// has been established but before it is selected by [`Call::draw_lottery`] which modifications of the win-eligible pool are prevented
         #[pallet::constant]
         type DrawingFreezeout: Get<BlockNumberFor<Self>>;
         /// Time in blocks until a collator is done unstaking
