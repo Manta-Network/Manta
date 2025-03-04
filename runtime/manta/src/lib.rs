@@ -146,7 +146,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("manta"),
     impl_name: create_runtime_str!("manta"),
     authoring_version: 1,
-    spec_version: 4730,
+    spec_version: 4731,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 10,
@@ -528,6 +528,7 @@ impl pallet_parachain_staking::Config for Runtime {
     type Currency = Balances;
     type BlockAuthor = AuthorInherent;
     type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
+    type RemoveCollatorOrigin = EnsureRoot<AccountId>;
     /// Minimum round length is 2 minutes (10 * 12 second block times)
     type MinBlocksPerRound = ConstU32<10>;
     /// Blocks per round

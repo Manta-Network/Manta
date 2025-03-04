@@ -143,7 +143,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 4730,
+    spec_version: 4731,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 21,
@@ -314,6 +314,7 @@ impl Contains<RuntimeCall> for BaseFilter {
                 | pallet_parachain_staking::Call::schedule_candidate_bond_less{..}
                 | pallet_parachain_staking::Call::execute_candidate_bond_less{..}
                 | pallet_parachain_staking::Call::cancel_candidate_bond_less{..}
+                | pallet_parachain_staking::Call::force_go_offline_collators{..}
                 // Delegator extrinsics
                 | pallet_parachain_staking::Call::delegate{..}
                 | pallet_parachain_staking::Call::schedule_leave_delegators{..}
@@ -741,6 +742,10 @@ impl pallet_parachain_staking::Config for Runtime {
     type Currency = Balances;
     type BlockAuthor = AuthorInherent;
     type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
+    type RemoveCollatorOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>,
+    >;
     /// Minimum round length is 2 minutes (10 * 12 second block times)
     type MinBlocksPerRound = ConstU32<10>;
     /// Blocks per round

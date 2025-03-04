@@ -270,6 +270,7 @@ impl pallet_parachain_staking::Config for Test {
     type Currency = Balances;
     type BlockAuthor = BlockAuthor;
     type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
+    type RemoveCollatorOrigin = frame_system::EnsureRoot<AccountId>;
     /// Minimum round length is 2 minutes (10 * 12 second block times)
     type MinBlocksPerRound = ConstU32<10>;
     /// Blocks per round
