@@ -711,7 +711,7 @@ impl pallet_treasury::Config for Runtime {
     type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
     type SpendFunds = ();
     // Expects an implementation of `EnsureOrigin` with a `Success` generic,
-    // which is the the maximum amount that this origin is allowed to spend at a time.
+    // which is the maximum amount that this origin is allowed to spend at a time.
     type SpendOrigin = EnsureWithSuccess<EnsureRoot<AccountId>, AccountId, MaxBalance>;
     type Beneficiary = AccountId;
     type BeneficiaryLookup = IdentityLookup<Self::Beneficiary>;
