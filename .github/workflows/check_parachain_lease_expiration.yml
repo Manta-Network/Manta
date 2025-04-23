@@ -15,7 +15,7 @@ jobs:
         node-version: [16.x]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: borales/actions-yarn@v3.0.0
       - name: Check manta and calamari lease
         run: |

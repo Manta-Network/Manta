@@ -48,7 +48,7 @@ jobs:
           echo $image_id
           echo "Adjusting permissions so we can access docker logs..."
           sudo cat /var/lib/docker/containers/${image_id}/${image_id}-json.log
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: Manta-Network/Dev-Tools
           path: dev-tools

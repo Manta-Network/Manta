@@ -16,7 +16,7 @@ jobs:
     container:
       image: ubuntu:20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Run yamllint
         uses: actionshub/yamllint@v1.5.0
       - name: install sccache

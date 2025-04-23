@@ -29,7 +29,7 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: cache target dir
         uses: actions/cache@v2
         with:
@@ -145,7 +145,7 @@ jobs:
           cd $GITHUB_WORKSPACE/zombienet-tool
           chmod +x zombienet
           ./zombienet version
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: Manta-Network/Dev-Tools
           path: dev-tools
@@ -162,7 +162,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.RUNTIME }}-runtime
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: Manta-Network/Manta
           path: Manta

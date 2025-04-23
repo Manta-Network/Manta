@@ -18,7 +18,7 @@ jobs:
     container:
       image: ubuntu:20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
@@ -83,7 +83,7 @@ jobs:
     container:
       image: ubuntu:20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: init
         shell: bash
         run: |
