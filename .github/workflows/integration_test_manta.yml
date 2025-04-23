@@ -37,7 +37,7 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
       - name: install sccache
         env:
@@ -164,7 +164,7 @@ jobs:
           echo "::set-output name=short-sha::${GITHUB_SHA:0:7}"
           manta export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
       - uses: borales/actions-yarn@v3.0.0
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: Manta-Network/Manta
           path: Manta
@@ -227,11 +227,11 @@ jobs:
           cd $GITHUB_WORKSPACE/zombienet-tool
           chmod +x zombienet
           ./zombienet version
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: Manta-Network/Dev-Tools
           path: dev-tools-rococo
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: Manta-Network/Dev-Tools
           path: dev-tools-manta
@@ -269,7 +269,7 @@ jobs:
             --no-autorestart \
             -- \
             --address=ws://127.0.0.1:9921
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: Manta-Network/Manta
           path: Manta
@@ -382,7 +382,7 @@ jobs:
         runtime:
           - name: manta
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
       - name: fetch manta
         uses: actions/download-artifact@v4
@@ -411,7 +411,7 @@ jobs:
           echo $image_id
           echo "Adjusting permissions so we can access docker logs..."
           sudo cat /var/lib/docker/containers/${image_id}/${image_id}-json.log
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: Manta-Network/Dev-Tools
           path: dev-tools

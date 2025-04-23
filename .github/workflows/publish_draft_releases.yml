@@ -37,7 +37,7 @@ jobs:
           - name: calamari
           - name: manta
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: cache target dir
         uses: actions/cache@v2
         with:
@@ -80,7 +80,7 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
@@ -179,7 +179,7 @@ jobs:
           - name: manta
     if: startsWith(github.ref, 'refs/tags')
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.runtime.name }}-runtime

@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           path: manta
@@ -23,7 +23,7 @@ jobs:
           cd manta
           sudo cp CHANGELOG.md CHANGELOG_ORIGIN.md
       - name: get Changelog Generator
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: Manta-Network/Dev-Tools
           path: dev-tools
