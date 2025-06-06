@@ -38,7 +38,7 @@ jobs:
       CARGO_TERM_COLOR: always
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 18.12.x
       - name: install sccache
@@ -115,7 +115,7 @@ jobs:
                 para: 4
     steps:
       - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18.x
       - run: |
@@ -395,7 +395,7 @@ jobs:
           - name: calamari
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
       - name: fetch manta
         uses: actions/download-artifact@v4
         with:
