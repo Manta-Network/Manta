@@ -23,7 +23,7 @@ jobs:
           cd manta
           sudo cp CHANGELOG.md CHANGELOG_ORIGIN.md
       - name: get Changelog Generator
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
         with:
           repository: Manta-Network/Dev-Tools
           path: dev-tools
