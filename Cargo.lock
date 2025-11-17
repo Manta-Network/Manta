@@ -6437,6 +6437,7 @@ dependencies = [
  "pallet-farming",
  "pallet-farming-rpc-runtime-api",
  "pallet-lottery",
+ "pallet-manta-pay",
  "pallet-manta-sbt",
  "pallet-manta-support",
  "pallet-membership",

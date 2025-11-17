@@ -68,7 +68,7 @@ use manta_primitives::{
     },
     types::{AccountId, Balance, BlockNumber, Hash, Header, Nonce, PoolId, Signature},
 };
-use manta_support::manta_pay::{PullResponse, RawCheckpoint};
+use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use pallet_session::ShouldEndSession;
 use runtime_common::{
@@ -273,6 +273,7 @@ impl Contains<RuntimeCall> for MantaFilter {
             | RuntimeCall::XTokens(_)
             | RuntimeCall::Balances(_)
             | RuntimeCall::Preimage(_)
+            | RuntimeCall::MantaPay(_)
             | RuntimeCall::MantaSbt(_)
             | RuntimeCall::NameService(_)
             | RuntimeCall::TransactionPause(_)
@@ -1013,6 +1014,7 @@ construct_runtime!(
         // Assets management
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
+        MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
         // 47 was occupied by mantapay
         MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
         NameService: pallet_name_service::{Pallet, Call, Storage, Event<T>} = 52,
@@ -1098,6 +1100,7 @@ mod benches {
         [pallet_parachain_staking, ParachainStaking]
         [pallet_randomness, Randomness]
         [pallet_lottery, Lottery]
+        [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
         [pallet_name_service, NameService]
         // always get this error Other("deposit lp asset error") while benchmarking
@@ -1334,6 +1337,22 @@ impl_runtime_apis! {
             // This runtime API can be called only when asynchronous backing is enabled client-side
             // We return false here to force the client to not use async backing.
             false
+        }
+    }
+
+    impl pallet_manta_pay::runtime::PullLedgerDiffApi<Block> for Runtime {
+        fn pull_ledger_diff(
+            checkpoint: RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> PullResponse {
+            MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
+        fn pull_ledger_total_count() -> [u8; 16] {
+            MantaPay::pull_ledger_total_count()
+        }
+        fn initial_pull(checkpoint: RawCheckpoint, max_receiver: u64) -> InitialSyncResponse {
+            MantaPay::initial_pull(checkpoint.into(), max_receiver)
         }
     }
 

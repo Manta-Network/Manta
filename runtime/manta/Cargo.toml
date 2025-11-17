@@ -106,6 +106,7 @@ pallet-asset-manager = { workspace = true }
 pallet-farming = { workspace = true }
 pallet-farming-rpc-runtime-api = { workspace = true }
 pallet-lottery = { workspace = true }
+pallet-manta-pay = { workspace = true, features = ["runtime"] }
 pallet-manta-sbt = { workspace = true, features = ["runtime"] }
 pallet-name-service = { workspace = true }
 pallet-parachain-staking = { workspace = true }
@@ -164,6 +165,7 @@ runtime-benchmarks = [
   'pallet-randomness/runtime-benchmarks',
   'pallet-lottery/runtime-benchmarks',
   'pallet-xcm-benchmarks/runtime-benchmarks',
+  'pallet-manta-pay/runtime-benchmarks',
   'pallet-manta-sbt/runtime-benchmarks',
   'pallet-name-service/runtime-benchmarks',
   "zenlink-protocol/runtime-benchmarks",
@@ -204,6 +206,7 @@ try-runtime = [
   'cumulus-pallet-xcm/try-runtime',
   'pallet-assets/try-runtime',
   'orml-xtokens/try-runtime',
+  'pallet-manta-pay/try-runtime',
   'pallet-manta-sbt/try-runtime',
   'pallet-name-service/try-runtime',
   'pallet-randomness/try-runtime',
@@ -293,6 +296,7 @@ std = [
   'manta-support/std',
   'orml-traits/std',
   'orml-xtokens/std',
+  'pallet-manta-pay/std',
   'pallet-manta-sbt/std',
   'pallet-name-service/std',
   "zenlink-protocol/std",
