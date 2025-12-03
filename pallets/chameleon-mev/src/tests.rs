@@ -358,7 +358,7 @@ fn test_ordering_immutable_after_commit() {
 fn test_reveal_must_match_commitment() {
     new_test_ext().execute_with(|| {
         let original_tx_data: BoundedVec<u8, ConstU32<65536>> = vec![1, 2, 3].try_into().unwrap();
-        let original_tx_hash = H256::from_slice(&frame_support::Blake2_256::hash(&original_tx_data));
+        let original_tx_hash = H256::from_slice(&Blake2_256::hash(&original_tx_data));
         let nonce = [1u8; 32];
 
         // Submit sealed transaction
