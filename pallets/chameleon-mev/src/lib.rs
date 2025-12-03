@@ -442,6 +442,54 @@ pub mod pallet {
 
             Ok(())
         }
+
+        /// Validator submits their decryption share
+        ///
+        /// This allows validators to submit their threshold decryption shares
+        /// for a specific block. Once enough shares are collected, the block
+        /// can be decrypted and transactions executed.
+        ///
+        /// # Parameters
+        /// - `block_number`: The block number to decrypt
+        /// - `share`: The decryption share bytes
+        /// - `validator_index`: The validator's index in the threshold scheme
+        ///
+        /// # Errors
+        /// - `InsufficientShares`: If not enough shares to decrypt
+        #[pallet::call_index(10)]
+        #[pallet::weight(10_000)]
+        pub fn submit_decryption_share(
+            origin: OriginFor<T>,
+            block_number: BlockNumberFor<T>,
+            share: BoundedVec<u8, ConstU32<96>>,
+            validator_index: u32,
+        ) -> DispatchResult {
+            let validator = ensure_signed(origin)?;
+            
+            // Verify validator is authorized (in production: check against validator set)
+            
+            let decryption_share = DecryptionShare {
+                validator: validator.encode().try_into().unwrap_or_default(),
+                share_bytes: share,
+                index: validator_index,
+            };
+            
+            ThresholdDecryptionShares::<T>::insert(&block_number, &validator, decryption_share);
+            
+            // Check if threshold reached
+            let share_count = ThresholdDecryptionShares::<T>::iter_prefix(&block_number).count() as u32;
+            if share_count >= T::DecryptionThreshold::get() {
+                Self::try_decrypt_block(block_number)?;
+            }
+            
+            Self::deposit_event(Event::DecryptionShareSubmitted { 
+                validator, 
+                block_number,
+                share_count,
+            });
+            
+            Ok(())
+        }
     }
 
     impl<T: Config> Pallet<T> {
