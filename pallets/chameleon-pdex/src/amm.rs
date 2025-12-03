@@ -23,8 +23,6 @@ use sp_runtime::{
     traits::{Zero, Saturating},
     Perbill,
 };
-use sp_std::cmp;
-
 // Import chameleon constants
 use manta_primitives::chameleon_constants::fees::{
     PDEX_SWAP_FEE, PDEX_LP_SHARE
