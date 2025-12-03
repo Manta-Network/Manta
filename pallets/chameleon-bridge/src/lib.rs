@@ -49,7 +49,7 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use sp_core::{H160, H256};
-    use sp_runtime::traits::{Saturating, SaturatedConversion};
+    use sp_runtime::traits::SaturatedConversion;
     
     /// Balance type alias
     pub type BalanceOf<T> = u128;
