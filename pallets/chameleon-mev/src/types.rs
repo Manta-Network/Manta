@@ -18,7 +18,7 @@
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{BoundedVec, RuntimeDebug};
-use manta_primitives::types::{BlockNumber, Hash, Moment};
+use manta_primitives::types::{Hash, Moment};
 use scale_info::TypeInfo;
 use sp_std::vec::Vec;
 
