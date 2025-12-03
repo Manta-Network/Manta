@@ -147,8 +147,22 @@ function RootNavigator() {
           // Main app flow
           <>
             <Stack.Screen name="Main" component={MainTabNavigator} />
-            <Stack.Screen name="Send" component={PlaceholderScreen} />
-            <Stack.Screen name="Receive" component={PlaceholderScreen} />
+            <Stack.Screen 
+              name="Send" 
+              component={SendScreen}
+              options={{
+                headerShown: false,
+                presentation: 'modal',
+              }}
+            />
+            <Stack.Screen 
+              name="Receive" 
+              component={ReceiveScreen}
+              options={{
+                headerShown: false,
+                presentation: 'modal',
+              }}
+            />
             <Stack.Screen name="TransactionDetail" component={PlaceholderScreen} />
             <Stack.Screen name="ValidatorDetail" component={PlaceholderScreen} />
             <Stack.Screen name="Stake" component={PlaceholderScreen} />
