@@ -37,6 +37,8 @@ pub struct EncryptedTransaction<T: frame_system::Config> {
     pub timestamp: Moment,
     /// Block number when submitted
     pub submit_block: u32,
+    /// Phantom data to use the generic parameter
+    pub _phantom: PhantomData<T>,
 }
 
 /// Threshold decryption share from validator
