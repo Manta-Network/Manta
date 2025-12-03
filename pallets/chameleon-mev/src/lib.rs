@@ -106,7 +106,7 @@ pub mod pallet {
     }
 
     /// Ordering commitment by block producer
-    #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq)]
+    #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq, MaxEncodedLen)]
     #[scale_info(skip_type_params(T))]
     pub struct OrderingCommitment<T: Config> {
         /// Block producer who committed this ordering
