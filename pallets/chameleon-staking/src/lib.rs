@@ -672,7 +672,7 @@ pub mod pallet {
             }
             
             // Iterate through delegations for this validator
-            for (delegator, delegation_amount) in Delegations::<T>::iter_prefix(validator_id) {
+            for (delegator, delegation_amount) in Delegations::<T>::iter_prefix_values(validator_id) {
                 let delegator_reward = total_delegator_rewards
                     .saturating_mul(delegation_amount)
                     .saturating_div(delegated_stake);
