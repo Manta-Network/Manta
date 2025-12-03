@@ -65,11 +65,7 @@ pub use amm::*;
 pub use rewards::*;
 
 // Import chameleon constants
-use manta_primitives::chameleon_constants::{
-    fees::{PDEX_SWAP_FEE, PDEX_LP_SHARE, PDEX_TREASURY_SHARE},
-    emission::{LP_REWARD_PERCENT, YEARLY_EMISSIONS},
-    CHAMELEON_PDEX_PALLET_ID,
-};
+use manta_primitives::chameleon_constants::CHAMELEON_PDEX_PALLET_ID;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
