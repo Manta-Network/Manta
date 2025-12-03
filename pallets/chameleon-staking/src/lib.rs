@@ -26,10 +26,13 @@
 //! - Slashing conditions (0.1% downtime, 5% double-sign)
 //! - 14-day unbonding period
 //!
-//! ## Status: STUB IMPLEMENTATION
+//! ## Features
 //!
-//! This is a stub implementation that compiles. Full functionality
-//! to be implemented in Week 2-6.
+//! - **Validator Management**: Join/leave validator set with minimum stake requirements
+//! - **Delegation**: Delegate tokens to validators without running a node
+//! - **Unbonding**: 14-day unbonding period for security
+//! - **Rewards**: Era-based reward distribution with commission
+//! - **Slashing**: Penalties for downtime and double-signing
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -37,9 +40,19 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use frame_support::pallet_prelude::*;
+    use frame_support::{
+        pallet_prelude::*,
+        traits::{
+            Currency, LockIdentifier, LockableCurrency, WithdrawReasons,
+            ReservableCurrency, ExistenceRequirement,
+        },
+    };
     use frame_system::pallet_prelude::*;
-    use sp_runtime::Perbill;
+    use sp_runtime::{
+        traits::{Zero, Saturating, CheckedAdd, CheckedSub},
+        Perbill, ArithmeticError,
+    };
+    use sp_std::vec::Vec;
 
     /// The current storage version
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
