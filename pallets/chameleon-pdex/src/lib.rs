@@ -244,7 +244,7 @@ pub mod pallet {
                 // Update LP position
                 LpPositions::<T>::mutate(pool_id, &who, |pos| {
                     pos.lp_tokens = pos.lp_tokens.saturating_add(lp_minted);
-                    pos.deposited_at = frame_system::Pallet::<T>::block_number().saturated_into();
+                    pos.deposited_at = 0; // Simplified: track just the position
                 });
 
                 Self::deposit_event(Event::LiquidityAdded {
