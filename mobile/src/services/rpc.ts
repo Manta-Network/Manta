@@ -504,6 +504,22 @@ export class RpcService {
     address: string,
     callback: (balance: Balance) => void
   ): () => void {
+    // Use mock implementation for development (Week 2)
+    if (DEBUG.TESTNET_ONLY || !this.isConnected()) {
+      // Simulate periodic balance updates
+      const interval = setInterval(() => {
+        const balance: Balance = {
+          public: (1250.75 + (Math.random() - 0.5) * 10).toFixed(6),
+          shielded: (850.25 + (Math.random() - 0.5) * 5).toFixed(6),
+          usdValue: (2.45 + (Math.random() - 0.5) * 0.1).toFixed(2),
+          lastUpdated: Date.now(),
+        };
+        callback(balance);
+      }, 30000); // Update every 30 seconds
+
+      return () => clearInterval(interval);
+    }
+
     let unsubscribe: (() => void) | null = null;
 
     this.connect().then(api => {
