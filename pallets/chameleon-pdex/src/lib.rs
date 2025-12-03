@@ -39,10 +39,7 @@
 use frame_support::{
     dispatch::DispatchResult,
     pallet_prelude::*,
-    traits::{
-        tokens::{fungibles, Preservation},
-        Get, StorageVersion,
-    },
+    traits::{Get, StorageVersion},
     PalletId,
 };
 use frame_system::pallet_prelude::*;
@@ -61,7 +58,6 @@ pub use types::*;
 pub use amm::*;
 pub use rewards::*;
 
-// Import chameleon constants
 // Import chameleon constants when needed
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -89,16 +85,14 @@ pub mod pallet {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-        /// The currency used for staking and rewards
-        type Currency: fungibles::Inspect<Self::AccountId>
-            + fungibles::Mutate<Self::AccountId>
-            + fungibles::Create<Self::AccountId>;
-
         /// Asset ID type
         type AssetId: Parameter + Copy + Ord + Default;
 
         /// Balance type
-        type Balance: Parameter + Copy + Ord + Zero + Saturating + From<u128>;
+        type Balance: Parameter + Copy + Ord + Zero + Saturating + From<u128> +
+                     sp_std::ops::Div<Output = Self::Balance> +
+                     sp_std::ops::Mul<Output = Self::Balance> +
+                     sp_std::ops::Add<Output = Self::Balance>;
 
         /// Weight information for extrinsics
         type WeightInfo: WeightInfo;
@@ -320,351 +314,6 @@ pub mod pallet {
 
             Ok(())
         }
-
-        /// Add liquidity to a pool
-        #[pallet::call_index(1)]
-        #[pallet::weight(T::WeightInfo::add_liquidity())]
-        pub fn add_liquidity(
-            origin: OriginFor<T>,
-            asset_a: T::AssetId,
-            asset_b: T::AssetId,
-            amount_a_desired: T::Balance,
-            amount_b_desired: T::Balance,
-            amount_a_min: T::Balance,
-            amount_b_min: T::Balance,
-        ) -> DispatchResult {
-            let who = ensure_signed(origin)?;
-
-            // Get pool (check both directions)
-            let (pool, is_reversed) = Self::get_pool_with_direction(&asset_a, &asset_b)
-                .ok_or(Error::<T>::PoolNotFound)?;
-
-            // Calculate optimal amounts
-            let (amount_a, amount_b) = if pool.total_lp_tokens.is_zero() {
-                // First liquidity provision
-                ensure!(
-                    amount_a_desired >= T::MinimumLiquidity::get() &&
-                    amount_b_desired >= T::MinimumLiquidity::get(),
-                    Error::<T>::MinimumLiquidityNotMet
-                );
-                (amount_a_desired, amount_b_desired)
-            } else {
-                // Subsequent liquidity provision - maintain ratio
-                let (reserve_a, reserve_b) = if is_reversed {
-                    (pool.reserve_b, pool.reserve_a)
-                } else {
-                    (pool.reserve_a, pool.reserve_b)
-                };
-
-                let amount_b_optimal = Self::quote(amount_a_desired, reserve_a, reserve_b)?;
-                if amount_b_optimal <= amount_b_desired {
-                    ensure!(amount_b_optimal >= amount_b_min, Error::<T>::SlippageExceeded);
-                    (amount_a_desired, amount_b_optimal)
-                } else {
-                    let amount_a_optimal = Self::quote(amount_b_desired, reserve_b, reserve_a)?;
-                    ensure!(amount_a_optimal <= amount_a_desired, Error::<T>::SlippageExceeded);
-                    ensure!(amount_a_optimal >= amount_a_min, Error::<T>::SlippageExceeded);
-                    (amount_a_optimal, amount_b_desired)
-                }
-            };
-
-            // Calculate LP tokens to mint
-            let lp_tokens = Self::calculate_lp_tokens_to_mint(&pool, amount_a, amount_b, is_reversed)?;
-
-            // Transfer tokens from user to pool account
-            let pool_account = Self::pool_account_id(&asset_a, &asset_b);
-            T::Currency::transfer(
-                asset_a,
-                &who,
-                &pool_account,
-                amount_a,
-                Preservation::Expendable,
-            )?;
-            T::Currency::transfer(
-                asset_b,
-                &who,
-                &pool_account,
-                amount_b,
-                Preservation::Expendable,
-            )?;
-
-            // Update pool state
-            let mut updated_pool = pool;
-            if is_reversed {
-                updated_pool.reserve_a = updated_pool.reserve_a.saturating_add(amount_b);
-                updated_pool.reserve_b = updated_pool.reserve_b.saturating_add(amount_a);
-            } else {
-                updated_pool.reserve_a = updated_pool.reserve_a.saturating_add(amount_a);
-                updated_pool.reserve_b = updated_pool.reserve_b.saturating_add(amount_b);
-            }
-            updated_pool.total_lp_tokens = updated_pool.total_lp_tokens.saturating_add(lp_tokens);
-
-            // Store updated pool
-            let (first_asset, second_asset) = if asset_a < asset_b {
-                (asset_a, asset_b)
-            } else {
-                (asset_b, asset_a)
-            };
-            Pools::<T>::insert(&first_asset, &second_asset, &updated_pool);
-
-            // Update LP position
-            let pool_id = PoolId::new(asset_a, asset_b);
-            let current_position = LpPositions::<T>::get(&who, &pool_id)
-                .unwrap_or_else(|| LpPosition::new(who.clone(), pool_id.clone()));
-            
-            let updated_position = LpPosition {
-                lp_tokens: current_position.lp_tokens.saturating_add(lp_tokens),
-                ..current_position
-            };
-            LpPositions::<T>::insert(&who, &pool_id, &updated_position);
-
-            // Emit event
-            Self::deposit_event(Event::LiquidityAdded {
-                pool_id,
-                provider: who,
-                amount_a,
-                amount_b,
-                lp_tokens,
-            });
-
-            Ok(())
-        }
-
-        /// Remove liquidity from a pool
-        #[pallet::call_index(2)]
-        #[pallet::weight(T::WeightInfo::remove_liquidity())]
-        pub fn remove_liquidity(
-            origin: OriginFor<T>,
-            asset_a: T::AssetId,
-            asset_b: T::AssetId,
-            lp_tokens: T::Balance,
-            amount_a_min: T::Balance,
-            amount_b_min: T::Balance,
-        ) -> DispatchResult {
-            let who = ensure_signed(origin)?;
-
-            // Get pool and LP position
-            let (pool, is_reversed) = Self::get_pool_with_direction(&asset_a, &asset_b)
-                .ok_or(Error::<T>::PoolNotFound)?;
-            
-            let pool_id = PoolId::new(asset_a, asset_b);
-            let position = LpPositions::<T>::get(&who, &pool_id)
-                .ok_or(Error::<T>::LpPositionNotFound)?;
-
-            // Ensure user has enough LP tokens
-            ensure!(position.lp_tokens >= lp_tokens, Error::<T>::InsufficientBalance);
-
-            // Calculate amounts to return
-            let (amount_a, amount_b) = Self::calculate_remove_liquidity_amounts(
-                &pool, lp_tokens, is_reversed
-            )?;
-
-            // Check slippage
-            ensure!(amount_a >= amount_a_min, Error::<T>::SlippageExceeded);
-            ensure!(amount_b >= amount_b_min, Error::<T>::SlippageExceeded);
-
-            // Transfer tokens back to user
-            let pool_account = Self::pool_account_id(&asset_a, &asset_b);
-            T::Currency::transfer(
-                asset_a,
-                &pool_account,
-                &who,
-                amount_a,
-                Preservation::Expendable,
-            )?;
-            T::Currency::transfer(
-                asset_b,
-                &pool_account,
-                &who,
-                amount_b,
-                Preservation::Expendable,
-            )?;
-
-            // Update pool state
-            let mut updated_pool = pool;
-            if is_reversed {
-                updated_pool.reserve_a = updated_pool.reserve_a.saturating_sub(amount_b);
-                updated_pool.reserve_b = updated_pool.reserve_b.saturating_sub(amount_a);
-            } else {
-                updated_pool.reserve_a = updated_pool.reserve_a.saturating_sub(amount_a);
-                updated_pool.reserve_b = updated_pool.reserve_b.saturating_sub(amount_b);
-            }
-            updated_pool.total_lp_tokens = updated_pool.total_lp_tokens.saturating_sub(lp_tokens);
-
-            // Store updated pool
-            let (first_asset, second_asset) = if asset_a < asset_b {
-                (asset_a, asset_b)
-            } else {
-                (asset_b, asset_a)
-            };
-            Pools::<T>::insert(&first_asset, &second_asset, &updated_pool);
-
-            // Update LP position
-            let updated_position = LpPosition {
-                lp_tokens: position.lp_tokens.saturating_sub(lp_tokens),
-                ..position
-            };
-            
-            if updated_position.lp_tokens.is_zero() {
-                LpPositions::<T>::remove(&who, &pool_id);
-            } else {
-                LpPositions::<T>::insert(&who, &pool_id, &updated_position);
-            }
-
-            // Emit event
-            Self::deposit_event(Event::LiquidityRemoved {
-                pool_id,
-                provider: who,
-                amount_a,
-                amount_b,
-                lp_tokens,
-            });
-
-            Ok(())
-        }
-
-        /// Swap exact tokens for tokens
-        #[pallet::call_index(3)]
-        #[pallet::weight(T::WeightInfo::swap())]
-        pub fn swap_exact_tokens_for_tokens(
-            origin: OriginFor<T>,
-            amount_in: T::Balance,
-            amount_out_min: T::Balance,
-            path: Vec<T::AssetId>,
-        ) -> DispatchResult {
-            let who = ensure_signed(origin)?;
-
-            // Validate path
-            ensure!(path.len() >= 2, Error::<T>::InvalidAssetPair);
-            ensure!(path.len() <= 3, Error::<T>::InvalidAssetPair); // Support direct and single-hop swaps
-
-            let asset_in = path[0];
-            let asset_out = path[path.len() - 1];
-
-            // For now, only support direct swaps (single pool)
-            ensure!(path.len() == 2, Error::<T>::InvalidAssetPair);
-
-            // Get pool
-            let (pool, is_reversed) = Self::get_pool_with_direction(&asset_in, &asset_out)
-                .ok_or(Error::<T>::PoolNotFound)?;
-
-            // Calculate output amount
-            let amount_out = Self::calculate_swap_output(
-                amount_in,
-                &pool,
-                asset_in,
-                is_reversed,
-            )?;
-
-            // Check slippage
-            ensure!(amount_out >= amount_out_min, Error::<T>::SlippageExceeded);
-
-            // Execute swap
-            let pool_account = Self::pool_account_id(&asset_in, &asset_out);
-            
-            // Transfer input tokens from user to pool
-            T::Currency::transfer(
-                asset_in,
-                &who,
-                &pool_account,
-                amount_in,
-                Preservation::Expendable,
-            )?;
-
-            // Transfer output tokens from pool to user
-            T::Currency::transfer(
-                asset_out,
-                &pool_account,
-                &who,
-                amount_out,
-                Preservation::Expendable,
-            )?;
-
-            // Update pool reserves
-            let mut updated_pool = pool;
-            if is_reversed {
-                if asset_in == updated_pool.asset_b {
-                    updated_pool.reserve_b = updated_pool.reserve_b.saturating_add(amount_in);
-                    updated_pool.reserve_a = updated_pool.reserve_a.saturating_sub(amount_out);
-                } else {
-                    updated_pool.reserve_a = updated_pool.reserve_a.saturating_add(amount_in);
-                    updated_pool.reserve_b = updated_pool.reserve_b.saturating_sub(amount_out);
-                }
-            } else {
-                if asset_in == updated_pool.asset_a {
-                    updated_pool.reserve_a = updated_pool.reserve_a.saturating_add(amount_in);
-                    updated_pool.reserve_b = updated_pool.reserve_b.saturating_sub(amount_out);
-                } else {
-                    updated_pool.reserve_b = updated_pool.reserve_b.saturating_add(amount_in);
-                    updated_pool.reserve_a = updated_pool.reserve_a.saturating_sub(amount_out);
-                }
-            }
-
-            // Store updated pool
-            let (first_asset, second_asset) = if asset_in < asset_out {
-                (asset_in, asset_out)
-            } else {
-                (asset_out, asset_in)
-            };
-            Pools::<T>::insert(&first_asset, &second_asset, &updated_pool);
-
-            // Update volume tracking
-            let pool_id = PoolId::new(asset_in, asset_out);
-            let current_volume = PoolVolume::<T>::get(&pool_id);
-            PoolVolume::<T>::insert(&pool_id, current_volume.saturating_add(amount_in));
-
-            // Emit event
-            Self::deposit_event(Event::Swap {
-                pool_id,
-                trader: who,
-                asset_in,
-                asset_out,
-                amount_in,
-                amount_out,
-            });
-
-            Ok(())
-        }
-
-        /// Claim LP rewards
-        #[pallet::call_index(4)]
-        #[pallet::weight(T::WeightInfo::claim_rewards())]
-        pub fn claim_lp_rewards(
-            origin: OriginFor<T>,
-            pool_id: PoolId<T::AssetId>,
-        ) -> DispatchResult {
-            let who = ensure_signed(origin)?;
-
-            // Get claimable rewards
-            let reward_amount = UserRewards::<T>::get(&who, &pool_id);
-            ensure!(!reward_amount.is_zero(), Error::<T>::NoRewardsToClaim);
-
-            // Clear user rewards
-            UserRewards::<T>::remove(&who, &pool_id);
-
-            // Transfer rewards to user (this would be CHML tokens)
-            // For now, we'll assume the reward token is the first asset in the pool
-            // In a real implementation, this would be the native CHML token
-            let reward_asset = pool_id.asset_a; // Placeholder
-            let pallet_account = T::PalletId::get().into_account_truncating();
-            
-            T::Currency::transfer(
-                reward_asset,
-                &pallet_account,
-                &who,
-                reward_amount,
-                Preservation::Expendable,
-            )?;
-
-            // Emit event
-            Self::deposit_event(Event::RewardsClaimed {
-                pool_id,
-                claimer: who,
-                amount: reward_amount,
-            });
-
-            Ok(())
-        }
     }
 
     // Helper functions
@@ -707,97 +356,6 @@ pub mod pallet {
             Ok(amount_b)
         }
 
-        /// Calculate LP tokens to mint
-        pub fn calculate_lp_tokens_to_mint(
-            pool: &LiquidityPool<T::AssetId, T::Balance>,
-            amount_a: T::Balance,
-            amount_b: T::Balance,
-            is_reversed: bool,
-        ) -> Result<T::Balance, Error<T>> {
-            if pool.total_lp_tokens.is_zero() {
-                // First liquidity provision: LP tokens = sqrt(amount_a * amount_b)
-                let product = amount_a.saturating_mul(amount_b);
-                // Simplified sqrt for demo - in production use proper sqrt implementation
-                let lp_tokens = Self::integer_sqrt(product);
-                Ok(lp_tokens)
-            } else {
-                // Subsequent provisions: LP tokens proportional to existing ratio
-                let (reserve_a, reserve_b) = if is_reversed {
-                    (pool.reserve_b, pool.reserve_a)
-                } else {
-                    (pool.reserve_a, pool.reserve_b)
-                };
-                
-                let lp_tokens_a = amount_a.saturating_mul(pool.total_lp_tokens) / reserve_a;
-                let lp_tokens_b = amount_b.saturating_mul(pool.total_lp_tokens) / reserve_b;
-                
-                // Take minimum to maintain ratio
-                Ok(lp_tokens_a.min(lp_tokens_b))
-            }
-        }
-
-        /// Calculate amounts when removing liquidity
-        pub fn calculate_remove_liquidity_amounts(
-            pool: &LiquidityPool<T::AssetId, T::Balance>,
-            lp_tokens: T::Balance,
-            is_reversed: bool,
-        ) -> Result<(T::Balance, T::Balance), Error<T>> {
-            ensure!(!pool.total_lp_tokens.is_zero(), Error::<T>::DivisionByZero);
-            
-            let (reserve_a, reserve_b) = if is_reversed {
-                (pool.reserve_b, pool.reserve_a)
-            } else {
-                (pool.reserve_a, pool.reserve_b)
-            };
-            
-            let amount_a = lp_tokens.saturating_mul(reserve_a) / pool.total_lp_tokens;
-            let amount_b = lp_tokens.saturating_mul(reserve_b) / pool.total_lp_tokens;
-            
-            Ok((amount_a, amount_b))
-        }
-
-        /// Calculate swap output using constant product formula
-        pub fn calculate_swap_output(
-            amount_in: T::Balance,
-            pool: &LiquidityPool<T::AssetId, T::Balance>,
-            asset_in: T::AssetId,
-            is_reversed: bool,
-        ) -> Result<T::Balance, Error<T>> {
-            let (reserve_in, reserve_out) = if is_reversed {
-                if asset_in == pool.asset_b {
-                    (pool.reserve_b, pool.reserve_a)
-                } else {
-                    (pool.reserve_a, pool.reserve_b)
-                }
-            } else {
-                if asset_in == pool.asset_a {
-                    (pool.reserve_a, pool.reserve_b)
-                } else {
-                    (pool.reserve_b, pool.reserve_a)
-                }
-            };
-            
-            Self::get_amount_out(amount_in, reserve_in, reserve_out)
-        }
-
-        /// Get amount out with fee calculation
-        pub fn get_amount_out(
-            amount_in: T::Balance,
-            reserve_in: T::Balance,
-            reserve_out: T::Balance,
-        ) -> Result<T::Balance, Error<T>> {
-            ensure!(!amount_in.is_zero(), Error::<T>::AmountTooSmall);
-            ensure!(!reserve_in.is_zero() && !reserve_out.is_zero(), Error::<T>::InsufficientLiquidity);
-            
-            // Apply fee (0.25% = 2.5/1000 = 997/1000 after fee)
-            let amount_in_with_fee = amount_in.saturating_mul(997u128.into());
-            let numerator = amount_in_with_fee.saturating_mul(reserve_out);
-            let denominator = reserve_in.saturating_mul(1000u128.into()).saturating_add(amount_in_with_fee);
-            
-            ensure!(!denominator.is_zero(), Error::<T>::DivisionByZero);
-            Ok(numerator / denominator)
-        }
-
         /// Simple integer square root implementation
         pub fn integer_sqrt(n: T::Balance) -> T::Balance {
             if n.is_zero() {
@@ -805,11 +363,14 @@ pub mod pallet {
             }
             
             let mut x = n;
-            let mut y = (n + 1u128.into()) / 2u128.into();
+            let mut y = (n + T::Balance::from(1u128)) / T::Balance::from(2u128);
             
-            while y < x {
+            // Newton's method: x_{n+1} = (x_n + n/x_n) / 2
+            let mut iterations = 0;
+            while y < x && iterations < 100 { // Prevent infinite loops
                 x = y;
-                y = (x + n / x) / 2u128.into();
+                y = (x + n / x) / T::Balance::from(2u128);
+                iterations += 1;
             }
             
             x
