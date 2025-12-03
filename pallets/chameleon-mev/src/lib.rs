@@ -421,8 +421,8 @@ pub mod pallet {
             // Create decryption share
             let share = DecryptionShare {
                 validator: validator_bytes,
-                share_data,
-                block_number: block_number.saturated_into(),
+                share_bytes: share_data,
+                index: 0, // Default index, should be provided by caller
             };
 
             // Store decryption share
