@@ -228,7 +228,7 @@ fn test_provide_decryption_share_works() {
         let share = ChameleonMev::decryption_shares(block_number, validator).unwrap();
         assert_eq!(share.validator, validator);
         assert_eq!(share.share_data, share_data);
-        assert_eq!(share.block_number, block_number);
+        assert_eq!(share.block_number, block_number as u32);
     });
 }
 
