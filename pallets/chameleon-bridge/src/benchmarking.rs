@@ -100,7 +100,7 @@ mod benchmarks {
         };
         PendingWithdrawals::<T>::insert(0, withdrawal);
         
-        let signature = vec![1, 2, 3, 4];
+        let signature = frame_support::BoundedVec::try_from(vec![1, 2, 3, 4]).unwrap();
 
         #[extrinsic_call]
         _(RawOrigin::Signed(validator.clone()), 0, signature.clone());
