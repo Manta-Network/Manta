@@ -296,16 +296,38 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Join as validator candidate (stub)
+        /// Join as validator candidate
         #[pallet::call_index(0)]
         #[pallet::weight(10_000)]
         pub fn join_candidates(
             origin: OriginFor<T>,
-            stake: u128,
+            stake: BalanceOf<T>,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
+            
+            // Ensure minimum stake requirement
             ensure!(stake >= T::MinValidatorStake::get(), Error::<T>::InsufficientStake);
             
+            // Ensure not already a validator
+            ensure!(!Validators::<T>::contains_key(&who), Error::<T>::AlreadyValidator);
+            
+            // Lock the stake
+            T::Currency::set_lock(STAKING_ID, &who, stake, WithdrawReasons::all());
+            
+            // Create validator info
+            let validator_info = ValidatorInfo {
+                controller: who.clone(),
+                self_stake: stake,
+                total_stake: stake,
+                delegator_count: 0,
+                commission: Perbill::from_percent(10), // Default 10% commission
+                status: ValidatorStatus::Waiting,
+            };
+            
+            // Store validator info
+            Validators::<T>::insert(&who, validator_info);
+            
+            // Update global counters
             TotalStaked::<T>::mutate(|total| *total = total.saturating_add(stake));
             ValidatorCount::<T>::mutate(|count| *count = count.saturating_add(1));
             
@@ -313,33 +335,250 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Delegate to a validator (stub)
+        /// Delegate to a validator
         #[pallet::call_index(1)]
         #[pallet::weight(10_000)]
         pub fn delegate(
             origin: OriginFor<T>,
             validator: T::AccountId,
-            amount: u128,
+            amount: BalanceOf<T>,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
             
+            // Ensure amount is not zero
+            ensure!(!amount.is_zero(), Error::<T>::InsufficientStake);
+            
+            // Ensure validator exists
+            ensure!(Validators::<T>::contains_key(&validator), Error::<T>::ValidatorNotFound);
+            
+            // Ensure not delegating to self
+            ensure!(who != validator, Error::<T>::CannotDelegateToSelf);
+            
+            // Ensure not already delegated to this validator
+            ensure!(!Delegations::<T>::contains_key(&who, &validator), Error::<T>::AlreadyDelegated);
+            
+            // Check delegation limits
+            let delegator_count = DelegatorCount::<T>::get(&validator);
+            ensure!(
+                delegator_count < T::MaxDelegatorsPerValidator::get(),
+                Error::<T>::TooManyDelegators
+            );
+            
+            let delegation_count = DelegationCount::<T>::get(&who);
+            ensure!(
+                delegation_count < T::MaxDelegationsPerDelegator::get(),
+                Error::<T>::TooManyDelegations
+            );
+            
+            // Lock the delegation amount
+            T::Currency::set_lock(STAKING_ID, &who, amount, WithdrawReasons::all());
+            
+            // Store delegation
+            Delegations::<T>::insert(&who, &validator, amount);
+            
+            // Update validator info
+            Validators::<T>::try_mutate(&validator, |validator_info| -> DispatchResult {
+                let info = validator_info.as_mut().ok_or(Error::<T>::ValidatorNotFound)?;
+                info.total_stake = info.total_stake.checked_add(&amount)
+                    .ok_or(Error::<T>::ArithmeticOverflow)?;
+                info.delegator_count = info.delegator_count.saturating_add(1);
+                Ok(())
+            })?;
+            
+            // Update counters
+            DelegatorCount::<T>::mutate(&validator, |count| *count = count.saturating_add(1));
+            DelegationCount::<T>::mutate(&who, |count| *count = count.saturating_add(1));
             TotalStaked::<T>::mutate(|total| *total = total.saturating_add(amount));
             
             Self::deposit_event(Event::Delegated { delegator: who, validator, amount });
             Ok(())
         }
 
-        /// Set commission rate (stub)
+        /// Remove delegation (start unbonding)
         #[pallet::call_index(2)]
+        #[pallet::weight(10_000)]
+        pub fn undelegate(
+            origin: OriginFor<T>,
+            validator: T::AccountId,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+            
+            // Get delegation amount
+            let amount = Delegations::<T>::get(&who, &validator);
+            ensure!(!amount.is_zero(), Error::<T>::NotDelegated);
+            
+            // Check unbonding request limit
+            let mut unbonding_requests = UnbondingRequests::<T>::get(&who);
+            ensure!(
+                unbonding_requests.len() < T::MaxUnbondingRequests::get() as usize,
+                Error::<T>::TooManyUnbondingRequests
+            );
+            
+            // Calculate unlock block
+            let current_block = frame_system::Pallet::<T>::block_number();
+            let unlock_at = current_block + T::UnbondingPeriod::get();
+            
+            // Add unbonding request
+            let unbonding_request = UnbondingRequest {
+                amount,
+                unlock_at,
+            };
+            
+            unbonding_requests.try_push(unbonding_request)
+                .map_err(|_| Error::<T>::TooManyUnbondingRequests)?;
+            
+            UnbondingRequests::<T>::insert(&who, unbonding_requests);
+            
+            // Remove delegation
+            Delegations::<T>::remove(&who, &validator);
+            
+            // Update validator info
+            Validators::<T>::try_mutate(&validator, |validator_info| -> DispatchResult {
+                let info = validator_info.as_mut().ok_or(Error::<T>::ValidatorNotFound)?;
+                info.total_stake = info.total_stake.checked_sub(&amount)
+                    .ok_or(Error::<T>::ArithmeticUnderflow)?;
+                info.delegator_count = info.delegator_count.saturating_sub(1);
+                Ok(())
+            })?;
+            
+            // Update counters
+            DelegatorCount::<T>::mutate(&validator, |count| *count = count.saturating_sub(1));
+            DelegationCount::<T>::mutate(&who, |count| *count = count.saturating_sub(1));
+            TotalStaked::<T>::mutate(|total| *total = total.saturating_sub(amount));
+            
+            Self::deposit_event(Event::Undelegated { delegator: who.clone(), validator, amount });
+            Self::deposit_event(Event::UnbondingStarted { who, amount, unlock_at });
+            Ok(())
+        }
+
+        /// Withdraw unbonded tokens
+        #[pallet::call_index(3)]
+        #[pallet::weight(10_000)]
+        pub fn withdraw_unbonded(
+            origin: OriginFor<T>,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+            
+            let current_block = frame_system::Pallet::<T>::block_number();
+            let mut unbonding_requests = UnbondingRequests::<T>::get(&who);
+            let mut total_withdrawn = BalanceOf::<T>::zero();
+            
+            // Filter out completed unbonding requests
+            unbonding_requests.retain(|request| {
+                if request.unlock_at <= current_block {
+                    total_withdrawn = total_withdrawn.saturating_add(request.amount);
+                    false
+                } else {
+                    true
+                }
+            });
+            
+            ensure!(!total_withdrawn.is_zero(), Error::<T>::NoUnbondedTokens);
+            
+            // Update unbonding requests
+            UnbondingRequests::<T>::insert(&who, unbonding_requests);
+            
+            // Remove lock for withdrawn amount
+            T::Currency::remove_lock(STAKING_ID, &who);
+            
+            Self::deposit_event(Event::UnbondedWithdrawn { who, amount: total_withdrawn });
+            Ok(())
+        }
+
+        /// Claim pending rewards
+        #[pallet::call_index(4)]
+        #[pallet::weight(10_000)]
+        pub fn claim_rewards(
+            origin: OriginFor<T>,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+            
+            let reward_amount = PendingRewards::<T>::get(&who);
+            ensure!(!reward_amount.is_zero(), Error::<T>::NoRewardsToClaim);
+            
+            // Clear pending rewards
+            PendingRewards::<T>::remove(&who);
+            
+            // Transfer rewards
+            T::Currency::deposit_creating(&who, reward_amount);
+            
+            Self::deposit_event(Event::RewardsClaimed { who, amount: reward_amount });
+            Ok(())
+        }
+
+        /// Set commission rate
+        #[pallet::call_index(5)]
         #[pallet::weight(10_000)]
         pub fn set_commission(
             origin: OriginFor<T>,
             commission: Perbill,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
+            
+            // Ensure valid commission (max 100%)
             ensure!(commission <= Perbill::from_percent(100), Error::<T>::InvalidCommission);
             
+            // Update validator commission
+            Validators::<T>::try_mutate(&who, |validator_info| -> DispatchResult {
+                let info = validator_info.as_mut().ok_or(Error::<T>::ValidatorNotFound)?;
+                info.commission = commission;
+                Ok(())
+            })?;
+            
             Self::deposit_event(Event::CommissionSet { validator: who, commission });
+            Ok(())
+        }
+
+        /// Leave validator set (start unbonding self-stake)
+        #[pallet::call_index(6)]
+        #[pallet::weight(10_000)]
+        pub fn leave_candidates(
+            origin: OriginFor<T>,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+            
+            // Get validator info
+            let validator_info = Validators::<T>::get(&who)
+                .ok_or(Error::<T>::ValidatorNotFound)?;
+            
+            // Ensure no delegators
+            ensure!(validator_info.delegator_count == 0, Error::<T>::TooManyDelegators);
+            
+            // Check unbonding request limit
+            let mut unbonding_requests = UnbondingRequests::<T>::get(&who);
+            ensure!(
+                unbonding_requests.len() < T::MaxUnbondingRequests::get() as usize,
+                Error::<T>::TooManyUnbondingRequests
+            );
+            
+            // Calculate unlock block
+            let current_block = frame_system::Pallet::<T>::block_number();
+            let unlock_at = current_block + T::UnbondingPeriod::get();
+            
+            // Add unbonding request for self-stake
+            let unbonding_request = UnbondingRequest {
+                amount: validator_info.self_stake,
+                unlock_at,
+            };
+            
+            unbonding_requests.try_push(unbonding_request)
+                .map_err(|_| Error::<T>::TooManyUnbondingRequests)?;
+            
+            UnbondingRequests::<T>::insert(&who, unbonding_requests);
+            
+            // Remove validator
+            Validators::<T>::remove(&who);
+            
+            // Update global counters
+            TotalStaked::<T>::mutate(|total| *total = total.saturating_sub(validator_info.self_stake));
+            ValidatorCount::<T>::mutate(|count| *count = count.saturating_sub(1));
+            
+            Self::deposit_event(Event::ValidatorLeft { validator: who.clone() });
+            Self::deposit_event(Event::UnbondingStarted { 
+                who, 
+                amount: validator_info.self_stake, 
+                unlock_at 
+            });
             Ok(())
         }
     }
