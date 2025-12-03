@@ -25,7 +25,7 @@ use frame_support::{
 };
 use sp_runtime::{
     traits::{Saturating, Zero},
-    DispatchResult, Perbill,
+    DispatchError, DispatchResult, Perbill,
 };
 use sp_std::vec::Vec;
 
