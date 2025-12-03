@@ -312,12 +312,12 @@ pub mod pallet {
             };
             
             PendingDeposits::<T>::insert(eth_tx_hash, deposit);
-            TotalBridged::<T>::mutate(|total| *total = total.saturating_add(amount.saturated_into()));
+            TotalBridged::<T>::mutate(|total| *total = total.saturating_add(amount));
             
             Self::deposit_event(Event::AssetMinted {
                 recipient,
                 asset,
-                amount: amount.saturated_into(),
+                amount,
             });
             
             Ok(())
