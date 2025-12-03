@@ -44,12 +44,9 @@ pub struct EncryptedTransaction {
 /// Each validator provides a share that can be combined with others
 /// to decrypt the transactions in a block.
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen, PartialEq, Eq)]
-pub struct DecryptionShare<T>
-where
-    T: frame_system::Config,
-{
-    /// Validator providing the share
-    pub validator: T::AccountId,
+pub struct DecryptionShare {
+    /// Validator providing the share (as bytes for simplicity)
+    pub validator: [u8; 32],
     /// Decryption share data
     pub share_data: BoundedVec<u8, ConstU32<1024>>,
     /// Block number this share is for
