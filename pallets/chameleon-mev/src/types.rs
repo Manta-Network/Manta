@@ -28,10 +28,7 @@ use sp_runtime::RuntimeDebug;
 /// Contains the encrypted transaction data along with metadata needed
 /// for ordering and commitment verification.
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen, PartialEq, Eq)]
-pub struct EncryptedTransaction<T>
-where
-    T: frame_system::Config,
-{
+pub struct EncryptedTransaction {
     /// Encrypted transaction data
     pub encrypted_data: BoundedVec<u8, ConstU32<1024>>,
     /// Commitment hash (SHA3-256 of original transaction)
@@ -40,8 +37,6 @@ where
     pub timestamp: Moment,
     /// Block number when submitted
     pub submit_block: u32,
-    /// Phantom data to use the generic parameter
-    pub _phantom: PhantomData<T>,
 }
 
 /// Threshold decryption share from validator
