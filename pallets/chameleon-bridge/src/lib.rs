@@ -496,12 +496,12 @@ pub mod pallet {
         }
 
         /// Get pending withdrawal by ID
-        pub fn get_pending_withdrawal(withdrawal_id: u64) -> Option<BridgeWithdrawal<T::AccountId, BalanceOf<T>>> {
+        pub fn get_pending_withdrawal(withdrawal_id: u64) -> Option<BridgeWithdrawal<T::AccountId>> {
             PendingWithdrawals::<T>::get(withdrawal_id)
         }
 
         /// Get pending deposit by Ethereum tx hash
-        pub fn get_pending_deposit(eth_tx_hash: H256) -> Option<BridgeDeposit<T::AccountId, BalanceOf<T>>> {
+        pub fn get_pending_deposit(eth_tx_hash: H256) -> Option<BridgeDeposit<T::AccountId>> {
             PendingDeposits::<T>::get(eth_tx_hash)
         }
 
