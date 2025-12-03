@@ -103,6 +103,10 @@ manta-collator-selection = { workspace = true }
 manta-primitives = { workspace = true }
 manta-support = { workspace = true }
 pallet-asset-manager = { workspace = true }
+pallet-chameleon-bridge = { workspace = true }
+pallet-chameleon-mev = { workspace = true }
+pallet-chameleon-pdex = { workspace = true }
+pallet-chameleon-staking = { workspace = true }
 pallet-farming = { workspace = true }
 pallet-farming-rpc-runtime-api = { workspace = true }
 pallet-lottery = { workspace = true }
