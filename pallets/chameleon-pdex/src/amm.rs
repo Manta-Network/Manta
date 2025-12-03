@@ -205,17 +205,18 @@ where
 }
 
 /// Calculate the fee amount for a given swap
+/// Uses basis points for fee (25 = 0.25%)
 pub fn calculate_swap_fee<Balance>(
     input_amount: Balance,
-    fee_percent: Perbill,
+    fee_bps: u32,
 ) -> Balance
 where
     Balance: Copy + Zero + Saturating + From<u128> +
              sp_std::ops::Div<Output = Balance> +
              sp_std::ops::Mul<Output = Balance>,
 {
-    input_amount.saturating_mul(Balance::from(fee_percent.deconstruct() as u128))
-        / Balance::from(1_000_000_000u128)
+    input_amount.saturating_mul(Balance::from(fee_bps as u128))
+        / Balance::from(10000u128)
 }
 
 /// Simple integer square root implementation using Newton's method
