@@ -27,6 +27,7 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
     BuildStorage,
 };
+use core::marker::PhantomData;
 
 type Block = frame_system::mocking::MockBlock<Test>;
 
