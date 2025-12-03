@@ -45,11 +45,12 @@ pub enum AmmError {
 }
 
 /// Calculate swap output using constant product formula with fees
+/// Uses basis points for fee (25 = 0.25%)
 pub fn calculate_swap_output<Balance>(
     input_amount: Balance,
     input_reserve: Balance,
     output_reserve: Balance,
-    fee_percent: Perbill,
+    fee_bps: u32,
 ) -> Result<Balance, AmmError>
 where
     Balance: Copy + Zero + Saturating + From<u128> + 
@@ -64,17 +65,18 @@ where
         return Err(AmmError::InsufficientLiquidity);
     }
 
-    // Apply fee: amount_after_fee = amount * (1 - fee)
-    let fee_multiplier = Balance::from(1_000_000_000u128).saturating_sub(Balance::from(fee_percent.deconstruct() as u128));
-    let input_after_fee = input_amount.saturating_mul(fee_multiplier) / Balance::from(1_000_000_000u128);
+    // Apply fee: input_with_fee = input * (10000 - fee_bps) / 10000
+    let input_with_fee = input_amount
+        .saturating_mul(Balance::from(10000u128.saturating_sub(fee_bps as u128)))
+        / Balance::from(10000u128);
     
-    if input_after_fee.is_zero() {
+    if input_with_fee.is_zero() {
         return Err(AmmError::AmountTooSmall);
     }
 
-    // Calculate output using constant product formula
-    let numerator = output_reserve.saturating_mul(input_after_fee);
-    let denominator = input_reserve.saturating_add(input_after_fee);
+    // Calculate output: dy = y * dx / (x + dx)
+    let numerator = output_reserve.saturating_mul(input_with_fee);
+    let denominator = input_reserve.saturating_add(input_with_fee);
     
     if denominator.is_zero() {
         return Err(AmmError::DivisionByZero);
