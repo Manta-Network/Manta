@@ -389,6 +389,7 @@ fn test_ordering_commitment_creation() {
             commitment: H256::from([2; 32]),
             timestamp: 2000,
             submit_block: 1,
+            _phantom: PhantomData,
         };
 
         let transactions = vec![tx1.clone(), tx2.clone()];
