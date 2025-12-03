@@ -20,7 +20,7 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{BoundedVec, traits::ConstU32};
 use manta_primitives::types::{Hash, Moment};
 use scale_info::TypeInfo;
-use sp_std::{vec::Vec, marker::PhantomData};
+use sp_std::vec::Vec;
 use sp_runtime::RuntimeDebug;
 
 /// Encrypted transaction structure
