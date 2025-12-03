@@ -48,9 +48,9 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use sp_runtime::{
     traits::{AccountIdConversion, Saturating, Zero},
-    Perbill, Permill,
+    Perbill,
 };
-use sp_std::{vec::Vec, collections::btree_map::BTreeMap};
+use sp_std::vec::Vec;
 
 // Re-export pallet items
 pub use pallet::*;
