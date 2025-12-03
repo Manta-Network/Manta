@@ -66,7 +66,6 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use manta_primitives::types::{Hash, Moment};
 use sp_runtime::traits::{BlakeTwo256, Saturating, SaturatedConversion};
-use sp_std::collections::btree_map::BTreeMap;
 
 pub use pallet::*;
 pub use types::*;
