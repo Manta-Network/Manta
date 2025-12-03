@@ -933,6 +933,77 @@ impl pallet_name_service::Config for Runtime {
 
 impl parachain_info::Config for Runtime {}
 
+// ============================================================================
+// Chameleon Network Pallets Configuration
+// ============================================================================
+
+/// Import Chameleon constants
+use manta_primitives::chameleon_constants::{
+    staking::{MAX_DELEGATORS_PER_VALIDATOR, MAX_DELEGATIONS_PER_DELEGATOR},
+    time::UNBONDING_PERIOD_BLOCKS,
+    MIN_VALIDATOR_STAKE,
+};
+
+// Chameleon MEV Protection Pallet Configuration
+parameter_types! {
+    pub const MevCommitRevealDelay: BlockNumber = 1;
+    pub const MevMaxEncryptedTxSize: u32 = 65536; // 64 KB max
+    pub const MevMaxPendingTxPerBlock: u32 = 1000;
+}
+
+impl pallet_chameleon_mev::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type CommitRevealDelay = MevCommitRevealDelay;
+    type MaxEncryptedTxSize = MevMaxEncryptedTxSize;
+    type MaxPendingTransactionsPerBlock = MevMaxPendingTxPerBlock;
+}
+
+// Chameleon pDEX Pallet Configuration
+parameter_types! {
+    pub const PdexMinLiquidity: Balance = 1_000_000_000_000_000; // 0.001 CHML
+    pub const PdexMaxPoolsPerPair: u32 = 1;
+    pub const PdexLpVestingPeriod: BlockNumber = 14400 * 90; // 90 days (6s blocks)
+}
+
+impl pallet_chameleon_pdex::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type MinLiquidity = PdexMinLiquidity;
+    type MaxPoolsPerPair = PdexMaxPoolsPerPair;
+    type LpVestingPeriod = PdexLpVestingPeriod;
+}
+
+// Chameleon Bridge Pallet Configuration
+parameter_types! {
+    pub const BridgeMinConfirmations: u32 = 12; // Ethereum confirmations
+    pub const BridgeSignatureThreshold: u32 = 5; // 5-of-9 multi-sig
+}
+
+impl pallet_chameleon_bridge::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type MinConfirmations = BridgeMinConfirmations;
+    type SignatureThreshold = BridgeSignatureThreshold;
+}
+
+// Chameleon Staking Pallet Configuration
+parameter_types! {
+    pub const ChameleonMinValidatorStake: u128 = MIN_VALIDATOR_STAKE;
+    pub const ChameleonUnbondingPeriod: BlockNumber = UNBONDING_PERIOD_BLOCKS as BlockNumber;
+    pub const ChameleonMaxDelegatorsPerValidator: u32 = MAX_DELEGATORS_PER_VALIDATOR;
+    pub const ChameleonMaxDelegationsPerDelegator: u32 = MAX_DELEGATIONS_PER_DELEGATOR;
+}
+
+impl pallet_chameleon_staking::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type MinValidatorStake = ChameleonMinValidatorStake;
+    type UnbondingPeriod = ChameleonUnbondingPeriod;
+    type MaxDelegatorsPerValidator = ChameleonMaxDelegatorsPerValidator;
+    type MaxDelegationsPerDelegator = ChameleonMaxDelegationsPerDelegator;
+}
+
+// ============================================================================
+// End Chameleon Network Pallets Configuration
+// ============================================================================
+
 struct CheckInherentsStruct;
 #[allow(deprecated)]
 impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherentsStruct {
