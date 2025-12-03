@@ -17,9 +17,8 @@
 //! Types for Chameleon Staking
 
 use codec::{Decode, Encode};
-use frame_support::RuntimeDebug;
 use scale_info::TypeInfo;
-use sp_runtime::Perbill;
+use sp_runtime::{Perbill, RuntimeDebug};
 
 /// Validator information
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq)]
