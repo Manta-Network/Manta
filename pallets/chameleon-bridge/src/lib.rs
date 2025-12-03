@@ -260,6 +260,12 @@ pub mod pallet {
         NotValidator,
         /// Already signed
         AlreadySigned,
+        /// Already processed
+        AlreadyProcessed,
+        /// Invalid signature
+        InvalidSignature,
+        /// Insufficient balance
+        InsufficientBalance,
     }
 
     #[pallet::call]
