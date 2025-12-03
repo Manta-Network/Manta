@@ -209,7 +209,7 @@ where
     Balance: Copy + Zero + Saturating + From<u128>,
 {
     let lp_fee = total_fee.saturating_mul(Balance::from(PDEX_LP_SHARE.deconstruct() as u128))
-        .saturating_div(Balance::from(1_000_000_000u128));
+        / Balance::from(1_000_000_000u128);
     let treasury_fee = total_fee.saturating_sub(lp_fee);
     
     (lp_fee, treasury_fee)
