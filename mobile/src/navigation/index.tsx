@@ -60,34 +60,31 @@ function MainTabNavigator() {
       />
       <Tab.Screen
         name="Staking"
+        component={PlaceholderScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
             <TabIcon icon="🏦" color={color} size={size} />
           ),
         }}
-      >
-        {() => <PlaceholderScreen />}
-      </Tab.Screen>
+      />
       <Tab.Screen
         name="DEX"
+        component={PlaceholderScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
             <TabIcon icon="🔄" color={color} size={size} />
           ),
         }}
-      >
-        {() => <PlaceholderScreen />}
-      </Tab.Screen>
+      />
       <Tab.Screen
         name="Settings"
+        component={PlaceholderScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
             <TabIcon icon="⚙️" color={color} size={size} />
           ),
         }}
-      >
-        {() => <PlaceholderScreen />}
-      </Tab.Screen>
+      />
     </Tab.Navigator>
   );
 }
