@@ -59,9 +59,33 @@ impl BridgeableAsset {
     pub fn ethereum_address(&self) -> EthereumAddress {
         match self {
             BridgeableAsset::ETH => H160::zero(), // ETH uses zero address convention
-            BridgeableAsset::USDC => H160::from_slice(&hex::decode("A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48").unwrap()),
-            BridgeableAsset::USDT => H160::from_slice(&hex::decode("dAC17F958D2ee523a2206206994597C13D831ec7").unwrap()),
-            BridgeableAsset::WBTC => H160::from_slice(&hex::decode("2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599").unwrap()),
+            BridgeableAsset::USDC => {
+                // USDC contract address: 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
+                let mut bytes = [0u8; 20];
+                bytes.copy_from_slice(&[
+                    0xA0, 0xb8, 0x69, 0x91, 0xc6, 0x21, 0x8b, 0x36, 0xc1, 0xd1,
+                    0x9D, 0x4a, 0x2e, 0x9E, 0xb0, 0xcE, 0x36, 0x06, 0xeB, 0x48
+                ]);
+                H160::from(bytes)
+            },
+            BridgeableAsset::USDT => {
+                // USDT contract address: 0xdAC17F958D2ee523a2206206994597C13D831ec7
+                let mut bytes = [0u8; 20];
+                bytes.copy_from_slice(&[
+                    0xdA, 0xC1, 0x7F, 0x95, 0x8D, 0x2e, 0xe5, 0x23, 0xa2, 0x20,
+                    0x62, 0x06, 0x99, 0x45, 0x97, 0xC1, 0x3D, 0x83, 0x1e, 0xc7
+                ]);
+                H160::from(bytes)
+            },
+            BridgeableAsset::WBTC => {
+                // WBTC contract address: 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599
+                let mut bytes = [0u8; 20];
+                bytes.copy_from_slice(&[
+                    0x22, 0x60, 0xFA, 0xC5, 0xE5, 0x54, 0x2a, 0x77, 0x3A, 0xa4,
+                    0x4f, 0xBC, 0xfe, 0xDf, 0x7C, 0x19, 0x3b, 0xc2, 0xC5, 0x99
+                ]);
+                H160::from(bytes)
+            },
         }
     }
 
