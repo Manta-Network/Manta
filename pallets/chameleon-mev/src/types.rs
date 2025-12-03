@@ -49,7 +49,7 @@ pub struct DecryptionShare<T: frame_system::Config> {
     /// Decryption share data
     pub share_data: BoundedVec<u8, ConstU32<1024>>,
     /// Block number this share is for
-    pub block_number: T::BlockNumber,
+    pub block_number: u32,
 }
 
 /// Block proposal with encrypted transactions
