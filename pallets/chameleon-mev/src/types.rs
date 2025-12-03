@@ -35,7 +35,7 @@ pub struct EncryptedTransaction<T: frame_system::Config> {
     /// Timestamp when submitted (for ordering)
     pub timestamp: Moment,
     /// Block number when submitted
-    pub submit_block: T::BlockNumber,
+    pub submit_block: u32,
 }
 
 /// Threshold decryption share from validator
