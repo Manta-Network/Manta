@@ -24,6 +24,7 @@
 extern crate alloc;
 
 pub mod assets;
+pub mod chameleon_constants;
 pub mod constants;
 pub mod currencies;
 pub mod types;
