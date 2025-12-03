@@ -134,17 +134,6 @@ pub struct ThresholdPublicKey {
     pub epoch: u32,
 }
 
-/// Decryption share from a validator
-#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq, MaxEncodedLen)]
-pub struct DecryptionShare {
-    /// Validator account ID (as bytes)
-    pub validator: [u8; 32],
-    /// Decryption share bytes
-    pub share_bytes: BoundedVec<u8, ConstU32<96>>,
-    /// Validator index in the threshold scheme
-    pub index: u32,
-}
-
 /// Encrypted transaction with threshold encryption
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ThresholdEncryptedTx<BlockNumber> {
