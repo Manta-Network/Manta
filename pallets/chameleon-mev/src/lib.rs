@@ -279,7 +279,7 @@ pub mod pallet {
             })?;
 
             // Calculate transaction hash
-            let tx_hash = BlakeTwo256::hash(&encrypted_tx.encrypted_data);
+            let tx_hash = <BlakeTwo256 as HashTrait>::hash(&encrypted_tx.encrypted_data);
 
             Self::deposit_event(Event::EncryptedTransactionSubmitted {
                 tx_hash,
