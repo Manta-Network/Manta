@@ -6,7 +6,8 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
 import { cryptoWaitReady } from '@polkadot/util-crypto';
-import { DEFAULT_NETWORK, TIME } from '@/constants';
+import { DEFAULT_NETWORK, TIME, DEBUG } from '@/constants';
+import { mockTransactionHistory, getMockTransactions } from '@/mocks/transactions';
 import type { NetworkConfig, Balance, Transaction, Validator, StakingInfo } from '@/types';
 
 /**
