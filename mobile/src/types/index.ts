@@ -183,6 +183,7 @@ export interface StoredTransaction {
 
 // Navigation Types
 export type RootStackParamList = {
+  Loading: undefined;
   Welcome: undefined;
   CreateWallet: undefined;
   ImportWallet: undefined;
@@ -190,6 +191,7 @@ export type RootStackParamList = {
   ConfirmSeed: { seed: string };
   SetupPin: undefined;
   SetupBiometric: undefined;
+  Unlock: undefined;
   Main: undefined;
   Send: { recipient?: string; amount?: string };
   Receive: undefined;
