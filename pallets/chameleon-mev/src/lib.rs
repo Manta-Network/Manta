@@ -408,7 +408,7 @@ pub mod pallet {
                 data.extend_from_slice(&tx.commitment.as_bytes());
                 data.extend_from_slice(&tx.timestamp.to_le_bytes());
             }
-            BlakeTwo256::hash(&data)
+            <BlakeTwo256 as HashTrait>::hash(&data)
         }
 
         /// Reveal and execute transactions (placeholder for actual decryption)
