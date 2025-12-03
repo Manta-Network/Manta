@@ -154,6 +154,17 @@ pub mod pallet {
     #[pallet::getter(fn next_pool_id)]
     pub type NextPoolId<T: Config> = StorageValue<_, u32, ValueQuery>;
 
+    /// Pool volume tracking for rewards calculation
+    #[pallet::storage]
+    #[pallet::getter(fn pool_volume)]
+    pub type PoolVolume<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        PoolId<T::AssetId>,
+        T::Balance,
+        ValueQuery,
+    >;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
