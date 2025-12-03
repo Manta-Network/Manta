@@ -62,7 +62,7 @@ pub mod pallet {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Asset ID type
-        type AssetId: Parameter + Copy + Ord + Default + MaxEncodedLen + From<u32>;
+        type AssetId: Parameter + Copy + Ord + Default + MaxEncodedLen + From<u128>;
 
         /// Balance type  
         type Balance: Parameter + Copy + Ord + Zero + Saturating + 
