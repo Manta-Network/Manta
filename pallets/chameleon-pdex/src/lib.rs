@@ -526,7 +526,7 @@ pub mod pallet {
             ensure!(amount_out >= amount_out_min, Error::<T>::SlippageExceeded);
 
             // Calculate and distribute fees
-            let fee_amount = calculate_swap_fee(amount_in, pool.fee);
+            let fee_amount = calculate_swap_fee(amount_in, pool.fee_bps);
             let (lp_fee, treasury_fee) = distribute_swap_fee(fee_amount);
 
             // Transfer tokens
