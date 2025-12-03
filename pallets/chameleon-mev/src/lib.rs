@@ -400,7 +400,7 @@ pub mod pallet {
 
         /// Create commitment hash for transaction ordering
         pub fn create_ordering_commitment(
-            transactions: &[EncryptedTransaction<T>],
+            transactions: &[EncryptedTransaction],
         ) -> Hash {
             let mut data = Vec::new();
             for tx in transactions {
