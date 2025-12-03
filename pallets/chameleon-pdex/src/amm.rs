@@ -171,8 +171,8 @@ where
         return Err(AmmError::InvalidInput);
     }
 
-    let amount_a = lp_tokens.saturating_mul(reserve_a).saturating_div(total_lp_tokens);
-    let amount_b = lp_tokens.saturating_mul(reserve_b).saturating_div(total_lp_tokens);
+    let amount_a = lp_tokens.saturating_mul(reserve_a) / total_lp_tokens;
+    let amount_b = lp_tokens.saturating_mul(reserve_b) / total_lp_tokens;
     
     Ok((amount_a, amount_b))
 }
