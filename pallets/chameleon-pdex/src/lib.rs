@@ -44,7 +44,7 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use sp_runtime::traits::{AccountIdConversion, Saturating, Zero};
-use sp_std::vec::Vec;
+// use sp_std::vec::Vec;
 
 // Re-export pallet items
 pub use pallet::*;
