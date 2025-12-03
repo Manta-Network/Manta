@@ -276,6 +276,17 @@ export class RpcService {
    * Get transaction history
    */
   async getTransactionHistory(address: string, limit: number = 50): Promise<Transaction[]> {
+    // Use mock data for development (Week 2)
+    if (DEBUG.TESTNET_ONLY || !this.isConnected()) {
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      return getMockTransactions({ 
+        limit, 
+        includePending: true 
+      });
+    }
+
     const api = await this.connect();
 
     try {
