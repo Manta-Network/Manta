@@ -482,4 +482,71 @@ pub mod pallet {
             Ok(())
         }
     }
+
+    impl<T: Config> Pallet<T> {
+        /// Check if an account is a bridge validator
+        pub fn is_validator(account: &T::AccountId) -> bool {
+            BridgeValidators::<T>::get(account)
+        }
+
+        /// Get pending withdrawal by ID
+        pub fn get_pending_withdrawal(withdrawal_id: u64) -> Option<BridgeWithdrawal<T::AccountId, BalanceOf<T>>> {
+            PendingWithdrawals::<T>::get(withdrawal_id)
+        }
+
+        /// Get pending deposit by Ethereum tx hash
+        pub fn get_pending_deposit(eth_tx_hash: H256) -> Option<BridgeDeposit<T::AccountId, BalanceOf<T>>> {
+            PendingDeposits::<T>::get(eth_tx_hash)
+        }
+
+        /// Get validator signature for withdrawal
+        pub fn get_withdrawal_signature(withdrawal_id: u64, validator: &T::AccountId) -> Option<Vec<u8>> {
+            WithdrawalSignatures::<T>::get(withdrawal_id, validator)
+        }
+
+        /// Count signatures for a withdrawal
+        pub fn count_withdrawal_signatures(withdrawal_id: u64) -> u32 {
+            if let Some(withdrawal) = Self::get_pending_withdrawal(withdrawal_id) {
+                withdrawal.signature_count
+            } else {
+                0
+            }
+        }
+
+        /// Check if withdrawal is ready to execute
+        pub fn is_withdrawal_ready(withdrawal_id: u64) -> bool {
+            if let Some(withdrawal) = Self::get_pending_withdrawal(withdrawal_id) {
+                withdrawal.signature_count >= T::SignatureThreshold::get() &&
+                withdrawal.status == WithdrawalStatus::ReadyToExecute
+            } else {
+                false
+            }
+        }
+
+        /// Validate bridgeable asset
+        pub fn is_valid_asset(asset: &BridgeableAsset) -> bool {
+            matches!(asset, BridgeableAsset::ETH | BridgeableAsset::USDC | BridgeableAsset::USDT | BridgeableAsset::WBTC)
+        }
+
+        /// Get minimum bridge amount for asset
+        pub fn get_min_amount(asset: &BridgeableAsset) -> BalanceOf<T> {
+            match asset {
+                BridgeableAsset::ETH => 1_000_000_000_000_000u128,  // 0.001 ETH (18 decimals)
+                BridgeableAsset::USDC => 1_000_000u128,             // 1 USDC (6 decimals)
+                BridgeableAsset::USDT => 1_000_000u128,             // 1 USDT (6 decimals)
+                BridgeableAsset::WBTC => 10_000u128,                // 0.0001 WBTC (8 decimals)
+            }
+        }
+
+        /// Calculate bridge fee (0.02% for shield, 0.05% for unshield)
+        pub fn calculate_fee(amount: BalanceOf<T>, is_shield: bool) -> BalanceOf<T> {
+            if is_shield {
+                // 0.02% fee for shield (lock on Ethereum, mint on Chameleon)
+                amount.saturating_mul(2) / 10_000
+            } else {
+                // 0.05% fee for unshield (burn on Chameleon, unlock on Ethereum)
+                amount.saturating_mul(5) / 10_000
+            }
+        }
+    }
 }
