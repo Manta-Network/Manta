@@ -173,7 +173,7 @@ fn test_commit_ordering_works() {
 fn test_reveal_transaction_works() {
     new_test_ext().execute_with(|| {
         let tx_data: BoundedVec<u8, ConstU32<65536>> = vec![1, 2, 3, 4, 5].try_into().unwrap();
-        let tx_hash = H256::from_slice(&frame_support::Blake2_256::hash(&tx_data));
+        let tx_hash = H256::from_slice(&Blake2_256::hash(&tx_data));
         let nonce = [1u8; 32];
 
         // Submit sealed transaction
