@@ -21,11 +21,10 @@
 
 use crate::types::*;
 use codec::{Decode, Encode};
-use frame_support::traits::Get;
 use manta_primitives::types::{Balance, BlockNumber};
 use scale_info::TypeInfo;
-use sp_core::{H160, H256};
-use sp_runtime::{traits::{Zero, Saturating}, RuntimeDebug};
+use sp_core::H256;
+use sp_runtime::{traits::Saturating, RuntimeDebug};
 use sp_std::{vec::Vec, collections::btree_set::BTreeSet};
 
 /// Multi-signature verification result
