@@ -29,7 +29,7 @@ use sp_std::vec::Vec;
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen, PartialEq, Eq)]
 pub struct EncryptedTransaction<T: frame_system::Config> {
     /// Encrypted transaction data
-    pub encrypted_data: BoundedVec<u8, T::MaxEncryptedDataSize>,
+    pub encrypted_data: BoundedVec<u8, ConstU32<1024>>,
     /// Commitment hash (SHA3-256 of original transaction)
     pub commitment: Hash,
     /// Timestamp when submitted (for ordering)
