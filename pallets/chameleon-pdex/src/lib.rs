@@ -221,7 +221,7 @@ pub mod pallet {
             
             // Assign LP token asset ID
             let lp_asset_id_raw = NextLpAssetId::<T>::get();
-            let lp_asset_id: T::AssetId = (lp_asset_id_raw + 1000).into(); // Offset to avoid collision
+            let lp_asset_id: T::AssetId = ((lp_asset_id_raw + 1000) as u128).into(); // Offset to avoid collision
             NextLpAssetId::<T>::put(lp_asset_id_raw + 1);
 
             // Create pool with zero reserves (filled on first liquidity add)
