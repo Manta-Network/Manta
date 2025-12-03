@@ -291,7 +291,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             eth_tx_hash: H256,
             asset: BridgeableAsset,
-            amount: BalanceOf<T>,
+            amount: u128,
             recipient: T::AccountId,
         ) -> DispatchResult {
             let validator = ensure_signed(origin)?;
