@@ -307,7 +307,7 @@ impl EthereumTransactionBuilder {
 }
 
 /// Ethereum block confirmation tracker
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, Default)]
 pub struct EthereumConfirmationTracker {
     /// Latest Ethereum block number observed
     pub latest_block: EthereumBlockNumber,
