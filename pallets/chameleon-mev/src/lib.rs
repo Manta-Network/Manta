@@ -156,7 +156,7 @@ pub mod pallet {
     #[pallet::getter(fn pending_block_transactions)]
     pub type PendingBlockTransactions<T: Config> = StorageValue<
         _,
-        BoundedVec<EncryptedTransaction<T>, T::MaxTransactionsPerBlock>,
+        BoundedVec<EncryptedTransaction, T::MaxTransactionsPerBlock>,
         ValueQuery,
     >;
 
