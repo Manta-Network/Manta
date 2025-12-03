@@ -19,10 +19,7 @@
 //! Distributes 30% of validator emissions (19.5M CHML over 20 years) to LP providers
 //! based on their share of liquidity and pool performance metrics.
 
-use sp_runtime::{
-    traits::{Zero, Saturating},
-    Perbill,
-};
+use sp_runtime::traits::{Zero, Saturating};
 use sp_std::collections::btree_map::BTreeMap;
 
 // Import chameleon constants
