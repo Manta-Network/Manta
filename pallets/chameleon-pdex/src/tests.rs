@@ -152,13 +152,13 @@ mod mock {
 
     impl crate::Config for Test {
         type RuntimeEvent = RuntimeEvent;
-        type Currency = Assets;
         type AssetId = AssetId;
         type Balance = Balance;
         type WeightInfo = ();
         type PalletId = PdexPalletId;
         type MaxPools = MaxPools;
         type MinimumLiquidity = MinimumLiquidity;
+        type Currency = Assets;
     }
 
     // Build genesis storage according to the mock runtime.
