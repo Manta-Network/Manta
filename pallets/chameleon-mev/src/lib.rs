@@ -600,12 +600,12 @@ pub mod pallet {
         fn placeholder_decrypt(
             ciphertext: &BoundedVec<u8, ConstU32<1024>>,
             _shares: &[DecryptionShare],
-        ) -> Result<Vec<u8>, Error<T>> {
+        ) -> Result<BoundedVec<u8, ConstU32<1024>>, Error<T>> {
             // In production: Combine shares using Lagrange interpolation
             // and decrypt using actual threshold decryption
             
             // For now, just return the data as-is (simulating successful decryption)
-            Ok(ciphertext.to_vec())
+            Ok(ciphertext.clone())
         }
     }
 }
