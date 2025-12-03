@@ -134,8 +134,8 @@ where
             return Err(AmmError::InsufficientLiquidity);
         }
         
-        let lp_tokens_a = amount_a.saturating_mul(total_lp_tokens).saturating_div(reserve_a);
-        let lp_tokens_b = amount_b.saturating_mul(total_lp_tokens).saturating_div(reserve_b);
+        let lp_tokens_a = amount_a.saturating_mul(total_lp_tokens) / reserve_a;
+        let lp_tokens_b = amount_b.saturating_mul(total_lp_tokens) / reserve_b;
         
         // Take minimum to maintain pool ratio
         let lp_tokens = if lp_tokens_a < lp_tokens_b { lp_tokens_a } else { lp_tokens_b };
