@@ -246,7 +246,7 @@ pub mod pallet {
             // Validate timestamp (within 30 seconds of current time)
             let current_time = Self::current_timestamp();
             ensure!(
-                timestamp <= current_time && current_time.saturating_sub(timestamp) <= 30_000,
+                timestamp <= current_time.saturating_add(30_000) && current_time.saturating_sub(timestamp) <= 30_000,
                 Error::<T>::InvalidTimestamp
             );
 
