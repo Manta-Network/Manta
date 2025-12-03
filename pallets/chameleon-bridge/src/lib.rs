@@ -419,8 +419,8 @@ pub mod pallet {
             
             Self::deposit_event(Event::DepositObserved {
                 eth_tx_hash,
-                recipient,
-                asset,
+                recipient: recipient.clone(),
+                asset: asset.clone(),
                 amount,
             });
             
