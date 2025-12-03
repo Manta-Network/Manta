@@ -373,7 +373,7 @@ pub mod pallet {
         pub fn sign_withdrawal(
             origin: OriginFor<T>,
             withdrawal_id: u64,
-            signature: Vec<u8>,
+            signature: BoundedVec<u8, ConstU32<65>>,
         ) -> DispatchResult {
             let validator = ensure_signed(origin)?;
             ensure!(BridgeValidators::<T>::get(&validator), Error::<T>::NotValidator);
