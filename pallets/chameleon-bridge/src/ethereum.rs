@@ -360,7 +360,7 @@ impl EthereumConfirmationTracker {
     pub fn cleanup_confirmed_deposits(&mut self) -> Vec<EthereumTxHash> {
         let mut confirmed = Vec::new();
         
-        self.pending_deposits.retain(|&tx_hash, &deposit_block| {
+        self.pending_deposits.retain(|&tx_hash, deposit_block| {
             let confirmations = self.latest_block.saturating_sub(deposit_block);
             if confirmations >= self.min_confirmations as u64 {
                 confirmed.push(tx_hash);
