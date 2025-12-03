@@ -244,7 +244,7 @@ fn sign_withdrawal_non_validator_fails() {
             eth_destination
         ));
         
-        let signature = vec![1, 2, 3, 4]; // Mock signature
+        let signature = BoundedVec::try_from(vec![1, 2, 3, 4]).unwrap(); // Mock signature
         
         // Try to sign without being validator
         assert_noop!(
