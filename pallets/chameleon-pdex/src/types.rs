@@ -231,7 +231,8 @@ impl<Balance: Zero + Copy> VestingSchedule<Balance> {
     /// Calculate vested amount at given block
     pub fn vested_amount(&self, current_block: u32) -> Balance
     where
-        Balance: From<u128> + sp_runtime::traits::Saturating + PartialOrd,
+        Balance: From<u128> + sp_runtime::traits::Saturating + PartialOrd +
+                 sp_std::ops::Div<Output = Balance> + sp_std::ops::Mul<Output = Balance>,
     {
         if current_block <= self.start_block {
             return Balance::zero();
