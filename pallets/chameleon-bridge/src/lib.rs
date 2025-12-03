@@ -509,7 +509,7 @@ pub mod pallet {
         }
 
         /// Get validator signature for withdrawal
-        pub fn get_withdrawal_signature(withdrawal_id: u64, validator: &T::AccountId) -> Option<Vec<u8>> {
+        pub fn get_withdrawal_signature(withdrawal_id: u64, validator: &T::AccountId) -> Option<BoundedVec<u8, ConstU32<65>>> {
             WithdrawalSignatures::<T>::get(withdrawal_id, validator)
         }
 
