@@ -968,9 +968,9 @@ parameter_types! {
 
 impl pallet_chameleon_pdex::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type AssetId = u32;
+    type AssetId = u128;  // Match pallet-assets AssetId
     type Balance = Balance;
-    type Assets = Assets;  // Use pallet-assets for token operations
+    type Assets = Assets;
     type PalletId = PdexPalletId;
     type MaxPools = PdexMaxPools;
     type MinimumLiquidity = PdexMinLiquidity;
@@ -978,15 +978,15 @@ impl pallet_chameleon_pdex::Config for Runtime {
 
 // Chameleon Bridge Pallet Configuration
 parameter_types! {
-    pub const BridgeMinConfirmations: u32 = 12; // Ethereum confirmations
-    pub const BridgeSignatureThreshold: u32 = 5; // 5-of-9 multi-sig
+    pub const BridgeMinConfirmations: u32 = 12;
+    pub const BridgeSignatureThreshold: u32 = 5;
 }
 
 impl pallet_chameleon_bridge::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type AssetId = u32;
+    type AssetId = u128;  // Match pallet-assets AssetId
     type Balance = Balance;
-    type Assets = Assets;  // Use pallet-assets for token operations
+    type Assets = Assets;
     type MinConfirmations = BridgeMinConfirmations;
     type SignatureThreshold = BridgeSignatureThreshold;
 }
