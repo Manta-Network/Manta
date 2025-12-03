@@ -582,4 +582,204 @@ pub mod pallet {
             Ok(())
         }
     }
+
+    impl<T: Config> Pallet<T> {
+        /// Distribute rewards for the current era
+        pub fn distribute_rewards(total_reward: BalanceOf<T>) -> DispatchResult {
+            let current_era = CurrentEra::<T>::get();
+            let total_staked = TotalStaked::<T>::get();
+            
+            if total_staked.is_zero() {
+                return Ok(());
+            }
+            
+            // Iterate through all validators and distribute rewards
+            for (validator_id, validator_info) in Validators::<T>::iter() {
+                if validator_info.status != ValidatorStatus::Active {
+                    continue;
+                }
+                
+                // Calculate validator's share based on total stake
+                let validator_reward = total_reward
+                    .saturating_mul(validator_info.total_stake)
+                    .saturating_div(total_staked);
+                
+                if validator_reward.is_zero() {
+                    continue;
+                }
+                
+                // Calculate commission
+                let commission_amount = validator_info.commission * validator_reward;
+                let delegator_reward_pool = validator_reward.saturating_sub(commission_amount);
+                
+                // Validator gets commission + their proportional share of delegator rewards
+                let validator_share = if validator_info.total_stake.is_zero() {
+                    validator_reward
+                } else {
+                    let validator_delegator_share = delegator_reward_pool
+                        .saturating_mul(validator_info.self_stake)
+                        .saturating_div(validator_info.total_stake);
+                    commission_amount.saturating_add(validator_delegator_share)
+                };
+                
+                // Add to validator's pending rewards
+                PendingRewards::<T>::mutate(&validator_id, |rewards| {
+                    *rewards = rewards.saturating_add(validator_share);
+                });
+                
+                // Distribute remaining rewards to delegators
+                let remaining_delegator_rewards = delegator_reward_pool.saturating_sub(
+                    delegator_reward_pool
+                        .saturating_mul(validator_info.self_stake)
+                        .saturating_div(validator_info.total_stake)
+                );
+                
+                if !remaining_delegator_rewards.is_zero() {
+                    Self::distribute_delegator_rewards(
+                        &validator_id,
+                        &validator_info,
+                        remaining_delegator_rewards,
+                    )?;
+                }
+            }
+            
+            // Increment era
+            CurrentEra::<T>::mutate(|era| *era = era.saturating_add(1));
+            
+            Self::deposit_event(Event::RewardsDistributed { 
+                era: current_era, 
+                total_reward 
+            });
+            Ok(())
+        }
+        
+        /// Distribute rewards to delegators of a specific validator
+        fn distribute_delegator_rewards(
+            validator_id: &T::AccountId,
+            validator_info: &ValidatorInfo<T::AccountId, BalanceOf<T>>,
+            total_delegator_rewards: BalanceOf<T>,
+        ) -> DispatchResult {
+            let delegated_stake = validator_info.total_stake.saturating_sub(validator_info.self_stake);
+            
+            if delegated_stake.is_zero() {
+                return Ok(());
+            }
+            
+            // Iterate through delegations for this validator
+            for (delegator, delegation_amount) in Delegations::<T>::iter_prefix(validator_id) {
+                let delegator_reward = total_delegator_rewards
+                    .saturating_mul(delegation_amount)
+                    .saturating_div(delegated_stake);
+                
+                if !delegator_reward.is_zero() {
+                    PendingRewards::<T>::mutate(&delegator, |rewards| {
+                        *rewards = rewards.saturating_add(delegator_reward);
+                    });
+                }
+            }
+            
+            Ok(())
+        }
+        
+        /// Slash a validator for an offense
+        pub fn slash_validator(
+            validator: &T::AccountId,
+            offense: SlashingOffense,
+        ) -> DispatchResult {
+            let validator_info = Validators::<T>::get(validator)
+                .ok_or(Error::<T>::ValidatorNotFound)?;
+            
+            // Determine slash percentage based on offense
+            let slash_percent = match offense {
+                SlashingOffense::ExtendedDowntime => Perbill::from_parts(1_000_000),   // 0.1%
+                SlashingOffense::DoubleSigning => Perbill::from_parts(50_000_000),     // 5%
+            };
+            
+            // Calculate slash amount
+            let slash_amount = slash_percent * validator_info.total_stake;
+            
+            if slash_amount.is_zero() {
+                return Ok(());
+            }
+            
+            // Slash validator's self-stake first
+            let validator_slash = slash_percent * validator_info.self_stake;
+            
+            // Update validator info
+            Validators::<T>::try_mutate(validator, |info| -> DispatchResult {
+                let validator_info = info.as_mut().ok_or(Error::<T>::ValidatorNotFound)?;
+                validator_info.self_stake = validator_info.self_stake.saturating_sub(validator_slash);
+                validator_info.total_stake = validator_info.total_stake.saturating_sub(slash_amount);
+                validator_info.status = ValidatorStatus::Slashed;
+                Ok(())
+            })?;
+            
+            // Slash delegators proportionally
+            let delegated_slash = slash_amount.saturating_sub(validator_slash);
+            if !delegated_slash.is_zero() {
+                Self::slash_delegators(validator, delegated_slash, &validator_info)?;
+            }
+            
+            // Update total staked
+            TotalStaked::<T>::mutate(|total| *total = total.saturating_sub(slash_amount));
+            
+            Self::deposit_event(Event::ValidatorSlashed { 
+                validator: validator.clone(), 
+                amount: slash_amount, 
+                offense 
+            });
+            Ok(())
+        }
+        
+        /// Slash delegators of a validator proportionally
+        fn slash_delegators(
+            validator: &T::AccountId,
+            total_delegator_slash: BalanceOf<T>,
+            validator_info: &ValidatorInfo<T::AccountId, BalanceOf<T>>,
+        ) -> DispatchResult {
+            let delegated_stake = validator_info.total_stake.saturating_sub(validator_info.self_stake);
+            
+            if delegated_stake.is_zero() {
+                return Ok(());
+            }
+            
+            // Slash each delegator proportionally
+            for (delegator, delegation_amount) in Delegations::<T>::iter_prefix(validator) {
+                let delegator_slash = total_delegator_slash
+                    .saturating_mul(delegation_amount)
+                    .saturating_div(delegated_stake);
+                
+                if !delegator_slash.is_zero() {
+                    let new_delegation = delegation_amount.saturating_sub(delegator_slash);
+                    
+                    if new_delegation.is_zero() {
+                        // Remove delegation if fully slashed
+                        Delegations::<T>::remove(&delegator, validator);
+                        DelegationCount::<T>::mutate(&delegator, |count| *count = count.saturating_sub(1));
+                        DelegatorCount::<T>::mutate(validator, |count| *count = count.saturating_sub(1));
+                    } else {
+                        // Update delegation amount
+                        Delegations::<T>::insert(&delegator, validator, new_delegation);
+                    }
+                }
+            }
+            
+            Ok(())
+        }
+        
+        /// Check if an account is a validator
+        pub fn is_validator(account: &T::AccountId) -> bool {
+            Validators::<T>::contains_key(account)
+        }
+        
+        /// Get validator information
+        pub fn get_validator_info(account: &T::AccountId) -> Option<ValidatorInfo<T::AccountId, BalanceOf<T>>> {
+            Validators::<T>::get(account)
+        }
+        
+        /// Get delegation amount
+        pub fn get_delegation(delegator: &T::AccountId, validator: &T::AccountId) -> BalanceOf<T> {
+            Delegations::<T>::get(delegator, validator)
+        }
+    }
 }
