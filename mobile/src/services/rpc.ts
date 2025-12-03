@@ -118,6 +118,19 @@ export class RpcService {
    * Get account balance (public and shielded)
    */
   async getBalance(address: string): Promise<Balance> {
+    // Use mock data for development (Week 2)
+    if (DEBUG.TESTNET_ONLY || !this.isConnected()) {
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      return {
+        public: '1250.750000',
+        shielded: '850.250000',
+        usdValue: '2.45', // Mock USD price
+        lastUpdated: Date.now(),
+      };
+    }
+
     const api = await this.connect();
 
     try {
