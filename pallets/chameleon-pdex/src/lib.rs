@@ -208,6 +208,24 @@ pub mod pallet {
         InvalidAssetPair,
         /// Pool creation limit reached
         TooManyPools,
+        /// Insufficient liquidity in pool
+        InsufficientLiquidity,
+        /// Slippage tolerance exceeded
+        SlippageExceeded,
+        /// Insufficient balance
+        InsufficientBalance,
+        /// Invalid amount (zero or too small)
+        InvalidAmount,
+        /// Mathematical overflow
+        Overflow,
+        /// LP position not found
+        LpPositionNotFound,
+        /// No rewards to claim
+        NoRewardsToClaim,
+        /// Invalid path for multi-hop swap
+        InvalidPath,
+        /// Pool is empty (no reserves)
+        EmptyPool,
     }
 
     #[pallet::call]
