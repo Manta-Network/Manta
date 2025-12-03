@@ -80,7 +80,7 @@ pub mod pallet {
     use crate::{
         ethereum::*,
         types::*,
-        verification::*,
+        verification::{MultiSigValidator, FraudProofValidator, TransactionVerifier},
         weights::WeightInfo,
     };
     use frame_support::{
