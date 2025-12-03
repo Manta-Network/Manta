@@ -24,9 +24,7 @@ use sp_runtime::{
     Perbill,
 };
 // Import chameleon constants
-use manta_primitives::chameleon_constants::fees::{
-    PDEX_SWAP_FEE, PDEX_LP_SHARE
-};
+use manta_primitives::chameleon_constants::fees::PDEX_LP_SHARE;
 
 /// AMM calculation errors
 #[derive(Debug, PartialEq, Eq)]
