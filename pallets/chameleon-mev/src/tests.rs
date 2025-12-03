@@ -387,7 +387,7 @@ fn test_ordering_commitment_creation() {
             encrypted_data: BoundedVec::try_from(vec![2]).unwrap(),
             commitment: H256::from([2; 32]),
             timestamp: 2000,
-            submit_block: 1,
+            submit_block: 1u32,
         };
 
         let transactions = vec![tx1.clone(), tx2.clone()];
