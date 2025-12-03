@@ -306,6 +306,106 @@ pub enum BridgeError {
     WithdrawalAlreadyExecuted,
 }
 
+/// Fraud proof for challenging bridge operations
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct FraudProof<AccountId> {
+    /// Type of fraud being reported
+    pub fraud_type: FraudType,
+    /// Transaction or operation being challenged
+    pub challenged_tx: H256,
+    /// Evidence supporting the fraud claim
+    pub evidence: Vec<u8>,
+    /// Account submitting the fraud proof
+    pub challenger: AccountId,
+    /// Block number when fraud proof was submitted
+    pub submitted_at: BlockNumber,
+    /// Reward for successful fraud proof
+    pub reward: Balance,
+}
+
+/// Types of fraud that can be reported
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub enum FraudType {
+    /// Invalid Ethereum transaction (doesn't exist or has wrong data)
+    InvalidEthereumTx,
+    /// Double spending attempt
+    DoubleSpending,
+    /// Malicious validator behavior
+    MaliciousValidator,
+    /// Invalid signature
+    InvalidSignature,
+    /// Unauthorized withdrawal
+    UnauthorizedWithdrawal,
+}
+
+/// Validator reputation tracking
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, Default)]
+pub struct ValidatorReputation {
+    /// Total number of correct validations
+    pub correct_validations: u64,
+    /// Total number of incorrect validations
+    pub incorrect_validations: u64,
+    /// Number of times validator was offline
+    pub offline_incidents: u64,
+    /// Reputation score (0-100)
+    pub score: u8,
+    /// Whether validator is currently trusted
+    pub is_trusted: bool,
+}
+
+impl ValidatorReputation {
+    /// Update reputation after a validation
+    pub fn update_after_validation(&mut self, was_correct: bool) {
+        if was_correct {
+            self.correct_validations = self.correct_validations.saturating_add(1);
+        } else {
+            self.incorrect_validations = self.incorrect_validations.saturating_add(1);
+        }
+        
+        self.recalculate_score();
+    }
+    
+    /// Update reputation after offline incident
+    pub fn update_after_offline(&mut self) {
+        self.offline_incidents = self.offline_incidents.saturating_add(1);
+        self.recalculate_score();
+    }
+    
+    /// Recalculate reputation score
+    fn recalculate_score(&mut self) {
+        let total_validations = self.correct_validations + self.incorrect_validations;
+        
+        if total_validations == 0 {
+            self.score = 50; // Neutral score for new validators
+            self.is_trusted = true;
+            return;
+        }
+        
+        // Calculate accuracy percentage
+        let accuracy = (self.correct_validations * 100) / total_validations;
+        
+        // Penalize for offline incidents
+        let offline_penalty = (self.offline_incidents * 5).min(50);
+        
+        // Calculate final score
+        self.score = (accuracy as u8).saturating_sub(offline_penalty as u8);
+        
+        // Validator is trusted if score >= 70
+        self.is_trusted = self.score >= 70;
+    }
+    
+    /// Get trust level description
+    pub fn trust_level(&self) -> &'static str {
+        match self.score {
+            90..=100 => "Excellent",
+            80..=89 => "Good",
+            70..=79 => "Fair",
+            50..=69 => "Poor",
+            _ => "Untrusted",
+        }
+    }
+}
+
 /// Trait for bridge fee calculation
 pub trait BridgeFeeCalculator<T: frame_system::Config> {
     /// Calculate shielding fee (Ethereum -> Chameleon)
