@@ -54,14 +54,14 @@ let output_amount = (output_reserve * input_with_fee) / (input_reserve + input_w
 
 ```rust
 // Add 1000 CHML + 10 ETH to CHML/ETH pool
-let pool_id = PoolId::new(CHML, ETH);
-let lp_tokens = Pdex::add_liquidity(
-    Origin::signed(alice()),
-    pool_id,
-    1000 * CHML_UNIT,  // 1000 CHML
-    10 * ETH_UNIT,     // 10 ETH
-    950 * CHML_UNIT,   // Min CHML (5% slippage)
-    9.5 * ETH_UNIT,    // Min ETH (5% slippage)
+ChameleonPdex::add_liquidity(
+    RuntimeOrigin::signed(alice()),
+    CHML,              // Asset A
+    ETH,               // Asset B
+    1000_000_000_000_000_000_000,  // 1000 CHML (18 decimals)
+    10_000_000_000_000_000_000,    // 10 ETH (18 decimals)
+    950_000_000_000_000_000_000,   // Min CHML (5% slippage)
+    9_500_000_000_000_000_000,     // Min ETH (5% slippage)
 )?;
 ```
 
@@ -69,11 +69,11 @@ let lp_tokens = Pdex::add_liquidity(
 
 ```rust
 // Swap 100 CHML for ETH with 1% max slippage
-let output_amount = Pdex::swap_exact_tokens_for_tokens(
-    Origin::signed(bob()),
-    100 * CHML_UNIT,   // Input: 100 CHML
-    0.95 * ETH_UNIT,   // Min output: 0.95 ETH (1% slippage)
-    vec![CHML, ETH],   // Path: CHML -> ETH
+ChameleonPdex::swap_exact_tokens_for_tokens(
+    RuntimeOrigin::signed(bob()),
+    100_000_000_000_000_000_000,   // Input: 100 CHML
+    990_000_000_000_000_000,       // Min output: 0.99 ETH (1% slippage)
+    vec![CHML, ETH],               // Path: CHML -> ETH
 )?;
 ```
 
@@ -81,8 +81,9 @@ let output_amount = Pdex::swap_exact_tokens_for_tokens(
 
 ```rust
 // Claim accumulated LP rewards
-let reward_amount = Pdex::claim_lp_rewards(
-    Origin::signed(alice()),
+let pool_id = PoolId::new(CHML, ETH);
+ChameleonPdex::claim_rewards(
+    RuntimeOrigin::signed(alice()),
     pool_id,
 )?;
 ```
