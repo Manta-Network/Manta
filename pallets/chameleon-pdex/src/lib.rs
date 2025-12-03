@@ -569,7 +569,6 @@ pub mod pallet {
             // For now, treasury fee stays in pool (will be implemented with treasury integration)
 
             // Emit event
-            let pool_id = PoolId::new(asset_in, asset_out);
             Self::deposit_event(Event::SwapExecuted {
                 pool_id,
                 trader: who,
