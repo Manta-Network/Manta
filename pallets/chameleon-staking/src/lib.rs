@@ -232,7 +232,7 @@ pub mod pallet {
                     reqs.try_push(UnbondingRequest { amount: unbond_amount, unlock_at })
                 }).map_err(|_| Error::<T>::TooManyDelegations)?;
 
-                Self::deposit_event(Event::Undelegated { delegator: who.clone(), validator, amount: unbond_amount });
+                Self::deposit_event(Event::Undelegated { delegator: who.clone(), validator: validator.clone(), amount: unbond_amount });
                 Self::deposit_event(Event::UnbondingStarted { who, amount: unbond_amount, unlock_at });
                 Ok(())
             })
