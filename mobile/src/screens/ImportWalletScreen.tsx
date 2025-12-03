@@ -44,7 +44,7 @@ export function ImportWalletScreen({ navigation }: Props) {
     }
 
     const words = seedPhrase.trim().split(/\s+/);
-    if (!VALIDATION.SEED_PHRASE_WORDS.includes(words.length)) {
+    if (!VALIDATION.SEED_PHRASE_WORDS.includes(words.length as 12 | 24)) {
       Alert.alert(
         'Invalid Recovery Phrase',
         `Recovery phrase must be ${VALIDATION.SEED_PHRASE_WORDS.join(' or ')} words`
