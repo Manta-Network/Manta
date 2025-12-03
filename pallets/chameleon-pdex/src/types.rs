@@ -243,7 +243,7 @@ impl<Balance: Zero + Copy> VestingSchedule<Balance> {
         }
         
         // Linear vesting: vested = total * elapsed / duration
-        self.total_amount * Balance::from(elapsed_blocks as u128) / Balance::from(self.duration_blocks as u128)
+        self.total_amount.saturating_mul(Balance::from(elapsed_blocks as u128))\n            .saturating_div(Balance::from(self.duration_blocks as u128))
     }
     
     /// Calculate claimable amount (vested - claimed)
