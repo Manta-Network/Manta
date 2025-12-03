@@ -269,6 +269,8 @@ pub mod pallet {
         OrderingMismatch,
         /// Reveal phase not ready
         RevealNotReady,
+        /// Insufficient shares for threshold decryption
+        InsufficientShares,
     }
 
     #[pallet::call]
