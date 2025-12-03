@@ -19,7 +19,7 @@
 use super::*;
 use frame_support::{
     assert_noop, assert_ok,
-    traits::{ConstU32, ConstU64},
+    traits::{ConstU32, ConstU64, ConstU128},
 };
 use frame_system as system;
 use sp_core::H256;
