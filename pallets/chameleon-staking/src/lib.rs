@@ -201,11 +201,12 @@ pub mod pallet {
 
                 T::Currency::set_lock(STAKING_ID, &who, amount, WithdrawReasons::all());
 
-                let current = Delegations::<T>::get(&who, &validator);
+                // Storage key is (validator, delegator)
+                let current = Delegations::<T>::get(&validator, &who);
                 if current.is_zero() {
                     info.delegator_count += 1;
                 }
-                Delegations::<T>::insert(&who, &validator, current.saturating_add(amount));
+                Delegations::<T>::insert(&validator, &who, current.saturating_add(amount));
                 info.total_stake = info.total_stake.saturating_add(amount);
                 TotalStaked::<T>::mutate(|t| *t = t.saturating_add(amount));
 
