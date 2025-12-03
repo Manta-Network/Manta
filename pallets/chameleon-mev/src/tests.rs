@@ -1,10 +1,12 @@
 // Copyright 2020-2024 Manta Network.
 // MEV Protection Tests - Proving Front-Running and Sandwich Attack Prevention
 
-use crate::*;
+use crate::pallet::*;
 use frame_support::{
     assert_noop, assert_ok,
+    pallet_prelude::*,
     traits::{ConstU32, ConstU64},
+    Blake2_256, StorageHasher,
 };
 use sp_core::H256;
 use sp_runtime::{
@@ -45,12 +47,6 @@ impl frame_system::Config for Test {
     type SS58Prefix = ();
     type OnSetCode = ();
     type MaxConsumers = ConstU32<16>;
-    type RuntimeTask = ();
-    type SingleBlockMigrations = ();
-    type MultiBlockMigrator = ();
-    type PreInherents = ();
-    type PostInherents = ();
-    type PostTransactions = ();
 }
 
 impl crate::Config for Test {
@@ -70,9 +66,6 @@ fn new_test_ext() -> sp_io::TestExternalities {
 }
 
 fn create_commitment(tx_hash: H256, nonce: [u8; 32]) -> H256 {
-    use frame_support::Blake2_256;
-    use frame_support::StorageHasher;
-    
     let mut preimage = Vec::with_capacity(64);
     preimage.extend_from_slice(tx_hash.as_bytes());
     preimage.extend_from_slice(&nonce);
