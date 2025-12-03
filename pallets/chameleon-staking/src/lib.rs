@@ -57,6 +57,12 @@ pub mod pallet {
     /// The current storage version
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
+    /// Lock identifier for staking
+    const STAKING_ID: LockIdentifier = *b"chmlstak";
+
+    /// Balance type alias
+    type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
@@ -66,9 +72,12 @@ pub mod pallet {
         /// The overarching event type
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
+        /// Currency type for staking operations
+        type Currency: LockableCurrency<Self::AccountId> + ReservableCurrency<Self::AccountId>;
+
         /// Minimum validator stake (1,750 CHML)
         #[pallet::constant]
-        type MinValidatorStake: Get<u128>;
+        type MinValidatorStake: Get<BalanceOf<Self>>;
 
         /// Unbonding period in blocks (14 days)
         #[pallet::constant]
@@ -81,6 +90,10 @@ pub mod pallet {
         /// Maximum delegations per delegator
         #[pallet::constant]
         type MaxDelegationsPerDelegator: Get<u32>;
+
+        /// Maximum unbonding requests per account
+        #[pallet::constant]
+        type MaxUnbondingRequests: Get<u32>;
     }
 
     /// Validator status
