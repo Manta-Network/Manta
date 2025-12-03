@@ -50,10 +50,10 @@ pub struct EncryptedTransaction {
 pub struct DecryptionShare {
     /// Validator providing the share (as bytes for simplicity)
     pub validator: [u8; 32],
-    /// Decryption share data
-    pub share_data: BoundedVec<u8, ConstU32<1024>>,
-    /// Block number this share is for
-    pub block_number: u32,
+    /// Decryption share bytes
+    pub share_bytes: BoundedVec<u8, ConstU32<96>>,
+    /// Validator index in the threshold scheme
+    pub index: u32,
 }
 
 /// Block proposal with encrypted transactions
