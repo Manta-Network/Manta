@@ -249,7 +249,7 @@ impl<Balance: Zero + Copy> VestingSchedule<Balance> {
     /// Calculate claimable amount (vested - claimed)
     pub fn claimable_amount(&self, current_block: u32) -> Balance
     where
-        Balance: From<u128> + sp_std::ops::Mul<Output = Balance> + sp_std::ops::Div<Output = Balance> + sp_std::ops::Sub<Output = Balance>,
+        Balance: From<u128> + sp_std::ops::Mul<Output = Balance> + sp_std::ops::Div<Output = Balance> + sp_std::ops::Sub<Output = Balance> + PartialOrd,
     {
         let vested = self.vested_amount(current_block);
         if vested > self.claimed_amount {
