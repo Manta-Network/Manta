@@ -255,6 +255,7 @@ pub mod pallet {
                 commitment,
                 timestamp,
                 submit_block: frame_system::Pallet::<T>::block_number().saturated_into(),
+                _phantom: PhantomData,
             };
 
             // Add to mempool (ordered by timestamp)
