@@ -243,10 +243,15 @@ pub mod pallet {
         ) -> DispatchResult {
             let _who = ensure_signed(origin)?;
 
-            // Validate timestamp (within 30 seconds of current time)
+            // Validate timestamp (within 30 seconds of current time, allow some future timestamps)
             let current_time = Self::current_timestamp();
+            let time_diff = if timestamp > current_time {
+                timestamp.saturating_sub(current_time)
+            } else {
+                current_time.saturating_sub(timestamp)
+            };
             ensure!(
-                timestamp <= current_time.saturating_add(30_000) && current_time.saturating_sub(timestamp) <= 30_000,
+                time_diff <= 30_000,
                 Error::<T>::InvalidTimestamp
             );
 
