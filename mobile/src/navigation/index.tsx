@@ -70,7 +70,7 @@ function MainTabNavigator() {
       <Tab.Screen
         name="DEX"
         component={PlaceholderScreen}
-        options={
+        options={{
           tabBarIcon: ({ color, size }) => (
             <TabIcon icon="🔄" color={color} size={size} />
           ),
