@@ -47,7 +47,7 @@ pub struct DecryptionShare<T: frame_system::Config> {
     /// Validator providing the share
     pub validator: T::AccountId,
     /// Decryption share data
-    pub share_data: BoundedVec<u8, T::MaxEncryptedDataSize>,
+    pub share_data: BoundedVec<u8, ConstU32<1024>>,
     /// Block number this share is for
     pub block_number: T::BlockNumber,
 }
