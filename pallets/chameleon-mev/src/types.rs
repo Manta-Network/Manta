@@ -28,7 +28,10 @@ use sp_runtime::RuntimeDebug;
 /// Contains the encrypted transaction data along with metadata needed
 /// for ordering and commitment verification.
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen, PartialEq, Eq)]
-pub struct EncryptedTransaction<T: frame_system::Config> {
+pub struct EncryptedTransaction<T>
+where
+    T: frame_system::Config,
+{
     /// Encrypted transaction data
     pub encrypted_data: BoundedVec<u8, ConstU32<1024>>,
     /// Commitment hash (SHA3-256 of original transaction)
