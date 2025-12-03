@@ -276,6 +276,22 @@ pub mod pallet {
         UnbondingInProgress,
         /// Invalid commission
         InvalidCommission,
+        /// Already a validator
+        AlreadyValidator,
+        /// Cannot delegate to self
+        CannotDelegateToSelf,
+        /// Insufficient balance
+        InsufficientBalance,
+        /// Too many unbonding requests
+        TooManyUnbondingRequests,
+        /// No unbonded tokens to withdraw
+        NoUnbondedTokens,
+        /// No rewards to claim
+        NoRewardsToClaim,
+        /// Arithmetic overflow
+        ArithmeticOverflow,
+        /// Arithmetic underflow
+        ArithmeticUnderflow,
     }
 
     #[pallet::call]
