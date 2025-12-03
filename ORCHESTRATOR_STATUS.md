@@ -232,7 +232,7 @@ Gas Fees:     ~0.1 CHML per transaction
 
 ---
 
-## 🔬 WEEK 1 VALIDATION RESULTS
+## 🔬 WEEK 1 VALIDATION RESULTS (UPDATED)
 
 ### Priority 1: Compilation Validation ✅
 
@@ -243,16 +243,29 @@ Gas Fees:     ~0.1 CHML per transaction
 | `pallet-chameleon-pdex` | ✅ COMPILES | 0 errors, 5 warnings |
 | `pallet-chameleon-bridge` | ✅ COMPILES | 0 errors, 5 warnings |
 | `pallet-chameleon-staking` | ✅ COMPILES | 0 errors, 5 warnings |
+| `manta-runtime` | ✅ COMPILES | All 4 pallets integrated! |
 
-**Full workspace check:** PASS (limited by disk space, individual checks pass)
+**Full workspace check:** ✅ PASS with SKIP_WASM_BUILD=1
 
-### Priority 2: Runtime Integration ⚠️
+### Priority 2: Runtime Integration ✅ COMPLETE
 
 | Task | Status | Notes |
 |------|--------|-------|
 | CHML constants in primitives | ✅ DONE | `chameleon_constants` module exported |
 | Pallets in workspace Cargo.toml | ✅ DONE | All 4 pallets added |
-| Runtime integration | ⚠️ PENDING | Full runtime config needed in Week 2 |
+| Pallets in runtime/manta/Cargo.toml | ✅ DONE | Dependencies + std features |
+| Config traits in runtime/manta/src/lib.rs | ✅ DONE | All 4 pallets configured |
+| construct_runtime! macro | ✅ DONE | Pallet IDs 80-83 assigned |
+
+### Runtime Integration Details
+
+```rust
+// runtime/manta/src/lib.rs
+ChameleonMev: pallet_chameleon_mev = 80,
+ChameleonPdex: pallet_chameleon_pdex = 81,
+ChameleonBridge: pallet_chameleon_bridge = 82,
+ChameleonStaking: pallet_chameleon_staking = 83,
+```
 
 ### Priority 3: Basic Testing
 
