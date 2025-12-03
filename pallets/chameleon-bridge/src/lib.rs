@@ -65,7 +65,12 @@ mod mock;
 mod tests;
 
 pub use pallet::*;
-pub use types::*;
+pub use types::{
+    BridgeableAsset, BridgeDeposit, BridgeWithdrawal, BridgeValidator, 
+    ValidatorReputation, BridgeFee, BridgeStats, BridgeError,
+    DepositStatus, WithdrawalStatus, FraudType, FraudProof,
+    DefaultBridgeFeeCalculator, BridgeFeeCalculator,
+};
 pub use weights::WeightInfo;
 
 /// Chameleon Bridge Pallet
