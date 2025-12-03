@@ -111,13 +111,13 @@ pub struct DelegatorReward<AccountId, Balance> {
     pub reward: Balance,
 }
 
-Impl Default for ValidatorStatus {
+impl Default for ValidatorStatus {
     fn default() -> Self {
         ValidatorStatus::Active
     }
 }
 
-Impl Default for ValidatorPerformance {
+impl Default for ValidatorPerformance {
     fn default() -> Self {
         ValidatorPerformance {
             uptime_percent: Perbill::one(),
