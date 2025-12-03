@@ -220,7 +220,8 @@ pub mod pallet {
         #[pallet::weight(10_000)]
         pub fn undelegate(origin: OriginFor<T>, validator: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
-            let current = Delegations::<T>::get(&who, &validator);
+            // Storage key is (validator, delegator)
+            let current = Delegations::<T>::get(&validator, &who);
             ensure!(!current.is_zero(), Error::<T>::NotDelegated);
 
             let unbond_amount = amount.min(current);
@@ -230,10 +231,10 @@ pub mod pallet {
                 let info = maybe_info.as_mut().ok_or(Error::<T>::ValidatorNotFound)?;
 
                 if remaining.is_zero() {
-                    Delegations::<T>::remove(&who, &validator);
+                    Delegations::<T>::remove(&validator, &who);
                     info.delegator_count = info.delegator_count.saturating_sub(1);
                 } else {
-                    Delegations::<T>::insert(&who, &validator, remaining);
+                    Delegations::<T>::insert(&validator, &who, remaining);
                 }
 
                 info.total_stake = info.total_stake.saturating_sub(unbond_amount);
