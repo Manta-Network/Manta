@@ -145,8 +145,8 @@ pub mod pallet {
         Blake2_128Concat,
         BlockNumberFor<T>,
         Blake2_128Concat,
-        T::AccountId,
-        DecryptionShare<T>,
+        [u8; 32],
+        DecryptionShare,
         OptionQuery,
     >;
 
