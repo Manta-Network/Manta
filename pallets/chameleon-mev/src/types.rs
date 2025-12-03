@@ -23,6 +23,9 @@ use scale_info::TypeInfo;
 use sp_std::vec::Vec;
 use sp_runtime::RuntimeDebug;
 
+/// Maximum transaction size for encryption
+pub const MAX_TX_SIZE: u32 = 2048;
+
 /// Encrypted transaction structure
 ///
 /// Contains the encrypted transaction data along with metadata needed
