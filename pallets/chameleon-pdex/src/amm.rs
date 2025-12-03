@@ -91,7 +91,7 @@ where
         return Err(AmmError::DivisionByZero);
     }
     
-    let output_amount = numerator.saturating_div(denominator);
+    let output_amount = numerator / denominator;
     
     if output_amount.is_zero() {
         return Err(AmmError::AmountTooSmall);
