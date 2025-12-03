@@ -124,6 +124,32 @@ pub mod pallet {
         DoubleSigning,
     }
 
+    /// Validator information
+    #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq, MaxEncodedLen)]
+    pub struct ValidatorInfo<AccountId, Balance> {
+        /// Controller account
+        pub controller: AccountId,
+        /// Self-staked amount
+        pub self_stake: Balance,
+        /// Total stake (self + delegated)
+        pub total_stake: Balance,
+        /// Number of delegators
+        pub delegator_count: u32,
+        /// Commission rate (percentage taken from delegator rewards)
+        pub commission: Perbill,
+        /// Current status
+        pub status: ValidatorStatus,
+    }
+
+    /// Unbonding request
+    #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq, MaxEncodedLen)]
+    pub struct UnbondingRequest<Balance, BlockNumber> {
+        /// Amount being unbonded
+        pub amount: Balance,
+        /// Block number when unbonding completes
+        pub unlock_at: BlockNumber,
+    }
+
     /// Total staked in the network
     #[pallet::storage]
     #[pallet::getter(fn total_staked)]
