@@ -26,7 +26,7 @@ use frame_support::{
 };
 use sp_runtime::{
     traits::{Saturating, Zero},
-    DispatchResult,
+    DispatchError, DispatchResult,
 };
 
 impl<T: Config> Pallet<T> {
