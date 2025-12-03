@@ -18,11 +18,11 @@ import type { RootStackParamList } from '@/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, any>;
 
-export function PlaceholderScreen({ navigation, route }: Props) {
-  const screenName = route.name || 'Screen';
+export function PlaceholderScreen({ navigation, route }: Partial<Props> = {}) {
+  const screenName = route?.name || 'Screen';
 
   const handleGoBack = () => {
-    if (navigation.canGoBack()) {
+    if (navigation?.canGoBack()) {
       navigation.goBack();
     }
   };
