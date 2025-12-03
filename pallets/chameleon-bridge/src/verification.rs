@@ -87,7 +87,7 @@ impl<T: frame_system::Config> MultiSigValidator<T> {
                 return MultiSigVerificationResult::InvalidSignature;
             }
             
-            verified_validators.insert(sig.validator.clone());
+            verified_validators.push(sig.validator.clone());
         }
         
         // Check if we have enough valid signatures
