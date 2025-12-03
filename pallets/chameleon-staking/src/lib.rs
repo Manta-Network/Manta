@@ -153,7 +153,7 @@ pub mod pallet {
     /// Total staked in the network
     #[pallet::storage]
     #[pallet::getter(fn total_staked)]
-    pub type TotalStaked<T: Config> = StorageValue<_, u128, ValueQuery>;
+    pub type TotalStaked<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
     /// Current era
     #[pallet::storage]
@@ -164,6 +164,74 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn validator_count)]
     pub type ValidatorCount<T: Config> = StorageValue<_, u32, ValueQuery>;
+
+    /// Validator information storage
+    #[pallet::storage]
+    #[pallet::getter(fn validators)]
+    pub type Validators<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        T::AccountId,
+        ValidatorInfo<T::AccountId, BalanceOf<T>>,
+        OptionQuery,
+    >;
+
+    /// Delegations: (delegator, validator) -> amount
+    #[pallet::storage]
+    #[pallet::getter(fn delegations)]
+    pub type Delegations<T: Config> = StorageDoubleMap<
+        _,
+        Blake2_128Concat,
+        T::AccountId,  // delegator
+        Blake2_128Concat,
+        T::AccountId,  // validator
+        BalanceOf<T>,
+        ValueQuery,
+    >;
+
+    /// Unbonding requests per account
+    #[pallet::storage]
+    #[pallet::getter(fn unbonding_requests)]
+    pub type UnbondingRequests<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        T::AccountId,
+        BoundedVec<UnbondingRequest<BalanceOf<T>, BlockNumberFor<T>>, T::MaxUnbondingRequests>,
+        ValueQuery,
+    >;
+
+    /// Pending rewards per account
+    #[pallet::storage]
+    #[pallet::getter(fn pending_rewards)]
+    pub type PendingRewards<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        T::AccountId,
+        BalanceOf<T>,
+        ValueQuery,
+    >;
+
+    /// Delegator count per validator
+    #[pallet::storage]
+    #[pallet::getter(fn delegator_count)]
+    pub type DelegatorCount<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        T::AccountId,
+        u32,
+        ValueQuery,
+    >;
+
+    /// Delegation count per delegator
+    #[pallet::storage]
+    #[pallet::getter(fn delegation_count)]
+    pub type DelegationCount<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        T::AccountId,
+        u32,
+        ValueQuery,
+    >;
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
