@@ -74,7 +74,9 @@ pub mod pallet {
         type Balance: Parameter + Copy + Ord + Zero + Saturating + From<u128> + MaxEncodedLen + Default +
                      sp_std::ops::Div<Output = Self::Balance> +
                      sp_std::ops::Mul<Output = Self::Balance> +
-                     sp_std::ops::Add<Output = Self::Balance>;
+                     sp_std::ops::Add<Output = Self::Balance> +
+                     sp_std::ops::Sub<Output = Self::Balance> +
+                     PartialOrd;
 
         /// Weight information for extrinsics
         type WeightInfo: WeightInfo;
@@ -90,6 +92,11 @@ pub mod pallet {
         /// Minimum liquidity for pool creation
         #[pallet::constant]
         type MinimumLiquidity: Get<Self::Balance>;
+
+        /// Currency trait for asset operations
+        type Currency: frame_support::traits::fungibles::Inspect<Self::AccountId, AssetId = Self::AssetId, Balance = Self::Balance> +
+                      frame_support::traits::fungibles::Mutate<Self::AccountId> +
+                      frame_support::traits::fungibles::Transfer<Self::AccountId>;
     }
 
     /// Liquidity pools storage
