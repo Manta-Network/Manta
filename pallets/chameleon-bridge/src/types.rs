@@ -233,7 +233,7 @@ pub struct BridgeValidator<AccountId> {
 }
 
 /// Bridge configuration parameters
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, Default)]
 pub struct BridgeConfig {
     /// Minimum number of Ethereum confirmations required
     pub min_confirmations: u32,
