@@ -115,7 +115,7 @@ fn test_submit_encrypted_transaction_works() {
         // Arrange
         let encrypted_data = BoundedVec::try_from(vec![1, 2, 3, 4]).unwrap();
         let commitment = H256::from([1; 32]);
-        let timestamp = 1000;
+        let timestamp = 6000; // Block 1 * 6000ms = 6000ms
 
         // Act
         assert_ok!(ChameleonMev::submit_encrypted_transaction(
