@@ -73,8 +73,8 @@ pub struct LiquidityPool<AssetId, Balance> {
     pub reserve_b: Balance,
     /// Total LP tokens issued for this pool
     pub total_lp_tokens: Balance,
-    /// Swap fee rate (default 0.25%)
-    pub fee: Perbill,
+    /// Swap fee rate in basis points (default 25 = 0.25%)
+    pub fee_bps: u32,
 }
 
 impl<AssetId: Copy + Ord, Balance: Zero + Copy> LiquidityPool<AssetId, Balance> {
