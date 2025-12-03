@@ -17,7 +17,7 @@
 //! Types for Chameleon MEV Protection Pallet
 
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{BoundedVec, RuntimeDebug};
+use frame_support::{BoundedVec, RuntimeDebug, traits::ConstU32};
 use manta_primitives::types::{Hash, Moment};
 use scale_info::TypeInfo;
 use sp_std::vec::Vec;
