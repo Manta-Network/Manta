@@ -178,7 +178,92 @@ Gas Fees:     ~0.1 CHML per transaction
 
 ## 📝 CHANGELOG
 
-### Week 1 - Day 1 (MAJOR MILESTONE)
+### Week 2 - STUB EXPANSION COMPLETE
+
+#### All Pallets Now Full Implementations ✅
+
+**Agent 3 - MEV Protection (pallet-chameleon-mev)**
+- ✅ Full threshold encryption types (ThresholdPublicKey, DecryptionShare)
+- ✅ Decryption share collection storage
+- ✅ submit_decryption_share extrinsic
+- ✅ Block decryption logic with threshold
+- ✅ Enhanced events (DecryptionShareSubmitted, BlockDecrypted)
+- ✅ 22,207 bytes of implementation
+
+**Agent 4 - pDEX (pallet-chameleon-pdex)**
+- ✅ Full constant product AMM (x * y = k)
+- ✅ create_pool, add_liquidity, remove_liquidity, swap extrinsics
+- ✅ LP position tracking
+- ✅ Slippage protection
+- ✅ Integer square root for first LP
+- ✅ 13,654 bytes of implementation
+
+**Agent 5 - Ethereum Bridge (pallet-chameleon-bridge)**
+- ✅ Solidity contracts in /app/contracts/ethereum/
+- ✅ ChameleonBridge.sol with lockETH, lockToken, unlock
+- ✅ Full pallet with deposit/withdrawal storage
+- ✅ Multi-sig signature collection (5-of-9)
+- ✅ Validator management
+- ✅ 18,348 bytes of implementation
+
+**Agent 6 - Staking (pallet-chameleon-staking)**
+- ✅ Full delegation system (join_candidates, delegate, undelegate)
+- ✅ Unbonding with 14-day period
+- ✅ Reward distribution logic
+- ✅ Slashing (0.1% downtime, 5% double-sign)
+- ✅ Commission settings
+- ✅ 13,774 bytes of implementation
+
+**Agent 2 - Mobile Wallet**
+- ✅ SendScreen.tsx (23,668 bytes) - Full send UI with:
+  - Recipient input with validation
+  - Amount input with max button
+  - Privacy toggle (private by default)
+  - Fee estimation
+  - Confirmation modal
+  - Transaction status tracking
+- ✅ ReceiveScreen.tsx (17,828 bytes) - Full receive UI with:
+  - QR code generation
+  - Address copy functionality
+  - Share address
+  - Amount request option
+- ✅ Transaction service with mocked responses
+- ✅ TransactionHistory component
+
+---
+
+### Week 2 Compilation Status
+
+```
+✅ pallet-chameleon-mev: COMPILES
+✅ pallet-chameleon-pdex: COMPILES
+✅ pallet-chameleon-bridge: COMPILES
+✅ pallet-chameleon-staking: COMPILES
+✅ manta-runtime: COMPILES (SKIP_WASM_BUILD=1)
+```
+
+---
+
+### Files Created This Week
+
+**Pallets (Rust):**
+- pallets/chameleon-mev/src/lib.rs (22KB)
+- pallets/chameleon-pdex/src/lib.rs (14KB)
+- pallets/chameleon-bridge/src/lib.rs (18KB)
+- pallets/chameleon-staking/src/lib.rs (14KB)
+
+**Mobile (React Native):**
+- mobile/src/screens/SendScreen.tsx (24KB)
+- mobile/src/screens/ReceiveScreen.tsx (18KB)
+- mobile/src/services/transaction.ts
+- mobile/src/components/TransactionHistory.tsx
+
+**Ethereum (Solidity):**
+- contracts/ethereum/ChameleonBridge.sol (12KB)
+- contracts/ethereum/hardhat.config.js
+- contracts/ethereum/package.json
+
+---
 
 #### Agent 1 - Tokenomics ✅
 - ✅ Created `/app/primitives/manta/src/chameleon_constants.rs` (529 lines)
