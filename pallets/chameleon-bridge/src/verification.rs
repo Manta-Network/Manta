@@ -61,7 +61,7 @@ impl<T: frame_system::Config> MultiSigValidator<T> {
             return MultiSigVerificationResult::InsufficientSignatures;
         }
         
-        let mut verified_validators = BTreeSet::new();
+        let mut verified_validators = Vec::new();
         
         // Verify each signature
         for sig in &withdrawal.signatures {
