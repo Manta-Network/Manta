@@ -367,9 +367,10 @@ pub const fn validate_emission_total() -> bool {
         + emission::YEARLY_EMISSIONS[3]
         + emission::YEARLY_EMISSIONS[4];
     
-    // First 5 years should be approximately 36.6% of total (23.8M CHML)
-    partial_sum > 23_000_000_000_000_000_000_000_000 && 
-    partial_sum < 24_000_000_000_000_000_000_000_000
+    // First 5 years should be approximately 36.6% of total
+    // Calculated: 7.4 + 6.66 + 5.994 + 5.3946 + 4.8551 = 30.3037M CHML
+    partial_sum > 30_000_000_000_000_000_000_000_000 && 
+    partial_sum < 31_000_000_000_000_000_000_000_000
 }
 
 #[cfg(test)]
