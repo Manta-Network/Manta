@@ -105,9 +105,17 @@ pub mod pallet {
     #[pallet::getter(fn validators)]
     pub type Validators<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, ValidatorInfo<T::AccountId, BalanceOf<T>>, OptionQuery>;
 
+    /// Delegations storage: (validator, delegator) -> amount
+    /// Keyed by validator first for efficient iteration of all delegators to a validator
     #[pallet::storage]
     #[pallet::getter(fn delegations)]
-    pub type Delegations<T: Config> = StorageDoubleMap<_, Blake2_128Concat, T::AccountId, Blake2_128Concat, T::AccountId, BalanceOf<T>, ValueQuery>;
+    pub type Delegations<T: Config> = StorageDoubleMap<
+        _, 
+        Blake2_128Concat, T::AccountId,  // validator
+        Blake2_128Concat, T::AccountId,  // delegator
+        BalanceOf<T>, 
+        ValueQuery
+    >;
 
     #[pallet::storage]
     #[pallet::getter(fn unbonding_requests)]
