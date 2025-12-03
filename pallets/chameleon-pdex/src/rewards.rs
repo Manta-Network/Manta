@@ -281,7 +281,7 @@ where
     }
 
     /// Helper function to convert Balance to u128 (simplified)
-    fn balance_to_u128(&self, balance: Balance) -> u128 {
+    fn balance_to_u128(&self, _balance: Balance) -> u128 {
         // This is a simplified conversion - in production, implement proper conversion
         // For now, assume Balance can be converted to u128
         1000000u128 // Placeholder
