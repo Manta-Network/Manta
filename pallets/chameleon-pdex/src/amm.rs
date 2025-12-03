@@ -27,7 +27,7 @@ use sp_std::cmp;
 
 // Import chameleon constants
 use manta_primitives::chameleon_constants::fees::{
-    PDEX_SWAP_FEE, PDEX_LP_SHARE, PDEX_TREASURY_SHARE
+    PDEX_SWAP_FEE, PDEX_LP_SHARE
 };
 
 /// AMM calculation errors
