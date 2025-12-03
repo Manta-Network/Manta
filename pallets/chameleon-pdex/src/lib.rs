@@ -284,6 +284,317 @@ pub mod pallet {
 
             Ok(())
         }
+
+        /// Add liquidity to an existing pool
+        #[pallet::call_index(1)]
+        #[pallet::weight(T::WeightInfo::add_liquidity())]
+        pub fn add_liquidity(
+            origin: OriginFor<T>,
+            asset_a: T::AssetId,
+            asset_b: T::AssetId,
+            amount_a_desired: T::Balance,
+            amount_b_desired: T::Balance,
+            amount_a_min: T::Balance,
+            amount_b_min: T::Balance,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            // Ensure amounts are valid
+            ensure!(!amount_a_desired.is_zero() && !amount_b_desired.is_zero(), Error::<T>::InvalidAmount);
+
+            // Get pool (ensure consistent ordering)
+            let (first_asset, second_asset) = if asset_a < asset_b {
+                (asset_a, asset_b)
+            } else {
+                (asset_b, asset_a)
+            };
+
+            let mut pool = Pools::<T>::get(&first_asset, &second_asset)
+                .ok_or(Error::<T>::PoolNotFound)?;
+
+            // Calculate optimal amounts and LP tokens
+            let (amount_a, amount_b, lp_tokens) = if pool.is_empty() {
+                // First liquidity provision
+                let lp_tokens = calculate_lp_tokens_mint(
+                    amount_a_desired,
+                    amount_b_desired,
+                    T::Balance::zero(),
+                    T::Balance::zero(),
+                    T::Balance::zero(),
+                ).map_err(|_| Error::<T>::InvalidAmount)?;
+
+                (amount_a_desired, amount_b_desired, lp_tokens)
+            } else {
+                // Subsequent liquidity provision - maintain ratio
+                let amount_b_optimal = quote(amount_a_desired, pool.reserve_a, pool.reserve_b)
+                    .map_err(|_| Error::<T>::InvalidAmount)?;
+
+                let (final_a, final_b) = if amount_b_optimal <= amount_b_desired {
+                    (amount_a_desired, amount_b_optimal)
+                } else {
+                    let amount_a_optimal = quote(amount_b_desired, pool.reserve_b, pool.reserve_a)
+                        .map_err(|_| Error::<T>::InvalidAmount)?;
+                    (amount_a_optimal, amount_b_desired)
+                };
+
+                // Check slippage protection
+                ensure!(final_a >= amount_a_min, Error::<T>::SlippageExceeded);
+                ensure!(final_b >= amount_b_min, Error::<T>::SlippageExceeded);
+
+                let lp_tokens = calculate_lp_tokens_mint(
+                    final_a,
+                    final_b,
+                    pool.reserve_a,
+                    pool.reserve_b,
+                    pool.total_lp_tokens,
+                ).map_err(|_| Error::<T>::InvalidAmount)?;
+
+                (final_a, final_b, lp_tokens)
+            };
+
+            // Ensure minimum liquidity
+            ensure!(lp_tokens >= T::MinimumLiquidity::get(), Error::<T>::InvalidAmount);
+
+            // Transfer tokens from user to pool account
+            let pool_account = Self::pool_account_id(&first_asset, &second_asset);
+            
+            T::Currency::transfer(asset_a, &who, &pool_account, amount_a, false)
+                .map_err(|_| Error::<T>::InsufficientBalance)?;
+            T::Currency::transfer(asset_b, &who, &pool_account, amount_b, false)
+                .map_err(|_| Error::<T>::InsufficientBalance)?;
+
+            // Update pool reserves
+            pool.reserve_a = pool.reserve_a.saturating_add(amount_a);
+            pool.reserve_b = pool.reserve_b.saturating_add(amount_b);
+            pool.total_lp_tokens = pool.total_lp_tokens.saturating_add(lp_tokens);
+
+            // Update or create LP position
+            let pool_id = PoolId::new(asset_a, asset_b);
+            let mut position = LpPositions::<T>::get(&who, &pool_id)
+                .unwrap_or_else(|| LpPosition::new(who.clone(), PoolId::new(first_asset, second_asset)));
+            
+            position.lp_tokens = position.lp_tokens.saturating_add(lp_tokens);
+            position.deposited_at = frame_system::Pallet::<T>::block_number().saturated_into();
+
+            // Store updates
+            Pools::<T>::insert(&first_asset, &second_asset, &pool);
+            LpPositions::<T>::insert(&who, &pool_id, &position);
+
+            // Emit event
+            Self::deposit_event(Event::LiquidityAdded {
+                pool_id,
+                provider: who,
+                amount_a,
+                amount_b,
+                lp_tokens_minted: lp_tokens,
+            });
+
+            Ok(())
+        }
+
+        /// Remove liquidity from a pool
+        #[pallet::call_index(2)]
+        #[pallet::weight(T::WeightInfo::remove_liquidity())]
+        pub fn remove_liquidity(
+            origin: OriginFor<T>,
+            asset_a: T::AssetId,
+            asset_b: T::AssetId,
+            lp_tokens: T::Balance,
+            amount_a_min: T::Balance,
+            amount_b_min: T::Balance,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            // Ensure valid amount
+            ensure!(!lp_tokens.is_zero(), Error::<T>::InvalidAmount);
+
+            // Get pool
+            let (first_asset, second_asset) = if asset_a < asset_b {
+                (asset_a, asset_b)
+            } else {
+                (asset_b, asset_a)
+            };
+
+            let mut pool = Pools::<T>::get(&first_asset, &second_asset)
+                .ok_or(Error::<T>::PoolNotFound)?;
+
+            // Check LP position
+            let pool_id = PoolId::new(asset_a, asset_b);
+            let mut position = LpPositions::<T>::get(&who, &pool_id)
+                .ok_or(Error::<T>::LpPositionNotFound)?;
+
+            ensure!(position.lp_tokens >= lp_tokens, Error::<T>::InsufficientBalance);
+
+            // Calculate amounts to return
+            let (amount_a, amount_b) = calculate_lp_tokens_burn(
+                lp_tokens,
+                pool.reserve_a,
+                pool.reserve_b,
+                pool.total_lp_tokens,
+            ).map_err(|_| Error::<T>::InvalidAmount)?;
+
+            // Check slippage protection
+            ensure!(amount_a >= amount_a_min, Error::<T>::SlippageExceeded);
+            ensure!(amount_b >= amount_b_min, Error::<T>::SlippageExceeded);
+
+            // Transfer tokens back to user
+            let pool_account = Self::pool_account_id(&first_asset, &second_asset);
+            
+            T::Currency::transfer(asset_a, &pool_account, &who, amount_a, false)
+                .map_err(|_| Error::<T>::InsufficientLiquidity)?;
+            T::Currency::transfer(asset_b, &pool_account, &who, amount_b, false)
+                .map_err(|_| Error::<T>::InsufficientLiquidity)?;
+
+            // Update pool reserves
+            pool.reserve_a = pool.reserve_a.saturating_sub(amount_a);
+            pool.reserve_b = pool.reserve_b.saturating_sub(amount_b);
+            pool.total_lp_tokens = pool.total_lp_tokens.saturating_sub(lp_tokens);
+
+            // Update LP position
+            position.lp_tokens = position.lp_tokens.saturating_sub(lp_tokens);
+
+            // Store updates
+            Pools::<T>::insert(&first_asset, &second_asset, &pool);
+            
+            if position.lp_tokens.is_zero() {
+                LpPositions::<T>::remove(&who, &pool_id);
+            } else {
+                LpPositions::<T>::insert(&who, &pool_id, &position);
+            }
+
+            // Emit event
+            Self::deposit_event(Event::LiquidityRemoved {
+                pool_id,
+                provider: who,
+                amount_a,
+                amount_b,
+                lp_tokens_burned: lp_tokens,
+            });
+
+            Ok(())
+        }
+
+        /// Execute a swap between two assets
+        #[pallet::call_index(3)]
+        #[pallet::weight(T::WeightInfo::swap())]
+        pub fn swap_exact_tokens_for_tokens(
+            origin: OriginFor<T>,
+            amount_in: T::Balance,
+            amount_out_min: T::Balance,
+            path: sp_std::vec::Vec<T::AssetId>,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            // Validate path
+            ensure!(path.len() >= 2, Error::<T>::InvalidPath);
+            ensure!(!amount_in.is_zero(), Error::<T>::InvalidAmount);
+
+            // For now, only support direct swaps (path length = 2)
+            ensure!(path.len() == 2, Error::<T>::InvalidPath);
+
+            let asset_in = path[0];
+            let asset_out = path[1];
+
+            // Get pool
+            let (first_asset, second_asset) = if asset_in < asset_out {
+                (asset_in, asset_out)
+            } else {
+                (asset_out, asset_in)
+            };
+
+            let mut pool = Pools::<T>::get(&first_asset, &second_asset)
+                .ok_or(Error::<T>::PoolNotFound)?;
+
+            // Ensure pool has liquidity
+            ensure!(!pool.is_empty(), Error::<T>::EmptyPool);
+
+            // Calculate swap output
+            let (input_reserve, output_reserve) = if asset_in == pool.asset_a {
+                (pool.reserve_a, pool.reserve_b)
+            } else {
+                (pool.reserve_b, pool.reserve_a)
+            };
+
+            let amount_out = calculate_swap_output(
+                amount_in,
+                input_reserve,
+                output_reserve,
+                pool.fee,
+            ).map_err(|_| Error::<T>::InsufficientLiquidity)?;
+
+            // Check slippage protection
+            ensure!(amount_out >= amount_out_min, Error::<T>::SlippageExceeded);
+
+            // Calculate and distribute fees
+            let fee_amount = calculate_swap_fee(amount_in, pool.fee);
+            let (lp_fee, treasury_fee) = distribute_swap_fee(fee_amount);
+
+            // Transfer tokens
+            let pool_account = Self::pool_account_id(&first_asset, &second_asset);
+            
+            T::Currency::transfer(asset_in, &who, &pool_account, amount_in, false)
+                .map_err(|_| Error::<T>::InsufficientBalance)?;
+            T::Currency::transfer(asset_out, &pool_account, &who, amount_out, false)
+                .map_err(|_| Error::<T>::InsufficientLiquidity)?;
+
+            // Update pool reserves (including LP fees)
+            if asset_in == pool.asset_a {
+                pool.reserve_a = pool.reserve_a.saturating_add(amount_in.saturating_sub(treasury_fee));
+                pool.reserve_b = pool.reserve_b.saturating_sub(amount_out);
+            } else {
+                pool.reserve_b = pool.reserve_b.saturating_add(amount_in.saturating_sub(treasury_fee));
+                pool.reserve_a = pool.reserve_a.saturating_sub(amount_out);
+            }
+
+            // Store updated pool
+            Pools::<T>::insert(&first_asset, &second_asset, &pool);
+
+            // TODO: Transfer treasury fee to treasury account
+            // For now, treasury fee stays in pool (will be implemented with treasury integration)
+
+            // Emit event
+            let pool_id = PoolId::new(asset_in, asset_out);
+            Self::deposit_event(Event::SwapExecuted {
+                pool_id,
+                trader: who,
+                asset_in,
+                amount_in,
+                asset_out,
+                amount_out,
+                fee_paid: fee_amount,
+            });
+
+            Ok(())
+        }
+
+        /// Claim accumulated LP rewards
+        #[pallet::call_index(4)]
+        #[pallet::weight(T::WeightInfo::claim_rewards())]
+        pub fn claim_rewards(
+            origin: OriginFor<T>,
+            pool_id: PoolId<T::AssetId>,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            // Check if user has rewards to claim
+            let reward_amount = UserRewards::<T>::get(&who, &pool_id);
+            ensure!(!reward_amount.is_zero(), Error::<T>::NoRewardsToClaim);
+
+            // Remove claimed rewards
+            UserRewards::<T>::remove(&who, &pool_id);
+
+            // TODO: Transfer CHML rewards to user
+            // For now, this is a placeholder - will be implemented with CHML token integration
+
+            // Emit event
+            Self::deposit_event(Event::RewardsClaimed {
+                pool_id,
+                claimer: who,
+                amount: reward_amount,
+            });
+
+            Ok(())
+        }
     }
 
     // Helper functions
