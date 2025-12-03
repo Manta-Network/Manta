@@ -286,7 +286,7 @@ pub mod pallet {
             Validators::<T>::try_mutate(&who, |maybe_info| {
                 let info = maybe_info.as_mut().ok_or(Error::<T>::ValidatorNotFound)?;
                 info.commission = commission;
-                Self::deposit_event(Event::CommissionSet { validator: who, commission });
+                Self::deposit_event(Event::CommissionSet { validator: who.clone(), commission });
                 Ok(())
             })
         }
