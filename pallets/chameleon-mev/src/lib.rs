@@ -431,7 +431,7 @@ pub mod pallet {
         }
 
         /// Get transactions from mempool for block proposal
-        pub fn propose_block_transactions() -> Vec<EncryptedTransaction<T>> {
+        pub fn propose_block_transactions() -> Vec<EncryptedTransaction> {
             let mempool = EncryptedMempool::<T>::get();
             let max_txs = T::MaxTransactionsPerBlock::get() as usize;
             mempool.into_iter().take(max_txs).collect()
