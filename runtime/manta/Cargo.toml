@@ -303,6 +303,10 @@ std = [
   "zenlink-protocol-runtime-api/std",
   "pallet-farming/std",
   "pallet-farming-rpc-runtime-api/std",
+  "pallet-chameleon-bridge/std",
+  "pallet-chameleon-mev/std",
+  "pallet-chameleon-pdex/std",
+  "pallet-chameleon-staking/std",
 ]
 
 # Enable the metadata hash generation in the wasm-builder
