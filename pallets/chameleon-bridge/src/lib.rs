@@ -173,7 +173,7 @@ pub mod pallet {
         _,
         Blake2_128Concat,
         H256,  // Ethereum tx hash
-        BridgeDeposit<T::AccountId, BalanceOf<T>>,
+        BridgeDeposit<T::AccountId>,
         OptionQuery,
     >;
 
@@ -183,7 +183,7 @@ pub mod pallet {
         _,
         Blake2_128Concat,
         u64,  // withdrawal_id
-        BridgeWithdrawal<T::AccountId, BalanceOf<T>>,
+        BridgeWithdrawal<T::AccountId>,
         OptionQuery,
     >;
 
