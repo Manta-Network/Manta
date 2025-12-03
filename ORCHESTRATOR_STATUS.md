@@ -88,19 +88,19 @@
 | Milestone | Week | Status | Notes |
 |-----------|------|--------|-------|
 | 1.1 Repository Setup | 1 | ✅ COMPLETE | Fork customized, branches created |
-| 1.2 Token Constants | 2 | 🟡 IN PROGRESS | Agent 1 assigned |
-| 1.3 Emission Logic | 3 | ⚪ PENDING | - |
-| 1.4 Staking Mechanism | 4 | ⚪ PENDING | - |
+| 1.2 Token Constants | 2 | ✅ COMPLETE | Agent 1 - All constants implemented |
+| 1.3 Emission Logic | 3 | ✅ COMPLETE | 20-year declining schedule coded |
+| 1.4 Staking Mechanism | 4 | 🟡 IN PROGRESS | Agent 6 - Core logic done |
 | 1.5 Local Devnet | 5 | ⚪ PENDING | - |
 | 1.6 Privacy Primitives | 6 | ⚪ PENDING | - |
 
 ### Phase 2: Core Features (Weeks 7-10)
 | Milestone | Week | Status | Notes |
 |-----------|------|--------|-------|
-| 2.1 Mobile Wallet MVP | 7 | ⚪ PENDING | - |
-| 2.2 pDEX Integration | 8 | ⚪ PENDING | - |
-| 2.3 MEV Protection | 9 | ⚪ PENDING | - |
-| 2.4 Ethereum Bridge | 10 | ⚪ PENDING | - |
+| 2.1 Mobile Wallet MVP | 7 | 🟡 IN PROGRESS | Agent 2 - Screens created |
+| 2.2 pDEX Integration | 8 | 🟡 IN PROGRESS | Agent 4 - AMM done |
+| 2.3 MEV Protection | 9 | 🟡 IN PROGRESS | Agent 3 - Core done |
+| 2.4 Ethereum Bridge | 10 | 🟡 IN PROGRESS | Agent 5 - Types done |
 
 ### Phase 3: Testnet Prep (Weeks 11-14)
 | Milestone | Week | Status | Notes |
