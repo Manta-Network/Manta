@@ -143,7 +143,7 @@ impl<T: frame_system::Config> MultiSigValidator<T> {
         }
         
         // Verify all confirming validators are active
-        let active_validators: BTreeSet<_> = validators
+        let active_validators: Vec<_> = validators
             .iter()
             .filter(|v| v.is_active)
             .map(|v| &v.account)
