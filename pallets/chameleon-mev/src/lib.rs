@@ -273,7 +273,7 @@ pub mod pallet {
                     .try_insert(insert_pos, encrypted_tx.clone())
                     .map_err(|_| Error::<T>::MempoolFull)?;
 
-                Ok(())
+                Ok::<(), Error<T>>(())
             })?;
 
             // Calculate transaction hash
