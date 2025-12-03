@@ -26,7 +26,7 @@ use frame_support::{
 use manta_primitives::chameleon_constants::emission::*;
 use sp_runtime::{
     traits::{Saturating, Zero},
-    DispatchResult, Perbill,
+    DispatchError, DispatchResult, Perbill, SaturatedConversion,
 };
 use sp_std::vec::Vec;
 
