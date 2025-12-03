@@ -66,7 +66,7 @@ where
     T: frame_system::Config,
 {
     /// Encrypted transactions in timestamp order
-    pub encrypted_txs: Vec<EncryptedTransaction<T>>,
+    pub encrypted_txs: Vec<EncryptedTransaction>,
     /// Commitment hash of the ordering
     pub ordering_commitment: Hash,
     /// Proposer validator
