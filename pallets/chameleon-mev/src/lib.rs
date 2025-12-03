@@ -353,15 +353,18 @@ pub mod pallet {
                 Error::<T>::NoCommitmentFound
             );
 
+            // Convert AccountId to bytes for storage
+            let validator_bytes: [u8; 32] = who.encode().try_into().unwrap_or([0u8; 32]);
+            
             // Create decryption share
             let share = DecryptionShare {
-                validator: who.clone(),
+                validator: validator_bytes,
                 share_data,
                 block_number: block_number.saturated_into(),
             };
 
             // Store decryption share
-            DecryptionShares::<T>::insert(&block_number, &who, share);
+            DecryptionShares::<T>::insert(&block_number, &validator_bytes, share);
 
             Self::deposit_event(Event::DecryptionShareProvided {
                 block_number,
