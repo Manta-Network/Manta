@@ -297,7 +297,7 @@ pub struct DefaultBridgeFeeCalculator;
 impl<T: frame_system::Config> BridgeFeeCalculator<T> for DefaultBridgeFeeCalculator {
     fn calculate_shielding_fee(amount: Balance) -> BridgeFee {
         use manta_primitives::chameleon_constants::fees::*;
-        use sp_runtime::traits::{Saturating, Zero};
+        use sp_runtime::traits::Saturating;
         
         // Calculate percentage fee
         let percentage_fee = SHIELDING_FEE_PERCENT.mul_floor(amount);
@@ -318,7 +318,7 @@ impl<T: frame_system::Config> BridgeFeeCalculator<T> for DefaultBridgeFeeCalcula
     
     fn calculate_unshielding_fee(amount: Balance) -> BridgeFee {
         use manta_primitives::chameleon_constants::fees::*;
-        use sp_runtime::traits::{Saturating, Zero};
+        use sp_runtime::traits::Saturating;
         
         // Calculate percentage fee
         let percentage_fee = UNSHIELDING_FEE_PERCENT.mul_floor(amount);
