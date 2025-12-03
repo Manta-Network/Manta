@@ -62,7 +62,7 @@ pub use amm::*;
 pub use rewards::*;
 
 // Import chameleon constants
-use manta_primitives::chameleon_constants::CHAMELEON_PDEX_PALLET_ID;
+// Import chameleon constants when needed
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
