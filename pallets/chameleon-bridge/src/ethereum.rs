@@ -361,7 +361,7 @@ impl EthereumConfirmationTracker {
         let mut confirmed = Vec::new();
         
         self.pending_deposits.retain(|&tx_hash, deposit_block| {
-            let confirmations = self.latest_block.saturating_sub(deposit_block);
+            let confirmations = self.latest_block.saturating_sub(*deposit_block);
             if confirmations >= self.min_confirmations as u64 {
                 confirmed.push(tx_hash);
                 false // Remove from pending
