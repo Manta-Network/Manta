@@ -60,7 +60,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 use frame_support::{
     pallet_prelude::*,
-    traits::Get,
+    traits::{Get, ConstU32},
     PalletId,
 };
 use frame_system::pallet_prelude::*;
