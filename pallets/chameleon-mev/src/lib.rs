@@ -497,7 +497,7 @@ pub mod pallet {
             let queue = ExecutionQueue::<T>::get();
 
             for commitment in queue.iter() {
-                if let Some(revealed) = RevealedTransactions::<T>::take(commitment) {
+                if let Some(_revealed) = RevealedTransactions::<T>::take(commitment) {
                     // In production, this would decode and execute the transaction
                     // For now, we just emit the execution event
                     Self::deposit_event(Event::TransactionExecuted {
