@@ -1093,7 +1093,15 @@ construct_runtime!(
 
         // Lottery
         Randomness: pallet_randomness::{Pallet, Call, Storage, Inherent} = 70,
-        Lottery: pallet_lottery::{Pallet, Call, Storage, Event<T>, Config<T>} = 71 // Beware: Lottery depends on Randomness inherent
+        Lottery: pallet_lottery::{Pallet, Call, Storage, Event<T>, Config<T>} = 71, // Beware: Lottery depends on Randomness inherent
+
+        // ========================================
+        // Chameleon Network Pallets
+        // ========================================
+        ChameleonMev: pallet_chameleon_mev::{Pallet, Call, Storage, Event<T>} = 80,
+        ChameleonPdex: pallet_chameleon_pdex::{Pallet, Call, Storage, Event<T>} = 81,
+        ChameleonBridge: pallet_chameleon_bridge::{Pallet, Call, Storage, Event<T>} = 82,
+        ChameleonStaking: pallet_chameleon_staking::{Pallet, Call, Storage, Event<T>} = 83,
 
     }
 );
