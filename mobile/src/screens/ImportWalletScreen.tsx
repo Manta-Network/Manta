@@ -114,7 +114,7 @@ export function ImportWalletScreen({ navigation }: Props) {
 
   const renderSeedStep = () => {
     const wordCount = seedPhrase.trim() ? seedPhrase.trim().split(/\s+/).length : 0;
-    const isValidLength = VALIDATION.SEED_PHRASE_WORDS.includes(wordCount);
+    const isValidLength = VALIDATION.SEED_PHRASE_WORDS.includes(wordCount as 12 | 24);
 
     return (
       <View style={styles.stepContainer}>
