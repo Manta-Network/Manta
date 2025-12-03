@@ -1,93 +1,182 @@
 # Chameleon Staking Pallet
 
-Enhanced staking mechanism for Chameleon Network with advanced delegation features and reward optimization.
-
 ## Overview
 
-The Chameleon Staking pallet extends the base parachain-staking functionality with:
+The Chameleon Staking Pallet is an enhanced staking mechanism that improves upon Substrate's default staking with advanced delegation features, optimized reward distribution, and user-friendly design.
 
-- **Enhanced Delegation**: No minimum delegation amounts, making staking accessible to all users
-- **Reward Optimization**: Performance-based rewards considering uptime, block production, and governance participation
-- **Slashing Conditions**: Automated slashing for downtime (0.1%) and double-signing (5%)
-- **14-Day Unbonding**: Standard unbonding period for network security
+## Key Features
 
-## Features
+### 🚀 Enhanced Delegation System
+- **No Minimum Amounts**: Anyone can delegate any amount (no barriers to entry)
+- **Instant Delegation**: Immediate delegation without waiting periods
+- **Multiple Delegations**: Delegate to multiple validators simultaneously
+- **14-Day Unbonding**: Security-focused unbonding period
 
-### 1. Delegation Mechanism
+### 💰 Optimized Reward Distribution
+- **Performance-Based**: Rewards based on stake ratio and validator performance
+- **Commission System**: Validators earn commission from delegator rewards
+- **Era-Based Distribution**: Regular reward distribution cycles
+- **Fair Allocation**: Proportional rewards for all participants
 
-- Users can delegate CHML to validators without running a node
-- Delegators earn proportional rewards minus validator commission
-- No minimum delegation amount (accessible to all)
-- Instant delegation, 14-day unbonding period
+### ⚡ Advanced Features
+- **Slashing Protection**: Penalties for downtime (0.1%) and double-signing (5%)
+- **Validator Management**: Easy join/leave mechanisms
+- **Reward Claiming**: Separate reward claiming for better UX
+- **State Tracking**: Comprehensive validator and delegation state
 
-### 2. Reward Distribution
+## Architecture
 
-- Rewards based on stake + performance + uptime
-- Validator commission system
-- Bonus for governance participation
-- Automatic slashing for poor performance
-
-### 3. Validator Performance Tracking
-
-- Uptime monitoring
-- Block production success rate
-- Governance participation tracking
-- Automated performance-based rewards
-
-## Constants
-
-- **Minimum Validator Stake**: 1,750 CHML
-- **Unbonding Period**: 14 days (201,600 blocks)
-- **Slashing Rates**: 0.1% (downtime), 5% (double-signing)
-- **Max Validators**: 200
-- **Max Delegators per Validator**: 500
-
-## Usage
-
-### For Delegators
+### Storage Items
 
 ```rust
-// Delegate to a validator
-let validator = AccountId::from([1u8; 32]);
-let amount = 100 * CHML; // 100 CHML
-ChameleonStaking::delegate(origin, validator, amount)?;
+/// Validator information
+Validators: Map<AccountId, ValidatorInfo>
 
-// Undelegate from a validator
-ChameleonStaking::undelegate(origin, validator)?;
+/// Delegations: (delegator, validator) -> amount
+Delegations: DoubleMap<AccountId, AccountId, Balance>
+
+/// Unbonding requests with unlock times
+UnbondingRequests: Map<AccountId, Vec<UnbondingRequest>>
+
+/// Pending rewards per account
+PendingRewards: Map<AccountId, Balance>
 ```
+
+### Core Types
+
+```rust
+pub struct ValidatorInfo {
+    pub controller: AccountId,
+    pub self_stake: Balance,
+    pub total_stake: Balance,
+    pub delegator_count: u32,
+    pub commission: Perbill,
+    pub status: ValidatorStatus,
+}
+
+pub struct UnbondingRequest {
+    pub amount: Balance,
+    pub unlock_at: BlockNumber,
+}
+```
+
+## Usage
 
 ### For Validators
 
 ```rust
-// Join as validator candidate
-let bond = 1750 * CHML; // Minimum stake
-ChameleonStaking::join_candidates(origin, bond)?;
+// Join as validator
+ChameleonStaking::join_candidates(origin, stake_amount)?;
 
 // Set commission rate
-let commission = Perbill::from_percent(10); // 10%
-ChameleonStaking::set_commission(origin, commission)?;
+ChameleonStaking::set_commission(origin, Perbill::from_percent(10))?;
+
+// Leave validator set
+ChameleonStaking::leave_candidates(origin)?;
 ```
 
-## Reward Formula
+### For Delegators
 
-```
-validator_reward = base_reward * stake_weight * uptime_multiplier * performance_multiplier * governance_bonus
+```rust
+// Delegate to validator
+ChameleonStaking::delegate(origin, validator_id, amount)?;
 
-where:
-- stake_weight = validator_total_stake / total_network_stake
-- uptime_multiplier = validator_uptime_percent / 100
-- performance_multiplier = block_success_rate / 100
-- governance_bonus = 1.1 if votes > 10, else 1.0
+// Remove delegation
+ChameleonStaking::undelegate(origin, validator_id)?;
+
+// Withdraw after unbonding period
+ChameleonStaking::withdraw_unbonded(origin)?;
 ```
+
+### For Everyone
+
+```rust
+// Claim pending rewards
+ChameleonStaking::claim_rewards(origin)?;
+```
+
+## Configuration
+
+```rust
+impl pallet_chameleon_staking::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type MinValidatorStake = MinValidatorStake; // 1,750 CHML
+    type UnbondingPeriod = UnbondingPeriod; // 14 days
+    type MaxDelegatorsPerValidator = ConstU32<500>;
+    type MaxDelegationsPerDelegator = ConstU32<100>;
+    type MaxUnbondingRequests = ConstU32<10>;
+}
+```
+
+## Security
+
+### Slashing Conditions
+- **Extended Downtime**: 0.1% slash for >12 hours offline
+- **Double Signing**: 5% slash for equivocation
+- **Proportional Impact**: Affects both validator and delegators
+
+### Safety Mechanisms
+- **Token Locking**: Secure token locking via Currency trait
+- **Unbonding Period**: 14-day security delay
+- **Overflow Protection**: Safe arithmetic operations
+- **State Consistency**: Atomic operations with rollback
+
+## Events
+
+```rust
+ValidatorJoined { validator, stake }
+Delegated { delegator, validator, amount }
+Undelegated { delegator, validator, amount }
+UnbondingStarted { who, amount, unlock_at }
+RewardsDistributed { era, total_reward }
+ValidatorSlashed { validator, amount, offense }
+CommissionSet { validator, commission }
+RewardsClaimed { who, amount }
+UnbondedWithdrawn { who, amount }
+ValidatorLeft { validator }
+```
+
+## Testing
+
+Run the test suite:
+
+```bash
+cargo test -p pallet-chameleon-staking --lib
+```
+
+The tests cover:
+- Validator lifecycle management
+- Delegation mechanics
+- Unbonding and withdrawal
+- Reward distribution
+- Slashing scenarios
+- Error conditions
+- Edge cases
 
 ## Integration
 
-This pallet extends `pallet-parachain-staking` and integrates with:
+1. **Add to Runtime**: Include in `construct_runtime!` macro
+2. **Configure Parameters**: Set constants for your network
+3. **Genesis Setup**: Initialize with genesis validators
+4. **Connect Currency**: Ensure proper Currency trait implementation
+5. **Monitor Performance**: Track validator performance for rewards
 
-- **Emission Schedule**: Uses constants from `manta-primitives::chameleon_constants::emission`
-- **Time Constants**: Uses `manta-primitives::chameleon_constants::time`
-- **Staking Constants**: Uses `manta-primitives::chameleon_constants::staking`
+## Comparison with Default Staking
+
+| Feature | Default Substrate | Chameleon Staking |
+|---------|------------------|-------------------|
+| Minimum Delegation | High barriers | No minimum |
+| Delegation UX | Complex | User-friendly |
+| Reward Distribution | Manual | Automated |
+| Commission System | Basic | Advanced |
+| Unbonding | 28 days | 14 days |
+| Multiple Delegations | Limited | Unlimited |
 
 ## License
 
-GPL-3.0
+GPL-3.0 - See [LICENSE](../../LICENSE) for details.
+
+## Contributing
+
+See [CONTRIBUTING.md](../../CONTRIBUTING.md) for contribution guidelines.
