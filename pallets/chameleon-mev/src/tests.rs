@@ -225,8 +225,9 @@ fn test_provide_decryption_share_works() {
         ));
 
         // Assert
-        let share = ChameleonMev::decryption_shares(block_number, validator).unwrap();
-        assert_eq!(share.validator, validator);
+        let validator_bytes: [u8; 32] = validator.encode().try_into().unwrap_or([0u8; 32]);
+        let share = ChameleonMev::decryption_shares(block_number, &validator_bytes).unwrap();
+        assert_eq!(share.validator, validator_bytes);
         assert_eq!(share.share_data, share_data);
         assert_eq!(share.block_number, block_number as u32);
     });
