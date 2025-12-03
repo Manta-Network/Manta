@@ -198,7 +198,7 @@ pub mod pallet {
                 info.total_stake = info.total_stake.saturating_add(amount);
                 TotalStaked::<T>::mutate(|t| *t = t.saturating_add(amount));
 
-                Self::deposit_event(Event::Delegated { delegator: who, validator, amount });
+                Self::deposit_event(Event::Delegated { delegator: who, validator: validator.clone(), amount });
                 Ok(())
             })
         }
