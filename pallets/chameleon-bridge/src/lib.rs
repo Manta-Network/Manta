@@ -535,7 +535,7 @@ pub mod pallet {
         }
 
         /// Get minimum bridge amount for asset
-        pub fn get_min_amount(asset: &BridgeableAsset) -> BalanceOf<T> {
+        pub fn get_min_amount(asset: &BridgeableAsset) -> u128 {
             match asset {
                 BridgeableAsset::ETH => 1_000_000_000_000_000u128,  // 0.001 ETH (18 decimals)
                 BridgeableAsset::USDC => 1_000_000u128,             // 1 USDC (6 decimals)
@@ -545,7 +545,7 @@ pub mod pallet {
         }
 
         /// Calculate bridge fee (0.02% for shield, 0.05% for unshield)
-        pub fn calculate_fee(amount: BalanceOf<T>, is_shield: bool) -> BalanceOf<T> {
+        pub fn calculate_fee(amount: u128, is_shield: bool) -> u128 {
             if is_shield {
                 // 0.02% fee for shield (lock on Ethereum, mint on Chameleon)
                 amount.saturating_mul(2) / 10_000
