@@ -46,10 +46,7 @@ use frame_support::{
     PalletId,
 };
 use frame_system::pallet_prelude::*;
-use sp_runtime::{
-    traits::{AccountIdConversion, Saturating, Zero},
-    Perbill,
-};
+use sp_runtime::traits::{AccountIdConversion, Saturating, Zero};
 use sp_std::vec::Vec;
 
 // Re-export pallet items
