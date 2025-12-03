@@ -153,7 +153,7 @@ pub mod pallet {
         Blake2_128Concat,
         PoolId<T::AssetId>,
         RewardInfo<T::Balance>,
-        ValueQuery,
+        OptionQuery,
     >;
 
     /// User claimable rewards
