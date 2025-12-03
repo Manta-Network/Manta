@@ -27,6 +27,7 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
     BuildStorage,
 };
+use codec::Encode;
 
 type Block = frame_system::mocking::MockBlock<Test>;
 
