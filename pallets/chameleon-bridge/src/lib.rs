@@ -51,7 +51,7 @@ pub mod pallet {
     use sp_core::{H160, H256};
     use sp_runtime::traits::SaturatedConversion;
     
-    /// Balance type alias
+    /// Balance type alias  
     pub type BalanceOf<T> = u128;
 
     /// Bridge deposit record
