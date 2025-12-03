@@ -48,7 +48,7 @@ export function PlaceholderScreen({ navigation, route }: Partial<Props> = {}) {
       </View>
 
       <View style={styles.actions}>
-        {navigation.canGoBack() && (
+        {navigation?.canGoBack() && (
           <Button
             title="Go Back"
             onPress={handleGoBack}
