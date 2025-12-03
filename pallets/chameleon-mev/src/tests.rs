@@ -381,6 +381,7 @@ fn test_ordering_commitment_creation() {
             commitment: H256::from([1; 32]),
             timestamp: 1000,
             submit_block: 1,
+            _phantom: PhantomData,
         };
         
         let tx2 = EncryptedTransaction {
