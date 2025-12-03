@@ -195,7 +195,7 @@ where
         return Err(AmmError::InsufficientLiquidity);
     }
 
-    let amount_b = amount_a.saturating_mul(reserve_b).saturating_div(reserve_a);
+    let amount_b = amount_a.saturating_mul(reserve_b) / reserve_a;
     Ok(amount_b)
 }
 
