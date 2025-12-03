@@ -85,14 +85,7 @@ pub mod pallet {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-        /// Asset ID type
-        type AssetId: Parameter + Copy + Ord + Default;
-
-        /// Balance type
-        type Balance: Parameter + Copy + Ord + Zero + Saturating + From<u128> +
-                     sp_std::ops::Div<Output = Self::Balance> +
-                     sp_std::ops::Mul<Output = Self::Balance> +
-                     sp_std::ops::Add<Output = Self::Balance>;
+        /// Asset ID type\n        type AssetId: Parameter + Copy + Ord + Default + MaxEncodedLen;\n\n        /// Balance type\n        type Balance: Parameter + Copy + Ord + Zero + Saturating + From<u128> + MaxEncodedLen +\n                     sp_std::ops::Div<Output = Self::Balance> +\n                     sp_std::ops::Mul<Output = Self::Balance> +\n                     sp_std::ops::Add<Output = Self::Balance>;
 
         /// Weight information for extrinsics
         type WeightInfo: WeightInfo;
