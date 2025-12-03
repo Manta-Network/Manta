@@ -134,6 +134,48 @@ pub mod pallet {
     #[pallet::getter(fn is_paused)]
     pub type IsPaused<T: Config> = StorageValue<_, bool, ValueQuery>;
 
+    /// Pending deposits awaiting confirmation
+    #[pallet::storage]
+    pub type PendingDeposits<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        H256,  // Ethereum tx hash
+        BridgeDeposit<T::AccountId, BalanceOf<T>>,
+        OptionQuery,
+    >;
+
+    /// Withdrawals awaiting signatures
+    #[pallet::storage]
+    pub type PendingWithdrawals<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        u64,  // withdrawal_id
+        BridgeWithdrawal<T::AccountId, BalanceOf<T>>,
+        OptionQuery,
+    >;
+
+    /// Bridge validators
+    #[pallet::storage]
+    pub type BridgeValidators<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        T::AccountId,
+        bool,
+        ValueQuery,
+    >;
+
+    /// Validator signatures per withdrawal
+    #[pallet::storage]
+    pub type WithdrawalSignatures<T: Config> = StorageDoubleMap<
+        _,
+        Blake2_128Concat,
+        u64,  // withdrawal_id
+        Blake2_128Concat,
+        T::AccountId,  // validator
+        Vec<u8>,  // signature
+        OptionQuery,
+    >;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
