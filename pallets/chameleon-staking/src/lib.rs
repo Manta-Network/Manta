@@ -35,7 +35,10 @@ pub mod pallet {
         traits::{Currency, LockIdentifier, LockableCurrency, WithdrawReasons},
     };
     use frame_system::pallet_prelude::*;
-    use sp_runtime::{traits::{Zero, Saturating}, Perbill};
+    use sp_runtime::{
+        traits::{Zero, Saturating, SaturatedConversion}, 
+        Perbill,
+    };
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
     const STAKING_ID: LockIdentifier = *b"chmlstak";
