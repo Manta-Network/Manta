@@ -37,7 +37,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
-    dispatch::{DispatchResult, DispatchError},
+    dispatch::DispatchResult,
     pallet_prelude::*,
     traits::{
         tokens::{fungibles, Preservation},
