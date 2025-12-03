@@ -530,13 +530,13 @@ fn test_amm_swap_calculation() {
     let input_amount = 100u128;
     let input_reserve = 1000u128;
     let output_reserve = 1000u128;
-    let fee = Perbill::from_parts(2_500_000); // 0.25%
+    let fee_bps = 25u32; // 0.25%
 
     let output = calculate_swap_output(
         input_amount,
         input_reserve,
         output_reserve,
-        fee,
+        fee_bps,
     ).unwrap();
 
     // With 0.25% fee: input_after_fee = 100 * 0.9975 = 99.75
