@@ -164,6 +164,38 @@ pub mod pallet {
             asset_b: T::AssetId,
             creator: T::AccountId,
         },
+        /// Liquidity added to pool
+        LiquidityAdded {
+            pool_id: PoolId<T::AssetId>,
+            provider: T::AccountId,
+            amount_a: T::Balance,
+            amount_b: T::Balance,
+            lp_tokens_minted: T::Balance,
+        },
+        /// Liquidity removed from pool
+        LiquidityRemoved {
+            pool_id: PoolId<T::AssetId>,
+            provider: T::AccountId,
+            amount_a: T::Balance,
+            amount_b: T::Balance,
+            lp_tokens_burned: T::Balance,
+        },
+        /// Swap executed
+        SwapExecuted {
+            pool_id: PoolId<T::AssetId>,
+            trader: T::AccountId,
+            asset_in: T::AssetId,
+            amount_in: T::Balance,
+            asset_out: T::AssetId,
+            amount_out: T::Balance,
+            fee_paid: T::Balance,
+        },
+        /// Rewards claimed
+        RewardsClaimed {
+            pool_id: PoolId<T::AssetId>,
+            claimer: T::AccountId,
+            amount: T::Balance,
+        },
     }
 
     #[pallet::error]
