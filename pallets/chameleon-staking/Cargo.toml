@@ -1,64 +1,76 @@
 [package]
-name = "pallet-chameleon-staking"
-version = "4.0.0-dev"
-authors = ["Manta Network"]
-edition = "2021"
-license = "GPL-3.0"
-homepage = "https://manta.network"
-repository = "https://github.com/Manta-Network/Manta/"
-description = "Chameleon Network enhanced staking pallet with delegation and reward optimization"
-readme = "README.md"
+authors.workspace = true
+description = 'Chameleon Network enhanced staking pallet with delegation and reward optimization'
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = 'pallet-chameleon-staking'
+readme = 'README.md'
+repository.workspace = true
+version.workspace = true
 
 [package.metadata.docs.rs]
-targets = ["x86_64-unknown-linux-gnu"]
+# To build locally:
+# RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features --open
+all-features = true
+rustdoc-args = ["--cfg", "doc_cfg"]
+
+[features]
+# Default Features
+default = ["std"]
+
+# Runtime Benchmarks
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "manta-primitives/runtime-benchmarks",
+  "pallet-parachain-staking/runtime-benchmarks",
+]
+
+try-runtime = [
+  "frame-support/try-runtime",
+  "frame-system/try-runtime",
+  "pallet-parachain-staking/try-runtime",
+]
+
+# Serde Serialization
+serde = [
+  "manta-support/serde",
+]
+
+# Standard Library
+std = [
+  "frame-benchmarking/std",
+  "frame-support/std",
+  "frame-system/std",
+  "codec/std",
+  "scale-info/std",
+  "sp-runtime/std",
+  "sp-std/std",
+  "sp-staking/std",
+  "manta-primitives/std",
+  "manta-support/std",
+  "pallet-parachain-staking/std",
+]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.4.0", default-features = false, features = ["derive"] }
-scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
-serde = { version = "1.0.140", default-features = false, features = ["derive"], optional = true }
-log = { version = "0.4.16", default-features = false }
+# Substrate dependencies
+codec = { workspace = true }
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+scale-info = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+sp-staking = { workspace = true }
 
-# Substrate
-frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false, optional = true }
-frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false }
-sp-staking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false }
-
-# Manta
-manta-primitives = { path = "../../primitives/manta", default-features = false }
+# Manta dependencies
+manta-primitives = { workspace = true }
+manta-support = { workspace = true }
 pallet-parachain-staking = { path = "../parachain-staking", default-features = false }
 
 [dev-dependencies]
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-
-[features]
-default = ["std"]
-std = [
-    "codec/std",
-    "scale-info/std",
-    "serde",
-    "log/std",
-    "frame-benchmarking?/std",
-    "frame-support/std",
-    "frame-system/std",
-    "sp-runtime/std",
-    "sp-std/std",
-    "sp-staking/std",
-    "manta-primitives/std",
-    "pallet-parachain-staking/std",
-]
-runtime-benchmarks = [
-    "frame-benchmarking/runtime-benchmarks",
-    "frame-support/runtime-benchmarks",
-    "frame-system/runtime-benchmarks",
-    "pallet-parachain-staking/runtime-benchmarks",
-]
-try-runtime = [
-    "frame-support/try-runtime",
-    "frame-system/try-runtime",
-    "pallet-parachain-staking/try-runtime",
-]
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+pallet-balances = { workspace = true, features = ["std"] }
