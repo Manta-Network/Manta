@@ -15,6 +15,8 @@ import { WelcomeScreen } from '@/screens/WelcomeScreen';
 import { CreateWalletScreen } from '@/screens/CreateWalletScreen';
 import { ImportWalletScreen } from '@/screens/ImportWalletScreen';
 import { HomeScreen } from '@/screens/HomeScreen';
+import { SendScreen } from '@/screens/SendScreen';
+import { ReceiveScreen } from '@/screens/ReceiveScreen';
 
 // Placeholder screens (to be implemented)
 import { PlaceholderScreen } from '@/screens/PlaceholderScreen';
