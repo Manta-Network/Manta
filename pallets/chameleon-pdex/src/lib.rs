@@ -560,6 +560,11 @@ pub mod pallet {
             // Store updated pool
             Pools::<T>::insert(&first_asset, &second_asset, &pool);
 
+            // Update volume tracking for rewards
+            let pool_id = PoolId::new(asset_in, asset_out);
+            let current_volume = PoolVolume::<T>::get(&pool_id);
+            PoolVolume::<T>::insert(&pool_id, current_volume.saturating_add(amount_in));
+
             // TODO: Transfer treasury fee to treasury account
             // For now, treasury fee stays in pool (will be implemented with treasury integration)
 
