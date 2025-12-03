@@ -318,7 +318,7 @@ where
         
         // Simplified calculation - in production, use actual TVL data
         // Assume total TVL of $50M and current year emission
-        let yearly_lp_rewards = YEARLY_EMISSIONS[self.current_year as usize] * LP_REWARD_PERCENT as u128 / 100;
+        let _yearly_lp_rewards = YEARLY_EMISSIONS[self.current_year as usize] * LP_REWARD_PERCENT as u128 / 100;
         
         // Assuming $0.50 per CHML and $50M total TVL
         // APY = (yearly_rewards * price) / total_tvl * 100
