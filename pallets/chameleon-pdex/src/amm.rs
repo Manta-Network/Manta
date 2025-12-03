@@ -224,7 +224,7 @@ where
     Balance: Copy + Zero + Saturating + From<u128>,
 {
     input_amount.saturating_mul(Balance::from(fee_percent.deconstruct() as u128))
-        .saturating_div(Balance::from(1_000_000_000u128))
+        / Balance::from(1_000_000_000u128)
 }
 
 /// Simple integer square root implementation using Newton's method
