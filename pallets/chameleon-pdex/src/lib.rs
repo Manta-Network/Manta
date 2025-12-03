@@ -95,8 +95,7 @@ pub mod pallet {
 
         /// Currency trait for asset operations
         type Currency: frame_support::traits::fungibles::Inspect<Self::AccountId, AssetId = Self::AssetId, Balance = Self::Balance> +
-                      frame_support::traits::fungibles::Mutate<Self::AccountId> +
-                      frame_support::traits::fungibles::Transfer<Self::AccountId>;
+                      frame_support::traits::fungibles::Mutate<Self::AccountId>;
     }
 
     /// Liquidity pools storage
