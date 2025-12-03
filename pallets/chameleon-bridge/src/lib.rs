@@ -59,7 +59,7 @@ pub mod pallet {
         type AssetId: Parameter + Copy + From<u32> + MaxEncodedLen;
 
         /// Balance type
-        type Balance: Parameter + Copy + Zero + Saturating + From<u128> + Into<u128> + MaxEncodedLen;
+        type Balance: Parameter + Copy + Zero + Saturating + From<u128> + Into<u128> + MaxEncodedLen + Default;
 
         /// Asset operations for minting/burning wrapped tokens
         type Assets: Inspect<Self::AccountId, AssetId = Self::AssetId, Balance = Self::Balance> +
