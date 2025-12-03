@@ -65,7 +65,7 @@ pub struct BlockProposal<T: frame_system::Config> {
     /// Proposer validator
     pub proposer: T::AccountId,
     /// Block number
-    pub block_number: T::BlockNumber,
+    pub block_number: u32,
 }
 
 /// MEV attack types that this pallet prevents
