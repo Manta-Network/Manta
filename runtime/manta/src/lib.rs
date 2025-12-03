@@ -960,16 +960,19 @@ impl pallet_chameleon_mev::Config for Runtime {
 
 // Chameleon pDEX Pallet Configuration
 parameter_types! {
+    pub const PdexPalletId: PalletId = PalletId(*b"chmlpdex");
     pub const PdexMinLiquidity: Balance = 1_000_000_000_000_000; // 0.001 CHML
-    pub const PdexMaxPoolsPerPair: u32 = 1;
-    pub const PdexLpVestingPeriod: BlockNumber = 14400 * 90; // 90 days (6s blocks)
+    pub const PdexMaxPools: u32 = 100;
 }
 
 impl pallet_chameleon_pdex::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type MinLiquidity = PdexMinLiquidity;
-    type MaxPoolsPerPair = PdexMaxPoolsPerPair;
-    type LpVestingPeriod = PdexLpVestingPeriod;
+    type AssetId = u32;
+    type Balance = Balance;
+    type WeightInfo = ();
+    type PalletId = PdexPalletId;
+    type MaxPools = PdexMaxPools;
+    type MinimumLiquidity = PdexMinLiquidity;
 }
 
 // Chameleon Bridge Pallet Configuration
