@@ -519,7 +519,7 @@ pub mod pallet {
                 amount_in,
                 input_reserve,
                 output_reserve,
-                pool.fee,
+                pool.fee_bps,
             ).map_err(|_| Error::<T>::InsufficientLiquidity)?;
 
             // Check slippage protection
