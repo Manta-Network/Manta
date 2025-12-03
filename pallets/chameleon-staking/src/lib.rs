@@ -53,6 +53,8 @@ mod types;
 mod weights;
 
 #[cfg(test)]
+mod mock;
+#[cfg(test)]
 mod tests;
 
 use frame_support::pallet;
