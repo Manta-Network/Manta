@@ -405,7 +405,7 @@ pub mod pallet {
         pub fn provide_decryption_share(
             origin: OriginFor<T>,
             block_number: BlockNumberFor<T>,
-            share_data: BoundedVec<u8, ConstU32<1024>>,
+            share_data: BoundedVec<u8, ConstU32<96>>,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
