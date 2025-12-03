@@ -380,7 +380,7 @@ fn test_ordering_commitment_creation() {
             encrypted_data: BoundedVec::try_from(vec![1]).unwrap(),
             commitment: H256::from([1; 32]),
             timestamp: 1000,
-            submit_block: 1,
+            submit_block: 1u32,
         };
         
         let tx2 = EncryptedTransaction {
