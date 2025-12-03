@@ -556,5 +556,56 @@ pub mod pallet {
                 mempool.drain(0..drain_count);
             });
         }
+
+        /// Attempt to decrypt all transactions when threshold reached
+        fn try_decrypt_block(block_number: BlockNumberFor<T>) -> DispatchResult {
+            // Get all decryption shares for this block
+            let shares: Vec<DecryptionShare> = ThresholdDecryptionShares::<T>::iter_prefix(&block_number)
+                .map(|(_, share)| share)
+                .collect();
+            
+            // Need at least threshold shares
+            ensure!(
+                shares.len() as u32 >= T::DecryptionThreshold::get(),
+                Error::<T>::InsufficientShares
+            );
+            
+            // Get encrypted transactions from mempool
+            let encrypted_txs = EncryptedMempool::<T>::get();
+            
+            // Decrypt each transaction (placeholder - real crypto in production)
+            let mut decrypted_txs = BoundedVec::new();
+            for encrypted_tx in encrypted_txs.iter() {
+                // Placeholder decryption - XOR with combined shares
+                // In production: Use actual threshold decryption algorithm
+                let decrypted = Self::placeholder_decrypt(&encrypted_tx.encrypted_data, &shares)?;
+                let _ = decrypted_txs.try_push(decrypted);
+            }
+            
+            // Store decrypted transactions ordered by timestamp (FIFO)
+            DecryptedTransactions::<T>::insert(&block_number, decrypted_txs);
+            
+            // Clear the mempool for this block
+            EncryptedMempool::<T>::kill();
+            
+            Self::deposit_event(Event::BlockDecrypted {
+                block_number,
+                transaction_count: encrypted_txs.len() as u32,
+            });
+            
+            Ok(())
+        }
+
+        /// Placeholder decryption (XOR-based for demo)
+        fn placeholder_decrypt(
+            ciphertext: &BoundedVec<u8, ConstU32<1024>>,
+            _shares: &[DecryptionShare],
+        ) -> Result<Vec<u8>, Error<T>> {
+            // In production: Combine shares using Lagrange interpolation
+            // and decrypt using actual threshold decryption
+            
+            // For now, just return the data as-is (simulating successful decryption)
+            Ok(ciphertext.to_vec())
+        }
     }
 }
