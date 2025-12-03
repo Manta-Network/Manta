@@ -208,7 +208,7 @@ pub mod pallet {
         u64,  // withdrawal_id
         Blake2_128Concat,
         T::AccountId,  // validator
-        Vec<u8>,  // signature
+        BoundedVec<u8, ConstU32<65>>,  // signature (max 65 bytes for ECDSA)
         OptionQuery,
     >;
 
