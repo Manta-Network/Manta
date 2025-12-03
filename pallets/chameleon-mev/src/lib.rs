@@ -391,8 +391,8 @@ pub mod pallet {
 
         /// Order transactions by timestamp (FIFO)
         pub fn order_transactions(
-            transactions: Vec<EncryptedTransaction<T>>,
-        ) -> Vec<EncryptedTransaction<T>> {
+            transactions: Vec<EncryptedTransaction>,
+        ) -> Vec<EncryptedTransaction> {
             let mut ordered = transactions;
             ordered.sort_by_key(|tx| tx.timestamp);
             ordered
