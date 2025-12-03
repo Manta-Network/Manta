@@ -36,7 +36,7 @@
     "react-native-haptic-feedback": "^2.2.0",
     "react-native-biometrics": "^3.0.1",
     "react-native-device-info": "^10.12.0",
-    "react-native-clipboard": "^1.5.1",
+    "@react-native-clipboard/clipboard": "^1.13.2",
     "react-native-share": "^10.0.2"
   },
   "devDependencies": {
