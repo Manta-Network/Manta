@@ -216,6 +216,17 @@ export class RpcService {
    * Shield tokens (public to private)
    */
   async shieldTokens(fromSeed: string, amount: string): Promise<string> {
+    // Use mock implementation for development (Week 2)
+    if (DEBUG.TESTNET_ONLY || !this.isConnected()) {
+      // Simulate longer delay for privacy proof generation
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Generate mock transaction hash
+      const mockHash = `0x${Math.random().toString(16).slice(2).padStart(64, '0')}`;
+      
+      return mockHash;
+    }
+
     const api = await this.connect();
 
     try {
