@@ -240,6 +240,14 @@ pub mod pallet {
         BridgePaused,
         /// Bridge resumed
         BridgeResumed,
+        /// Validator added
+        ValidatorAdded {
+            validator: T::AccountId,
+        },
+        /// Validator removed
+        ValidatorRemoved {
+            validator: T::AccountId,
+        },
     }
 
     #[pallet::error]
