@@ -239,7 +239,7 @@ where
     }
     
     let mut x = n;
-    let mut y = n.saturating_add(Balance::from(1u128)).saturating_div(Balance::from(2u128));
+    let mut y = (n.saturating_add(Balance::from(1u128))) / Balance::from(2u128);
     
     // Newton's method: x_{n+1} = (x_n + n/x_n) / 2
     // Simplified version to avoid complex trait bounds
