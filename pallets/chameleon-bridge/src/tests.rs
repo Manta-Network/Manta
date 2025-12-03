@@ -24,6 +24,7 @@ use crate::{
 use frame_support::{
     assert_noop, assert_ok,
     traits::Get,
+    BoundedVec, traits::ConstU32,
 };
 use sp_core::{H160, H256};
 
