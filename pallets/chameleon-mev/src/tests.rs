@@ -346,7 +346,7 @@ fn test_ordering_immutable_after_commit() {
         // Try to commit again - should fail (ordering is immutable)
         assert_noop!(
             ChameleonMev::commit_ordering(RuntimeOrigin::signed(100)),
-            Error::<Test>::NoPendingTransactions
+            Error::<Test>::OrderingAlreadyCommitted
         );
 
         // Ordering hash unchanged
