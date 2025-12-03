@@ -33,10 +33,7 @@ pub use pallet::*;
 pub mod pallet {
     use frame_support::{
         pallet_prelude::*,
-        traits::{
-            tokens::fungibles::{Inspect, Mutate, Create},
-            AccountTouch,
-        },
+        traits::tokens::fungibles::{Inspect, Mutate},
         PalletId,
     };
     use frame_system::pallet_prelude::*;
