@@ -56,7 +56,7 @@ export function HomeScreen({ navigation }: Props) {
   };
 
   const handleSend = () => {
-    navigation.navigate('Send');
+    navigation.navigate('Send', {});
   };
 
   const handleReceive = () => {
