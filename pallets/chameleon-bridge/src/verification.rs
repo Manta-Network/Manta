@@ -286,7 +286,7 @@ impl TransactionVerifier {
     /// Verify transaction hasn't been processed before
     pub fn verify_no_double_processing<AccountId>(
         tx_hash: &H256,
-        processed_deposits: &BTreeSet<H256>,
+        processed_deposits: &Vec<H256>,
     ) -> bool {
         !processed_deposits.contains(tx_hash)
     }
