@@ -20,12 +20,11 @@
 //! for cross-chain asset transfers between Ethereum and Chameleon Network.
 
 use codec::{Decode, Encode};
-use frame_support::traits::Get;
 use manta_primitives::types::{Balance, BlockNumber};
 use scale_info::TypeInfo;
 use sp_core::{H160, H256};
 use sp_runtime::RuntimeDebug;
-use sp_std::{vec::Vec, collections::btree_map::BTreeMap};
+use sp_std::vec::Vec;
 
 /// Ethereum address type (20 bytes)
 pub type EthereumAddress = H160;
