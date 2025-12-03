@@ -998,6 +998,7 @@ parameter_types! {
 
 impl pallet_chameleon_staking::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
     type MinValidatorStake = ChameleonMinValidatorStake;
     type UnbondingPeriod = ChameleonUnbondingPeriod;
     type MaxDelegatorsPerValidator = ChameleonMaxDelegatorsPerValidator;
