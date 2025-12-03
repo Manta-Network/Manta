@@ -55,11 +55,9 @@ pub mod pallet {
         Blake2_256, StorageHasher,
     };
     use frame_system::pallet_prelude::*;
+    use sp_core::H256;
     use sp_runtime::traits::Saturating;
     use sp_std::vec::Vec;
-    
-    /// 32-byte hash type for commitments
-    pub type H256 = sp_runtime::H256;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
