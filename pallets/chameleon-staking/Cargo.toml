@@ -51,3 +51,4 @@ manta-primitives = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 pallet-balances = { workspace = true, features = ["std"] }
+frame-system = { workspace = true, features = ["std"] }
