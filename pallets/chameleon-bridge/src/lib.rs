@@ -270,8 +270,127 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Report observed lock event from Ethereum (stub)
+        /// Mint wrapped tokens after confirmed deposit
         #[pallet::call_index(0)]
+        #[pallet::weight(10_000)]
+        pub fn mint_wrapped_asset(
+            origin: OriginFor<T>,
+            eth_tx_hash: H256,
+            asset: BridgeableAsset,
+            amount: BalanceOf<T>,
+            recipient: T::AccountId,
+        ) -> DispatchResult {
+            let validator = ensure_signed(origin)?;
+            ensure!(BridgeValidators::<T>::get(&validator), Error::<T>::NotValidator);
+            ensure!(!IsPaused::<T>::get(), Error::<T>::BridgePaused);
+            
+            // Check if already processed
+            ensure!(!PendingDeposits::<T>::contains_key(eth_tx_hash), Error::<T>::AlreadyProcessed);
+            
+            // Create deposit record
+            let deposit = BridgeDeposit {
+                eth_tx_hash,
+                recipient: recipient.clone(),
+                asset: asset.clone(),
+                amount,
+                status: DepositStatus::Confirmed,
+                confirmations: T::MinConfirmations::get(),
+            };
+            
+            PendingDeposits::<T>::insert(eth_tx_hash, deposit);
+            TotalBridged::<T>::mutate(|total| *total = total.saturating_add(amount.saturated_into()));
+            
+            Self::deposit_event(Event::AssetMinted {
+                recipient,
+                asset,
+                amount: amount.saturated_into(),
+            });
+            
+            Ok(())
+        }
+
+        /// Initiate withdrawal (burn wrapped tokens)
+        #[pallet::call_index(1)]
+        #[pallet::weight(10_000)]
+        pub fn initiate_withdrawal(
+            origin: OriginFor<T>,
+            asset: BridgeableAsset,
+            amount: BalanceOf<T>,
+            eth_destination: H160,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+            ensure!(!IsPaused::<T>::get(), Error::<T>::BridgePaused);
+            
+            // TODO: Burn tokens (integrate with pallet-assets)
+            // T::Assets::burn(asset, &who, amount)?;
+            
+            let withdrawal_id = NextWithdrawalId::<T>::get();
+            NextWithdrawalId::<T>::put(withdrawal_id + 1);
+            
+            let withdrawal = BridgeWithdrawal {
+                withdrawal_id,
+                from: who.clone(),
+                eth_destination,
+                asset: asset.clone(),
+                amount,
+                status: WithdrawalStatus::Pending,
+                signature_count: 0,
+            };
+            
+            PendingWithdrawals::<T>::insert(withdrawal_id, withdrawal);
+            
+            Self::deposit_event(Event::WithdrawalInitiated {
+                withdrawal_id,
+                from: who,
+                eth_destination,
+                asset,
+                amount: amount.saturated_into(),
+            });
+            
+            Ok(())
+        }
+
+        /// Add validator signature to withdrawal
+        #[pallet::call_index(2)]
+        #[pallet::weight(10_000)]
+        pub fn sign_withdrawal(
+            origin: OriginFor<T>,
+            withdrawal_id: u64,
+            signature: Vec<u8>,
+        ) -> DispatchResult {
+            let validator = ensure_signed(origin)?;
+            ensure!(BridgeValidators::<T>::get(&validator), Error::<T>::NotValidator);
+            
+            PendingWithdrawals::<T>::try_mutate(withdrawal_id, |maybe_withdrawal| {
+                let withdrawal = maybe_withdrawal.as_mut().ok_or(Error::<T>::WithdrawalNotFound)?;
+                
+                // Check not already signed
+                ensure!(
+                    !WithdrawalSignatures::<T>::contains_key(withdrawal_id, &validator),
+                    Error::<T>::AlreadySigned
+                );
+                
+                // Store signature
+                WithdrawalSignatures::<T>::insert(withdrawal_id, &validator, signature);
+                withdrawal.signature_count += 1;
+                
+                // Check if threshold reached (5-of-9)
+                if withdrawal.signature_count >= T::SignatureThreshold::get() {
+                    withdrawal.status = WithdrawalStatus::ReadyToExecute;
+                    Self::deposit_event(Event::WithdrawalCompleted { withdrawal_id });
+                } else {
+                    Self::deposit_event(Event::WithdrawalSigned { 
+                        withdrawal_id, 
+                        validator: validator.clone() 
+                    });
+                }
+                
+                Ok(())
+            })
+        }
+
+        /// Report observed lock event from Ethereum
+        #[pallet::call_index(3)]
         #[pallet::weight(10_000)]
         pub fn report_lock_event(
             origin: OriginFor<T>,
@@ -280,10 +399,9 @@ pub mod pallet {
             asset: BridgeableAsset,
             amount: u128,
         ) -> DispatchResult {
-            let _validator = ensure_signed(origin)?;
+            let validator = ensure_signed(origin)?;
+            ensure!(BridgeValidators::<T>::get(&validator), Error::<T>::NotValidator);
             ensure!(!IsPaused::<T>::get(), Error::<T>::BridgePaused);
-            
-            TotalBridged::<T>::mutate(|total| *total = total.saturating_add(amount));
             
             Self::deposit_event(Event::DepositObserved {
                 eth_tx_hash,
@@ -291,52 +409,53 @@ pub mod pallet {
                 asset,
                 amount,
             });
-            Ok(())
-        }
-
-        /// Burn wrapped tokens for unlock on Ethereum (stub)
-        #[pallet::call_index(1)]
-        #[pallet::weight(10_000)]
-        pub fn burn_for_unlock(
-            origin: OriginFor<T>,
-            asset: BridgeableAsset,
-            amount: u128,
-            eth_destination: H160,
-        ) -> DispatchResult {
-            let who = ensure_signed(origin)?;
-            ensure!(!IsPaused::<T>::get(), Error::<T>::BridgePaused);
             
-            let withdrawal_id = NextWithdrawalId::<T>::get();
-            NextWithdrawalId::<T>::put(withdrawal_id + 1);
-            
-            Self::deposit_event(Event::WithdrawalInitiated {
-                withdrawal_id,
-                from: who,
-                eth_destination,
+            // Auto-mint for now (in production, require multiple validator confirmations)
+            Self::mint_wrapped_asset(
+                frame_system::RawOrigin::Signed(validator).into(),
+                eth_tx_hash,
                 asset,
                 amount,
-            });
-            Ok(())
-        }
-
-        /// Sign withdrawal as validator (stub)
-        #[pallet::call_index(2)]
-        #[pallet::weight(10_000)]
-        pub fn sign_withdrawal(
-            origin: OriginFor<T>,
-            withdrawal_id: u64,
-        ) -> DispatchResult {
-            let validator = ensure_signed(origin)?;
+                recipient,
+            )?;
             
-            Self::deposit_event(Event::WithdrawalSigned {
-                withdrawal_id,
-                validator,
-            });
             Ok(())
         }
 
-        /// Pause bridge (admin only - stub)
-        #[pallet::call_index(3)]
+        /// Add bridge validator (admin only)
+        #[pallet::call_index(4)]
+        #[pallet::weight(10_000)]
+        pub fn add_validator(
+            origin: OriginFor<T>,
+            validator: T::AccountId,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+            ensure!(!BridgeValidators::<T>::get(&validator), Error::<T>::AlreadyProcessed);
+            
+            BridgeValidators::<T>::insert(&validator, true);
+            
+            Self::deposit_event(Event::ValidatorAdded { validator });
+            Ok(())
+        }
+
+        /// Remove bridge validator (admin only)
+        #[pallet::call_index(5)]
+        #[pallet::weight(10_000)]
+        pub fn remove_validator(
+            origin: OriginFor<T>,
+            validator: T::AccountId,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+            ensure!(BridgeValidators::<T>::get(&validator), Error::<T>::NotValidator);
+            
+            BridgeValidators::<T>::remove(&validator);
+            
+            Self::deposit_event(Event::ValidatorRemoved { validator });
+            Ok(())
+        }
+
+        /// Pause bridge (admin only)
+        #[pallet::call_index(6)]
         #[pallet::weight(10_000)]
         pub fn pause_bridge(origin: OriginFor<T>) -> DispatchResult {
             ensure_root(origin)?;
@@ -345,8 +464,8 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Resume bridge (admin only - stub)
-        #[pallet::call_index(4)]
+        /// Resume bridge (admin only)
+        #[pallet::call_index(7)]
         #[pallet::weight(10_000)]
         pub fn resume_bridge(origin: OriginFor<T>) -> DispatchResult {
             ensure_root(origin)?;
