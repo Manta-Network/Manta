@@ -28,7 +28,7 @@ use manta_primitives::chameleon_constants::{
     time::BLOCKS_PER_YEAR,
 };
 
-use crate::types::{PoolId, RewardInfo, VestingSchedule};
+use crate::types::{PoolId, VestingSchedule};
 
 /// Reward calculation errors
 #[derive(Debug, PartialEq, Eq)]
