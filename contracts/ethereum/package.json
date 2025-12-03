@@ -1,0 +1,29 @@
+{
+  "name": "chameleon-bridge-contracts",
+  "version": "1.0.0",
+  "description": "Ethereum smart contracts for Chameleon Network bridge",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.js",
+    "verify": "hardhat verify"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.9.3"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^3.0.2",
+    "hardhat": "^2.17.1",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "ethers": "^5.7.2"
+  },
+  "keywords": [
+    "ethereum",
+    "bridge",
+    "chameleon",
+    "cross-chain"
+  ],
+  "author": "Chameleon Network",
+  "license": "GPL-3.0"
+}
