@@ -754,10 +754,11 @@ pub mod pallet {
             }
             
             // Slash each delegator proportionally
-            for ((delegator, validator_key), delegation_amount) in Delegations::<T>::iter() {
-                if validator_key != *validator {
-                    continue;
-                }
+            let delegations: Vec<_> = Delegations::<T>::iter()
+                .filter(|((_, validator_key), _)| validator_key == validator)
+                .collect();
+            
+            for ((delegator, _), delegation_amount) in delegations {
                 let delegator_slash = total_delegator_slash
                     .saturating_mul(delegation_amount)
                     .saturating_div(delegated_stake);
