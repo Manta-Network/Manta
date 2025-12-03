@@ -255,7 +255,7 @@ pub mod pallet {
                 encrypted_data,
                 commitment,
                 timestamp,
-                submit_block: frame_system::Pallet::<T>::block_number(),
+                submit_block: frame_system::Pallet::<T>::block_number().saturated_into(),
             };
 
             // Add to mempool (ordered by timestamp)
