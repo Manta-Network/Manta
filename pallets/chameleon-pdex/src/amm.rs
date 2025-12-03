@@ -246,7 +246,7 @@ where
     let mut iterations = 0;
     while y < x && iterations < 100 { // Prevent infinite loops
         x = y;
-        y = x.saturating_add(n.saturating_div(x)).saturating_div(Balance::from(2u128));
+        y = (x.saturating_add(n / x)) / Balance::from(2u128);
         iterations += 1;
     }
     
