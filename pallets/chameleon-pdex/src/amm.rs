@@ -76,7 +76,7 @@ where
     // Apply fee: amount_after_fee = amount * (1 - fee)
     // fee_percent is in parts per billion (1e9)
     let fee_multiplier = Balance::from(1_000_000_000u128).saturating_sub(Balance::from(fee_percent.deconstruct() as u128));
-    let input_after_fee = input_amount.saturating_mul(fee_multiplier).saturating_div(Balance::from(1_000_000_000u128));
+    let input_after_fee = input_amount.saturating_mul(fee_multiplier) / Balance::from(1_000_000_000u128);
     
     if input_after_fee.is_zero() {
         return Err(AmmError::AmountTooSmall);
