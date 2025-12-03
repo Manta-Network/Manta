@@ -946,17 +946,16 @@ use manta_primitives::chameleon_constants::{
 
 // Chameleon MEV Protection Pallet Configuration
 parameter_types! {
-    pub const MevMaxTransactionsPerBlock: u32 = 1000;
-    pub const MevMaxEncryptedDataSize: u32 = 65536; // 64 KB max
-    pub const MevDecryptionThreshold: u32 = 5; // 5-of-9 validators
+    pub const MevMaxSealedTxPerBlock: u32 = 1000;
+    pub const MevMaxTxInOrdering: u32 = 1000;
+    pub const MevRevealDeadline: BlockNumber = 10; // 10 blocks (~60 seconds)
 }
 
 impl pallet_chameleon_mev::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type WeightInfo = ();
-    type MaxTransactionsPerBlock = MevMaxTransactionsPerBlock;
-    type MaxEncryptedDataSize = MevMaxEncryptedDataSize;
-    type DecryptionThreshold = MevDecryptionThreshold;
+    type MaxSealedTxPerBlock = MevMaxSealedTxPerBlock;
+    type MaxTxInOrdering = MevMaxTxInOrdering;
+    type RevealDeadline = MevRevealDeadline;
 }
 
 // Chameleon pDEX Pallet Configuration
