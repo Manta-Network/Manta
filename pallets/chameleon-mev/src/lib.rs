@@ -185,7 +185,7 @@ pub mod pallet {
         _,
         Blake2_128Concat,
         BlockNumberFor<T>,
-        BoundedVec<Vec<u8>, T::MaxTransactionsPerBlock>,
+        BoundedVec<BoundedVec<u8, ConstU32<1024>>, T::MaxTransactionsPerBlock>,
         ValueQuery,
     >;
 
