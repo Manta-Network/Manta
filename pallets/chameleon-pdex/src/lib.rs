@@ -623,5 +623,70 @@ pub mod pallet {
             };
             T::PalletId::get().into_sub_account_truncating((first, second))
         }
+
+        /// Get pool information
+        pub fn get_pool(asset_a: T::AssetId, asset_b: T::AssetId) -> Option<LiquidityPool<T::AssetId, T::Balance>> {
+            let (first, second) = if asset_a < asset_b {
+                (asset_a, asset_b)
+            } else {
+                (asset_b, asset_a)
+            };
+            Pools::<T>::get(&first, &second)
+        }
+
+        /// Calculate quote for adding liquidity
+        pub fn quote_liquidity(
+            asset_a: T::AssetId,
+            asset_b: T::AssetId,
+            amount_a: T::Balance,
+        ) -> Option<T::Balance> {
+            let pool = Self::get_pool(asset_a, asset_b)?;
+            if pool.is_empty() {
+                return None;
+            }
+
+            let (reserve_a, reserve_b) = if asset_a == pool.asset_a {
+                (pool.reserve_a, pool.reserve_b)
+            } else {
+                (pool.reserve_b, pool.reserve_a)
+            };
+
+            quote(amount_a, reserve_a, reserve_b).ok()
+        }
+
+        /// Get swap quote
+        pub fn get_swap_quote(
+            asset_in: T::AssetId,
+            asset_out: T::AssetId,
+            amount_in: T::Balance,
+        ) -> Option<T::Balance> {
+            let pool = Self::get_pool(asset_in, asset_out)?;
+            if pool.is_empty() {
+                return None;
+            }
+
+            let (input_reserve, output_reserve) = if asset_in == pool.asset_a {
+                (pool.reserve_a, pool.reserve_b)
+            } else {
+                (pool.reserve_b, pool.reserve_a)
+            };
+
+            calculate_swap_output(amount_in, input_reserve, output_reserve, pool.fee_bps).ok()
+        }
+
+        /// Get pool TVL (Total Value Locked)
+        pub fn get_pool_tvl(pool_id: &PoolId<T::AssetId>) -> T::Balance {
+            if let Some(pool) = Self::get_pool(pool_id.asset_a, pool_id.asset_b) {
+                // Simplified TVL calculation - in production, convert to USD equivalent
+                pool.reserve_a.saturating_add(pool.reserve_b)
+            } else {
+                T::Balance::zero()
+            }
+        }
+
+        /// Get pool 24h volume
+        pub fn get_pool_volume(pool_id: &PoolId<T::AssetId>) -> T::Balance {
+            PoolVolume::<T>::get(pool_id)
+        }
     }
 }
