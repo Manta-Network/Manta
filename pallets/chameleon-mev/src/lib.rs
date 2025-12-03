@@ -237,7 +237,7 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::submit_encrypted_transaction())]
         pub fn submit_encrypted_transaction(
             origin: OriginFor<T>,
-            encrypted_data: BoundedVec<u8, T::MaxEncryptedDataSize>,
+            encrypted_data: BoundedVec<u8, ConstU32<1024>>,
             commitment: Hash,
             timestamp: Moment,
         ) -> DispatchResult {
