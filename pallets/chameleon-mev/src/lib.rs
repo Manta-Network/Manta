@@ -66,6 +66,7 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use manta_primitives::types::{Hash, Moment};
 use sp_runtime::traits::{BlakeTwo256, SaturatedConversion, Hash as HashTrait};
+use codec::Encode;
 
 pub use pallet::*;
 pub use types::*;
