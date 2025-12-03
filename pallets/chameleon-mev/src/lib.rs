@@ -123,7 +123,7 @@ pub mod pallet {
     #[pallet::getter(fn encrypted_mempool)]
     pub type EncryptedMempool<T: Config> = StorageValue<
         _,
-        BoundedVec<EncryptedTransaction<T>, T::MaxTransactionsPerBlock>,
+        BoundedVec<EncryptedTransaction, T::MaxTransactionsPerBlock>,
         ValueQuery,
     >;
 
