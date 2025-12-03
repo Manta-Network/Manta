@@ -90,22 +90,17 @@ pub mod pallet {
             tokens::Preservation,
             Get, StorageVersion,
         },
-        transactional, PalletId,
+        PalletId,
     };
     use frame_system::pallet_prelude::*;
     use manta_primitives::{
-        chameleon_constants::{fees::*, CHAMELEON_BRIDGE_PALLET_ID},
         types::{Balance, BlockNumber},
     };
-    use sp_core::{H160, H256};
+    use sp_core::H256;
     use sp_runtime::{
         traits::{AccountIdConversion, Saturating, Zero},
-        ArithmeticError, DispatchError,
     };
-    use sp_std::{
-        collections::{btree_map::BTreeMap, btree_set::BTreeSet},
-        vec::Vec,
-    };
+    use sp_std::vec::Vec;
 
     /// Storage Version
     pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
