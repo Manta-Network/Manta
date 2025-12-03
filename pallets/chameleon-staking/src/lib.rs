@@ -237,19 +237,25 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// Validator joined the candidate pool
-        ValidatorJoined { validator: T::AccountId, stake: u128 },
+        ValidatorJoined { validator: T::AccountId, stake: BalanceOf<T> },
         /// Delegation made
-        Delegated { delegator: T::AccountId, validator: T::AccountId, amount: u128 },
+        Delegated { delegator: T::AccountId, validator: T::AccountId, amount: BalanceOf<T> },
         /// Delegation removed
-        Undelegated { delegator: T::AccountId, validator: T::AccountId, amount: u128 },
+        Undelegated { delegator: T::AccountId, validator: T::AccountId, amount: BalanceOf<T> },
         /// Unbonding started
-        UnbondingStarted { who: T::AccountId, amount: u128, unlock_at: BlockNumberFor<T> },
+        UnbondingStarted { who: T::AccountId, amount: BalanceOf<T>, unlock_at: BlockNumberFor<T> },
         /// Rewards distributed
-        RewardsDistributed { era: u32, total_reward: u128 },
+        RewardsDistributed { era: u32, total_reward: BalanceOf<T> },
         /// Validator slashed
-        ValidatorSlashed { validator: T::AccountId, amount: u128, offense: SlashingOffense },
+        ValidatorSlashed { validator: T::AccountId, amount: BalanceOf<T>, offense: SlashingOffense },
         /// Commission set
         CommissionSet { validator: T::AccountId, commission: Perbill },
+        /// Rewards claimed
+        RewardsClaimed { who: T::AccountId, amount: BalanceOf<T> },
+        /// Unbonded tokens withdrawn
+        UnbondedWithdrawn { who: T::AccountId, amount: BalanceOf<T> },
+        /// Validator left the candidate pool
+        ValidatorLeft { validator: T::AccountId },
     }
 
     #[pallet::error]
