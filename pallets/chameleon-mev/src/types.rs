@@ -49,7 +49,10 @@ where
 /// Each validator provides a share that can be combined with others
 /// to decrypt the transactions in a block.
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen, PartialEq, Eq)]
-pub struct DecryptionShare<T: frame_system::Config> {
+pub struct DecryptionShare<T>
+where
+    T: frame_system::Config,
+{
     /// Validator providing the share
     pub validator: T::AccountId,
     /// Decryption share data
