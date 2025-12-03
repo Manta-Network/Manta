@@ -305,7 +305,7 @@ pub mod pallet {
             Pools::<T>::insert(&first_asset, &second_asset, &pool);
 
             // Initialize pool rewards
-            PoolRewards::<T>::insert(&pool_id, RewardInfo::default());
+            PoolRewards::<T>::insert(&pool_id, RewardInfo::new());
 
             // Increment pool counter
             NextPoolId::<T>::put(pool_count + 1);
