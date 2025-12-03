@@ -53,7 +53,7 @@ pub trait WeightInfo {
     fn remove_validator() -> Weight;
     fn update_bridge_config() -> Weight;
     fn submit_fraud_proof() -> Weight;
-    fn process_confirmed_deposits() -> Weight;
+    fn process_confirmed_deposits(d: u32) -> Weight;
     fn execute_withdrawal() -> Weight;
     fn pause_bridge() -> Weight;
     fn resume_bridge() -> Weight;
