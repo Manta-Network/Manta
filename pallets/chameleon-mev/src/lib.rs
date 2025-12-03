@@ -358,7 +358,7 @@ pub mod pallet {
             let share = DecryptionShare {
                 validator: who.clone(),
                 share_data,
-                block_number,
+                block_number: block_number.saturated_into(),
             };
 
             // Store decryption share
