@@ -40,6 +40,10 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use sp_core::{H160, H256};
+    use sp_runtime::traits::{Saturating, SaturatedConversion};
+    
+    /// Balance type alias
+    pub type BalanceOf<T> = u128;
 
     /// The current storage version
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
