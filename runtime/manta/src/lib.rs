@@ -970,7 +970,7 @@ impl pallet_chameleon_pdex::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type AssetId = u32;
     type Balance = Balance;
-    type WeightInfo = ();
+    type Assets = Assets;  // Use pallet-assets for token operations
     type PalletId = PdexPalletId;
     type MaxPools = PdexMaxPools;
     type MinimumLiquidity = PdexMinLiquidity;
@@ -984,6 +984,9 @@ parameter_types! {
 
 impl pallet_chameleon_bridge::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
+    type AssetId = u32;
+    type Balance = Balance;
+    type Assets = Assets;  // Use pallet-assets for token operations
     type MinConfirmations = BridgeMinConfirmations;
     type SignatureThreshold = BridgeSignatureThreshold;
 }
