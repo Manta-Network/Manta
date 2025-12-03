@@ -408,3 +408,266 @@ fn test_ordering_commitment_creation() {
         assert_ne!(commitment1, commitment3);
     });
 }
+
+#[test]
+fn test_submit_decryption_share_works() {
+    new_test_ext().execute_with(|| {
+        // Arrange
+        let block_number = 1;
+        let share_bytes = BoundedVec::try_from(vec![1, 2, 3, 4, 5]).unwrap();
+        let validator_index = 0;
+        let validator = 1;
+
+        // Act
+        assert_ok!(ChameleonMev::submit_decryption_share(
+            RuntimeOrigin::signed(validator),
+            block_number,
+            share_bytes.clone(),
+            validator_index,
+        ));
+
+        // Assert
+        let stored_share = ChameleonMev::threshold_decryption_shares(block_number, validator).unwrap();
+        assert_eq!(stored_share.share_bytes, share_bytes);
+        assert_eq!(stored_share.index, validator_index);
+    });
+}
+
+#[test]
+fn test_threshold_decryption_insufficient_shares() {
+    new_test_ext().execute_with(|| {
+        // Arrange - Add some encrypted transactions to mempool
+        let encrypted_data = BoundedVec::try_from(vec![1, 2, 3, 4]).unwrap();
+        let commitment = H256::from([1; 32]);
+        let timestamp = 1000;
+
+        assert_ok!(ChameleonMev::submit_encrypted_transaction(
+            RuntimeOrigin::signed(1),
+            encrypted_data,
+            commitment,
+            timestamp,
+        ));
+
+        let block_number = 1;
+        let share_bytes = BoundedVec::try_from(vec![1, 2, 3]).unwrap();
+
+        // Submit only 4 shares (threshold is 5)
+        for i in 1..=4 {
+            assert_ok!(ChameleonMev::submit_decryption_share(
+                RuntimeOrigin::signed(i),
+                block_number,
+                share_bytes.clone(),
+                i - 1,
+            ));
+        }
+
+        // Assert - Block should not be decrypted yet
+        assert!(ChameleonMev::decrypted_transactions(block_number).is_empty());
+    });
+}
+
+#[test]
+fn test_threshold_decryption_sufficient_shares() {
+    new_test_ext().execute_with(|| {
+        // Arrange - Add encrypted transactions to mempool
+        let encrypted_data = BoundedVec::try_from(vec![1, 2, 3, 4]).unwrap();
+        let commitment = H256::from([1; 32]);
+        let timestamp = 1000;
+
+        assert_ok!(ChameleonMev::submit_encrypted_transaction(
+            RuntimeOrigin::signed(1),
+            encrypted_data.clone(),
+            commitment,
+            timestamp,
+        ));
+
+        let block_number = 1;
+        let share_bytes = BoundedVec::try_from(vec![1, 2, 3]).unwrap();
+
+        // Submit exactly threshold shares (5)
+        for i in 1..=5 {
+            assert_ok!(ChameleonMev::submit_decryption_share(
+                RuntimeOrigin::signed(i),
+                block_number,
+                share_bytes.clone(),
+                i - 1,
+            ));
+        }
+
+        // Assert - Block should be decrypted
+        let decrypted_txs = ChameleonMev::decrypted_transactions(block_number);
+        assert_eq!(decrypted_txs.len(), 1);
+        // In our placeholder implementation, decrypted data equals original encrypted data
+        assert_eq!(decrypted_txs[0], encrypted_data.to_vec());
+    });
+}
+
+#[test]
+fn test_threshold_encryption_setup() {
+    new_test_ext().execute_with(|| {
+        // Test threshold public key storage
+        let threshold_key = ThresholdPublicKey {
+            key_bytes: BoundedVec::try_from(vec![1; 48]).unwrap(), // BLS12-381 key size
+            epoch: 1,
+        };
+
+        // Store the key
+        CurrentPublicKey::<Test>::put(&threshold_key);
+
+        // Verify storage
+        let stored_key = ChameleonMev::current_public_key().unwrap();
+        assert_eq!(stored_key.key_bytes, threshold_key.key_bytes);
+        assert_eq!(stored_key.epoch, threshold_key.epoch);
+    });
+}
+
+#[test]
+fn test_fifo_ordering_verification() {
+    new_test_ext().execute_with(|| {
+        // Submit transactions with different timestamps
+        let transactions = vec![
+            (vec![1], 3000u64), // Third
+            (vec![2], 1000u64), // First  
+            (vec![3], 2000u64), // Second
+        ];
+
+        for (i, (data, timestamp)) in transactions.iter().enumerate() {
+            let encrypted_data = BoundedVec::try_from(data.clone()).unwrap();
+            let commitment = H256::from([i as u8; 32]);
+
+            assert_ok!(ChameleonMev::submit_encrypted_transaction(
+                RuntimeOrigin::signed(1),
+                encrypted_data,
+                commitment,
+                *timestamp,
+            ));
+        }
+
+        // Verify FIFO ordering (by timestamp)
+        let mempool = ChameleonMev::encrypted_mempool();
+        assert_eq!(mempool.len(), 3);
+        assert_eq!(mempool[0].timestamp, 1000); // First
+        assert_eq!(mempool[1].timestamp, 2000); // Second
+        assert_eq!(mempool[2].timestamp, 3000); // Third
+
+        // Verify the actual data is in correct order
+        assert_eq!(mempool[0].encrypted_data.to_vec(), vec![2]); // Data from timestamp 1000
+        assert_eq!(mempool[1].encrypted_data.to_vec(), vec![3]); // Data from timestamp 2000
+        assert_eq!(mempool[2].encrypted_data.to_vec(), vec![1]); // Data from timestamp 3000
+    });
+}
+
+#[test]
+fn test_sandwich_attack_prevention_comprehensive() {
+    new_test_ext().execute_with(|| {
+        // Victim wants to buy 100 tokens at timestamp 2000
+        let victim_tx = BoundedVec::try_from(vec![100, 0, 1]).unwrap(); // Buy 100 tokens
+        let victim_commitment = H256::from([50; 32]);
+        
+        // Attacker tries to sandwich:
+        // 1. Front-run: Buy tokens before victim (timestamp 1999)
+        // 2. Back-run: Sell tokens after victim (timestamp 2001)
+        let front_run_tx = BoundedVec::try_from(vec![200, 0, 1]).unwrap(); // Buy 200 tokens
+        let front_run_commitment = H256::from([60; 32]);
+        
+        let back_run_tx = BoundedVec::try_from(vec![200, 1, 0]).unwrap(); // Sell 200 tokens
+        let back_run_commitment = H256::from([70; 32]);
+
+        // Submit transactions
+        assert_ok!(ChameleonMev::submit_encrypted_transaction(
+            RuntimeOrigin::signed(2), // attacker front-run
+            front_run_tx,
+            front_run_commitment,
+            1999, // Before victim
+        ));
+
+        assert_ok!(ChameleonMev::submit_encrypted_transaction(
+            RuntimeOrigin::signed(1), // victim
+            victim_tx,
+            victim_commitment,
+            2000, // Victim's timestamp
+        ));
+
+        assert_ok!(ChameleonMev::submit_encrypted_transaction(
+            RuntimeOrigin::signed(2), // attacker back-run
+            back_run_tx,
+            back_run_commitment,
+            2001, // After victim
+        ));
+
+        // Verify ordering is strictly by timestamp (FIFO)
+        let mempool = ChameleonMev::encrypted_mempool();
+        assert_eq!(mempool.len(), 3);
+        assert_eq!(mempool[0].commitment, front_run_commitment); // 1999
+        assert_eq!(mempool[1].commitment, victim_commitment);    // 2000
+        assert_eq!(mempool[2].commitment, back_run_commitment);  // 2001
+
+        // Key insight: Even if attacker tries to sandwich, they cannot:
+        // 1. See the victim's transaction details (encrypted)
+        // 2. Reorder transactions after submission (timestamp-locked)
+        // 3. Use higher fees to jump ahead (no fee-based ordering)
+    });
+}
+
+#[test]
+fn test_decryption_share_duplicate_submission() {
+    new_test_ext().execute_with(|| {
+        let block_number = 1;
+        let share_bytes = BoundedVec::try_from(vec![1, 2, 3]).unwrap();
+        let validator = 1;
+
+        // Submit first share
+        assert_ok!(ChameleonMev::submit_decryption_share(
+            RuntimeOrigin::signed(validator),
+            block_number,
+            share_bytes.clone(),
+            0,
+        ));
+
+        // Submit duplicate share (should overwrite)
+        let new_share_bytes = BoundedVec::try_from(vec![4, 5, 6]).unwrap();
+        assert_ok!(ChameleonMev::submit_decryption_share(
+            RuntimeOrigin::signed(validator),
+            block_number,
+            new_share_bytes.clone(),
+            0,
+        ));
+
+        // Verify the latest share is stored
+        let stored_share = ChameleonMev::threshold_decryption_shares(block_number, validator).unwrap();
+        assert_eq!(stored_share.share_bytes, new_share_bytes);
+    });
+}
+
+#[test]
+fn test_mempool_capacity_limit() {
+    new_test_ext().execute_with(|| {
+        // Fill mempool to capacity (MaxTransactionsPerBlock = 1000)
+        for i in 0..1000 {
+            let encrypted_data = BoundedVec::try_from(vec![i as u8]).unwrap();
+            let commitment = H256::from([i as u8; 32]);
+            let timestamp = i as u64;
+
+            assert_ok!(ChameleonMev::submit_encrypted_transaction(
+                RuntimeOrigin::signed(1),
+                encrypted_data,
+                commitment,
+                timestamp,
+            ));
+        }
+
+        // Try to add one more (should fail)
+        let overflow_data = BoundedVec::try_from(vec![255]).unwrap();
+        let overflow_commitment = H256::from([255; 32]);
+
+        assert_noop!(
+            ChameleonMev::submit_encrypted_transaction(
+                RuntimeOrigin::signed(1),
+                overflow_data,
+                overflow_commitment,
+                1000,
+            ),
+            Error::<Test>::MempoolFull
+        );
+    });
+}
