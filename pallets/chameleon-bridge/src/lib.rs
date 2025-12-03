@@ -329,7 +329,7 @@ pub mod pallet {
         pub fn initiate_withdrawal(
             origin: OriginFor<T>,
             asset: BridgeableAsset,
-            amount: BalanceOf<T>,
+            amount: u128,
             eth_destination: H160,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
