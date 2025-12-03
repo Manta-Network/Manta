@@ -66,7 +66,10 @@ where
 /// Contains the ordered list of encrypted transactions for a block
 /// along with the commitment to their ordering.
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq)]
-pub struct BlockProposal<T: frame_system::Config> {
+pub struct BlockProposal<T>
+where
+    T: frame_system::Config,
+{
     /// Encrypted transactions in timestamp order
     pub encrypted_txs: Vec<EncryptedTransaction<T>>,
     /// Commitment hash of the ordering
