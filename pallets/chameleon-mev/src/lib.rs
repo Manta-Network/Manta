@@ -222,6 +222,31 @@ pub mod pallet {
             /// Validator who provided share
             validator: T::AccountId,
         },
+        /// Decryption share submitted
+        DecryptionShareSubmitted {
+            /// Validator who submitted
+            validator: T::AccountId,
+            /// Block number
+            block_number: BlockNumberFor<T>,
+            /// Current share count
+            share_count: u32,
+        },
+        /// Block successfully decrypted
+        BlockDecrypted {
+            /// Block number
+            block_number: BlockNumberFor<T>,
+            /// Number of transactions decrypted
+            transaction_count: u32,
+        },
+        /// Insufficient shares for decryption
+        DecryptionFailed {
+            /// Block number
+            block_number: BlockNumberFor<T>,
+            /// Shares received
+            shares_received: u32,
+            /// Required threshold
+            threshold: u32,
+        },
     }
 
     #[pallet::error]
