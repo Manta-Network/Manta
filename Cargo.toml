@@ -48,6 +48,7 @@ lazy_static = "1.4.0"
 libsecp256k1 = { version = "0.7", default-features = false, features = ["hmac", "static-context"] }
 log = { version = "0.4.20", default-features = false }
 num_cpus = { version = "1.16.0" }
+num-traits = { version = "0.2", default-features = false }
 rand = { version = "0.8.5", default-features = false }
 rand_chacha = { version = "0.3.1", default-features = false }
 reqwest = { version = "0.11.6", features = ["blocking"] }
