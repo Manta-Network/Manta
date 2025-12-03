@@ -19,7 +19,7 @@
 //! This module handles verification of bridge transactions,
 //! including multi-signature validation and fraud proof mechanisms.
 
-use crate::types::*;
+use crate::types::{*, FraudProof, FraudType, ValidatorReputation};
 use codec::{Decode, Encode};
 use manta_primitives::types::{Balance, BlockNumber};
 use scale_info::TypeInfo;
