@@ -18,21 +18,6 @@
 //!
 //! A privacy-preserving decentralized exchange implementation for Chameleon Network
 //! featuring automated market maker (AMM) pools with constant product formula.
-//!
-//! ## Overview
-//!
-//! The pDEX enables private token swaps using:
-//! - Constant product AMM (x × y = k)
-//! - 0.25% swap fees (90% to LPs, 10% to Treasury)
-//! - LP rewards from 30% of validator emissions
-//! - Slippage protection and MEV resistance
-//!
-//! ## Key Features
-//!
-//! - **AMM Pools**: Uniswap v2-style constant product formula
-//! - **LP Rewards**: 19.5M CHML distributed over 20 years
-//! - **Fee Distribution**: 90% to LPs, 10% to Treasury
-//! - **Privacy**: Future zkSNARK integration for private amounts
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -44,7 +29,6 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use sp_runtime::traits::{AccountIdConversion, Saturating, Zero};
-// use sp_std::vec::Vec;
 
 // Re-export pallet items
 pub use pallet::*;
@@ -57,8 +41,6 @@ mod rewards;
 pub use types::*;
 pub use amm::*;
 pub use rewards::*;
-
-// Import chameleon constants when needed
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -85,7 +67,14 @@ pub mod pallet {
         /// The overarching event type.
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-        /// Asset ID type\n        type AssetId: Parameter + Copy + Ord + Default + MaxEncodedLen;\n\n        /// Balance type\n        type Balance: Parameter + Copy + Ord + Zero + Saturating + From<u128> + MaxEncodedLen +\n                     sp_std::ops::Div<Output = Self::Balance> +\n                     sp_std::ops::Mul<Output = Self::Balance> +\n                     sp_std::ops::Add<Output = Self::Balance>;
+        /// Asset ID type
+        type AssetId: Parameter + Copy + Ord + Default + MaxEncodedLen;
+
+        /// Balance type
+        type Balance: Parameter + Copy + Ord + Zero + Saturating + From<u128> + MaxEncodedLen +
+                     sp_std::ops::Div<Output = Self::Balance> +
+                     sp_std::ops::Mul<Output = Self::Balance> +
+                     sp_std::ops::Add<Output = Self::Balance>;
 
         /// Weight information for extrinsics
         type WeightInfo: WeightInfo;
@@ -104,7 +93,6 @@ pub mod pallet {
     }
 
     /// Liquidity pools storage
-    /// Maps (AssetA, AssetB) -> LiquidityPool
     #[pallet::storage]
     #[pallet::getter(fn pools)]
     pub type Pools<T: Config> = StorageDoubleMap<
@@ -118,7 +106,6 @@ pub mod pallet {
     >;
 
     /// LP token positions for users
-    /// Maps (AccountId, PoolId) -> LpPosition
     #[pallet::storage]
     #[pallet::getter(fn lp_positions)]
     pub type LpPositions<T: Config> = StorageDoubleMap<
@@ -132,7 +119,6 @@ pub mod pallet {
     >;
 
     /// Pool rewards accumulator
-    /// Maps PoolId -> RewardInfo
     #[pallet::storage]
     #[pallet::getter(fn pool_rewards)]
     pub type PoolRewards<T: Config> = StorageMap<
@@ -144,24 +130,12 @@ pub mod pallet {
     >;
 
     /// User claimable rewards
-    /// Maps (AccountId, PoolId) -> Balance
     #[pallet::storage]
     #[pallet::getter(fn user_rewards)]
     pub type UserRewards<T: Config> = StorageDoubleMap<
         _,
         Blake2_128Concat,
         T::AccountId,
-        Blake2_128Concat,
-        PoolId<T::AssetId>,
-        T::Balance,
-        ValueQuery,
-    >;
-
-    /// Total volume per pool (24h rolling)
-    #[pallet::storage]
-    #[pallet::getter(fn pool_volume)]
-    pub type PoolVolume<T: Config> = StorageMap<
-        _,
         Blake2_128Concat,
         PoolId<T::AssetId>,
         T::Balance,
@@ -176,48 +150,12 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// Pool created [pool_id, asset_a, asset_b, creator]
+        /// Pool created
         PoolCreated {
             pool_id: PoolId<T::AssetId>,
             asset_a: T::AssetId,
             asset_b: T::AssetId,
             creator: T::AccountId,
-        },
-        /// Liquidity added [pool_id, provider, amount_a, amount_b, lp_tokens]
-        LiquidityAdded {
-            pool_id: PoolId<T::AssetId>,
-            provider: T::AccountId,
-            amount_a: T::Balance,
-            amount_b: T::Balance,
-            lp_tokens: T::Balance,
-        },
-        /// Liquidity removed [pool_id, provider, amount_a, amount_b, lp_tokens]
-        LiquidityRemoved {
-            pool_id: PoolId<T::AssetId>,
-            provider: T::AccountId,
-            amount_a: T::Balance,
-            amount_b: T::Balance,
-            lp_tokens: T::Balance,
-        },
-        /// Swap executed [pool_id, trader, asset_in, asset_out, amount_in, amount_out]
-        Swap {
-            pool_id: PoolId<T::AssetId>,
-            trader: T::AccountId,
-            asset_in: T::AssetId,
-            asset_out: T::AssetId,
-            amount_in: T::Balance,
-            amount_out: T::Balance,
-        },
-        /// LP rewards claimed [pool_id, claimer, amount]
-        RewardsClaimed {
-            pool_id: PoolId<T::AssetId>,
-            claimer: T::AccountId,
-            amount: T::Balance,
-        },
-        /// Pool rewards distributed [pool_id, total_amount]
-        RewardsDistributed {
-            pool_id: PoolId<T::AssetId>,
-            total_amount: T::Balance,
         },
     }
 
@@ -227,28 +165,10 @@ pub mod pallet {
         PoolAlreadyExists,
         /// Pool does not exist
         PoolNotFound,
-        /// Insufficient liquidity in pool
-        InsufficientLiquidity,
-        /// Insufficient balance
-        InsufficientBalance,
-        /// Slippage tolerance exceeded
-        SlippageExceeded,
         /// Invalid asset pair (same asset)
         InvalidAssetPair,
-        /// Amount too small
-        AmountTooSmall,
-        /// LP position not found
-        LpPositionNotFound,
-        /// No rewards to claim
-        NoRewardsToClaim,
         /// Pool creation limit reached
         TooManyPools,
-        /// Minimum liquidity not met
-        MinimumLiquidityNotMet,
-        /// Mathematical overflow
-        Overflow,
-        /// Division by zero
-        DivisionByZero,
     }
 
     #[pallet::call]
@@ -319,54 +239,6 @@ pub mod pallet {
                 (asset_b, asset_a)
             };
             T::PalletId::get().into_sub_account_truncating((first, second))
-        }
-
-        /// Get pool with direction handling
-        pub fn get_pool_with_direction(
-            asset_a: &T::AssetId,
-            asset_b: &T::AssetId,
-        ) -> Option<(LiquidityPool<T::AssetId, T::Balance>, bool)> {
-            if let Some(pool) = Pools::<T>::get(asset_a, asset_b) {
-                Some((pool, false))
-            } else if let Some(pool) = Pools::<T>::get(asset_b, asset_a) {
-                Some((pool, true))
-            } else {
-                None
-            }
-        }
-
-        /// Quote function for calculating optimal amounts
-        pub fn quote(
-            amount_a: T::Balance,
-            reserve_a: T::Balance,
-            reserve_b: T::Balance,
-        ) -> Result<T::Balance, Error<T>> {
-            ensure!(!amount_a.is_zero(), Error::<T>::AmountTooSmall);
-            ensure!(!reserve_a.is_zero() && !reserve_b.is_zero(), Error::<T>::InsufficientLiquidity);
-            
-            // amount_b = amount_a * reserve_b / reserve_a
-            let amount_b = amount_a.saturating_mul(reserve_b) / reserve_a;
-            Ok(amount_b)
-        }
-
-        /// Simple integer square root implementation
-        pub fn integer_sqrt(n: T::Balance) -> T::Balance {
-            if n.is_zero() {
-                return n;
-            }
-            
-            let mut x = n;
-            let mut y = (n + T::Balance::from(1u128)) / T::Balance::from(2u128);
-            
-            // Newton's method: x_{n+1} = (x_n + n/x_n) / 2
-            let mut iterations = 0;
-            while y < x && iterations < 100 { // Prevent infinite loops
-                x = y;
-                y = (x + n / x) / T::Balance::from(2u128);
-                iterations += 1;
-            }
-            
-            x
         }
     }
 }
