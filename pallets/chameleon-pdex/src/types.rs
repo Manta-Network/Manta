@@ -92,7 +92,7 @@ impl<AssetId: Copy + Ord, Balance: Zero + Copy> LiquidityPool<AssetId, Balance> 
             reserve_a: Balance::zero(),
             reserve_b: Balance::zero(),
             total_lp_tokens: Balance::zero(),
-            fee: Perbill::from_parts(2_500_000), // 0.25%
+            fee_bps: 25, // 0.25%
         }
     }
     
