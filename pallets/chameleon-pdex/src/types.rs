@@ -17,7 +17,6 @@
 //! Types for the Chameleon pDEX pallet
 
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::traits::Get;
 use scale_info::TypeInfo;
 use sp_runtime::{traits::Zero, Perbill};
 use sp_std::cmp::Ordering;
