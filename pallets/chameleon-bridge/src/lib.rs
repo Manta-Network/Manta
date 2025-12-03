@@ -42,10 +42,10 @@ pub mod pallet {
 
     /// Wrapped asset IDs on Chameleon
     /// These are the asset IDs in pallet-assets for wrapped tokens
-    pub const WRAPPED_ETH_ASSET_ID: u32 = 1;
-    pub const WRAPPED_USDC_ASSET_ID: u32 = 2;
-    pub const WRAPPED_USDT_ASSET_ID: u32 = 3;
-    pub const WRAPPED_WBTC_ASSET_ID: u32 = 4;
+    pub const WRAPPED_ETH_ASSET_ID: u128 = 1;
+    pub const WRAPPED_USDC_ASSET_ID: u128 = 2;
+    pub const WRAPPED_USDT_ASSET_ID: u128 = 3;
+    pub const WRAPPED_WBTC_ASSET_ID: u128 = 4;
 
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
