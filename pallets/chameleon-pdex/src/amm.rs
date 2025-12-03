@@ -21,7 +21,7 @@
 
 use sp_runtime::{
     traits::{Zero, Saturating},
-    Perbill, ArithmeticError,
+    Perbill,
 };
 use sp_std::cmp;
 
