@@ -205,7 +205,7 @@ fn sign_withdrawal_works() {
             eth_destination
         ));
         
-        let signature = vec![1, 2, 3, 4]; // Mock signature
+        let signature = BoundedVec::try_from(vec![1, 2, 3, 4]).unwrap(); // Mock signature
         
         // Sign withdrawal
         assert_ok!(ChameleonBridge::sign_withdrawal(
