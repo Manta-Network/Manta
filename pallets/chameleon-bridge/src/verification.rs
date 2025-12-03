@@ -25,7 +25,7 @@ use manta_primitives::types::{Balance, BlockNumber};
 use scale_info::TypeInfo;
 use sp_core::H256;
 use sp_runtime::{traits::Saturating, RuntimeDebug};
-use sp_std::{vec::Vec, collections::btree_set::BTreeSet};
+use sp_std::vec::Vec;
 
 /// Multi-signature verification result
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
