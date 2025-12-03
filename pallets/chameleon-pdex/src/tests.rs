@@ -657,3 +657,102 @@ fn test_integer_sqrt() {
     assert_eq!(integer_sqrt(16u128), 4);
     assert_eq!(integer_sqrt(1000000u128), 1000);
 }
+
+// Additional comprehensive tests for full AMM functionality
+
+#[test]
+fn test_fee_calculation_and_distribution() {
+    let input_amount = 1000u128;
+    let fee_bps = 25u32; // 0.25%
+    
+    let fee_amount = calculate_swap_fee(input_amount, fee_bps);
+    assert_eq!(fee_amount, 2); // 1000 * 25 / 10000 = 2.5 -> 2 (integer division)
+    
+    let (lp_fee, treasury_fee) = distribute_swap_fee(fee_amount);
+    // 90% to LPs, 10% to treasury
+    assert_eq!(lp_fee, 1); // 2 * 90% = 1.8 -> 1
+    assert_eq!(treasury_fee, 1); // 2 - 1 = 1
+}
+
+#[test]
+fn test_slippage_protection_add_liquidity() {
+    new_test_ext().execute_with(|| {
+        // Setup
+        create_asset(CHML, ALICE, 1);
+        create_asset(ETH, ALICE, 1);
+        mint_asset(CHML, ALICE, 10_000);
+        mint_asset(ETH, ALICE, 100);
+        mint_asset(CHML, BOB, 10_000);
+        mint_asset(ETH, BOB, 100);
+
+        // Create pool and add initial liquidity
+        assert_ok!(ChameleonPdex::create_pool(
+            RuntimeOrigin::signed(ALICE),
+            CHML,
+            ETH
+        ));
+        assert_ok!(ChameleonPdex::add_liquidity(
+            RuntimeOrigin::signed(ALICE),
+            CHML,
+            ETH,
+            1000, 10, 1000, 10
+        ));
+
+        // Bob tries to add liquidity with unrealistic slippage protection
+        assert_noop!(
+            ChameleonPdex::add_liquidity(
+                RuntimeOrigin::signed(BOB),
+                CHML,
+                ETH,
+                500, // amount_a_desired
+                5,   // amount_b_desired
+                600, // amount_a_min (impossible)
+                6,   // amount_b_min (impossible)
+            ),
+            Error::<Test>::SlippageExceeded
+        );
+    });
+}
+
+#[test]
+fn test_constant_product_invariant() {
+    new_test_ext().execute_with(|| {
+        // Setup with liquidity
+        create_asset(CHML, ALICE, 1);
+        create_asset(ETH, ALICE, 1);
+        mint_asset(CHML, ALICE, 10_000);
+        mint_asset(ETH, ALICE, 100);
+        mint_asset(CHML, BOB, 1_000);
+
+        assert_ok!(ChameleonPdex::create_pool(
+            RuntimeOrigin::signed(ALICE),
+            CHML,
+            ETH
+        ));
+        assert_ok!(ChameleonPdex::add_liquidity(
+            RuntimeOrigin::signed(ALICE),
+            CHML,
+            ETH,
+            1000, 10, 1000, 10
+        ));
+
+        // Record initial k
+        let pool_before = ChameleonPdex::get_pool(CHML, ETH).unwrap();
+        let k_before = pool_before.reserve_a * pool_before.reserve_b;
+
+        // Execute swap
+        assert_ok!(ChameleonPdex::swap_exact_tokens_for_tokens(
+            RuntimeOrigin::signed(BOB),
+            100,
+            0,
+            vec![CHML, ETH],
+        ));
+
+        // Check k after swap
+        let pool_after = ChameleonPdex::get_pool(CHML, ETH).unwrap();
+        let k_after = pool_after.reserve_a * pool_after.reserve_b;
+
+        // k should increase due to fees (constant product + fees)
+        assert!(k_after >= k_before, "Constant product should increase due to fees");
+    });
+}
