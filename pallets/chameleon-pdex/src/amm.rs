@@ -23,6 +23,7 @@ use sp_runtime::{
     traits::{Zero, Saturating},
     Perbill,
 };
+
 // Import chameleon constants
 use manta_primitives::chameleon_constants::fees::PDEX_LP_SHARE;
 
@@ -44,14 +45,6 @@ pub enum AmmError {
 }
 
 /// Calculate swap output using constant product formula with fees
-/// 
-/// Formula: dy = y * dx * (1 - fee) / (x + dx * (1 - fee))
-/// Where:
-/// - dx = input amount
-/// - dy = output amount  
-/// - x = input reserve
-/// - y = output reserve
-/// - fee = swap fee (0.25% default)
 pub fn calculate_swap_output<Balance>(
     input_amount: Balance,
     input_reserve: Balance,
@@ -59,7 +52,9 @@ pub fn calculate_swap_output<Balance>(
     fee_percent: Perbill,
 ) -> Result<Balance, AmmError>
 where
-    Balance: Copy + Zero + Saturating + From<u128>,
+    Balance: Copy + Zero + Saturating + From<u128> + 
+             sp_std::ops::Div<Output = Balance> +
+             sp_std::ops::Mul<Output = Balance>,
 {
     // Validate inputs
     if input_amount.is_zero() {
@@ -70,7 +65,6 @@ where
     }
 
     // Apply fee: amount_after_fee = amount * (1 - fee)
-    // fee_percent is in parts per billion (1e9)
     let fee_multiplier = Balance::from(1_000_000_000u128).saturating_sub(Balance::from(fee_percent.deconstruct() as u128));
     let input_after_fee = input_amount.saturating_mul(fee_multiplier) / Balance::from(1_000_000_000u128);
     
@@ -79,7 +73,6 @@ where
     }
 
     // Calculate output using constant product formula
-    // output = (output_reserve * input_after_fee) / (input_reserve + input_after_fee)
     let numerator = output_reserve.saturating_mul(input_after_fee);
     let denominator = input_reserve.saturating_add(input_after_fee);
     
@@ -97,9 +90,6 @@ where
 }
 
 /// Calculate LP tokens to mint for initial liquidity provision
-/// 
-/// For first liquidity: LP_tokens = sqrt(amount_a * amount_b)
-/// For subsequent: LP_tokens = min(amount_a * total_lp / reserve_a, amount_b * total_lp / reserve_b)
 pub fn calculate_lp_tokens_mint<Balance>(
     amount_a: Balance,
     amount_b: Balance,
@@ -108,7 +98,9 @@ pub fn calculate_lp_tokens_mint<Balance>(
     total_lp_tokens: Balance,
 ) -> Result<Balance, AmmError>
 where
-    Balance: Copy + Zero + Saturating + From<u128> + PartialOrd,
+    Balance: Copy + Zero + Saturating + From<u128> + PartialOrd +
+             sp_std::ops::Div<Output = Balance> +
+             sp_std::ops::Mul<Output = Balance>,
 {
     if amount_a.is_zero() || amount_b.is_zero() {
         return Err(AmmError::AmountTooSmall);
@@ -145,9 +137,6 @@ where
 }
 
 /// Calculate amounts to return when burning LP tokens
-/// 
-/// amount_a = lp_tokens * reserve_a / total_lp_tokens
-/// amount_b = lp_tokens * reserve_b / total_lp_tokens
 pub fn calculate_lp_tokens_burn<Balance>(
     lp_tokens: Balance,
     reserve_a: Balance,
@@ -155,7 +144,9 @@ pub fn calculate_lp_tokens_burn<Balance>(
     total_lp_tokens: Balance,
 ) -> Result<(Balance, Balance), AmmError>
 where
-    Balance: Copy + Zero + Saturating + PartialOrd,
+    Balance: Copy + Zero + Saturating + PartialOrd +
+             sp_std::ops::Div<Output = Balance> +
+             sp_std::ops::Mul<Output = Balance>,
 {
     if lp_tokens.is_zero() {
         return Err(AmmError::AmountTooSmall);
@@ -174,15 +165,15 @@ where
 }
 
 /// Quote function: calculate equivalent amount of token B for given amount of token A
-/// 
-/// Formula: amount_b = amount_a * reserve_b / reserve_a
 pub fn quote<Balance>(
     amount_a: Balance,
     reserve_a: Balance,
     reserve_b: Balance,
 ) -> Result<Balance, AmmError>
 where
-    Balance: Copy + Zero + Saturating,
+    Balance: Copy + Zero + Saturating +
+             sp_std::ops::Div<Output = Balance> +
+             sp_std::ops::Mul<Output = Balance>,
 {
     if amount_a.is_zero() {
         return Err(AmmError::AmountTooSmall);
@@ -196,13 +187,13 @@ where
 }
 
 /// Distribute swap fees between LPs and treasury
-/// 
-/// Returns (lp_fee, treasury_fee)
 pub fn distribute_swap_fee<Balance>(
     total_fee: Balance,
 ) -> (Balance, Balance)
 where
-    Balance: Copy + Zero + Saturating + From<u128>,
+    Balance: Copy + Zero + Saturating + From<u128> +
+             sp_std::ops::Div<Output = Balance> +
+             sp_std::ops::Mul<Output = Balance>,
 {
     let lp_fee = total_fee.saturating_mul(Balance::from(PDEX_LP_SHARE.deconstruct() as u128))
         / Balance::from(1_000_000_000u128);
@@ -217,32 +208,34 @@ pub fn calculate_swap_fee<Balance>(
     fee_percent: Perbill,
 ) -> Balance
 where
-    Balance: Copy + Zero + Saturating + From<u128>,
+    Balance: Copy + Zero + Saturating + From<u128> +
+             sp_std::ops::Div<Output = Balance> +
+             sp_std::ops::Mul<Output = Balance>,
 {
     input_amount.saturating_mul(Balance::from(fee_percent.deconstruct() as u128))
         / Balance::from(1_000_000_000u128)
 }
 
 /// Simple integer square root implementation using Newton's method
-/// 
-/// Used for calculating initial LP tokens: sqrt(amount_a * amount_b)
 pub fn integer_sqrt<Balance>(n: Balance) -> Balance
 where
-    Balance: Copy + Zero + From<u128> + PartialOrd + Saturating,
+    Balance: Copy + Zero + From<u128> + PartialOrd + Saturating +
+             sp_std::ops::Div<Output = Balance> +
+             sp_std::ops::Mul<Output = Balance> +
+             sp_std::ops::Add<Output = Balance>,
 {
     if n.is_zero() {
         return n;
     }
     
     let mut x = n;
-    let mut y = (n.saturating_add(Balance::from(1u128))) / Balance::from(2u128);
+    let mut y = (n + Balance::from(1u128)) / Balance::from(2u128);
     
     // Newton's method: x_{n+1} = (x_n + n/x_n) / 2
-    // Simplified version to avoid complex trait bounds
     let mut iterations = 0;
     while y < x && iterations < 100 { // Prevent infinite loops
         x = y;
-        y = (x.saturating_add(n / x)) / Balance::from(2u128);
+        y = (x + n / x) / Balance::from(2u128);
         iterations += 1;
     }
     
@@ -258,9 +251,6 @@ mod tests {
 
     #[test]
     fn test_swap_output_calculation() {
-        // Pool: 1000 A, 1000 B
-        // Swap: 100 A -> ? B
-        // Fee: 0.25%
         let input_amount = 100u128;
         let input_reserve = 1000u128;
         let output_reserve = 1000u128;
@@ -273,15 +263,12 @@ mod tests {
             fee,
         ).unwrap();
         
-        // With 0.25% fee: input_after_fee = 100 * 0.9975 = 99.75
-        // output = 1000 * 99.75 / (1000 + 99.75) = ~90.7
+        // Should get approximately 90-92 tokens out
         assert!(output > 90 && output < 92);
     }
 
     #[test]
     fn test_lp_tokens_mint_initial() {
-        // First liquidity: 1000 A, 1000 B
-        // LP tokens = sqrt(1000 * 1000) = 1000
         let amount_a = 1000u128;
         let amount_b = 1000u128;
         let reserve_a = 0u128;
@@ -301,9 +288,6 @@ mod tests {
 
     #[test]
     fn test_lp_tokens_burn() {
-        // Pool: 1000 A, 2000 B, 1000 LP tokens
-        // Burn: 500 LP tokens
-        // Returns: 500 A, 1000 B
         let lp_tokens = 500u128;
         let reserve_a = 1000u128;
         let reserve_b = 2000u128;
@@ -322,9 +306,6 @@ mod tests {
 
     #[test]
     fn test_quote() {
-        // Pool: 1000 A, 2000 B
-        // Quote: 100 A -> ? B
-        // Result: 100 * 2000 / 1000 = 200 B
         let amount_a = 100u128;
         let reserve_a = 1000u128;
         let reserve_b = 2000u128;
