@@ -248,7 +248,8 @@ impl EthereumSignature {
         message.extend_from_slice(&amount.to_be_bytes());
         
         // Simple hash for now - replace with keccak256 in production
-        sp_io::hashing::blake2_256(&message).into()
+        use sp_core::hashing::blake2_256;
+        blake2_256(&message).into()
     }
 }
 
