@@ -13,3 +13,7 @@ runtime/**/target
 /scripts/benchmarking/rocksdb_weights.rs
 /scripts/benchmarking/frame-weights-output/
 /scripts/benchmarking/xcm-weights-output/
+-e 
+# Environment files
+*.env
+*.env.*
