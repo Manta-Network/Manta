@@ -42,37 +42,7 @@ pub enum MultiSigVerificationResult {
     UnknownValidator,
 }
 
-/// Fraud proof for challenging bridge operations
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct FraudProof<AccountId> {
-    /// Type of fraud being reported
-    pub fraud_type: FraudType,
-    /// Transaction or operation being challenged
-    pub challenged_tx: H256,
-    /// Evidence supporting the fraud claim
-    pub evidence: Vec<u8>,
-    /// Account submitting the fraud proof
-    pub challenger: AccountId,
-    /// Block number when fraud proof was submitted
-    pub submitted_at: BlockNumber,
-    /// Reward for successful fraud proof
-    pub reward: Balance,
-}
-
-/// Types of fraud that can be reported
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub enum FraudType {
-    /// Invalid Ethereum transaction (doesn't exist or has wrong data)
-    InvalidEthereumTx,
-    /// Double spending attempt
-    DoubleSpending,
-    /// Malicious validator behavior
-    MaliciousValidator,
-    /// Invalid signature
-    InvalidSignature,
-    /// Unauthorized withdrawal
-    UnauthorizedWithdrawal,
-}
+// Fraud proof types moved to types.rs
 
 /// Multi-signature validator for bridge operations
 pub struct MultiSigValidator<T: frame_system::Config> {
