@@ -45,6 +45,29 @@ pub mod pallet {
     /// Balance type alias
     pub type BalanceOf<T> = u128;
 
+    /// Bridge deposit record
+    #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq, MaxEncodedLen)]
+    pub struct BridgeDeposit<AccountId, Balance> {
+        pub eth_tx_hash: H256,
+        pub recipient: AccountId,
+        pub asset: BridgeableAsset,
+        pub amount: Balance,
+        pub status: DepositStatus,
+        pub confirmations: u32,
+    }
+
+    /// Bridge withdrawal record
+    #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq, MaxEncodedLen)]
+    pub struct BridgeWithdrawal<AccountId, Balance> {
+        pub withdrawal_id: u64,
+        pub from: AccountId,
+        pub eth_destination: H160,
+        pub asset: BridgeableAsset,
+        pub amount: Balance,
+        pub status: WithdrawalStatus,
+        pub signature_count: u32,
+    }
+
     /// The current storage version
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
