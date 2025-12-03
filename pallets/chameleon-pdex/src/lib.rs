@@ -71,7 +71,7 @@ pub mod pallet {
         type AssetId: Parameter + Copy + Ord + Default + MaxEncodedLen;
 
         /// Balance type
-        type Balance: Parameter + Copy + Ord + Zero + Saturating + From<u128> + MaxEncodedLen +
+        type Balance: Parameter + Copy + Ord + Zero + Saturating + From<u128> + MaxEncodedLen + Default +
                      sp_std::ops::Div<Output = Self::Balance> +
                      sp_std::ops::Mul<Output = Self::Balance> +
                      sp_std::ops::Add<Output = Self::Balance>;
