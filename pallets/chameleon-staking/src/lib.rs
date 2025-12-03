@@ -671,8 +671,11 @@ pub mod pallet {
                 return Ok(());
             }
             
-            // Iterate through delegations for this validator
-            for (delegator, delegation_amount) in Delegations::<T>::iter_prefix_values(validator_id) {
+            // Iterate through all delegations to find ones for this validator
+            for ((delegator, validator), delegation_amount) in Delegations::<T>::iter() {
+                if validator != *validator_id {
+                    continue;
+                }
                 let delegator_reward = total_delegator_rewards
                     .saturating_mul(delegation_amount)
                     .saturating_div(delegated_stake);
