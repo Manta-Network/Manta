@@ -231,6 +231,8 @@ export interface UseTransactionsReturn {
   isLoading: boolean;
   error: string | null;
   sendTransaction: (to: string, amount: string, isPrivate: boolean, memo?: string) => Promise<string>;
+  shieldTokens: (amount: string) => Promise<string>;
+  unshieldTokens: (amount: string) => Promise<string>;
   refreshTransactions: () => Promise<void>;
 }
 
