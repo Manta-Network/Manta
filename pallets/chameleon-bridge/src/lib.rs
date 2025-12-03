@@ -358,7 +358,7 @@ pub mod pallet {
                 from: who,
                 eth_destination,
                 asset,
-                amount: amount.saturated_into(),
+                amount,
             });
             
             Ok(())
