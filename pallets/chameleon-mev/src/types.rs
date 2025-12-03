@@ -124,3 +124,38 @@ pub struct MevProtectionStats {
     /// Average decryption time (milliseconds)
     pub avg_decryption_time_ms: u64,
 }
+
+/// Threshold encryption public key (shared across validators)
+#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq, MaxEncodedLen)]
+pub struct ThresholdPublicKey {
+    /// BLS12-381 public key bytes
+    pub key_bytes: BoundedVec<u8, ConstU32<48>>,
+    /// Epoch for key rotation
+    pub epoch: u32,
+}
+
+/// Decryption share from a validator
+#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq, MaxEncodedLen)]
+pub struct DecryptionShare {
+    /// Validator account ID (as bytes)
+    pub validator: [u8; 32],
+    /// Decryption share bytes
+    pub share_bytes: BoundedVec<u8, ConstU32<96>>,
+    /// Validator index in the threshold scheme
+    pub index: u32,
+}
+
+/// Encrypted transaction with threshold encryption
+#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub struct ThresholdEncryptedTx<BlockNumber> {
+    /// Encrypted transaction ciphertext
+    pub ciphertext: BoundedVec<u8, ConstU32<MAX_TX_SIZE>>,
+    /// Ephemeral key for encryption
+    pub ephemeral_key: BoundedVec<u8, ConstU32<48>>,
+    /// Commitment hash
+    pub commitment: Hash,
+    /// Block number when submitted
+    pub submitted_at_block: BlockNumber,
+    /// Timestamp for ordering
+    pub timestamp: u64,
+}
