@@ -160,6 +160,35 @@ pub mod pallet {
         ValueQuery,
     >;
 
+    /// Current threshold public key
+    #[pallet::storage]
+    #[pallet::getter(fn current_public_key)]
+    pub type CurrentPublicKey<T: Config> = StorageValue<_, ThresholdPublicKey, OptionQuery>;
+
+    /// Decryption shares per block
+    #[pallet::storage]
+    #[pallet::getter(fn threshold_decryption_shares)]
+    pub type ThresholdDecryptionShares<T: Config> = StorageDoubleMap<
+        _,
+        Blake2_128Concat,
+        BlockNumberFor<T>,  // Block number
+        Blake2_128Concat,
+        T::AccountId,  // Validator
+        DecryptionShare,
+        OptionQuery,
+    >;
+
+    /// Decrypted transactions ready for execution
+    #[pallet::storage]
+    #[pallet::getter(fn decrypted_transactions)]
+    pub type DecryptedTransactions<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        BlockNumberFor<T>,
+        BoundedVec<Vec<u8>, T::MaxTransactionsPerBlock>,
+        ValueQuery,
+    >;
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
