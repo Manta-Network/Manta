@@ -398,7 +398,7 @@ fn test_reveal_must_match_commitment() {
 fn test_replay_attack_prevented() {
     new_test_ext().execute_with(|| {
         let tx_data: BoundedVec<u8, ConstU32<65536>> = vec![1, 2, 3].try_into().unwrap();
-        let tx_hash = H256::from_slice(&frame_support::Blake2_256::hash(&tx_data));
+        let tx_hash = H256::from_slice(&Blake2_256::hash(&tx_data));
         let nonce = [1u8; 32];
 
         // Complete full cycle
