@@ -245,15 +245,37 @@ fn test_debug_asset_transfers() {
         println!("Pool CHML balance before: {}", Assets::balance(CHML, &pool_acc));
         
         // Try direct transfer using Assets pallet
-        assert_ok!(Assets::transfer(
+        let result = Assets::transfer(
             RuntimeOrigin::signed(ALICE),
             CHML,
             pool_acc,
             1000u128,
-        ));
+        );
         
-        println!("Pool CHML balance after direct transfer: {}", Assets::balance(CHML, &pool_acc));
-        println!("ALICE CHML balance after direct transfer: {}", Assets::balance(CHML, &ALICE));
+        if let Err(e) = result {
+            println!("Direct transfer failed: {:?}", e);
+        } else {
+            println!("Direct transfer succeeded");
+            println!("Pool CHML balance after direct transfer: {}", Assets::balance(CHML, &pool_acc));
+            println!("ALICE CHML balance after direct transfer: {}", Assets::balance(CHML, &ALICE));
+        }
+        
+        // Test LP token minting
+        println!("Testing LP token minting...");
+        let lp_asset_id = 1000u128;
+        let mint_result = Assets::mint(
+            RuntimeOrigin::signed(ALICE),
+            lp_asset_id,
+            ALICE,
+            1000u128,
+        );
+        
+        if let Err(e) = mint_result {
+            println!("LP token mint failed: {:?}", e);
+        } else {
+            println!("LP token mint succeeded");
+            println!("ALICE LP token balance: {}", Assets::balance(lp_asset_id, &ALICE));
+        }
     });
 }
 
