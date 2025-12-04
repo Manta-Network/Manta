@@ -325,14 +325,15 @@ pub mod pallet {
                 })?;
 
                 // Mint LP tokens to provider
-                T::Assets::mint_into(
-                    pool.lp_asset_id,
-                    &provider,
-                    lp_minted,
-                ).map_err(|e| {
-                    log::error!("Mint LP tokens failed: {:?}", e);
-                    Error::<T>::LpTokenMintFailed
-                })?;
+                // TODO: Temporarily disabled to test basic transfers
+                // T::Assets::mint_into(
+                //     pool.lp_asset_id,
+                //     &provider,
+                //     lp_minted,
+                // ).map_err(|e| {
+                //     log::error!("Mint LP tokens failed: {:?}", e);
+                //     Error::<T>::LpTokenMintFailed
+                // })?;
                 // =============================================
 
                 // Update pool reserves
