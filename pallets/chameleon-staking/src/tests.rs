@@ -67,6 +67,7 @@ impl pallet_balances::Config for Test {
     type RuntimeFreezeReason = ();
     type FreezeIdentifier = ();
     type MaxFreezes = ();
+    type MaxHolds = ConstU32<0>;
 }
 
 // Staking configuration
