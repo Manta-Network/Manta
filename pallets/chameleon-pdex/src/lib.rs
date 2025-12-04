@@ -68,7 +68,8 @@ pub mod pallet {
 
         /// Multi-asset support for token operations
         type Assets: Inspect<Self::AccountId, AssetId = Self::AssetId, Balance = Self::Balance> +
-                     Mutate<Self::AccountId>;
+                     Mutate<Self::AccountId> +
+                     frame_support::traits::tokens::fungibles::Create<Self::AccountId>;
 
         /// Pallet ID for pool account derivation
         #[pallet::constant]
