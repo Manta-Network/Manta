@@ -145,21 +145,21 @@ fn new_test_ext() -> sp_io::TestExternalities {
         // Create test assets
         assert_ok!(Assets::create(
             RuntimeOrigin::signed(ALICE),
-            CHML.into(),
+            CHML,
             ALICE,
             1000, // min_balance
         ));
         
         assert_ok!(Assets::create(
             RuntimeOrigin::signed(ALICE),
-            ETH.into(),
+            ETH,
             ALICE,
             1000,
         ));
         
         assert_ok!(Assets::create(
             RuntimeOrigin::signed(ALICE),
-            USDC.into(),
+            USDC,
             ALICE,
             1000,
         ));
