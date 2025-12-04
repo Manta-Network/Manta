@@ -308,10 +308,7 @@ pub mod pallet {
                     &pool_account,
                     amount_a,
                     frame_support::traits::tokens::Preservation::Expendable,
-                ).map_err(|e| {
-                    log::error!("Transfer asset_a failed: {:?}", e);
-                    Error::<T>::AssetATransferFailed
-                })?;
+                ).map_err(|_| Error::<T>::AssetATransferFailed)?;
 
                 // Transfer asset_b from provider to pool
                 T::Assets::transfer(
