@@ -222,9 +222,14 @@ pub mod pallet {
             let lp_asset_id: T::AssetId = ((lp_asset_id_raw + 1000) as u128).into(); // Offset to avoid collision
             NextLpAssetId::<T>::put(lp_asset_id_raw + 1);
 
-            // Create the LP token asset (this ensures it exists for minting)
-            // Note: In production, this would need proper error handling for asset creation
-            // For now, we assume the asset is pre-created in tests or created externally
+            // Create the LP token asset with the pallet as admin
+            let pallet_account = T::PalletId::get().into_account_truncating();
+            T::Assets::create(
+                lp_asset_id,
+                pallet_account,
+                true, // is_sufficient
+                T::Balance::from(1u128), // min_balance
+            ).map_err(|_| Error::<T>::AssetCreationFailed)?;
 
             // Create pool with zero reserves (filled on first liquidity add)
             let pool = LiquidityPool {
