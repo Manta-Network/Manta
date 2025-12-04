@@ -112,9 +112,9 @@ parameter_types! {
 }
 
 // Test asset IDs
-const CHML: u32 = 1;
-const ETH: u32 = 2;
-const USDC: u32 = 3;
+const CHML: u128 = 1;
+const ETH: u128 = 2;
+const USDC: u128 = 3;
 
 // Test accounts
 const ALICE: u64 = 1;
