@@ -187,6 +187,18 @@ fn pool_account(pool_id: u32) -> u64 {
     ChameleonPdex::pool_account(pool_id)
 }
 
+// Helper function for integer square root (local copy since lib.rs version is private)
+fn integer_sqrt(n: u128) -> u128 {
+    if n == 0 { return 0; }
+    let mut x = n;
+    let mut y = (x + 1) / 2;
+    while y < x {
+        x = y;
+        y = (x + n / x) / 2;
+    }
+    x
+}
+
 // ============================================================================
 // REQUIRED TESTS (Minimum 4)
 // ============================================================================
