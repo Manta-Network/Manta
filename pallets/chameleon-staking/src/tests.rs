@@ -2,7 +2,7 @@
 // Chameleon Staking Tests - Production-Grade Delegation and Reward Testing
 
 use crate::pallet::*;
-use frame_support::
+use frame_support::{
     assert_noop, assert_ok,
     pallet_prelude::*,
     traits::{ConstU32, ConstU64, ConstU128, Currency, LockableCurrency, WithdrawReasons},
