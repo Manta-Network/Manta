@@ -190,6 +190,12 @@ pub mod pallet {
         TransferFailed,
         /// Asset creation failed
         AssetCreationFailed,
+        /// Asset A transfer failed
+        AssetATransferFailed,
+        /// Asset B transfer failed
+        AssetBTransferFailed,
+        /// LP token mint failed
+        LpTokenMintFailed,
     }
 
     impl<T: Config> Pallet<T> {
