@@ -127,12 +127,12 @@ fn new_test_ext() -> sp_io::TestExternalities {
         .build_storage()
         .unwrap();
     
-    // Initialize balances for test accounts
+    // Initialize balances for test accounts - INCREASED for asset deposits
     pallet_balances::GenesisConfig::<Test> {
         balances: vec![
-            (ALICE, 1_000_000_000_000), // 1M native tokens
-            (BOB, 1_000_000_000_000),
-            (CHARLIE, 1_000_000_000_000),
+            (ALICE, 1_000_000_000_000_000), // 1B native tokens for deposits
+            (BOB, 1_000_000_000_000_000),
+            (CHARLIE, 1_000_000_000_000_000),
         ],
     }
     .assimilate_storage(&mut t)
@@ -142,30 +142,33 @@ fn new_test_ext() -> sp_io::TestExternalities {
     ext.execute_with(|| {
         System::set_block_number(1);
         
-        // Create test assets
-        assert_ok!(Assets::create(
-            RuntimeOrigin::signed(ALICE),
+        // Create test assets using force_create to avoid deposit requirements
+        assert_ok!(Assets::force_create(
+            RuntimeOrigin::root(),
             CHML,
             ALICE,
-            1000, // min_balance
+            true,  // is_sufficient - accounts don't need native balance to hold this asset
+            1,     // min_balance - reduced for easier testing
         ));
         
-        assert_ok!(Assets::create(
-            RuntimeOrigin::signed(ALICE),
+        assert_ok!(Assets::force_create(
+            RuntimeOrigin::root(),
             ETH,
             ALICE,
-            1000,
+            true,  // is_sufficient
+            1,     // min_balance
         ));
         
-        assert_ok!(Assets::create(
-            RuntimeOrigin::signed(ALICE),
+        assert_ok!(Assets::force_create(
+            RuntimeOrigin::root(),
             USDC,
             ALICE,
-            1000,
+            true,  // is_sufficient
+            1,     // min_balance
         ));
         
         // Mint tokens to test accounts
-        let initial_balance = 1_000_000_000_000u128; // 1M tokens
+        let initial_balance = 1_000_000_000_000_000u128; // 1B tokens for testing
         
         for account in [ALICE, BOB, CHARLIE] {
             for asset in [CHML, ETH, USDC] {
@@ -176,6 +179,18 @@ fn new_test_ext() -> sp_io::TestExternalities {
                     initial_balance,
                 ));
             }
+        }
+        
+        // Pre-create LP token assets that the pDEX will use
+        // LP asset IDs start from 1000 (see lib.rs line 221)
+        for lp_asset_id in 1000..1010u128 {
+            assert_ok!(Assets::force_create(
+                RuntimeOrigin::root(),
+                lp_asset_id,
+                ALICE,
+                true,  // is_sufficient
+                1,     // min_balance
+            ));
         }
     });
     
