@@ -261,7 +261,7 @@ fn test_add_liquidity_transfers_tokens() {
         
         // Verify LP tokens minted
         let pool = ChameleonPdex::pools(pool_id).unwrap();
-        let expected_lp = integer_sqrt(amount_chml * amount_eth);
+        let expected_lp = crate::pallet::integer_sqrt(amount_chml * amount_eth);
         assert_eq!(
             Assets::balance(pool.lp_asset_id, &ALICE),
             expected_lp,
