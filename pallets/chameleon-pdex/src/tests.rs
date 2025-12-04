@@ -183,26 +183,15 @@ fn new_test_ext() -> sp_io::TestExternalities {
         
         // Pre-create LP token assets that the pDEX will use
         // LP asset IDs start from 1000 (see lib.rs line 221)
-        // Try creating assets without admin (adminless) so Mutate trait can work
+        // Keep it simple - ALICE as admin, sufficient assets
         for lp_asset_id in 1000..1010u128 {
-            // Create asset first with ALICE as admin
             assert_ok!(Assets::force_create(
                 RuntimeOrigin::root(),
                 lp_asset_id,
-                ALICE,
+                ALICE, // ALICE as admin
                 true,  // is_sufficient - this is key!
                 1,     // min_balance
             ));
-            
-            // Then remove the admin to make it adminless
-            // This should allow the Mutate trait to work
-            assert_ok!(Assets::start_destroy(
-                RuntimeOrigin::signed(ALICE),
-                lp_asset_id,
-            ));
-            
-            // Actually, let's not destroy it. Let's try a different approach.
-            // Let's just keep ALICE as admin and see if mint_into works
         }
         
         // Fund pool accounts with native balance (for existential deposit)
