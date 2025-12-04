@@ -317,10 +317,7 @@ pub mod pallet {
                     &pool_account,
                     amount_b,
                     frame_support::traits::tokens::Preservation::Expendable,
-                ).map_err(|e| {
-                    log::error!("Transfer asset_b failed: {:?}", e);
-                    Error::<T>::AssetBTransferFailed
-                })?;
+                ).map_err(|_| Error::<T>::AssetBTransferFailed)?;
 
                 // Mint LP tokens to provider
                 // Use mint_into for LP token creation
