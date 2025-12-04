@@ -308,9 +308,8 @@ pub mod pallet {
                     amount_a,
                     frame_support::traits::tokens::Preservation::Expendable,
                 ).map_err(|e| {
-                    // Debug: Log the actual error
                     log::error!("Transfer asset_a failed: {:?}", e);
-                    Error::<T>::TransferFailed
+                    Error::<T>::AssetATransferFailed
                 })?;
 
                 // Transfer asset_b from provider to pool
@@ -321,9 +320,8 @@ pub mod pallet {
                     amount_b,
                     frame_support::traits::tokens::Preservation::Expendable,
                 ).map_err(|e| {
-                    // Debug: Log the actual error
                     log::error!("Transfer asset_b failed: {:?}", e);
-                    Error::<T>::TransferFailed
+                    Error::<T>::AssetBTransferFailed
                 })?;
 
                 // Mint LP tokens to provider
@@ -333,7 +331,7 @@ pub mod pallet {
                     lp_minted,
                 ).map_err(|e| {
                     log::error!("Mint LP tokens failed: {:?}", e);
-                    Error::<T>::TransferFailed
+                    Error::<T>::LpTokenMintFailed
                 })?;
                 // =============================================
 
