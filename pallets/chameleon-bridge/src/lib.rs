@@ -251,7 +251,7 @@ pub mod pallet {
         /// Validator reports seeing a lock event on Ethereum
         /// When threshold approvals reached, mints wrapped tokens
         #[pallet::call_index(0)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn report_deposit(
             origin: OriginFor<T>,
             eth_tx_hash: H256,
@@ -325,7 +325,7 @@ pub mod pallet {
 
         /// Initiate withdrawal - burns wrapped tokens immediately
         #[pallet::call_index(1)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn initiate_withdrawal(
             origin: OriginFor<T>,
             asset: BridgeableAsset,
@@ -378,7 +378,7 @@ pub mod pallet {
 
         /// Validator signs withdrawal for Ethereum execution
         #[pallet::call_index(2)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn sign_withdrawal(
             origin: OriginFor<T>,
             withdrawal_id: u64,
@@ -411,7 +411,7 @@ pub mod pallet {
 
         /// Add a bridge validator (root only)
         #[pallet::call_index(3)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn add_validator(origin: OriginFor<T>, validator: T::AccountId) -> DispatchResult {
             ensure_root(origin)?;
             BridgeValidators::<T>::insert(&validator, true);
@@ -421,7 +421,7 @@ pub mod pallet {
 
         /// Remove a bridge validator (root only)
         #[pallet::call_index(4)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn remove_validator(origin: OriginFor<T>, validator: T::AccountId) -> DispatchResult {
             ensure_root(origin)?;
             BridgeValidators::<T>::remove(&validator);
@@ -431,7 +431,7 @@ pub mod pallet {
 
         /// Pause bridge (root only)
         #[pallet::call_index(5)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn pause_bridge(origin: OriginFor<T>) -> DispatchResult {
             ensure_root(origin)?;
             IsPaused::<T>::put(true);
@@ -441,7 +441,7 @@ pub mod pallet {
 
         /// Resume bridge (root only)
         #[pallet::call_index(6)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn resume_bridge(origin: OriginFor<T>) -> DispatchResult {
             ensure_root(origin)?;
             IsPaused::<T>::put(false);
