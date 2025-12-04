@@ -526,7 +526,7 @@ pub mod pallet {
     }
 
     /// Integer square root using Newton's method
-    fn integer_sqrt(n: u128) -> u128 {
+    pub fn integer_sqrt(n: u128) -> u128 {
         if n == 0 { return 0; }
         let mut x = n;
         let mut y = (x + 1) / 2;
