@@ -164,7 +164,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Join as validator
         #[pallet::call_index(0)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn join_candidates(origin: OriginFor<T>, stake: BalanceOf<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
             ensure!(stake >= T::MinValidatorStake::get(), Error::<T>::InsufficientStake);
@@ -190,7 +190,7 @@ pub mod pallet {
 
         /// Delegate to a validator
         #[pallet::call_index(1)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn delegate(origin: OriginFor<T>, validator: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
             ensure!(!amount.is_zero(), Error::<T>::InsufficientStake);
@@ -217,7 +217,7 @@ pub mod pallet {
 
         /// Undelegate and start unbonding
         #[pallet::call_index(2)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn undelegate(origin: OriginFor<T>, validator: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
             // Storage key is (validator, delegator)
@@ -253,7 +253,7 @@ pub mod pallet {
 
         /// Withdraw unbonded tokens
         #[pallet::call_index(3)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn withdraw_unbonded(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
             let now = frame_system::Pallet::<T>::block_number();
@@ -279,7 +279,7 @@ pub mod pallet {
 
         /// Claim pending rewards
         #[pallet::call_index(4)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn claim_rewards(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
             let rewards = PendingRewards::<T>::take(&who);
@@ -291,7 +291,7 @@ pub mod pallet {
 
         /// Set validator commission
         #[pallet::call_index(5)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn set_commission(origin: OriginFor<T>, commission: Perbill) -> DispatchResult {
             let who = ensure_signed(origin)?;
             ensure!(commission <= Perbill::from_percent(100), Error::<T>::InvalidCommission);
