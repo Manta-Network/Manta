@@ -171,7 +171,7 @@ fn new_test_ext() -> sp_io::TestExternalities {
             for asset in [CHML, ETH, USDC] {
                 assert_ok!(Assets::mint(
                     RuntimeOrigin::signed(ALICE),
-                    asset.into(),
+                    asset,
                     account,
                     initial_balance,
                 ));
