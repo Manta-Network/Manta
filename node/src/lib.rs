@@ -23,6 +23,8 @@ extern crate alloc;
 pub mod aura_or_nimbus_consensus;
 pub mod builder;
 pub mod chain_specs;
+pub mod chameleon_accounts;
+pub mod chameleon_chain_spec;
 pub mod cli;
 pub mod client;
 pub mod command;
