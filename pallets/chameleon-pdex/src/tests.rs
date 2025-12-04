@@ -183,13 +183,21 @@ fn new_test_ext() -> sp_io::TestExternalities {
         
         // Pre-create LP token assets that the pDEX will use
         // LP asset IDs start from 1000 (see lib.rs line 221)
-        // The issue might be that mint_into requires admin permissions
-        // Let's try making ALICE the admin but allow the pallet to mint
+        // Make the pallet account the admin so it can mint LP tokens
+        let pallet_account: u64 = PalletId(*b"pdex/amm").into_account_truncating();
+        
+        // Fund the pallet account
+        assert_ok!(Balances::force_set_balance(
+            RuntimeOrigin::root(),
+            pallet_account,
+            1_000_000_000_000u128,
+        ));
+        
         for lp_asset_id in 1000..1010u128 {
             assert_ok!(Assets::force_create(
                 RuntimeOrigin::root(),
                 lp_asset_id,
-                ALICE, // ALICE as admin
+                pallet_account, // Pallet account as admin so it can mint
                 true,  // is_sufficient - this is key!
                 1,     // min_balance
             ));
