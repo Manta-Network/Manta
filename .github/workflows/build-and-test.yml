@@ -1,0 +1,35 @@
+name: Build and Test Chameleon
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          
+      - name: Test All Pallets
+        run: |
+          cargo test -p pallet-chameleon-mev --lib --release
+          cargo test -p pallet-chameleon-pdex --lib --release
+          cargo test -p pallet-chameleon-bridge --lib --release
+          cargo test -p pallet-chameleon-staking --lib --release
+          cargo test -p manta-primitives --lib --release
+          
+      - name: Build Runtime
+        run: cargo build --release -p manta-runtime
+        
+      - name: Upload Binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: chameleon-node
+          path: target/release/manta
