@@ -280,7 +280,7 @@ pub mod pallet {
         /// - Attackers cannot see what trade you're making
         /// - Timestamp recorded for fair ordering (FIFO)
         #[pallet::call_index(0)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn submit_sealed_transaction(
             origin: OriginFor<T>,
             tx_hash: H256,
@@ -342,7 +342,7 @@ pub mod pallet {
         /// - Block producer cannot reorder for profit (MEV extraction)
         /// - Commitment is cryptographically bound
         #[pallet::call_index(1)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn commit_ordering(
             origin: OriginFor<T>,
         ) -> DispatchResult {
@@ -420,7 +420,7 @@ pub mod pallet {
         /// - Enforces committed ordering
         /// - Prevents front-running (content wasn't visible during ordering)
         #[pallet::call_index(2)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn reveal_transaction(
             origin: OriginFor<T>,
             tx_data: BoundedVec<u8, ConstU32<65536>>,
@@ -488,7 +488,7 @@ pub mod pallet {
         /// Processes the execution queue, executing transactions in the exact
         /// order that was committed. This is the final MEV protection guarantee.
         #[pallet::call_index(3)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn execute_ordered(
             origin: OriginFor<T>,
         ) -> DispatchResult {
@@ -515,7 +515,7 @@ pub mod pallet {
 
         /// Clean up expired sealed transactions
         #[pallet::call_index(4)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn cleanup_expired(
             origin: OriginFor<T>,
         ) -> DispatchResult {
