@@ -325,10 +325,7 @@ pub mod pallet {
                     pool.lp_asset_id,
                     &provider,
                     lp_minted,
-                ).map_err(|e| {
-                    log::error!("Mint LP tokens failed: {:?}", e);
-                    Error::<T>::LpTokenMintFailed
-                })?;
+                ).map_err(|_| Error::<T>::LpTokenMintFailed)?;
                 // =============================================
 
                 // Update pool reserves
