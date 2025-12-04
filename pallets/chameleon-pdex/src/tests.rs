@@ -183,14 +183,30 @@ fn new_test_ext() -> sp_io::TestExternalities {
         
         // Pre-create LP token assets that the pDEX will use
         // LP asset IDs start from 1000 (see lib.rs line 221)
-        // Keep it simple - ALICE as admin, sufficient assets
+        // Create assets and then remove admin to make them adminless
+        // This should allow the Mutate trait to work properly
         for lp_asset_id in 1000..1010u128 {
+            // Create with ALICE as admin first
             assert_ok!(Assets::force_create(
                 RuntimeOrigin::root(),
                 lp_asset_id,
-                ALICE, // ALICE as admin
-                true,  // is_sufficient - this is key!
+                ALICE,
+                true,  // is_sufficient
                 1,     // min_balance
+            ));
+            
+            // Remove admin to make it adminless - this should allow mint_into to work
+            assert_ok!(Assets::clear_metadata(
+                RuntimeOrigin::signed(ALICE),
+                lp_asset_id,
+            ));
+            
+            // Actually, let's try setting the admin to the pallet account
+            let pallet_account: u64 = PalletId(*b"pdex/amm").into_account_truncating();
+            assert_ok!(Assets::transfer_ownership(
+                RuntimeOrigin::signed(ALICE),
+                lp_asset_id,
+                pallet_account,
             ));
         }
         
