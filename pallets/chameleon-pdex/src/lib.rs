@@ -209,7 +209,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Create a new liquidity pool for an asset pair
         #[pallet::call_index(0)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn create_pool(
             origin: OriginFor<T>,
             asset_a: T::AssetId,
@@ -258,7 +258,7 @@ pub mod pallet {
 
         /// Add liquidity to a pool - TRANSFERS TOKENS FROM PROVIDER
         #[pallet::call_index(1)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn add_liquidity(
             origin: OriginFor<T>,
             pool_id: u32,
@@ -355,7 +355,7 @@ pub mod pallet {
 
         /// Remove liquidity from a pool - TRANSFERS TOKENS TO PROVIDER
         #[pallet::call_index(2)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn remove_liquidity(
             origin: OriginFor<T>,
             pool_id: u32,
@@ -439,7 +439,7 @@ pub mod pallet {
 
         /// Swap tokens using constant product formula - ACTUAL TOKEN TRANSFERS
         #[pallet::call_index(3)]
-        #[pallet::weight(10_000)]
+        #[pallet::weight(Weight::from_parts(10_000, 0))]
         pub fn swap(
             origin: OriginFor<T>,
             pool_id: u32,
