@@ -321,6 +321,7 @@ pub mod pallet {
                 })?;
 
                 // Mint LP tokens to provider
+                // Note: Using mint_into from Mutate trait - this should work if asset is sufficient
                 T::Assets::mint_into(
                     pool.lp_asset_id,
                     &provider,
