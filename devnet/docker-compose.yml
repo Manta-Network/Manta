@@ -1,0 +1,364 @@
+version: '3.8'
+
+services:
+  # Validator 0 - US East
+  validator-0:
+    image: chameleon/node:latest
+    container_name: chameleon-validator-0
+    hostname: validator-us-east-1
+    restart: unless-stopped
+    ports:
+      - "30333:30333"  # P2P
+      - "9933:9933"    # RPC
+      - "9944:9944"    # WebSocket
+      - "9615:9615"    # Prometheus
+    volumes:
+      - ./validator-0-data:/data
+      - ./validator-0-keys:/keys
+      - ./chameleon-devnet-spec.json:/spec.json:ro
+    environment:
+      - RUST_LOG=info,sc_consensus_aura=debug
+      - VALIDATOR_INDEX=0
+      - VALIDATOR_NAME=Validator-US-East-1
+      - REGION=US-East
+    command: >
+      /usr/local/bin/manta
+      --validator
+      --name "Validator-US-East-1"
+      --chain /spec.json
+      --base-path /data
+      --port 30333
+      --rpc-port 9933
+      --ws-port 9944
+      --prometheus-port 9615
+      --rpc-cors all
+      --unsafe-rpc-external
+      --unsafe-ws-external
+      --prometheus-external
+      --telemetry-url "wss://telemetry.polkadot.io/submit/ 0"
+      --
+      --chain polkadot-local
+      --port 30343
+      --rpc-port 9943
+    networks:
+      - chameleon-devnet
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9933/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Validator 1 - US West
+  validator-1:
+    image: chameleon/node:latest
+    container_name: chameleon-validator-1
+    hostname: validator-us-west-1
+    restart: unless-stopped
+    ports:
+      - "30334:30333"  # P2P
+      - "9934:9933"    # RPC
+      - "9945:9944"    # WebSocket
+      - "9616:9615"    # Prometheus
+    volumes:
+      - ./validator-1-data:/data
+      - ./validator-1-keys:/keys
+      - ./chameleon-devnet-spec.json:/spec.json:ro
+    environment:
+      - RUST_LOG=info,sc_consensus_aura=debug
+      - VALIDATOR_INDEX=1
+      - VALIDATOR_NAME=Validator-US-West-1
+      - REGION=US-West
+    command: >
+      /usr/local/bin/manta
+      --validator
+      --name "Validator-US-West-1"
+      --chain /spec.json
+      --base-path /data
+      --port 30333
+      --rpc-port 9933
+      --ws-port 9944
+      --prometheus-port 9615
+      --rpc-cors all
+      --unsafe-rpc-external
+      --unsafe-ws-external
+      --prometheus-external
+      --telemetry-url "wss://telemetry.polkadot.io/submit/ 0"
+      --bootnodes /dns/validator-0/tcp/30333/p2p/12D3KooWValidator0NodeId
+      --
+      --chain polkadot-local
+      --port 30343
+      --rpc-port 9943
+    networks:
+      - chameleon-devnet
+    depends_on:
+      - validator-0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9933/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Validator 2 - EU Central
+  validator-2:
+    image: chameleon/node:latest
+    container_name: chameleon-validator-2
+    hostname: validator-eu-central-1
+    restart: unless-stopped
+    ports:
+      - "30335:30333"  # P2P
+      - "9935:9933"    # RPC
+      - "9946:9944"    # WebSocket
+      - "9617:9615"    # Prometheus
+    volumes:
+      - ./validator-2-data:/data
+      - ./validator-2-keys:/keys
+      - ./chameleon-devnet-spec.json:/spec.json:ro
+    environment:
+      - RUST_LOG=info,sc_consensus_aura=debug
+      - VALIDATOR_INDEX=2
+      - VALIDATOR_NAME=Validator-EU-Central-1
+      - REGION=EU-Central
+    command: >
+      /usr/local/bin/manta
+      --validator
+      --name "Validator-EU-Central-1"
+      --chain /spec.json
+      --base-path /data
+      --port 30333
+      --rpc-port 9933
+      --ws-port 9944
+      --prometheus-port 9615
+      --rpc-cors all
+      --unsafe-rpc-external
+      --unsafe-ws-external
+      --prometheus-external
+      --telemetry-url "wss://telemetry.polkadot.io/submit/ 0"
+      --bootnodes /dns/validator-0/tcp/30333/p2p/12D3KooWValidator0NodeId
+      --
+      --chain polkadot-local
+      --port 30343
+      --rpc-port 9943
+    networks:
+      - chameleon-devnet
+    depends_on:
+      - validator-0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9933/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Validator 3 - Asia East
+  validator-3:
+    image: chameleon/node:latest
+    container_name: chameleon-validator-3
+    hostname: validator-asia-east-1
+    restart: unless-stopped
+    ports:
+      - "30336:30333"  # P2P
+      - "9936:9933"    # RPC
+      - "9947:9944"    # WebSocket
+      - "9618:9615"    # Prometheus
+    volumes:
+      - ./validator-3-data:/data
+      - ./validator-3-keys:/keys
+      - ./chameleon-devnet-spec.json:/spec.json:ro
+    environment:
+      - RUST_LOG=info,sc_consensus_aura=debug
+      - VALIDATOR_INDEX=3
+      - VALIDATOR_NAME=Validator-Asia-East-1
+      - REGION=Asia-East
+    command: >
+      /usr/local/bin/manta
+      --validator
+      --name "Validator-Asia-East-1"
+      --chain /spec.json
+      --base-path /data
+      --port 30333
+      --rpc-port 9933
+      --ws-port 9944
+      --prometheus-port 9615
+      --rpc-cors all
+      --unsafe-rpc-external
+      --unsafe-ws-external
+      --prometheus-external
+      --telemetry-url "wss://telemetry.polkadot.io/submit/ 0"
+      --bootnodes /dns/validator-0/tcp/30333/p2p/12D3KooWValidator0NodeId
+      --
+      --chain polkadot-local
+      --port 30343
+      --rpc-port 9943
+    networks:
+      - chameleon-devnet
+    depends_on:
+      - validator-0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9933/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Validator 4 - Asia Southeast
+  validator-4:
+    image: chameleon/node:latest
+    container_name: chameleon-validator-4
+    hostname: validator-asia-southeast-1
+    restart: unless-stopped
+    ports:
+      - "30337:30333"  # P2P
+      - "9937:9933"    # RPC
+      - "9948:9944"    # WebSocket
+      - "9619:9615"    # Prometheus
+    volumes:
+      - ./validator-4-data:/data
+      - ./validator-4-keys:/keys
+      - ./chameleon-devnet-spec.json:/spec.json:ro
+    environment:
+      - RUST_LOG=info,sc_consensus_aura=debug
+      - VALIDATOR_INDEX=4
+      - VALIDATOR_NAME=Validator-Asia-Southeast-1
+      - REGION=Asia-Southeast
+    command: >
+      /usr/local/bin/manta
+      --validator
+      --name "Validator-Asia-Southeast-1"
+      --chain /spec.json
+      --base-path /data
+      --port 30333
+      --rpc-port 9933
+      --ws-port 9944
+      --prometheus-port 9615
+      --rpc-cors all
+      --unsafe-rpc-external
+      --unsafe-ws-external
+      --prometheus-external
+      --telemetry-url "wss://telemetry.polkadot.io/submit/ 0"
+      --bootnodes /dns/validator-0/tcp/30333/p2p/12D3KooWValidator0NodeId
+      --
+      --chain polkadot-local
+      --port 30343
+      --rpc-port 9943
+    networks:
+      - chameleon-devnet
+    depends_on:
+      - validator-0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9933/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Monitoring Services
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: chameleon-prometheus
+    hostname: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - chameleon-devnet
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: chameleon-grafana
+    hostname: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=chameleon
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - chameleon-devnet
+    depends_on:
+      - prometheus
+
+  # Utility Services
+  polkadot-js-apps:
+    image: jacogr/polkadot-js-apps:latest
+    container_name: chameleon-polkadot-js
+    hostname: polkadot-js
+    restart: unless-stopped
+    ports:
+      - "3001:80"
+    environment:
+      - WS_URL=ws://validator-0:9944
+    networks:
+      - chameleon-devnet
+    depends_on:
+      - validator-0
+
+  # Log aggregation
+  loki:
+    image: grafana/loki:latest
+    container_name: chameleon-loki
+    hostname: loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - chameleon-devnet
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: chameleon-promtail
+    hostname: promtail
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/promtail-config.yml:/etc/promtail/config.yml:ro
+      - ./validator-0-data/chains/chameleon-devnet:/var/log/validator-0:ro
+      - ./validator-1-data/chains/chameleon-devnet:/var/log/validator-1:ro
+      - ./validator-2-data/chains/chameleon-devnet:/var/log/validator-2:ro
+      - ./validator-3-data/chains/chameleon-devnet:/var/log/validator-3:ro
+      - ./validator-4-data/chains/chameleon-devnet:/var/log/validator-4:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - chameleon-devnet
+    depends_on:
+      - loki
+
+networks:
+  chameleon-devnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  loki-data:
+    driver: local
