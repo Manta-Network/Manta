@@ -193,6 +193,17 @@ fn new_test_ext() -> sp_io::TestExternalities {
                 1,     // min_balance
             ));
         }
+        
+        // Fund pool accounts with native balance (for existential deposit)
+        for pool_id in 0..10u32 {
+            let pool_acc = ChameleonPdex::pool_account(pool_id);
+            // Give pool accounts native balance
+            assert_ok!(Balances::force_set_balance(
+                RuntimeOrigin::root(),
+                pool_acc,
+                1_000_000_000_000u128,
+            ));
+        }
     });
     
     ext
