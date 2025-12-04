@@ -183,11 +183,12 @@ fn new_test_ext() -> sp_io::TestExternalities {
         
         // Pre-create LP token assets that the pDEX will use
         // LP asset IDs start from 1000 (see lib.rs line 221)
+        // Make ALICE the admin so the pallet can mint/burn LP tokens
         for lp_asset_id in 1000..1010u128 {
             assert_ok!(Assets::force_create(
                 RuntimeOrigin::root(),
                 lp_asset_id,
-                ALICE,
+                ALICE, // ALICE as admin can mint/burn for anyone
                 true,  // is_sufficient
                 1,     // min_balance
             ));
