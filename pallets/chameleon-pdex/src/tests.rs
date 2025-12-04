@@ -98,7 +98,7 @@ impl pallet_assets::Config for Test {
 // pDEX configuration
 impl crate::Config for Test {
     type RuntimeEvent = RuntimeEvent;
-    type AssetId = u32;
+    type AssetId = u128;
     type Balance = u128;
     type Assets = Assets;
     type PalletId = ConstPalletId;
