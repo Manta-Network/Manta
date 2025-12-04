@@ -6,6 +6,7 @@ use frame_support::{
     assert_noop, assert_ok,
     pallet_prelude::*,
     traits::{ConstU32, ConstU64, ConstU128, tokens::fungibles::{Inspect, Mutate}},
+    parameter_types,
     PalletId,
 };
 use sp_core::H256;
