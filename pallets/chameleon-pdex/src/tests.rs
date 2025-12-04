@@ -203,14 +203,27 @@ fn new_test_ext() -> sp_io::TestExternalities {
         }
         
         // Fund pool accounts with native balance (for existential deposit)
+        // Also ensure they can receive assets by giving them initial asset balances
         for pool_id in 0..10u32 {
             let pool_acc = ChameleonPdex::pool_account(pool_id);
-            // Give pool accounts native balance
+            
+            // Give pool accounts native balance for existential deposit
             assert_ok!(Balances::force_set_balance(
                 RuntimeOrigin::root(),
                 pool_acc,
                 1_000_000_000_000u128,
             ));
+            
+            // Give pool accounts initial asset balances (even if 0) to ensure they can receive assets
+            for asset in [CHML, ETH, USDC] {
+                // This creates the account-asset relationship
+                assert_ok!(Assets::mint(
+                    RuntimeOrigin::signed(ALICE),
+                    asset,
+                    pool_acc,
+                    1u128, // Minimal amount to create the account
+                ));
+            }
         }
     });
     
