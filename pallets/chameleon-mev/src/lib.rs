@@ -52,6 +52,7 @@ pub mod pallet {
     use frame_support::{
         pallet_prelude::*,
         traits::Get,
+        weights::Weight,
         Blake2_256, StorageHasher,
     };
     use frame_system::pallet_prelude::*;
