@@ -34,6 +34,7 @@ pub mod pallet {
     use frame_support::{
         pallet_prelude::*,
         traits::tokens::fungibles::{Inspect, Mutate},
+        weights::Weight,
         PalletId,
     };
     use frame_system::pallet_prelude::*;
