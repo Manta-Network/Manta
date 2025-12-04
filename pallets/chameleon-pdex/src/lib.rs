@@ -537,3 +537,6 @@ pub mod pallet {
         x
     }
 }
+
+#[cfg(test)]
+mod tests;
