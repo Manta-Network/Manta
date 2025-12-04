@@ -183,8 +183,8 @@ fn new_test_ext() -> sp_io::TestExternalities {
         
         // Pre-create LP token assets that the pDEX will use
         // LP asset IDs start from 1000 (see lib.rs line 221)
-        // Make the pallet account the admin so it can mint/burn LP tokens
-        let pallet_account = ChameleonPdex::pool_account(0); // Use pool 0 account as pallet account
+        // Use a special pallet account derived from the PalletId as admin
+        let pallet_account: u64 = PalletId(*b"pdex/amm").into_account_truncating();
         for lp_asset_id in 1000..1010u128 {
             assert_ok!(Assets::force_create(
                 RuntimeOrigin::root(),
@@ -192,6 +192,13 @@ fn new_test_ext() -> sp_io::TestExternalities {
                 pallet_account, // Pallet account as admin
                 true,  // is_sufficient
                 1,     // min_balance
+            ));
+            
+            // Give the pallet account native balance for existential deposit
+            assert_ok!(Balances::force_set_balance(
+                RuntimeOrigin::root(),
+                pallet_account,
+                1_000_000_000_000u128,
             ));
         }
         
