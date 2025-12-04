@@ -1,0 +1,30 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Chameleon Validators
+  - job_name: 'chameleon-validators'
+    static_configs:
+      - targets:
+        - 'validator-0:9615'
+        - 'validator-1:9615'
+        - 'validator-2:9615'
+        - 'validator-3:9615'
+        - 'validator-4:9615'
+    scrape_interval: 5s
+    metrics_path: /metrics
+    
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Grafana
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
