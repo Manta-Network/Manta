@@ -1,0 +1,212 @@
+{
+  "network": "chameleon-devnet",
+  "description": "Chameleon Network 5-Validator Devnet Configuration",
+  "total_validators": 5,
+  "total_stake_chml": "5000000",
+  "stake_per_validator_chml": "1000000",
+  "validators": [
+    {
+      "index": 0,
+      "name": "Validator-US-East-1",
+      "region": "US-East",
+      "account_id": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+      "stash": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+      "controller": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+      "seed": "ChameleonValidator0//Alice//Stash",
+      "session_keys": {
+        "aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+        "grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"
+      },
+      "initial_stake": "1000000000000000000000000",
+      "node_config": {
+        "p2p_port": 30333,
+        "rpc_port": 9933,
+        "ws_port": 9944,
+        "prometheus_port": 9615
+      },
+      "docker_config": {
+        "container_name": "chameleon-validator-0",
+        "image": "chameleon/node:latest",
+        "volumes": [
+          "./validator-0-data:/data",
+          "./validator-0-keys:/keys"
+        ]
+      }
+    },
+    {
+      "index": 1,
+      "name": "Validator-US-West-1",
+      "region": "US-West",
+      "account_id": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+      "stash": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+      "controller": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+      "seed": "ChameleonValidator1//Bob//Stash",
+      "session_keys": {
+        "aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+        "grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
+      },
+      "initial_stake": "1000000000000000000000000",
+      "node_config": {
+        "p2p_port": 30334,
+        "rpc_port": 9934,
+        "ws_port": 9945,
+        "prometheus_port": 9616
+      },
+      "docker_config": {
+        "container_name": "chameleon-validator-1",
+        "image": "chameleon/node:latest",
+        "volumes": [
+          "./validator-1-data:/data",
+          "./validator-1-keys:/keys"
+        ]
+      }
+    },
+    {
+      "index": 2,
+      "name": "Validator-EU-Central-1",
+      "region": "EU-Central",
+      "account_id": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+      "stash": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+      "controller": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+      "seed": "ChameleonValidator2//Charlie//Stash",
+      "session_keys": {
+        "aura": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+        "grandpa": "5H4MvAsobfZ6bBCDyj5dsrWYLrA8HrRzaqa9p61UXtxMhSCY"
+      },
+      "initial_stake": "1000000000000000000000000",
+      "node_config": {
+        "p2p_port": 30335,
+        "rpc_port": 9935,
+        "ws_port": 9946,
+        "prometheus_port": 9617
+      },
+      "docker_config": {
+        "container_name": "chameleon-validator-2",
+        "image": "chameleon/node:latest",
+        "volumes": [
+          "./validator-2-data:/data",
+          "./validator-2-keys:/keys"
+        ]
+      }
+    },
+    {
+      "index": 3,
+      "name": "Validator-Asia-East-1",
+      "region": "Asia-East",
+      "account_id": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
+      "stash": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
+      "controller": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
+      "seed": "ChameleonValidator3//Dave//Stash",
+      "session_keys": {
+        "aura": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
+        "grandpa": "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw"
+      },
+      "initial_stake": "1000000000000000000000000",
+      "node_config": {
+        "p2p_port": 30336,
+        "rpc_port": 9936,
+        "ws_port": 9947,
+        "prometheus_port": 9618
+      },
+      "docker_config": {
+        "container_name": "chameleon-validator-3",
+        "image": "chameleon/node:latest",
+        "volumes": [
+          "./validator-3-data:/data",
+          "./validator-3-keys:/keys"
+        ]
+      }
+    },
+    {
+      "index": 4,
+      "name": "Validator-Asia-Southeast-1",
+      "region": "Asia-Southeast",
+      "account_id": "5HpG9w8EBLe5XCrbczpwq5TSXvedjrBGCwqxK1iQ7qUsSWFc",
+      "stash": "5HpG9w8EBLe5XCrbczpwq5TSXvedjrBGCwqxK1iQ7qUsSWFc",
+      "controller": "5HpG9w8EBLe5XCrbczpwq5TSXvedjrBGCwqxK1iQ7qUsSWFc",
+      "seed": "ChameleonValidator4//Eve//Stash",
+      "session_keys": {
+        "aura": "5HpG9w8EBLe5XCrbczpwq5TSXvedjrBGCwqxK1iQ7qUsSWFy",
+        "grandpa": "5Ck5SLSHYac6WFt5UZRSsdJjwmpSZq85fd5TRNAdZQVzEAPT"
+      },
+      "initial_stake": "1000000000000000000000000",
+      "node_config": {
+        "p2p_port": 30337,
+        "rpc_port": 9937,
+        "ws_port": 9948,
+        "prometheus_port": 9619
+      },
+      "docker_config": {
+        "container_name": "chameleon-validator-4",
+        "image": "chameleon/node:latest",
+        "volumes": [
+          "./validator-4-data:/data",
+          "./validator-4-keys:/keys"
+        ]
+      }
+    }
+  ],
+  "network_config": {
+    "chain_spec": "chameleon-devnet",
+    "parachain_id": 2105,
+    "relay_chain": "polkadot",
+    "block_time_seconds": 6,
+    "finality_blocks": 2,
+    "max_validators": 200,
+    "min_validators": 5
+  },
+  "genesis_config": {
+    "total_supply_chml": "100000000",
+    "allocations": {
+      "validators": {
+        "amount_chml": "5000000",
+        "percentage": "5.0%",
+        "description": "5 validators with 1M CHML each for network security"
+      },
+      "liquidity_pool": {
+        "amount_chml": "2500000",
+        "percentage": "2.5%",
+        "description": "Initial DEX liquidity across CHML/ETH, CHML/USDC, CHML/WBTC pools"
+      },
+      "treasury": {
+        "amount_chml": "2500000",
+        "percentage": "2.5%",
+        "description": "DAO-controlled strategic reserve for opportunities and emergencies"
+      },
+      "ecosystem": {
+        "amount_chml": "5000000",
+        "percentage": "5.0%",
+        "description": "Team compensation and development funding (36-month vesting, 6-month cliff)"
+      },
+      "presale": {
+        "amount_chml": "15000000",
+        "percentage": "15.0%",
+        "description": "Public presale allocation (50% TGE unlock, 50% linear 6-month vesting)"
+      },
+      "airdrop": {
+        "amount_chml": "5000000",
+        "percentage": "5.0%",
+        "description": "Community airdrop in 3 stages: TGE (20%), Testnet (30%), Mainnet (50%)"
+      },
+      "emission": {
+        "amount_chml": "65000000",
+        "percentage": "65.0%",
+        "description": "20-year declining emission schedule for validator (70%) and LP (30%) rewards"
+      }
+    }
+  },
+  "emission_schedule": {
+    "total_years": 20,
+    "decay_factor": 0.9,
+    "validator_percentage": 70,
+    "lp_percentage": 30,
+    "year_1_emission_chml": "7400000",
+    "total_emission_chml": "65000000"
+  },
+  "deployment_info": {
+    "created_at": "2024-12-19T00:00:00Z",
+    "version": "1.0.0",
+    "maintainer": "Chameleon Network Team",
+    "documentation": "https://docs.chameleon.network/devnet"
+  }
+}
