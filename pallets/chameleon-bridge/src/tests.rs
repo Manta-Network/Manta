@@ -80,11 +80,11 @@ impl pallet_assets::Config for Test {
     type Currency = Balances;
     type CreateOrigin = frame_support::traits::AsEnsureOriginWithArg<frame_system::EnsureSigned<u64>>;
     type ForceOrigin = frame_system::EnsureRoot<u64>;
-    type AssetDeposit = ConstU128<100>;
-    type AssetAccountDeposit = ConstU128<10>;
-    type MetadataDepositBase = ConstU128<10>;
-    type MetadataDepositPerByte = ConstU128<1>;
-    type ApprovalDeposit = ConstU128<1>;
+    type AssetDeposit = ConstU128<0>;  // No deposit for testing
+    type AssetAccountDeposit = ConstU128<0>;  // No deposit for testing
+    type MetadataDepositBase = ConstU128<0>;
+    type MetadataDepositPerByte = ConstU128<0>;
+    type ApprovalDeposit = ConstU128<0>;
     type StringLimit = ConstU32<50>;
     type Freezer = ();
     type Extra = ();
