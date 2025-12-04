@@ -189,6 +189,8 @@ pub mod pallet {
         InsufficientBalance,
         /// Token transfer failed
         TransferFailed,
+        /// Asset creation failed
+        AssetCreationFailed,
     }
 
     impl<T: Config> Pallet<T> {
