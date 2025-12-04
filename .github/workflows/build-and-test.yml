@@ -17,14 +17,14 @@ jobs:
           
       - name: Test All Pallets
         run: |
-          cargo test -p pallet-chameleon-mev --lib --release
-          cargo test -p pallet-chameleon-pdex --lib --release
-          cargo test -p pallet-chameleon-bridge --lib --release
-          cargo test -p pallet-chameleon-staking --lib --release
-          cargo test -p manta-primitives --lib --release
+          RUSTFLAGS="-A warnings" cargo test -p pallet-chameleon-mev --lib --release
+          RUSTFLAGS="-A warnings" cargo test -p pallet-chameleon-pdex --lib --release
+          RUSTFLAGS="-A warnings" cargo test -p pallet-chameleon-bridge --lib --release
+          RUSTFLAGS="-A warnings" cargo test -p pallet-chameleon-staking --lib --release
+          RUSTFLAGS="-A warnings" cargo test -p manta-primitives --lib --release
           
       - name: Build Runtime
-        run: cargo build --release -p manta-runtime
+        run: RUSTFLAGS="-A warnings" cargo build --release -p manta-runtime
         
       - name: Upload Binary
         uses: actions/upload-artifact@v4
