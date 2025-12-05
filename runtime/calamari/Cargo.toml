@@ -303,7 +303,6 @@ std = [
   'xcm-builder/std',
   'xcm-executor/std',
   'polkadot-primitives/std',
-  'polkadot-runtime-common/std',
   'parachains-common/std',
   'manta-collator-selection/std',
   'calamari-vesting/std',
