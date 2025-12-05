@@ -90,7 +90,7 @@ pallet-xcm-benchmarks = { workspace = true, optional = true }
 parachains-common = { workspace = true }
 polkadot-parachain-primitives = { workspace = true }
 polkadot-primitives = { workspace = true }
-polkadot-runtime-common = { workspace = true }
+# polkadot-runtime-common removed - not used and causes pallet-identity compilation errors
 xcm = { workspace = true }
 xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
