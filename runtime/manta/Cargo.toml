@@ -283,7 +283,6 @@ std = [
   'log/std',
   'cumulus-pallet-session-benchmarking/std',
   'polkadot-parachain-primitives/std',
-  'polkadot-runtime-common/std',
   'parachains-common/std',
   'xcm/std',
   'xcm-builder/std',
