@@ -60,7 +60,8 @@ use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain_primitives::primitives::{
     DmpMessageHandler, Sibling, XcmpMessageFormat, XcmpMessageHandler,
 };
-use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
+// Removed: use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
+// Using local implementation for standalone devnet
 use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, VersionedXcm};
 use xcm_builder::{
     Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -71,6 +72,14 @@ use xcm_builder::{
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
+
+/// Local implementation of NoPriceForMessageDelivery for standalone devnet.
+pub struct NoPriceForMessageDelivery<Id>(sp_std::marker::PhantomData<Id>);
+impl<Id> xcm_builder::PriceForSiblingDelivery for NoPriceForMessageDelivery<Id> {
+    fn price_for_delivery(_: cumulus_primitives_core::ParaId, _: &Xcm<()>) -> MultiAssets {
+        MultiAssets::new()
+    }
+}
 
 pub type AccountId = AccountId32;
 pub type Balance = u128;
