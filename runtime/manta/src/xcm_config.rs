@@ -44,7 +44,8 @@ use orml_traits::location::AbsoluteReserveProvider;
 use pallet_xcm::XcmPassthrough;
 use parachains_common::message_queue::{NarrowOriginToSibling, ParaIdToSibling};
 use polkadot_parachain_primitives::primitives::Sibling;
-use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
+// Removed: use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
+// Using local implementation for standalone devnet
 use scale_info::TypeInfo;
 use sp_runtime::{traits::Convert, Perbill};
 use sp_std::marker::PhantomData;
