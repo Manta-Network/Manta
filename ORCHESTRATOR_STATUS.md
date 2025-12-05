@@ -1,9 +1,9 @@
 # 🦎 CHAMELEON NETWORK - ORCHESTRATOR STATUS DASHBOARD
 
 **Orchestrator:** AI Agent Coordinator  
-**Current Week:** 3 of 16  
+**Current Week:** 4 of 16  
 **Target:** Public Testnet Launch (Week 15)  
-**Last Updated:** Week 3 - Phase A Complete
+**Last Updated:** Week 4 - Devnet Deployment
 
 ---
 
@@ -11,7 +11,7 @@
 
 | Agent | Branch | Status | Priority | Progress | Dependencies |
 |-------|--------|--------|----------|----------|-------------|
-| 1. Tokenomics | `feature/core-tokenomics` | 🟢 WEEK 3 COMPLETE | CRITICAL | 100% | None |
+| 1. Tokenomics | `feature/core-tokenomics` | 🟡 WEEK 4 LEAD | CRITICAL | 100% | None |
 | 2. Mobile Wallet | `feature/mobile-wallet` | ⏸️ STANDBY | HIGH | 40% | None |
 | 3. MEV Protection | `feature/mev-protection` | ⏸️ STANDBY | HIGH | 60% | None |
 | 4. pDEX | `feature/pdex-integration` | ⏸️ STANDBY | MEDIUM | 50% | Agent 1 ✅ |
@@ -92,55 +92,89 @@
 - ✅ Validator keys structure (validator-keys.json, 7KB)
 - ✅ Devnet setup documentation (devnet-setup.md, 12.7KB)
 - ✅ Docker Compose configuration (docker-compose.yml, 10KB)
-- ✅ Devnet scripts (start, stop, reset, health-check)
-- ✅ Monitoring configs (Prometheus, Grafana, Loki)
-
-**Genesis Allocations Verified:**
-- Validators: 5M CHML (5%)
-- Liquidity Pool: 2.5M CHML (2.5%)
-- Treasury: 2.5M CHML (2.5%)
-- Ecosystem: 5M CHML (5%)
-- Presale: 15M CHML (15%)
-- Airdrop: 5M CHML (5%)
-- Emission: 65M CHML (65%)
-- **Total: 100M CHML ✅ CORRECT**
-
-**Network Parameters:**
-- Chain ID: chameleon-devnet
-- Parachain ID: 2105
-- Block Time: 6 seconds
-- SS58 Prefix: 99
-- Validators: 5 (devnet)
-
-**Efficiency Achievement:**
-- Week 2: 9 GitHub Actions runs (60 minutes)
-- Week 3 Phase A: 1 GitHub Actions run (~10 minutes)
-- **Improvement: 90% reduction in CI/CD usage** 🎯
 
 ---
 
-## 🎯 CURRENT SPRINT (Week 3 Phase B)
+### Week 3 Phase B: Cloud Infrastructure Planning ✅
+**Status:** COMPLETE  
+**Duration:** Days 22-24  
 
-### In Progress:
+**Deliverables:**
+- ✅ Cloud deployment plan (cloud-deployment-plan.md)
+- ✅ AWS deployment scripts (aws-deployment.sh)
+- ✅ Validator initialization scripts (validator-init.sh)
+- ✅ GitHub Actions CD pipeline (deploy.yml)
+- ✅ Week 4 deployment checklist
 
-#### Week 3 Phase B - Cloud Infrastructure Planning
-- [ ] Cloud deployment plan documentation
-- [ ] AWS deployment scripts
-- [ ] Validator initialization scripts
-- [ ] GitHub Actions CD pipeline
-- [ ] Week 4 deployment checklist
+---
+
+### Week 3 Complete: Infrastructure Ready ✅
+**Status:** PREREQUISITES COMPLETE  
+**Human Tasks Completed:**
+
+**DigitalOcean Setup:**
+- ✅ Account created with $100 credits (covers 2 months)
+- ✅ 2 droplets provisioned:
+  - Droplet 1: 104.131.167.75 (NYC3) - 4GB/2vCPU
+  - Droplet 2: 64.23.233.36 (SFO3) - 4GB/2vCPU
+- ✅ API token generated (chameleon-deploy, expires 3 months)
+- ✅ GitHub repository secret configured (DIGITALOCEAN_TOKEN)
+
+**Cost Structure:**
+- Months 1-2: $0 (free credits)
+- Months 3-7: $96/month
+- Total to testnet: $480
+
+**Deployment Architecture:**
+- Droplet 1: 3 validators (chameleon-validator-1, 2, 3)
+- Droplet 2: 2 validators + RPC (chameleon-validator-4, 5, chameleon-rpc)
+- Total: 5 validators + 1 public RPC endpoint
+
+**Domain Strategy:**
+- Week 4: Use IP addresses directly
+- Week 5+: Optional subdomain setup (user has domain)
+
+---
+
+## 🎯 CURRENT SPRINT (Week 4)
+
+### In Progress: Devnet Deployment
+
+#### Day 25: Deployment Scripts
+- [ ] Create DigitalOcean deployment script
+- [ ] Create validator node setup script
+- [ ] Create RPC node setup script
+- [ ] Create chain specification JSON
+- [ ] Create deployment guide for Sid
+
+#### Day 26: Manual Deployment (Sid)
+- [ ] Clone repository
+- [ ] Run deployment script
+- [ ] Verify SSH connectivity
+- [ ] Deploy validators (5-60 min)
+
+#### Day 27: Validation
+- [ ] Verify all services running
+- [ ] Test RPC endpoint
+- [ ] Monitor for 24 hours
+- [ ] Document any issues
+
+#### Day 28: Week 4 Complete
+- [ ] Update status document
+- [ ] Report readiness for Week 5
 
 ---
 
 ## 📊 AGENT STATUS DETAIL
 
-### Agent 1 (Tokenomics): ✅ WEEK 3 COMPLETE
+### Agent 1 (Tokenomics): 🟡 WEEK 4 LEAD
 - Week 1-2: Core tokenomics implemented
-- Week 3: Chain specification and genesis config (LEAD)
-- Next: Support role for Week 4 deployment
+- Week 3: Chain specification and genesis config
+- Week 4: Devnet deployment scripts (LEAD)
+- Next: Support role for Week 5
 
 ### Agent 2-6 (All Others): ⏸️ STANDBY
-- Week 3: No work (as planned)
+- Week 4: No work (as planned)
 - Next: Week 5+ for respective features
 
 ---
@@ -151,8 +185,8 @@
 ```
 Workflow: build-and-test.yml
 Status: ✅ GREEN CHECKMARK
-Last Run: Week 3 Phase A
-Total Runs: 10 (9 Week 2 + 1 Week 3)
+Last Run: Week 3 Phase B
+Total Runs: 11 (9 Week 2 + 2 Week 3)
 ```
 
 ### Test Results by Pallet
@@ -178,36 +212,35 @@ Total Runs: 10 (9 Week 2 + 1 Week 3)
 - Weeks Completed: 3 of 16
 - Progress: ~18.75%
 - Status: ✅ ON TRACK
-- Next Milestone: Week 4 Cloud Deployment
+- Next Milestone: Week 4 Devnet Deployment
 
 ### Resources
-- GitHub Actions: 70/2000 minutes (3.5%)
-- Efficiency Improvement: 90% (Week 3 vs Week 2)
+- GitHub Actions: ~80/2000 minutes (4%)
+- DigitalOcean: $100 credits available
 - Team: 1 human (Sid) + 7 AI agents
 
 ---
 
 ## 🔮 NEXT STEPS
 
-**Immediate (Week 3 Phase B):**
-1. ~~Update status document~~ ✅
-2. Create cloud infrastructure deployment plan
-3. Define AWS/GCP resource requirements
-4. Create deployment scripts and CI/CD pipeline
-5. Prepare validator deployment documentation
+**Immediate (Week 4):**
+1. Create DigitalOcean deployment scripts
+2. Generate chain specification JSON
+3. Deploy to 2 droplets (5 validators + RPC)
+4. Verify block production
+5. 24-hour stability test
 
-**Short-term (Week 4):**
-6. Deploy devnet to cloud (5 validators)
-7. Test validator connectivity and consensus
-8. Verify block production and finality
-9. Test RPC endpoints and block explorer
-10. Load testing and performance validation
+**Short-term (Week 5):**
+6. Configure mobile app RPC endpoint
+7. Test wallet functionality
+8. Begin integration testing
+9. Expand test coverage
 
 **Long-term (Week 11-15):**
-11. Public testnet launch
-12. Community testing & bug bounty
-13. External security audits
-14. Presale preparation
+10. Public testnet launch
+11. Community testing & bug bounty
+12. External security audits
+13. Presale preparation
 
 ---
 
@@ -216,7 +249,7 @@ Total Runs: 10 (9 Week 2 + 1 Week 3)
 ### High Priority (Week 4-5)
 1. [ ] Expand test coverage for pDEX, Bridge, Staking
 2. [ ] Add proper benchmarking weights
-3. [ ] Implement comprehensive mock.rs files
+3. [ ] Generate proper chain spec with WASM blob
 
 ### Medium Priority (Week 6-8)
 4. [ ] Add comprehensive error handling
@@ -236,8 +269,9 @@ Total Runs: 10 (9 Week 2 + 1 Week 3)
 ### Active Risks
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| Cloud Costs | Low | Start with minimal instances, scale as needed |
-| Deployment Complexity | Medium | Detailed documentation, scripts tested locally |
+| Binary Not Built | Medium | Build from source on first deploy (~45 min) |
+| Chain Spec Missing WASM | Medium | Use raw spec or build locally |
+| Network Connectivity | Low | Droplets on reliable DO infrastructure |
 
 ### Resolved Risks
 - ✅ Runtime integration (initially blocked)
@@ -245,6 +279,7 @@ Total Runs: 10 (9 Week 2 + 1 Week 3)
 - ✅ MEV encryption (compatibility issues)
 - ✅ Deprecated weights (fixed with Weight::from_parts)
 - ✅ CI/CD efficiency (90% improvement achieved)
+- ✅ Cloud infrastructure (DigitalOcean provisioned)
 
 ---
 
@@ -256,4 +291,4 @@ Total Runs: 10 (9 Week 2 + 1 Week 3)
 - 🔴 Blocked
 
 **Last Updated by:** Orchestrator Agent  
-**Next Update:** End of Week 3 Phase B
+**Next Update:** End of Week 4 (after deployment)
