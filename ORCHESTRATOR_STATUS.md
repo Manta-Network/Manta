@@ -140,16 +140,24 @@
 
 ### In Progress: Devnet Deployment
 
-#### Day 25: Deployment Scripts
-- [ ] Create DigitalOcean deployment script
-- [ ] Create validator node setup script
-- [ ] Create RPC node setup script
-- [ ] Create chain specification JSON
-- [ ] Create deployment guide for Sid
+#### Day 25: Deployment Scripts ✅
+- [x] Create DigitalOcean deployment script
+- [x] Create validator node setup script
+- [x] Create RPC node setup script
+- [x] Create chain specification JSON
+- [x] Create deployment guide for Sid
 
-#### Day 26: Manual Deployment (Sid)
-- [ ] Clone repository
-- [ ] Run deployment script
+#### Day 25-26: Build Fix ✅
+- [x] Fixed `polkadot-runtime-common` dependency removal
+- [x] Added local `NoPriceForMessageDelivery` implementation
+- [x] Updated manta, calamari, and integration-tests runtimes
+- [x] Changes merged to `develop` branch
+
+#### Day 26: Manual Deployment (Sid) - NEXT STEPS
+- [ ] Push `develop` branch to GitHub (triggers CI/CD)
+- [ ] Wait for GitHub Actions to build release binary
+- [ ] Download binary from GitHub Releases
+- [ ] Run deployment script to DigitalOcean
 - [ ] Verify SSH connectivity
 - [ ] Deploy validators (5-60 min)
 
