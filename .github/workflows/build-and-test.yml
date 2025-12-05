@@ -79,7 +79,7 @@ jobs:
           
       - name: Build Release Binary
         run: |
-          RUSTFLAGS="-A warnings" cargo build --release -p manta
+          SKIP_WASM_BUILD=1 RUSTFLAGS="-A warnings" cargo build --release -p manta
           
       - name: Create Release
         uses: softprops/action-gh-release@v1
