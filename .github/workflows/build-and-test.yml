@@ -9,11 +9,25 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-test-
           
       - name: Test All Pallets
         run: |
@@ -35,6 +49,7 @@ jobs:
   create-release:
     name: Create Release Binary
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     needs: [test]
     if: github.ref == 'refs/heads/develop'
     
@@ -43,11 +58,24 @@ jobs:
       
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-release-
           
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y protobuf-compiler libclang-dev
+          sudo apt-get install -y protobuf-compiler libclang-dev cmake
           
       - name: Build Release Binary
         run: |
