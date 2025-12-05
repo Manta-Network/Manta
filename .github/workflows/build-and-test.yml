@@ -31,3 +31,29 @@ jobs:
         with:
           name: chameleon-node
           path: target/release/manta
+
+  create-release:
+    name: Create Release Binary
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+          
+      - name: Build Release Binary
+        run: |
+          RUSTFLAGS="-A warnings" cargo build --release -p manta
+          
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v0.1.0-alpha.${{ github.run_number }}
+          files: target/release/manta
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
