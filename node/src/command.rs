@@ -375,6 +375,8 @@ pub fn run_with(cli: Cli) -> Result {
                     .map(|e| e.para_id)
                     .ok_or("Could not find parachain extension in chain-spec.")?;
 
+                // Phase 1: polkadot_cli removed - RelayChainCli is now a stub
+                // For standalone devnet, always use dev node mode
                 let _polkadot_cli = RelayChainCli::new(
                     &config,
                     [RelayChainCli::executable_name()]
