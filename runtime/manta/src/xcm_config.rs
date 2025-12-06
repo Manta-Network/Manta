@@ -354,9 +354,9 @@ impl pallet_message_queue::Config for Runtime {
         RuntimeCall,
     >;
     type Size = u32;
-    // The XCMP queue pallet is only ever able to handle the `Sibling(ParaId)` origin:
-    type QueueChangeHandler = NarrowOriginToSibling<XcmpQueue>;
-    type QueuePausedQuery = NarrowOriginToSibling<XcmpQueue>;
+    // XcmpQueue disabled - using () as placeholder for standalone devnet
+    type QueueChangeHandler = ();
+    type QueuePausedQuery = ();
     type HeapSize = sp_core::ConstU32<{ 64 * 1024 }>;
     type MaxStale = sp_core::ConstU32<8>;
     type ServiceWeight = MessageQueueServiceWeight;
