@@ -18,7 +18,8 @@
 #![allow(clippy::too_many_arguments)]
 
 pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Nonce};
-use polkadot_service::CollatorPair;
+// polkadot_service::CollatorPair removed - using sp_core for standalone chain
+use sp_core::sr25519::Pair as CollatorPair;
 use std::sync::Arc;
 
 use sc_service::{Configuration, TaskManager};
