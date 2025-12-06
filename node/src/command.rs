@@ -271,7 +271,7 @@ pub fn run_with(cli: Cli) -> Result {
                 // polkadot_cli dependency removed
                 // TODO Phase 2: Implement standalone chain purge
                 /*
-                let polkadot_cli = RelayChainCli::new(
+                let _polkadot_cli = RelayChainCli::new(
                     &config,
                     [RelayChainCli::executable_name()]
                         .iter()
@@ -375,7 +375,7 @@ pub fn run_with(cli: Cli) -> Result {
                     .map(|e| e.para_id)
                     .ok_or("Could not find parachain extension in chain-spec.")?;
 
-                let polkadot_cli = RelayChainCli::new(
+                let _polkadot_cli = RelayChainCli::new(
                     &config,
                     [RelayChainCli::executable_name()]
                         .iter()
