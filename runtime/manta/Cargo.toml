@@ -122,7 +122,8 @@ session-key-primitives = { workspace = true }
 [dev-dependencies]
 csv = { workspace = true }
 polkadot-core-primitives = { workspace = true }
-polkadot-runtime-parachains = { workspace = true }
+# polkadot-runtime-parachains removed - pulls polkadot-runtime-common transitively
+# polkadot-runtime-parachains = { workspace = true }
 runtime-common = { workspace = true, features = ["test-helpers"] }
 version-compare = { workspace = true }
 xcm-simulator = { workspace = true }
