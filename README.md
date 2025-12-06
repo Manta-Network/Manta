@@ -4,6 +4,45 @@
 > Custom pallets: MEV protection, pDEX AMM, Ethereum bridge, Enhanced staking.
 > Built from substrate-node-template for clean, maintainable foundation.
 
+## 🚀 Quick Start - Standalone Node
+
+### Build from Source
+
+```bash
+# Install Rust (if not installed)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+rustup target add wasm32-unknown-unknown
+
+# Clone repository
+git clone https://github.com/chmldev/chameleon-network.git
+cd chameleon-network
+
+# Build node (uses Cargo-standalone.toml workspace)
+cargo build -p chameleon-node --manifest-path Cargo-standalone.toml --release
+```
+
+### Run Development Node
+
+```bash
+./target/release/chameleon-node --dev
+```
+
+### Run Testnet Validator
+
+```bash
+./target/release/chameleon-node \
+  --chain local \
+  --validator \
+  --name "Validator 1" \
+  --base-path /tmp/validator1 \
+  --port 30333 \
+  --rpc-port 9944
+```
+
+See [BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md) for detailed build guide.
+
+---
+
 ## Previous Architecture
 
 This project initially forked Manta Network (parachain architecture) but pivoted to standalone
