@@ -389,7 +389,7 @@ pub fn run_with(cli: Cli) -> Result {
                         &id,
                     );
 
-                let tokio_handle = config.tokio_handle.clone();
+                let _tokio_handle = config.tokio_handle.clone();
 
                 info!("Parachain id: {:?}", id);
                 info!("Parachain Account: {}", parachain_account);
