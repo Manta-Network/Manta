@@ -87,7 +87,8 @@ session-keys-primitives = { workspace = true }
 # Polkadot dependencies
 pallet-xcm = { workspace = true }
 pallet-xcm-benchmarks = { workspace = true, optional = true }
-parachains-common = { workspace = true }
+# parachains-common removed - pulls polkadot-runtime-common transitively
+# parachains-common = { workspace = true }
 polkadot-parachain-primitives = { workspace = true }
 polkadot-primitives = { workspace = true }
 # polkadot-runtime-common removed - not used and causes pallet-identity compilation errors
