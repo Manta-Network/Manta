@@ -572,6 +572,8 @@ where
     Ok((task_manager, client))
 }
 
+// Phase 2: Consensus function for parachain mode disabled
+#[cfg(feature = "parachain-mode")]
 #[allow(clippy::too_many_arguments)]
 fn start_consensus<RuntimeApi, SO>(
     async_backing: bool,
