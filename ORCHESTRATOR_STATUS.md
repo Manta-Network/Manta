@@ -191,22 +191,116 @@
 
 ---
 
-## 🎯 CURRENT SPRINT (Week 4)
+## 🎯 CURRENT SPRINT (Week 4) - ARCHITECTURE PIVOT
 
-### In Progress: Devnet Deployment
+### Status: Pivoting to Standalone Node Template
 
-#### Day 25: Deployment Scripts ✅
-- [x] Create DigitalOcean deployment script
-- [x] Create validator node setup script
-- [x] Create RPC node setup script
-- [x] Create chain specification JSON
-- [x] Create deployment guide for Sid
+**Original Plan:** Deploy Manta-based parachain node  
+**Revised Plan:** Build Substrate standalone node with custom pallets  
+**Reason:** Manta parachain architecture incompatible with standalone devnet
 
-#### Day 25-26: Build Fix ✅
-- [x] Fixed `polkadot-runtime-common` dependency removal
-- [x] Added local `NoPriceForMessageDelivery` implementation
-- [x] Updated manta, calamari, and integration-tests runtimes
-- [x] Changes merged to `develop` branch
+### Completed Work (Preserved):
+- [x] 4 custom pallets fully implemented and tested
+- [x] Tokenomics design and configuration
+- [x] Chain specification design
+- [x] Deployment scripts and infrastructure
+- [x] DigitalOcean droplets provisioned
+
+### Manta Compilation Attempts (14 iterations):
+- [x] Iteration 1-3: Removed polkadot-runtime-common
+- [x] Iteration 4-6: Removed polkadot-service, polkadot-cli
+- [x] Iteration 7-9: Removed cumulus-relay-chain-* crates
+- [x] Iteration 10-12: Removed polkadot-runtime-parachains
+- [x] Iteration 13: Removed parachains-common
+- [x] Iteration 14: Attempted cargo patch (blocked by Cargo limitation)
+- [x] **Decision:** Pivot to standalone architecture
+
+### Next Steps (Week 4-5):
+- [ ] Clone substrate-node-template
+- [ ] Integrate chameleon-mev pallet
+- [ ] Integrate chameleon-pdex pallet  
+- [ ] Integrate chameleon-bridge pallet
+- [ ] Integrate chameleon-staking pallet
+- [ ] Configure runtime (genesis, pallet ordering)
+- [ ] Create chain spec (100M CHML)
+- [ ] Compile and test
+- [ ] Deploy to DigitalOcean
+
+---
+
+## 📅 REVISED WEEKLY PLAN (POST-PIVOT)
+
+### Week 4 (Days 25-28) - REVISED: Standalone Node Build
+**Original:** Deploy Manta-based node  
+**Revised:** Build Substrate standalone node with custom pallets  
+**Status:** IN PROGRESS
+
+**Deliverables:**
+- Clone substrate-node-template
+- Integrate 4 custom pallets
+- Configure runtime (pallet ordering, genesis config)
+- Create chain spec (100M CHML, validator allocation)
+- Compile and test locally
+- Deploy to DigitalOcean droplets
+- Verify RPC endpoint functionality
+
+**Success Criteria:**
+- ✅ Node compiles without errors
+- ✅ 5 validators producing blocks (6 second block time)
+- ✅ RPC responds to queries
+- ✅ Custom pallets operational
+- ✅ 24-hour stability test passes
+
+### Week 5 (Days 29-35) - REVISED: Devnet Hardening + Mobile Prep
+**Original:** Mobile wallet RPC integration  
+**Revised:** Complete devnet testing + begin mobile prep  
+
+**Deliverables:**
+- Full devnet testing (all custom pallet functions)
+- Performance benchmarking
+- RPC endpoint hardening
+- Begin mobile app RPC integration (if time permits)
+
+### Week 6-10: Continue as Originally Planned
+- Mobile wallet development
+- Privacy layer integration
+- Feature enhancements
+- Testing and refinement
+
+### Week 11-15: Testnet Launch (ON SCHEDULE)
+- Scale to 30 validators
+- Public testnet
+- Community testing
+- External audits
+
+---
+
+## 📚 LESSONS LEARNED - WEEK 4 PIVOT
+
+### Technical Insights:
+1. **Architecture matching is critical** - Parachain codebase can't easily become standalone
+2. **Transitive dependencies matter** - Removing direct deps doesn't remove transitive ones
+3. **Upstream bugs block downstream** - polkadot-sdk v1.6.0 pallet-identity bug unfixable in our codebase
+4. **Cargo patch limitations** - Can't patch repo with itself (same-source restriction)
+
+### Project Management:
+1. **Set iteration limits** - We correctly set 11-13 iteration threshold before pivot
+2. **Recognize sunk cost** - 6 hours invested, but pivoting saves weeks more
+3. **Preserve IP** - Custom pallets are the value, node architecture is replaceable
+4. **Timeline focus** - Testnet launch date more important than perfect Manta fork
+
+### Strategic Decisions:
+1. **Standalone > Parachain for devnet** - Simpler, no relay chain dependency
+2. **Fresh start > Incremental fixes** - Sometimes rebuilding is faster
+3. **Pragmatism > Perfection** - Working devnet > pristine Manta fork
+
+### Positive Outcomes:
+1. **Deep understanding** - Now experts in Substrate/Polkadot architecture
+2. **Clean foundation** - Standalone node is better long-term
+3. **Preserved work** - All custom pallets and logic intact
+4. **Timeline maintained** - 1 week delay, but testnet still Week 11
+
+---
 
 #### Day 26: Manual Deployment (Sid) - NEXT STEPS
 - [ ] Push `develop` branch to GitHub (triggers CI/CD)
