@@ -180,7 +180,10 @@ impl SubstrateCli for RelayChainCli {
     }
 
     fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
-        polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
+        // Phase 1: polkadot_cli removed - return error for relay chain specs
+        // TODO Phase 2: Implement standalone chain spec loading
+        // Original: polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
+        Err(format!("Relay chain spec loading disabled for standalone devnet: {}", id))
     }
 }
 
