@@ -375,10 +375,6 @@ construct_runtime!(
         ChameleonStaking: pallet_chameleon_staking,
     }
 );
-        // ChameleonBridge: pallet_chameleon_bridge,
-        // ChameleonStaking: pallet_chameleon_staking,
-    }
-);
 
 // Block and Header types
 pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
