@@ -191,7 +191,7 @@ runtime-benchmarks = [
   "pallet-conviction-voting/runtime-benchmarks",
   "pallet-referenda/runtime-benchmarks",
   "pallet-ranked-collective/runtime-benchmarks",
-  'parachains-common/runtime-benchmarks',
+  # 'parachains-common/runtime-benchmarks',  # Removed with parachains-common
 ]
 try-runtime = [
   'frame-try-runtime/try-runtime',
