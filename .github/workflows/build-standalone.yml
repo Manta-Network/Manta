@@ -125,12 +125,12 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-standalone-node-${{ hashFiles('**/Cargo-standalone.toml') }}
+          key: ${{ runner.os }}-cargo-standalone-node-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-cargo-standalone-node-
       
       - name: Build Node Binary
-        run: cargo build -p chameleon-node --manifest-path Cargo-standalone.toml --release
+        run: cargo build -p chameleon-node --release
       
       - name: Upload Node Binary
         uses: actions/upload-artifact@v4
