@@ -241,6 +241,10 @@ where
     })
 }
 
+// Phase 2: Parachain node function disabled for standalone devnet
+// This function requires cumulus-relay-chain-* crates which pull polkadot-service
+// Enable with feature flag when parachain deployment is needed
+#[cfg(feature = "parachain-mode")]
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
