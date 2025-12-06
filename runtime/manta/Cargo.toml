@@ -285,7 +285,7 @@ std = [
   'log/std',
   'cumulus-pallet-session-benchmarking/std',
   'polkadot-parachain-primitives/std',
-  'parachains-common/std',
+  # 'parachains-common/std',  # Removed with parachains-common
   'xcm/std',
   'xcm-builder/std',
   'xcm-executor/std',
