@@ -253,8 +253,3 @@ runtime-common = { path = "./runtime/common", default-features = false }
 session-key-primitives = { path = './primitives/session-keys', default-features = false }
 substrate-fixed = { git = "https://github.com/Manta-Network/substrate-fixed.git", tag = "v0.5.9", default-features = false }
 
-
-# Patch section to exclude problematic crate
-[patch.crates-io]
-# Note: polkadot-runtime-common compilation issues handled by feature flags
-
