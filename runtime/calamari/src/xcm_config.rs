@@ -59,8 +59,18 @@ use xcm_builder::{
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
-// XCM disabled for standalone devnet - not needed for local testing
-// Will be re-enabled when deploying as parachain
+/// Zero-cost price implementation for standalone devnet (XCM disabled)
+/// Returns empty MultiAssets for all message deliveries since we don't need
+/// cross-chain messaging on a standalone devnet.
+pub struct NoPriceForSiblingDelivery;
+
+impl xcm_builder::PriceForMessageDelivery for NoPriceForSiblingDelivery {
+    type Id = ParaId;
+    
+    fn price_for_delivery(_: Self::Id, _: &Xcm<()>) -> MultiAssets {
+        MultiAssets::new()
+    }
+}
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
