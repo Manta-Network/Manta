@@ -15,8 +15,13 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Relay chain runtime mock.
+//! 
+//! DISABLED for standalone devnet - polkadot_runtime_parachains removed to avoid
+//! polkadot-runtime-common dependency which causes pallet-identity compilation errors.
+//! Re-enable when XCM integration tests are needed for parachain deployment.
 
-#![cfg(test)]
+// Entire module disabled - requires polkadot_runtime_parachains
+#![cfg(all(test, feature = "xcm-integration-tests"))]
 
 use frame_support::{
     construct_runtime, parameter_types,
