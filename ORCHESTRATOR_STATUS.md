@@ -20,6 +20,19 @@
 - polkadot-sdk release-polkadot-v1.6.0 has pallet-identity vec! macro bug in no_std mode
 - Transitive dependencies prevent removal without breaking core functionality
 
+**Attempts Made:**
+1. ✅ Removed polkadot-runtime-common
+2. ✅ Removed polkadot-service
+3. ✅ Removed polkadot-cli
+4. ✅ Removed 4 cumulus-relay-chain-* crates
+5. ✅ Removed polkadot-runtime-parachains
+6. ✅ Removed parachains-common
+7. ✅ Disabled XCM configuration
+8. ✅ Disabled xcmp-queue pallet
+9. ✅ Attempted cargo patch (blocked by Cargo same-source limitation)
+10. ✅ Verified with cargo tree and grep
+11. ❌ Error persists due to deep transitive dependencies
+
 **Pivot Decision:**
 - Build fresh Substrate standalone node from node-template
 - Integrate 4 custom pallets: chameleon-mev, chameleon-pdex, chameleon-bridge, chameleon-staking
@@ -35,11 +48,43 @@
 - ✅ Test infrastructure
 - ✅ DevOps and deployment scripts
 
+**What We Remove (parachain overhead):**
+- ❌ Cumulus parachain system pallets
+- ❌ Relay chain integration code
+- ❌ XCM cross-chain messaging (not needed for standalone)
+- ❌ Collator selection (use validators instead)
+- ❌ Manta-specific node architecture
+
 **Timeline Impact:**
 - Original: Week 4 deployment blocked indefinitely
 - Revised: Week 4-5 = rebuild on standalone template
 - Net delay: 1 week (Week 5 work shifts to Week 6)
 - Week 11 testnet launch: STILL ON TRACK
+
+**Path Forward:**
+- Week 4 (Days 25-26): Build standalone node with custom pallets
+- Week 5 (Days 27-28): Deploy to DigitalOcean, test
+- Week 6+: Resume mobile wallet development
+- Weeks 7-10: Feature development continues as planned
+- Week 11: Testnet launch (on schedule)
+
+---
+
+## CURRENT STATUS
+
+**Current Week:** 4 of 16 (PIVOT - Architecture Rebuild)  
+**Timeline:** ON TRACK (adjusted for 1-week pivot)  
+**Blockers:** None (pivot resolves compilation issues)
+
+**Immediate Focus:**
+- Weekend: Build Substrate standalone node with custom pallets
+- Deploy to DigitalOcean (2 droplets already provisioned)
+- Test basic functionality (block production, RPC, transactions)
+
+**Architecture Change:**
+- FROM: Manta parachain fork (cumulus-based)
+- TO: Substrate standalone node (sc-service-based)
+- IMPACT: Cleaner foundation, same custom features
 
 ---
 
@@ -191,43 +236,6 @@
 
 ---
 
-## 🎯 CURRENT SPRINT (Week 4) - ARCHITECTURE PIVOT
-
-### Status: Pivoting to Standalone Node Template
-
-**Original Plan:** Deploy Manta-based parachain node  
-**Revised Plan:** Build Substrate standalone node with custom pallets  
-**Reason:** Manta parachain architecture incompatible with standalone devnet
-
-### Completed Work (Preserved):
-- [x] 4 custom pallets fully implemented and tested
-- [x] Tokenomics design and configuration
-- [x] Chain specification design
-- [x] Deployment scripts and infrastructure
-- [x] DigitalOcean droplets provisioned
-
-### Manta Compilation Attempts (14 iterations):
-- [x] Iteration 1-3: Removed polkadot-runtime-common
-- [x] Iteration 4-6: Removed polkadot-service, polkadot-cli
-- [x] Iteration 7-9: Removed cumulus-relay-chain-* crates
-- [x] Iteration 10-12: Removed polkadot-runtime-parachains
-- [x] Iteration 13: Removed parachains-common
-- [x] Iteration 14: Attempted cargo patch (blocked by Cargo limitation)
-- [x] **Decision:** Pivot to standalone architecture
-
-### Next Steps (Week 4-5):
-- [ ] Clone substrate-node-template
-- [ ] Integrate chameleon-mev pallet
-- [ ] Integrate chameleon-pdex pallet  
-- [ ] Integrate chameleon-bridge pallet
-- [ ] Integrate chameleon-staking pallet
-- [ ] Configure runtime (genesis, pallet ordering)
-- [ ] Create chain spec (100M CHML)
-- [ ] Compile and test
-- [ ] Deploy to DigitalOcean
-
----
-
 ## 📅 REVISED WEEKLY PLAN (POST-PIVOT)
 
 ### Week 4 (Days 25-28) - REVISED: Standalone Node Build
@@ -237,7 +245,10 @@
 
 **Deliverables:**
 - Clone substrate-node-template
-- Integrate 4 custom pallets
+- Integrate chameleon-mev pallet
+- Integrate chameleon-pdex pallet
+- Integrate chameleon-bridge pallet
+- Integrate chameleon-staking pallet
 - Configure runtime (pallet ordering, genesis config)
 - Create chain spec (100M CHML, validator allocation)
 - Compile and test locally
@@ -275,6 +286,72 @@
 
 ---
 
+## ⚠️ TECHNICAL DEBT
+
+### RESOLVED by Pivot:
+- ~~Manta parachain compilation issues~~ ✅ (architecture change)
+- ~~XCM configuration errors~~ ✅ (not needed for standalone)
+- ~~Relay chain dependency conflicts~~ ✅ (not needed for standalone)
+
+### NEW High Priority (Week 4-5):
+- Build standalone node from template
+- Integrate 4 custom pallets
+- Test pallet interactions in new runtime
+- Verify deployment scripts work with new binary
+
+### Medium Priority (Week 6-8):
+- Expand test coverage for custom pallets
+- Add benchmarking weights
+- Security review of pallet interactions
+
+### Low Priority (Week 10+):
+- Optimize runtime performance
+- Comprehensive documentation
+- Consider parachain deployment path (if needed for mainnet)
+
+---
+
+## AGENT STATUS
+
+**Week 4 Focus:** Architecture pivot execution
+
+**Agent 1 (Tokenomics):**
+- Status: ACTIVE - Chain spec migration to standalone template
+- Progress: 0% (new task)
+- Next: Create genesis configuration for standalone node
+
+**Agent 2 (Mobile Wallet):**
+- Status: STANDBY - Waiting for RPC endpoint
+- Progress: Week 5 delayed to Week 6
+- Next: RPC integration after devnet stable
+
+**Agent 3 (Privacy):**
+- Status: STANDBY
+- Progress: Week 6 work remains on schedule
+- Next: zkSNARK integration after mobile wallet
+
+**Agent 4 (pDEX):**
+- Status: STANDBY
+- Progress: Custom pallet preserved, ready for integration
+- Next: Test pallet in standalone runtime
+
+**Agent 5 (Bridge):**
+- Status: STANDBY  
+- Progress: Custom pallet preserved, ready for integration
+- Next: Test pallet in standalone runtime
+
+**Agent 6 (Staking):**
+- Status: STANDBY
+- Progress: Custom pallet preserved, ready for integration
+- Next: Test pallet in standalone runtime
+
+**Orchestrator:**
+- Status: ACTIVE - Managing architecture pivot
+- Focus: Ensure smooth transition, minimal timeline impact
+- Next: Coordinate standalone node build
+
+---
+
 ## 📚 LESSONS LEARNED - WEEK 4 PIVOT
 
 ### Technical Insights:
@@ -299,40 +376,6 @@
 2. **Clean foundation** - Standalone node is better long-term
 3. **Preserved work** - All custom pallets and logic intact
 4. **Timeline maintained** - 1 week delay, but testnet still Week 11
-
----
-
-#### Day 26: Manual Deployment (Sid) - NEXT STEPS
-- [ ] Push `develop` branch to GitHub (triggers CI/CD)
-- [ ] Wait for GitHub Actions to build release binary
-- [ ] Download binary from GitHub Releases
-- [ ] Run deployment script to DigitalOcean
-- [ ] Verify SSH connectivity
-- [ ] Deploy validators (5-60 min)
-
-#### Day 27: Validation
-- [ ] Verify all services running
-- [ ] Test RPC endpoint
-- [ ] Monitor for 24 hours
-- [ ] Document any issues
-
-#### Day 28: Week 4 Complete
-- [ ] Update status document
-- [ ] Report readiness for Week 5
-
----
-
-## 📊 AGENT STATUS DETAIL
-
-### Agent 1 (Tokenomics): 🟡 WEEK 4 LEAD
-- Week 1-2: Core tokenomics implemented
-- Week 3: Chain specification and genesis config
-- Week 4: Devnet deployment scripts (LEAD)
-- Next: Support role for Week 5
-
-### Agent 2-6 (All Others): ⏸️ STANDBY
-- Week 4: No work (as planned)
-- Next: Week 5+ for respective features
 
 ---
 
@@ -381,66 +424,24 @@ Total Runs: 11 (9 Week 2 + 2 Week 3)
 ## 🔮 NEXT STEPS
 
 **Immediate (Week 4):**
-1. Create DigitalOcean deployment scripts
-2. Generate chain specification JSON
-3. Deploy to 2 droplets (5 validators + RPC)
-4. Verify block production
-5. 24-hour stability test
+1. Clone substrate-node-template
+2. Integrate 4 custom pallets
+3. Generate chain specification JSON
+4. Deploy to 2 droplets (5 validators + RPC)
+5. Verify block production
+6. 24-hour stability test
 
 **Short-term (Week 5):**
-6. Configure mobile app RPC endpoint
-7. Test wallet functionality
-8. Begin integration testing
-9. Expand test coverage
+7. Configure mobile app RPC endpoint
+8. Test wallet functionality
+9. Begin integration testing
+10. Expand test coverage
 
 **Long-term (Week 11-15):**
-10. Public testnet launch
-11. Community testing & bug bounty
-12. External security audits
-13. Presale preparation
-
----
-
-## ⚠️ TECHNICAL DEBT
-
-### High Priority (Week 4-5)
-1. [ ] Expand test coverage for pDEX, Bridge, Staking
-2. [ ] Add proper benchmarking weights
-3. [ ] Generate proper chain spec with WASM blob
-
-### Medium Priority (Week 6-8)
-4. [ ] Add comprehensive error handling
-5. [ ] Implement full MEV encryption (off-chain workers)
-6. [ ] Deploy Ethereum bridge contracts
-7. [ ] Security audits for critical functions
-
-### Low Priority (Week 10+)
-8. [ ] Optimize gas costs
-9. [ ] Add extensive rustdoc documentation
-10. [ ] Implement governance proposals
-
----
-
-## 🔧 KNOWN ISSUES & FIXES
-
-### pallet-identity vec! Macro Compilation Error (FIXED)
-
-**Issue:** The `release-polkadot-v1.6.0` branch of polkadot-sdk has a bug in `pallet-identity` where the `vec!` macro is not properly imported in `no_std` mode, causing compilation failures in release builds.
-
-**Root Cause:** Transitive dependency through various polkadot-sdk crates that depend on `polkadot-runtime-common`.
-
-**Solution Applied:**
-- Removed direct dependencies: `polkadot-runtime-common`, `polkadot-runtime-parachains`, `parachains-common`, `polkadot-service`, `polkadot-cli`
-- Removed relay chain interface crates from node: `cumulus-relay-chain-inprocess-interface`, `cumulus-relay-chain-minimal-node`
-- Applied cargo patch in `/app/Cargo.toml` to use `stable2409` branch for `pallet-identity`
-- Disabled XCM integration tests that required removed dependencies
-
-**Files Modified:**
-- `/app/Cargo.toml` - Patch section and workspace dependencies
-- `/app/node/Cargo.toml` - Removed relay chain dependencies
-- `/app/runtime/*/Cargo.toml` - Removed polkadot-runtime-parachains
-- `/app/node/src/service.rs` - Refactored for standalone mode
-- `/app/node/src/command.rs` - Force dev mode only
+11. Public testnet launch
+12. Community testing & bug bounty
+13. External security audits
+14. Presale preparation
 
 ---
 
@@ -449,8 +450,8 @@ Total Runs: 11 (9 Week 2 + 2 Week 3)
 ### Active Risks
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| Binary Not Built | Medium | Build from source on first deploy (~45 min) |
-| Chain Spec Missing WASM | Medium | Use raw spec or build locally |
+| Pallet integration complexity | Medium | Follow Substrate template patterns exactly |
+| Chain Spec configuration | Low | Reuse existing genesis config |
 | Network Connectivity | Low | Droplets on reliable DO infrastructure |
 
 ### Resolved Risks
@@ -460,7 +461,7 @@ Total Runs: 11 (9 Week 2 + 2 Week 3)
 - ✅ Deprecated weights (fixed with Weight::from_parts)
 - ✅ CI/CD efficiency (90% improvement achieved)
 - ✅ Cloud infrastructure (DigitalOcean provisioned)
-- ✅ pallet-identity compilation (patched to stable2409)
+- ✅ pallet-identity compilation (RESOLVED via architecture pivot)
 
 ---
 

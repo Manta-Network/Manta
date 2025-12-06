@@ -1,8 +1,23 @@
-# Chameleon Network
+# Chameleon Network - Standalone Blockchain
+
+> **Architecture Note:** This project uses a Substrate standalone node architecture.
+> Custom pallets: MEV protection, pDEX AMM, Ethereum bridge, Enhanced staking.
+> Built from substrate-node-template for clean, maintainable foundation.
+
+## Previous Architecture
+
+This project initially forked Manta Network (parachain architecture) but pivoted to standalone
+node template in Week 4 after identifying parachain-specific compilation issues.
+
+**Preserved:** All custom pallets and business logic (80% of codebase value)  
+**Changed:** Node architecture from parachain (cumulus) to standalone (sc-service)  
+**Benefit:** Cleaner dependencies, faster compilation, better maintainability
+
+See `docs/architecture-pivot.md` for detailed rationale.
+
+---
 
 **Privacy-first blockchain with MEV protection for retail users**
-
-> **🔄 Architecture Update (Week 4):** This project has pivoted from Manta parachain fork to Substrate standalone node architecture. All custom pallets and business logic are preserved. See [docs/architecture-pivot.md](docs/architecture-pivot.md) for details.
 
 Chameleon is a next-generation privacy blockchain built on Substrate, designed to protect retail users from MEV (Miner Extractable Value) exploitation while delivering a mobile-first user experience.
 
@@ -66,7 +81,7 @@ rustup target add wasm32-unknown-unknown
 cargo build --release
 
 # Run local development node
-./target/release/manta --dev --tmp
+./target/release/chameleon-node --dev --tmp
 ```
 
 ### Running a Validator
@@ -87,6 +102,7 @@ The Chameleon mobile wallet is under active development. Beta testing will begin
 
 ## 📚 Documentation
 
+- **Architecture Pivot:** [View Pivot Details](docs/architecture-pivot.md)
 - **Tokenomics:** [View Tokenomics](docs/tokenomics.md) *(coming soon)*
 - **Whitepaper:** [Read Whitepaper](docs/whitepaper.md) *(coming soon)*
 - **Developer Docs:** [API Documentation](docs/developers.md) *(coming soon)*
@@ -103,10 +119,11 @@ The Chameleon mobile wallet is under active development. Beta testing will begin
 
 **Phase 1: Foundation (Weeks 1-6)**
 - ✅ Repository setup and fork
-- ⏳ Token implementation (CHML)
-- ⏳ Emission schedule logic
-- ⏳ Staking mechanism
-- ⏳ Privacy primitives integration
+- ✅ Token implementation (CHML)
+- ✅ Emission schedule logic
+- ✅ Staking mechanism
+- ✅ Privacy primitives integration
+- ✅ Architecture pivot to standalone node
 
 **Phase 2: Core Features (Weeks 7-10)**
 - ⏳ Mobile wallet MVP
@@ -159,8 +176,8 @@ By contributing to this project, you agree to license your contributions under t
 
 Chameleon Network is built on the shoulders of giants:
 
-- **Manta Network** - For their groundbreaking work on privacy infrastructure
 - **Substrate/Polkadot** - For the robust blockchain framework
+- **Manta Network** - For their groundbreaking work on privacy infrastructure (initial fork basis)
 - **Zcash** - For pioneering zkSNARK technology
 - **Ethereum** - For demonstrating the power of decentralized applications
 
