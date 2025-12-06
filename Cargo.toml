@@ -196,7 +196,8 @@ session-keys-primitives = { git = "https://github.com/Manta-Network/moonkit.git"
 pallet-xcm = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 pallet-xcm-benchmarks = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 parachains-common = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
-polkadot-cli = { git = 'https://github.com/paritytech/polkadot-sdk', branch = "release-polkadot-v1.6.0" }
+# polkadot-cli removed - pulls in polkadot-service transitively which causes pallet-identity errors
+# polkadot-cli = { git = 'https://github.com/paritytech/polkadot-sdk', branch = "release-polkadot-v1.6.0" }
 polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 polkadot-parachain-primitives = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
