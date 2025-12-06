@@ -14,7 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-#![cfg(test)]
+//! XCM Mock Tests
+//! 
+//! DISABLED for standalone devnet - polkadot_runtime_parachains removed to avoid
+//! polkadot-runtime-common dependency which causes pallet-identity compilation errors.
+//! Re-enable when XCM integration tests are needed for parachain deployment.
+
+// Entire module disabled - requires polkadot_runtime_parachains
+#![cfg(all(test, feature = "xcm-integration-tests"))]
 
 pub mod parachain;
 pub mod relay_chain;
