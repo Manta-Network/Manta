@@ -30,9 +30,11 @@ use cumulus_client_parachain_inherent::{MockValidationDataInherentDataProvider, 
 use cumulus_client_service::{
     build_network, prepare_node_config, CollatorSybilResistance,
     DARecoveryProfile,
-    // start_relay_chain_tasks disabled for standalone devnet
-    // StartRelayChainTasksParams,
 };
+// Parachain mode imports - only needed with "parachain-mode" feature
+#[cfg(feature = "parachain-mode")]
+use cumulus_client_service::{start_relay_chain_tasks, StartRelayChainTasksParams};
+
 use cumulus_primitives_core::{relay_chain::CollatorPair, ParaId};
 use cumulus_relay_chain_interface::{OverseerHandle, RelayChainInterface};
 use futures::{Stream, StreamExt};
