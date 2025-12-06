@@ -1164,7 +1164,8 @@ mod benches {
         // we disable zenlink in this release, and will fix it in next release
         // [zenlink_protocol, ZenlinkProtocol]
         [pallet_farming, Farming]
-        [cumulus_pallet_xcmp_queue, XcmpQueue]
+        // XCM - DISABLED for standalone devnet
+        // [cumulus_pallet_xcmp_queue, XcmpQueue]
         // always get this error(Unimplemented) while benchmarking pallet_xcm_benchmarks::fungible::initiate_teleport
         // so this time we will use statemint's fungible weights
         // and actually we don't support teleport now
