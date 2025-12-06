@@ -66,7 +66,6 @@ check_prerequisites() {
     local required_files=(
         "scripts/setup-validator-node.sh"
         "scripts/setup-rpc-node.sh"
-        "../node/${CHAIN_SPEC_FILE}"
     )
     
     for file in "${required_files[@]}"; do
@@ -75,6 +74,12 @@ check_prerequisites() {
             exit 1
         fi
     done
+    
+    # Check for chain spec (can be in node-standalone or will be generated)
+    if [[ ! -f "../node-standalone/${CHAIN_SPEC_FILE}" ]]; then
+        log_warning "Chain spec not found at ../node-standalone/${CHAIN_SPEC_FILE}"
+        log_info "Chain spec will need to be generated or copied before deployment"
+    fi
     
     log_success "All prerequisites check passed"
 }
