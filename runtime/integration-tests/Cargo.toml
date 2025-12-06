@@ -39,11 +39,12 @@ xcm = { workspace = true }
 xcm-builder = { workspace = true }
 xcm-executor = { workspace = true }
 
-parachains-common = { workspace = true, features = ["std"] }
+# parachains-common and polkadot-runtime-parachains removed - pull polkadot-runtime-common
+# parachains-common = { workspace = true, features = ["std"] }
 polkadot-core-primitives = { workspace = true, features = ["std"] }
 polkadot-parachain-primitives = { workspace = true, features = ["std"] }
 # polkadot-runtime-common removed - not used and causes pallet-identity compilation errors
-polkadot-runtime-parachains = { workspace = true, features = ["std"] }
+# polkadot-runtime-parachains = { workspace = true, features = ["std"] }
 xcm-simulator = { workspace = true }
 
 # Cumulus dependencies
