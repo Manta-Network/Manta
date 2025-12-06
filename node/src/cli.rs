@@ -108,11 +108,16 @@ fn block_authoring_duration_parser(s: &str) -> Result<Duration, String> {
     )?))
 }
 
-/// Relay Chain CLI
+// Phase 1: Relay Chain CLI disabled for standalone devnet
+// polkadot-cli dependency removed to avoid polkadot-runtime-common issues
+// TODO Phase 2: Replace with sc-cli for standalone node operation
+
+/// Relay Chain CLI (Stub for standalone chain)
+/// In standalone mode, relay chain configuration is not used
 #[derive(Debug)]
 pub struct RelayChainCli {
-    /// The actual relay chain cli object.
-    pub base: polkadot_cli::RunCmd,
+    // Phase 1 stub - polkadot_cli::RunCmd replaced
+    // pub base: polkadot_cli::RunCmd,
 
     /// Optional chain id that should be passed to the relay chain.
     pub chain_id: Option<String>,
@@ -123,9 +128,10 @@ pub struct RelayChainCli {
 
 impl RelayChainCli {
     /// Parse the relay chain CLI parameters using the para chain `Configuration`.
+    /// Phase 1: Returns stub configuration for standalone chain
     pub fn new<'a>(
         para_config: &sc_service::Configuration,
-        relay_chain_args: impl Iterator<Item = &'a String>,
+        _relay_chain_args: impl Iterator<Item = &'a String>,
     ) -> Self {
         let extension = chain_specs::Extensions::try_get(&*para_config.chain_spec);
         let chain_id = extension.map(|e| e.relay_chain.clone());
@@ -133,7 +139,8 @@ impl RelayChainCli {
         Self {
             base_path,
             chain_id,
-            base: polkadot_cli::RunCmd::parse_from(relay_chain_args),
+            // Phase 1: polkadot_cli::RunCmd removed
+            // base: polkadot_cli::RunCmd::parse_from(relay_chain_args),
         }
     }
 }
