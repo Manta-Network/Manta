@@ -59,9 +59,9 @@ use xcm_builder::{
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
-/// Zero-cost price implementation for standalone devnet (XCM disabled)
-/// Returns empty MultiAssets for all message deliveries since we don't need
-/// cross-chain messaging on a standalone devnet.
+// NoPriceForSiblingDelivery removed - XCM Queue disabled for standalone devnet
+// Will be re-enabled for parachain deployment
+/*
 pub struct NoPriceForSiblingDelivery;
 
 impl xcm_builder::PriceForMessageDelivery for NoPriceForSiblingDelivery {
@@ -71,6 +71,7 @@ impl xcm_builder::PriceForMessageDelivery for NoPriceForSiblingDelivery {
         MultiAssets::new()
     }
 }
+*/
 
 parameter_types! {
     pub ReservedDmpWeight: Weight = RuntimeBlockWeights::get().max_block.saturating_div(4);
