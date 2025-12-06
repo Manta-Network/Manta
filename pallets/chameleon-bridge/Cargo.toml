@@ -1,36 +1,27 @@
 [package]
-authors.workspace = true
-edition.workspace = true
-homepage.workspace = true
-license.workspace = true
 name = "pallet-chameleon-bridge"
-repository.workspace = true
-version.workspace = true
-
-[dependencies]
-codec = { workspace = true }
-frame-benchmarking = { workspace = true, optional = true }
-frame-support = { workspace = true }
-frame-system = { workspace = true }
-scale-info = { workspace = true }
-sp-runtime = { workspace = true }
-sp-std = { workspace = true }
-sp-core = { workspace = true }
-
-[dev-dependencies]
-sp-core = { workspace = true, features = ["std"] }
-sp-io = { workspace = true, features = ["std"] }
-pallet-balances = { workspace = true, features = ["std"] }
-pallet-assets = { workspace = true, features = ["std"] }
+version = "0.1.0"
+edition = "2021"
+description = "Ethereum bridge pallet for Chameleon Network."
+license = "GPL-3.0"
+readme = "README.md"
 
 [features]
 default = ["std"]
+
 runtime-benchmarks = [
   "frame-benchmarking/runtime-benchmarks",
   "frame-support/runtime-benchmarks",
   "frame-system/runtime-benchmarks",
 ]
+
+try-runtime = [
+  "frame-support/try-runtime",
+  "frame-system/try-runtime",
+]
+
 std = [
+  "frame-benchmarking?/std",
   "codec/std",
   "frame-support/std",
   "frame-system/std",
@@ -39,7 +30,19 @@ std = [
   "sp-std/std",
   "sp-core/std",
 ]
-try-runtime = [
-  "frame-support/try-runtime",
-  "frame-system/try-runtime",
-]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.6", default-features = false, features = ["derive"] }
+scale-info = { version = "2.10", default-features = false, features = ["derive"] }
+frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false, optional = true }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
+frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
+sp-std = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
+
+[dev-dependencies]
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", features = ["std"] }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", features = ["std"] }
+pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", features = ["std"] }
+pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", features = ["std"] }

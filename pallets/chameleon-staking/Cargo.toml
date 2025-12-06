@@ -1,13 +1,10 @@
 [package]
-authors.workspace = true
-description = 'Chameleon Network enhanced staking pallet with delegation and reward optimization'
-edition.workspace = true
-homepage.workspace = true
-license.workspace = true
-name = 'pallet-chameleon-staking'
-readme = 'README.md'
-repository.workspace = true
-version.workspace = true
+name = "pallet-chameleon-staking"
+version = "0.1.0"
+edition = "2021"
+description = "Chameleon Network enhanced staking pallet with delegation and reward optimization."
+license = "GPL-3.0"
+readme = "README.md"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -28,7 +25,7 @@ try-runtime = [
 ]
 
 std = [
-  "frame-benchmarking/std",
+  "frame-benchmarking?/std",
   "frame-support/std",
   "frame-system/std",
   "codec/std",
@@ -38,16 +35,16 @@ std = [
 ]
 
 [dependencies]
-codec = { workspace = true }
-frame-benchmarking = { workspace = true, optional = true }
-frame-support = { workspace = true }
-frame-system = { workspace = true }
-scale-info = { workspace = true }
-sp-runtime = { workspace = true }
-sp-std = { workspace = true }
+codec = { package = "parity-scale-codec", version = "3.6", default-features = false, features = ["derive"] }
+scale-info = { version = "2.10", default-features = false, features = ["derive"] }
+frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false, optional = true }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
+frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
+sp-std = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 
 [dev-dependencies]
-sp-core = { workspace = true }
-sp-io = { workspace = true }
-pallet-balances = { workspace = true, features = ["std"] }
-frame-system = { workspace = true, features = ["std"] }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", features = ["std"] }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", features = ["std"] }
+pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", features = ["std"] }
+frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", features = ["std"] }

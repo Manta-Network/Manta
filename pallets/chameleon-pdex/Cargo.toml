@@ -1,81 +1,59 @@
 [package]
-authors.workspace = true
-description = 'Pallet implementing privacy-preserving DEX with AMM pools for Chameleon Network.'
-edition.workspace = true
-homepage.workspace = true
-license.workspace = true
-name = 'pallet-chameleon-pdex'
-readme = 'README.md'
-repository.workspace = true
-version.workspace = true
+name = "pallet-chameleon-pdex"
+version = "0.1.0"
+edition = "2021"
+description = "Pallet implementing privacy-preserving DEX with AMM pools for Chameleon Network."
+license = "GPL-3.0"
+readme = "README.md"
 
 [package.metadata.docs.rs]
-# To build locally:
-# RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features --open
 all-features = true
 rustdoc-args = ["--cfg", "doc_cfg"]
 
 [features]
-# Default Features
 default = ["std"]
 
-# Runtime Benchmarks
 runtime-benchmarks = [
   "frame-benchmarking/runtime-benchmarks",
   "frame-support/runtime-benchmarks",
   "frame-system/runtime-benchmarks",
-  "manta-primitives/runtime-benchmarks",
+  "pallet-assets/runtime-benchmarks",
 ]
 
 try-runtime = [
   "frame-support/try-runtime",
   "frame-system/try-runtime",
+  "pallet-assets/try-runtime",
 ]
 
-# Serde Serialization
-serde = [
-  "manta-support/serde",
-]
-
-# Standard Library
 std = [
-  "frame-benchmarking/std",
+  "frame-benchmarking?/std",
   "frame-support/std",
   "frame-system/std",
   "codec/std",
   "scale-info/std",
   "sp-runtime/std",
   "sp-std/std",
-  "manta-primitives/std",
-  "manta-support/std",
+  "sp-core/std",
   "pallet-assets/std",
+  "pallet-balances/std",
 ]
 
 [dependencies]
-# Substrate dependencies
-codec = { workspace = true }
-frame-benchmarking = { workspace = true, optional = true }
-frame-support = { workspace = true }
-frame-system = { workspace = true }
-scale-info = { workspace = true }
-sp-runtime = { workspace = true }
-sp-std = { workspace = true }
-sp-core = { workspace = true }
-
-# Manta dependencies
-manta-primitives = { workspace = true }
-manta-support = { workspace = true }
-
-# Substrate pallets
-pallet-assets = { workspace = true }
-pallet-balances = { workspace = true }
-
-# Math utilities
-num-traits = { workspace = true }
+codec = { package = "parity-scale-codec", version = "3.6", default-features = false, features = ["derive"] }
+scale-info = { version = "2.10", default-features = false, features = ["derive"] }
+frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false, optional = true }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
+frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
+sp-std = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
+pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 
 [dev-dependencies]
-sp-core = { workspace = true }
-sp-io = { workspace = true }
-pallet-balances = { workspace = true, features = ["std"] }
-pallet-timestamp = { workspace = true, features = ["std"] }
-pallet-assets = { workspace = true, features = ["std"] }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", features = ["std"] }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", features = ["std"] }
+pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", features = ["std"] }
+pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", features = ["std"] }
+pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", features = ["std"] }
