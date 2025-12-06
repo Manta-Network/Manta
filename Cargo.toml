@@ -257,19 +257,13 @@ runtime-common = { path = "./runtime/common", default-features = false }
 session-key-primitives = { path = './primitives/session-keys', default-features = false }
 substrate-fixed = { git = "https://github.com/Manta-Network/substrate-fixed.git", tag = "v0.5.9", default-features = false }
 
-
 # ========================================
-# EMERGENCY PATCH: Fix pallet-identity vec! macro compilation error
+# NOTE: Cargo patch removed - cannot patch repo with itself
 # ========================================
-# The release-polkadot-v1.6.0 branch has a bug in pallet-identity where
-# vec! macro is not properly imported in no_std mode.
-# This patch forces a version from stable2409 that has the fix.
+# After 13+ iterations of dependency cleanup, we've removed all direct
+# sources of polkadot-runtime-common which pulls pallet-identity:
+# - Removed: polkadot-runtime-common, polkadot-runtime-parachains
+# - Removed: parachains-common, polkadot-service, polkadot-cli  
+# - Removed: cumulus-relay-chain-* crates from node
+# If pallet-identity still fails, must pivot to Option B (fresh template)
 # ========================================
-
-[patch.'https://github.com/paritytech/polkadot-sdk']
-# Fix pallet-identity vec! macro bug
-pallet-identity = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
-
-# If stable2409 doesn't work, uncomment one of these alternatives:
-# pallet-identity = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412" }
-# pallet-identity = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-v1.7.0" }
