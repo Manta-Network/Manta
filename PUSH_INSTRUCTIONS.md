@@ -86,7 +86,7 @@ apt-get update
 apt-get install -y build-essential git clang curl libssl-dev protobuf-compiler
 
 # Build (this will take 30-60 minutes)
-cargo build -p chameleon-node --manifest-path Cargo-standalone.toml --release
+cargo build -p chameleon-node  --release
 
 # If successful, binary is at:
 # target/release/chameleon-node
@@ -120,7 +120,7 @@ See `DEPLOYMENT_SEQUENCE.md` Stage 4 for verification steps.
 2. Fix error locally
 3. Test with:
    ```bash
-   cargo check -p chameleon-node --manifest-path Cargo-standalone.toml
+   cargo check -p chameleon-node 
    ```
 4. Commit fix, push again
 5. Repeat until successful

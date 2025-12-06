@@ -53,24 +53,24 @@ git checkout develop
 
 ```bash
 # Check each custom pallet compiles (faster than full build)
-cargo check -p pallet-chameleon-mev --manifest-path Cargo-standalone.toml
-cargo check -p pallet-chameleon-pdex --manifest-path Cargo-standalone.toml
-cargo check -p pallet-chameleon-bridge --manifest-path Cargo-standalone.toml
-cargo check -p pallet-chameleon-staking --manifest-path Cargo-standalone.toml
+cargo check -p pallet-chameleon-mev 
+cargo check -p pallet-chameleon-pdex 
+cargo check -p pallet-chameleon-bridge 
+cargo check -p pallet-chameleon-staking 
 ```
 
 ### Test Runtime Compilation
 
 ```bash
 # Check runtime compiles (includes WASM build)
-cargo check -p chameleon-runtime --manifest-path Cargo-standalone.toml --release
+cargo check -p chameleon-runtime  --release
 ```
 
 ### Build Full Node Binary
 
 ```bash
 # Release build (optimized, takes 30-60 minutes on first run)
-cargo build -p chameleon-node --manifest-path Cargo-standalone.toml --release
+cargo build -p chameleon-node  --release
 ```
 
 ### Binary Location
@@ -156,7 +156,7 @@ If WASM build fails:
 If build runs out of memory:
 ```bash
 # Limit parallel jobs
-cargo build -p chameleon-node --manifest-path Cargo-standalone.toml --release -j 2
+cargo build -p chameleon-node  --release -j 2
 ```
 
 ### Cargo Cache Issues
@@ -164,7 +164,7 @@ cargo build -p chameleon-node --manifest-path Cargo-standalone.toml --release -j
 If you encounter strange errors after git pull:
 ```bash
 # Clear cargo cache
-cargo clean --manifest-path Cargo-standalone.toml
+cargo clean 
 ```
 
 ## Deployment

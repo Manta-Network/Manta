@@ -153,13 +153,13 @@ Kept for reference but no longer used:
 
 ```bash
 # Quick check (all pallets)
-cargo check --manifest-path Cargo-standalone.toml --workspace
+cargo check  --workspace
 
 # Build runtime
-cargo build -p chameleon-runtime --manifest-path Cargo-standalone.toml --release
+cargo build -p chameleon-runtime  --release
 
 # Build node
-cargo build -p chameleon-node --manifest-path Cargo-standalone.toml --release
+cargo build -p chameleon-node  --release
 
 # Run dev node
 ./target/release/chameleon-node --dev
