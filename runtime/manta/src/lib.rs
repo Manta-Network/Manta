@@ -1171,8 +1171,8 @@ mod benches {
         [pallet_asset_manager, AssetManager]
         [pallet_scheduler, Scheduler]
         [pallet_sudo, Sudo]
-        // XCM
-        [cumulus_pallet_xcmp_queue, XcmpQueue]
+        // XCM - DISABLED for standalone devnet
+        // [cumulus_pallet_xcmp_queue, XcmpQueue]
         // always get this error(Unimplemented) while benchmarking pallet_xcm_benchmarks::fungible::initiate_teleport
         // so this time we will use statemint's fungible weights
         // [pallet_xcm_benchmarks::fungible, XcmBalances]
