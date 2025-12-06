@@ -115,7 +115,8 @@ session-keys-primitives = { workspace = true, features = ["std"] }
 # Polkadot dependencies
 polkadot-cli = { workspace = true }
 polkadot-primitives = { workspace = true, features = ["std"] }
-polkadot-service = { workspace = true }
+# polkadot-service removed - not needed for standalone chain, causes pallet-identity compile errors
+# polkadot-service = { workspace = true }
 xcm = { workspace = true, features = ["std"] }
 
 # Self dependencies
@@ -139,7 +140,7 @@ fast-runtime = [
 ]
 runtime-benchmarks = [
   'calamari-runtime/runtime-benchmarks',
-  'polkadot-service/runtime-benchmarks',
+  # 'polkadot-service/runtime-benchmarks',  # Removed with polkadot-service
   'manta-runtime/runtime-benchmarks',
   'manta-primitives/runtime-benchmarks',
   'polkadot-primitives/runtime-benchmarks',
