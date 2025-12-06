@@ -2,27 +2,37 @@
 
 **Privacy-first blockchain with MEV protection for retail users**
 
+> **🔄 Architecture Update (Week 4):** This project has pivoted from Manta parachain fork to Substrate standalone node architecture. All custom pallets and business logic are preserved. See [docs/architecture-pivot.md](docs/architecture-pivot.md) for details.
+
 Chameleon is a next-generation privacy blockchain built on Substrate, designed to protect retail users from MEV (Miner Extractable Value) exploitation while delivering a mobile-first user experience.
 
 ## 🎯 Key Features
 
 - 🔒 **Privacy-Preserving Transactions** - zkSNARK-based shielded transactions
-- 🛡️ **MEV Protection** - Encrypted mempool prevents front-running and sandwich attacks
+- 🛡️ **MEV Protection** - Commit-reveal pattern prevents front-running and sandwich attacks
 - 📱 **Mobile-First Experience** - Native iOS and Android wallet for seamless UX
-- 💱 **Privacy DEX (pDEX)** - Trade with full privacy guarantees
-- 🌉 **Cross-Chain Bridges** - Connect to Ethereum, Bitcoin, Solana, and more
-- 🏛️ **Community Governance** - Token holders control protocol upgrades
+- 💱 **Privacy DEX (pDEX)** - AMM-based decentralized exchange
+- 🌉 **Ethereum Bridge** - Cross-chain asset transfers
+- 🏛️ **Enhanced Staking** - Commission-based delegation system
 
-## 🔧 Built On
+## 🔧 Architecture
 
-Chameleon is built on the [Manta Network](https://github.com/Manta-Network/Manta) codebase, inheriting battle-tested privacy primitives and Substrate infrastructure. We extend Manta's foundation with:
+### Standalone Node (Current - Week 4+)
+Chameleon uses a **Substrate standalone node** architecture for optimal simplicity and maintainability:
+- Clean dependency tree (no parachain overhead)
+- Direct block production (no relay chain)
+- Full control over consensus and runtime
 
-- MEV-resistant transaction ordering
-- Retail-focused tokenomics (100M CHML fixed supply)
-- Mobile-optimized RPC endpoints and wallet experience
-- Community-first governance from day one
+### Custom Pallets
+| Pallet | Description | Status |
+|--------|-------------|--------|
+| `chameleon-mev` | MEV protection via commit-reveal | ✅ Production |
+| `chameleon-pdex` | AMM-based private DEX | ✅ Production |
+| `chameleon-bridge` | Ethereum bridge with multi-sig | ✅ Production |
+| `chameleon-staking` | Enhanced staking with delegation | ✅ Production |
 
-**We are deeply grateful to the Manta Network team for their pioneering work in privacy-preserving blockchain technology.**
+### Previous Architecture (Deprecated)
+Initially forked from [Manta Network](https://github.com/Manta-Network/Manta) (parachain architecture), but pivoted to standalone due to polkadot-sdk v1.6.0 compilation issues. See [architecture-pivot.md](docs/architecture-pivot.md).
 
 ## 🌐 Network Information
 
