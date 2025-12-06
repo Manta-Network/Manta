@@ -59,16 +59,8 @@ use xcm_builder::{
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
-/// Local implementation of NoPriceForMessageDelivery for standalone devnet.
-/// This replaces the polkadot_runtime_common dependency which is not compatible
-/// with our current dependency tree. For a standalone devnet without XCM/parachain
-/// features, this no-op implementation is sufficient.
-pub struct NoPriceForMessageDelivery<Id>(sp_std::marker::PhantomData<Id>);
-impl<Id> xcm_builder::PriceForSiblingDelivery for NoPriceForMessageDelivery<Id> {
-    fn price_for_delivery(_: cumulus_primitives_core::ParaId, _: &Xcm<()>) -> MultiAssets {
-        MultiAssets::new()
-    }
-}
+// XCM disabled for standalone devnet - not needed for local testing
+// Will be re-enabled when deploying as parachain
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
