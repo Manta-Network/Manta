@@ -120,8 +120,12 @@ copy_scripts_to_droplet() {
     scp ${SSH_OPTS} scripts/setup-validator-node.sh "${SSH_USER}@${droplet_ip}:${DEPLOY_DIR}/"
     scp ${SSH_OPTS} scripts/setup-rpc-node.sh "${SSH_USER}@${droplet_ip}:${DEPLOY_DIR}/"
     
-    # Copy chain specification
-    scp ${SSH_OPTS} "../node/${CHAIN_SPEC_FILE}" "${SSH_USER}@${droplet_ip}:${DEPLOY_DIR}/"
+    # Copy chain specification (from standalone node directory)
+    if [[ -f "../node-standalone/${CHAIN_SPEC_FILE}" ]]; then
+        scp ${SSH_OPTS} "../node-standalone/${CHAIN_SPEC_FILE}" "${SSH_USER}@${droplet_ip}:${DEPLOY_DIR}/"
+    else
+        log_warning "Chain spec not found, will need to be generated on server"
+    fi
     
     # Make scripts executable
     ssh ${SSH_OPTS} "${SSH_USER}@${droplet_ip}" "chmod +x ${DEPLOY_DIR}/*.sh"
