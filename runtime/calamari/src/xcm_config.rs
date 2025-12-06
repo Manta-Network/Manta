@@ -42,7 +42,7 @@ use manta_primitives::{
 };
 use orml_traits::location::AbsoluteReserveProvider;
 use pallet_xcm::XcmPassthrough;
-use parachains_common::message_queue::NarrowOriginToSibling; // ParaIdToSibling removed
+// NarrowOriginToSibling and ParaIdToSibling removed - XcmpQueue disabled
 use polkadot_parachain_primitives::primitives::Sibling;
 // Removed: use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 // XCM disabled for standalone devnet
