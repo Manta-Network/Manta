@@ -32,7 +32,8 @@ use futures::{Stream, StreamExt};
 use hex_literal::hex;
 pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Nonce};
 use nimbus_consensus::NimbusManualSealConsensusDataProvider;
-use polkadot_service::HeaderBackend;
+// polkadot_service removed - using sp_blockchain::HeaderBackend for standalone chain
+use sp_blockchain::HeaderBackend;
 use sc_consensus::{ImportQueue, LongestChain};
 use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
