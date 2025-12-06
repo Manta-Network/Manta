@@ -59,9 +59,9 @@ use xcm_builder::{
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
-/// Zero-cost price implementation for standalone devnet (XCM disabled)
-/// Returns empty MultiAssets for all message deliveries since we don't need
-/// cross-chain messaging on a standalone devnet.
+// NoPriceForSiblingDelivery removed - XCM Queue disabled for standalone devnet
+// Will be re-enabled for parachain deployment
+/*
 pub struct NoPriceForSiblingDelivery;
 
 impl xcm_builder::PriceForMessageDelivery for NoPriceForSiblingDelivery {
@@ -71,6 +71,7 @@ impl xcm_builder::PriceForMessageDelivery for NoPriceForSiblingDelivery {
         MultiAssets::new()
     }
 }
+*/
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -85,8 +86,9 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type SelfParaId = parachain_info::Pallet<Runtime>;
     type DmpQueue = EnqueueWithOrigin<MessageQueue, RelayOrigin>;
     type ReservedDmpWeight = ReservedDmpWeight;
-    type OutboundXcmpMessageSource = XcmpQueue;
-    type XcmpMessageHandler = XcmpQueue;
+    // XcmpQueue disabled for standalone devnet - using () as placeholder
+    type OutboundXcmpMessageSource = ();
+    type XcmpMessageHandler = ();
     type ReservedXcmpWeight = ReservedXcmpWeight;
     type OnSystemEvent = ();
     type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
