@@ -272,8 +272,9 @@ impl Contains<RuntimeCall> for BaseFilter {
                                 | pallet_democracy::Call::cancel_proposal {..}
                                 | pallet_democracy::Call::clear_public_proposals {..})
             | RuntimeCall::Treasury(_) // Treasury calls are filtered while it is accumulating funds.
-            // Filter callables from XCM pallets, we use XTokens exclusively
-            | RuntimeCall::XcmpQueue(_) => false,
+            // XcmpQueue disabled for standalone devnet
+            // | RuntimeCall::XcmpQueue(_)
+            => false,
 
             // Explicitly ALLOWED calls
             | RuntimeCall::Multisig(_)
