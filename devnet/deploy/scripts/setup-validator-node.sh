@@ -12,7 +12,7 @@ NODE_USER="chameleon"
 NODE_HOME="/var/lib/chameleon"
 BINARY_PATH="/usr/local/bin/chameleon-node"
 CHAIN_SPEC_PATH="/etc/chameleon/chainspec.json"
-GITHUB_REPO="chameleon-network/chameleon"
+GITHUB_REPO="chmldev/chameleon-network"
 NODE_VERSION="v0.1.0"
 DEPLOY_DIR="/tmp/chameleon-deploy"
 
