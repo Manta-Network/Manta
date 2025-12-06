@@ -267,6 +267,10 @@ pub fn run_with(cli: Cli) -> Result {
             let runner = cli.create_runner(cmd)?;
 
             runner.sync_run(|config| {
+                // Phase 1: Relay chain purge disabled for standalone devnet
+                // polkadot_cli dependency removed
+                // TODO Phase 2: Implement standalone chain purge
+                /*
                 let polkadot_cli = RelayChainCli::new(
                     &config,
                     [RelayChainCli::executable_name()]
@@ -282,6 +286,13 @@ pub fn run_with(cli: Cli) -> Result {
                 .map_err(|err| format!("Relay chain argument error: {err}"))?;
 
                 cmd.run(config, polkadot_config)
+                */
+                // Standalone devnet: purge only parachain data
+                let db_path = config.database.path();
+                if let Some(path) = db_path {
+                    std::fs::remove_dir_all(path).map_err(|e| format!("Failed to purge chain: {}", e))?;
+                }
+                Ok(())
             })
         }
         Some(Subcommand::ExportGenesisHead(cmd)) => {
