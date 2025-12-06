@@ -325,9 +325,8 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type ControllerOrigin = EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToCallOrigin;
     type WeightInfo = crate::weights::cumulus_pallet_xcmp_queue::SubstrateWeight<Runtime>;
-    // XCM disabled for standalone devnet - using unit type as placeholder
-    // Will be replaced with proper fee mechanism when deploying as parachain
-    type PriceForSiblingDelivery = ();
+    // Zero-cost delivery for standalone devnet (no XCM needed)
+    type PriceForSiblingDelivery = NoPriceForSiblingDelivery;
     type XcmpQueue = TransformOrigin<MessageQueue, AggregateMessageOrigin, ParaId, ParaIdToSibling>;
     type MaxInboundSuspended = ConstU32<1_000>;
 }
