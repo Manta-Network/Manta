@@ -404,8 +404,8 @@ pub fn run_with(cli: Cli) -> Result {
                     }
                 );
 
-                // hard code async backing off
-                let async_backing = false;
+                // Phase 1: For standalone devnet, always use dev node
+                // Parachain mode requires polkadot_cli which is disabled
                 let is_localdev = config.chain_spec.is_localdev();
 
                 if config.chain_spec.is_manta() {
