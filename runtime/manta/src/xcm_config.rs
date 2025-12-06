@@ -83,8 +83,9 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type SelfParaId = parachain_info::Pallet<Runtime>;
     type DmpQueue = EnqueueWithOrigin<MessageQueue, RelayOrigin>;
     type ReservedDmpWeight = ReservedDmpWeight;
-    type OutboundXcmpMessageSource = XcmpQueue;
-    type XcmpMessageHandler = XcmpQueue;
+    // XcmpQueue disabled for standalone devnet - using () as placeholder
+    type OutboundXcmpMessageSource = ();
+    type XcmpMessageHandler = ();
     type ReservedXcmpWeight = ReservedXcmpWeight;
     type OnSystemEvent = ();
     type ConsensusHook = cumulus_pallet_parachain_system::ExpectParentIncluded;
