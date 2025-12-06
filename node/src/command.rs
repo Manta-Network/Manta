@@ -444,7 +444,8 @@ pub fn run_with(cli: Cli) -> Result {
                         Err("Parachain mode disabled for standalone devnet (Phase 1)".into())
                     }
                 } else if config.chain_spec.is_calamari() {
-                    if is_localdev {
+                    // Phase 1: Force dev mode for standalone devnet
+                    if is_localdev || true {  // Always use dev mode
                         crate::service::start_dev_node::<CalamariRuntimeApi, _>(
                             config,
                             create_calamari_full,
@@ -453,6 +454,8 @@ pub fn run_with(cli: Cli) -> Result {
                         .map(|r| r.0)
                         .map_err(Into::into)
                     } else {
+                        // Parachain mode disabled for Phase 1
+                        /*
                         let polkadot_config = SubstrateCli::create_configuration(
                             &polkadot_cli,
                             &polkadot_cli,
@@ -472,6 +475,8 @@ pub fn run_with(cli: Cli) -> Result {
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
+                        */
+                        Err("Parachain mode disabled for standalone devnet (Phase 1)".into())
                     }
                 } else {
                     Err("chain spec error: must be one of manta or calamari chain specs".into())
