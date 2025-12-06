@@ -36,7 +36,7 @@ Week 4 architecture pivot from Manta parachain fork to Substrate standalone node
 - `/runtime-standalone/src/lib.rs` - Runtime with all pallets
 
 ### Configuration
-- `/Cargo-standalone.toml` - Workspace for standalone builds
+- `/Cargo.toml` - Workspace for standalone builds
 - `/.github/workflows/build-standalone.yml` - CI/CD pipeline
 - `/BUILD_INSTRUCTIONS.md` - Build documentation
 

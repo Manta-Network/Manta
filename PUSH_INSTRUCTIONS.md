@@ -177,7 +177,7 @@ After successful deployment:
 ### New Files
 - `/node-standalone/` - Complete standalone node
 - `/runtime-standalone/` - Runtime with custom pallets
-- `/Cargo-standalone.toml` - Workspace configuration
+- `/Cargo.toml` - Workspace configuration
 - `/.github/workflows/build-standalone.yml` - CI pipeline
 - `/BUILD_INSTRUCTIONS.md` - Build guide
 - `/STANDALONE_MIGRATION.md` - Migration docs
