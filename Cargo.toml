@@ -203,7 +203,8 @@ polkadot-parachain-primitives = { git = "https://github.com/paritytech/polkadot-
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 # polkadot-runtime-common removed - causes pallet-identity compilation errors in release builds
 # polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
-polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
+# polkadot-runtime-parachains removed - pulls polkadot-runtime-common transitively
+# polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
 # polkadot-service removed - pulls in polkadot-runtime-common transitively
 # polkadot-service = { git = 'https://github.com/paritytech/polkadot-sdk', branch = "release-polkadot-v1.6.0" }
 xcm = { package = "staging-xcm", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0", default-features = false }
