@@ -83,12 +83,12 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-standalone-runtime-${{ hashFiles('**/Cargo-standalone.toml') }}
+          key: ${{ runner.os }}-cargo-standalone-runtime-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-cargo-standalone-runtime-
       
       - name: Build Runtime
-        run: cargo build -p chameleon-runtime --manifest-path Cargo-standalone.toml --release
+        run: cargo build -p chameleon-runtime --release
       
       - name: Upload Runtime WASM
         uses: actions/upload-artifact@v4
