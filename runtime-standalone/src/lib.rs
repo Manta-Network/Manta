@@ -244,20 +244,137 @@ impl pallet_sudo::Config for Runtime {
     type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
-// Construct runtime
+// ============================================================================
+// Assets Pallet (needed by pDEX and Bridge)
+// ============================================================================
+
+parameter_types! {
+    pub const AssetDeposit: Balance = 100 * UNIT;
+    pub const ApprovalDeposit: Balance = UNIT;
+    pub const StringLimit: u32 = 50;
+    pub const MetadataDepositBase: Balance = 10 * UNIT;
+    pub const MetadataDepositPerByte: Balance = UNIT;
+}
+
+impl pallet_assets::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Balance = Balance;
+    type AssetId = u32;
+    type AssetIdParameter = codec::Compact<u32>;
+    type Currency = Balances;
+    type CreateOrigin = frame_support::traits::AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
+    type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+    type AssetDeposit = AssetDeposit;
+    type AssetAccountDeposit = ConstU128<UNIT>;
+    type MetadataDepositBase = MetadataDepositBase;
+    type MetadataDepositPerByte = MetadataDepositPerByte;
+    type ApprovalDeposit = ApprovalDeposit;
+    type StringLimit = StringLimit;
+    type Freezer = ();
+    type Extra = ();
+    type CallbackHandle = ();
+    type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+    type RemoveItemsLimit = ConstU32<1000>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
+}
+
+// ============================================================================
+// Chameleon Custom Pallets
+// ============================================================================
+
+// MEV Protection Pallet Configuration
+parameter_types! {
+    pub const MaxSealedTxPerBlock: u32 = 100;
+    pub const MaxTxInOrdering: u32 = 1000;
+    pub const RevealDeadline: BlockNumber = 2; // 2 blocks (~12 seconds)
+}
+
+impl pallet_chameleon_mev::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type MaxSealedTxPerBlock = MaxSealedTxPerBlock;
+    type MaxTxInOrdering = MaxTxInOrdering;
+    type RevealDeadline = RevealDeadline;
+}
+
+// Privacy DEX (pDEX) Pallet Configuration
+parameter_types! {
+    pub const PdexPalletId: frame_support::PalletId = frame_support::PalletId(*b"chml/pdx");
+    pub const MaxPools: u32 = 1000;
+    pub const MinimumLiquidity: Balance = 1000;
+}
+
+impl pallet_chameleon_pdex::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type AssetId = u32;
+    type Balance = Balance;
+    type Assets = Assets;
+    type PalletId = PdexPalletId;
+    type MaxPools = MaxPools;
+    type MinimumLiquidity = ConstU128<1000>;
+}
+
+// Ethereum Bridge Pallet Configuration
+parameter_types! {
+    pub const MinConfirmations: u32 = 12; // ~3 minutes on Ethereum
+    pub const SignatureThreshold: u32 = 2; // 2 of 3 multisig for devnet
+}
+
+impl pallet_chameleon_bridge::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type AssetId = u32;
+    type Balance = Balance;
+    type Assets = Assets;
+    type MinConfirmations = MinConfirmations;
+    type SignatureThreshold = SignatureThreshold;
+}
+
+// Enhanced Staking Pallet Configuration
+parameter_types! {
+    pub const MinValidatorStake: Balance = 1_000 * UNIT; // 1,000 CHML for devnet (lower for testing)
+    pub const UnbondingPeriod: BlockNumber = DAYS; // 1 day for devnet (faster testing)
+    pub const MaxDelegatorsPerValidator: u32 = 100;
+    pub const MaxDelegationsPerDelegator: u32 = 10;
+}
+
+impl pallet_chameleon_staking::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type MinValidatorStake = MinValidatorStake;
+    type UnbondingPeriod = UnbondingPeriod;
+    type MaxDelegatorsPerValidator = MaxDelegatorsPerValidator;
+    type MaxDelegationsPerDelegator = MaxDelegationsPerDelegator;
+}
+
+// ============================================================================
+// Construct Runtime
+// ============================================================================
+
 construct_runtime!(
     pub struct Runtime {
+        // Core
         System: frame_system,
         Timestamp: pallet_timestamp,
+        
+        // Consensus
         Aura: pallet_aura,
         Grandpa: pallet_grandpa,
+        
+        // Monetary
         Balances: pallet_balances,
         TransactionPayment: pallet_transaction_payment,
+        Assets: pallet_assets,
+        
+        // Governance
         Sudo: pallet_sudo,
         
-        // Custom pallets will be added in Phase 8
-        // ChameleonMev: pallet_chameleon_mev,
-        // ChameleonPdex: pallet_chameleon_pdex,
+        // Chameleon Custom Pallets
+        ChameleonMev: pallet_chameleon_mev,
+        ChameleonPdex: pallet_chameleon_pdex,
+        ChameleonBridge: pallet_chameleon_bridge,
+        ChameleonStaking: pallet_chameleon_staking,
+    }
+);
         // ChameleonBridge: pallet_chameleon_bridge,
         // ChameleonStaking: pallet_chameleon_staking,
     }
