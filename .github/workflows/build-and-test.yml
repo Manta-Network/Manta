@@ -1,86 +1,28 @@
-name: Build and Test Chameleon
+# This workflow is DISABLED during architecture pivot (Week 4-5)
+# Old workflow tested Manta parachain node which we've deprecated
+# New workflow will be created after standalone node is built
+#
+# See: docs/architecture-pivot.md for context
+#
+# DO NOT ENABLE until standalone node is ready
+
+name: Build and Test Chameleon (DISABLED)
 
 on:
   push:
-    branches: [develop, main]
+    branches: [ develop, main ]
   pull_request:
-    branches: [develop]
+    branches: [ develop, main ]
 
 jobs:
-  test:
+  disabled:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        
-      - name: Cache Cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-test-
-          
-      - name: Test All Pallets
+      - name: Architecture Pivot in Progress
         run: |
-          RUSTFLAGS="-A warnings" cargo test -p pallet-chameleon-mev --lib --release
-          RUSTFLAGS="-A warnings" cargo test -p pallet-chameleon-pdex --lib --release
-          RUSTFLAGS="-A warnings" cargo test -p pallet-chameleon-bridge --lib --release
-          RUSTFLAGS="-A warnings" cargo test -p pallet-chameleon-staking --lib --release
-          RUSTFLAGS="-A warnings" cargo test -p manta-primitives --lib --release
-          
-      - name: Build Runtime
-        run: RUSTFLAGS="-A warnings" cargo build --release -p manta-runtime
-
-  create-release:
-    name: Create Release Binary
-    runs-on: ubuntu-latest
-    timeout-minutes: 120
-    needs: [test]
-    if: github.ref == 'refs/heads/develop'
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        
-      - name: Cache Cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-release-
-          
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y protobuf-compiler libclang-dev cmake
-          
-      - name: Build Release Binary
-        run: |
-          RUSTFLAGS="-A warnings" cargo build --release -p manta
-          
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v0.1.0-alpha.${{ github.run_number }}
-          files: target/release/manta
-          draft: false
-          prerelease: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "⚠️  Old workflow disabled during architecture pivot"
+          echo "📖 See docs/architecture-pivot.md for details"
+          echo "✅ New standalone node workflow will replace this"
+          echo ""
+          echo "Week 4-5: Building Substrate standalone node"
+          echo "Week 6+: New workflow will test standalone architecture"
