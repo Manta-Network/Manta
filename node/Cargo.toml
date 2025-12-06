@@ -113,7 +113,8 @@ pallet-author-inherent = { workspace = true, features = ["std"] }
 session-keys-primitives = { workspace = true, features = ["std"] }
 
 # Polkadot dependencies
-polkadot-cli = { workspace = true }
+# polkadot-cli removed - not needed for standalone chain, pulls polkadot-service transitively
+# polkadot-cli = { workspace = true }
 polkadot-primitives = { workspace = true, features = ["std"] }
 # polkadot-service removed - not needed for standalone chain, causes pallet-identity compile errors
 # polkadot-service = { workspace = true }
@@ -146,7 +147,7 @@ runtime-benchmarks = [
   'polkadot-primitives/runtime-benchmarks',
   'sc-service/runtime-benchmarks',
   'sp-runtime/runtime-benchmarks',
-  'polkadot-cli/runtime-benchmarks',
+  # 'polkadot-cli/runtime-benchmarks',  # Removed with polkadot-cli
   'frame-benchmarking/runtime-benchmarks',
   'frame-benchmarking-cli/runtime-benchmarks',
   'cumulus-primitives-core/runtime-benchmarks',
