@@ -273,12 +273,8 @@ pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, R
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
-pub type XcmRouter = (
-    // Two routers - use UMP to communicate with the relay chain:
-    cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, ()>,
-    // ..and XCMP to communicate with the sibling chains.
-    XcmpQueue,
-);
+// XcmpQueue disabled for standalone devnet - only UMP router for relay chain
+pub type XcmRouter = cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm, ()>;
 
 impl pallet_xcm::Config for Runtime {
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
