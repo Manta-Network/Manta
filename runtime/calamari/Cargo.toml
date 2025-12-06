@@ -139,7 +139,8 @@ version-compare = { workspace = true }
 cumulus-primitives-parachain-inherent = { workspace = true }
 cumulus-test-relay-sproof-builder = { workspace = true }
 polkadot-core-primitives = { workspace = true }
-polkadot-runtime-parachains = { workspace = true }
+# polkadot-runtime-parachains removed - pulls polkadot-runtime-common transitively
+# polkadot-runtime-parachains = { workspace = true }
 sp-io = { workspace = true }
 xcm-simulator = { workspace = true }
 
