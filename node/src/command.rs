@@ -368,7 +368,7 @@ pub fn run_with(cli: Cli) -> Result {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let chain_spec = &runner.config().chain_spec;
             info!("id:{}", chain_spec.id());
-            let collator_options = cli.run.collator_options();
+            let _collator_options = cli.run.collator_options();
 
             runner.run_node_until_exit(|config| async move {
                 let para_id = crate::chain_specs::Extensions::try_get(&*config.chain_spec)
