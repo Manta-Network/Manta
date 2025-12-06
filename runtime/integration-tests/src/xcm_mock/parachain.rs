@@ -73,8 +73,16 @@ use xcm_builder::{
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
 
-// XCM disabled for standalone devnet - not needed for integration tests
-// Will be re-enabled when deploying as parachain
+/// Zero-cost price implementation for standalone devnet (XCM disabled)
+pub struct NoPriceForSiblingDelivery;
+
+impl xcm_builder::PriceForMessageDelivery for NoPriceForSiblingDelivery {
+    type Id = cumulus_primitives_core::ParaId;
+    
+    fn price_for_delivery(_: Self::Id, _: &Xcm<()>) -> MultiAssets {
+        MultiAssets::new()
+    }
+}
 
 pub type AccountId = AccountId32;
 pub type Balance = u128;
