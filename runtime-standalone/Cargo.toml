@@ -95,6 +95,10 @@ std = [
     "pallet-transaction-payment/std",
     "pallet-transaction-payment-rpc-runtime-api/std",
     "pallet-assets/std",
+    "pallet-chameleon-mev/std",
+    "pallet-chameleon-pdex/std",
+    "pallet-chameleon-bridge/std",
+    "pallet-chameleon-staking/std",
     "substrate-wasm-builder",
 ]
 runtime-benchmarks = [
