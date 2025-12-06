@@ -22,9 +22,16 @@ use cumulus_client_collator::service::CollatorService;
 use cumulus_client_consensus_common::ParachainBlockImport as TParachainBlockImport;
 use cumulus_client_consensus_proposer::Proposer;
 use cumulus_client_parachain_inherent::{MockValidationDataInherentDataProvider, MockXcmConfig};
+// STANDALONE DEVNET CONFIGURATION
+// - Relay chain integration disabled
+// - Node runs in dev mode only
+// - cumulus-relay-chain-* crates removed to avoid polkadot-service dependency
+
 use cumulus_client_service::{
-    build_network, prepare_node_config, start_relay_chain_tasks, CollatorSybilResistance,
-    DARecoveryProfile, StartRelayChainTasksParams,
+    build_network, prepare_node_config, CollatorSybilResistance,
+    DARecoveryProfile,
+    // start_relay_chain_tasks disabled for standalone devnet
+    // StartRelayChainTasksParams,
 };
 use cumulus_primitives_core::{relay_chain::CollatorPair, ParaId};
 use cumulus_relay_chain_interface::{OverseerHandle, RelayChainInterface};
@@ -32,7 +39,6 @@ use futures::{Stream, StreamExt};
 use hex_literal::hex;
 pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Nonce};
 use nimbus_consensus::NimbusManualSealConsensusDataProvider;
-// polkadot_service removed - using sp_blockchain::HeaderBackend for standalone chain
 use sp_blockchain::HeaderBackend;
 use sc_consensus::{ImportQueue, LongestChain};
 use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
