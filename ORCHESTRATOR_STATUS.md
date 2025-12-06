@@ -272,6 +272,29 @@ Total Runs: 11 (9 Week 2 + 2 Week 3)
 
 ---
 
+## 🔧 KNOWN ISSUES & FIXES
+
+### pallet-identity vec! Macro Compilation Error (FIXED)
+
+**Issue:** The `release-polkadot-v1.6.0` branch of polkadot-sdk has a bug in `pallet-identity` where the `vec!` macro is not properly imported in `no_std` mode, causing compilation failures in release builds.
+
+**Root Cause:** Transitive dependency through various polkadot-sdk crates that depend on `polkadot-runtime-common`.
+
+**Solution Applied:**
+- Removed direct dependencies: `polkadot-runtime-common`, `polkadot-runtime-parachains`, `parachains-common`, `polkadot-service`, `polkadot-cli`
+- Removed relay chain interface crates from node: `cumulus-relay-chain-inprocess-interface`, `cumulus-relay-chain-minimal-node`
+- Applied cargo patch in `/app/Cargo.toml` to use `stable2409` branch for `pallet-identity`
+- Disabled XCM integration tests that required removed dependencies
+
+**Files Modified:**
+- `/app/Cargo.toml` - Patch section and workspace dependencies
+- `/app/node/Cargo.toml` - Removed relay chain dependencies
+- `/app/runtime/*/Cargo.toml` - Removed polkadot-runtime-parachains
+- `/app/node/src/service.rs` - Refactored for standalone mode
+- `/app/node/src/command.rs` - Force dev mode only
+
+---
+
 ## 🚨 RISKS & MITIGATION
 
 ### Active Risks
@@ -288,6 +311,7 @@ Total Runs: 11 (9 Week 2 + 2 Week 3)
 - ✅ Deprecated weights (fixed with Weight::from_parts)
 - ✅ CI/CD efficiency (90% improvement achieved)
 - ✅ Cloud infrastructure (DigitalOcean provisioned)
+- ✅ pallet-identity compilation (patched to stable2409)
 
 ---
 
