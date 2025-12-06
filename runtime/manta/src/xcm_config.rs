@@ -17,7 +17,7 @@
 use super::{
     assets_config::MantaAssetConfig, AssetManager, Assets, Balance, Balances, MessageQueue,
     ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeBlockWeights, RuntimeCall,
-    RuntimeEvent, RuntimeOrigin, Treasury, XcmpQueue,
+    RuntimeEvent, RuntimeOrigin, Treasury, // XcmpQueue removed for standalone devnet
 };
 
 use codec::{Decode, Encode};
@@ -26,7 +26,7 @@ use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use frame_support::{
     match_types, parameter_types,
     traits::{
-        ConstU32, Contains, Currency, EnqueueWithOrigin, Everything, Nothing, TransformOrigin,
+        ConstU32, Contains, Currency, EnqueueWithOrigin, Everything, Nothing, // TransformOrigin removed
     },
     weights::Weight,
 };
@@ -42,10 +42,10 @@ use manta_primitives::{
 };
 use orml_traits::location::AbsoluteReserveProvider;
 use pallet_xcm::XcmPassthrough;
-use parachains_common::message_queue::{NarrowOriginToSibling, ParaIdToSibling};
+use parachains_common::message_queue::NarrowOriginToSibling; // ParaIdToSibling removed
 use polkadot_parachain_primitives::primitives::Sibling;
 // Removed: use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
-// Using local implementation for standalone devnet
+// XCM disabled for standalone devnet
 use scale_info::TypeInfo;
 use sp_runtime::{traits::Convert, Perbill};
 use sp_std::marker::PhantomData;
