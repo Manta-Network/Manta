@@ -94,16 +94,18 @@ cumulus-client-collator = { workspace = true }
 cumulus-client-consensus-aura = { workspace = true }
 cumulus-client-consensus-common = { workspace = true }
 cumulus-client-consensus-proposer = { workspace = true }
-cumulus-client-consensus-relay-chain = { workspace = true }
+# Relay chain dependencies removed for standalone devnet - these pull polkadot-service
+# cumulus-client-consensus-relay-chain = { workspace = true }
 cumulus-client-network = { workspace = true }
 cumulus-client-parachain-inherent = { workspace = true }
 cumulus-client-service = { workspace = true }
 cumulus-primitives-core = { workspace = true, features = ["std"] }
 cumulus-primitives-parachain-inherent = { workspace = true, features = ["std"] }
-cumulus-relay-chain-inprocess-interface = { workspace = true }
-cumulus-relay-chain-interface = { workspace = true }
-cumulus-relay-chain-minimal-node = { workspace = true }
-cumulus-relay-chain-rpc-interface = { workspace = true }
+# Relay chain interface crates removed - ROOT CAUSE of polkadot-service dependency
+# cumulus-relay-chain-inprocess-interface = { workspace = true }
+cumulus-relay-chain-interface = { workspace = true }  # Keep interface trait only
+# cumulus-relay-chain-minimal-node = { workspace = true }
+# cumulus-relay-chain-rpc-interface = { workspace = true }
 
 # Nimbus dependencies
 async-backing-primitives = { workspace = true, features = ["std"] }
