@@ -66,7 +66,7 @@ serde_json = { version = "1.0", default-features = false }
 sp-consensus-grandpa = { version = "24", default-features = false }
 sp-offchain = { version = "37", default-features = false }
 sp-session = { version = "39", default-features = false }
-sp-storage = { version = "23", default-features = false }
+sp-storage = { version = "22", default-features = false }
 sp-transaction-pool = { version = "37", default-features = false }
 sp-version = { version = "40", default-features = false }
 substrate-wasm-builder = { version = "27", default-features = false }
