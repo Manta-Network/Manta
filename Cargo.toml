@@ -18,66 +18,66 @@ repository = "https://github.com/chmldev/chameleon-network"
 version = "0.1.0"
 
 [workspace.dependencies]
-# Substrate primitives (crates.io versions - stable)
-sp-api = { version = "34", default-features = false }
-sp-block-builder = { version = "34", default-features = false }
-sp-consensus-aura = { version = "0.40", default-features = false }
-sp-consensus-grandpa = { version = "21", default-features = false }
-sp-core = { version = "34", default-features = false }
-sp-inherents = { version = "34", default-features = false }
-sp-io = { version = "38", default-features = false }
-sp-offchain = { version = "34", default-features = false }
-sp-runtime = { version = "39", default-features = false }
-sp-session = { version = "35", default-features = false }
+# Substrate primitives (crates.io latest stable versions)
+sp-api = { version = "39", default-features = false }
+sp-block-builder = { version = "39", default-features = false }
+sp-consensus-aura = { version = "0.45", default-features = false }
+sp-consensus-grandpa = { version = "26", default-features = false }
+sp-core = { version = "38", default-features = false }
+sp-inherents = { version = "39", default-features = false }
+sp-io = { version = "43", default-features = false }
+sp-offchain = { version = "39", default-features = false }
+sp-runtime = { version = "44", default-features = false }
+sp-session = { version = "41", default-features = false }
 sp-std = { version = "14", default-features = false }
-sp-storage = { version = "21", default-features = false }
-sp-transaction-pool = { version = "34", default-features = false }
-sp-version = { version = "37", default-features = false }
-sp-genesis-builder = { version = "0.15", default-features = false }
-sp-blockchain = "36"
-sp-keyring = "39"
-sp-timestamp = "34"
-sp-consensus = "0.40"
+sp-storage = { version = "22", default-features = false }
+sp-transaction-pool = { version = "39", default-features = false }
+sp-version = { version = "42", default-features = false }
+sp-genesis-builder = { version = "0.20", default-features = false }
+sp-blockchain = "42"
+sp-keyring = "44"
+sp-timestamp = "39"
+sp-consensus = "0.45"
 
-# Frame dependencies (crates.io versions - stable)
-frame-benchmarking = { version = "36", default-features = false }
-frame-executive = { version = "36", default-features = false }
-frame-support = { version = "36", default-features = false }
-frame-system = { version = "36", default-features = false }
-frame-system-benchmarking = { version = "36", default-features = false }
-frame-system-rpc-runtime-api = { version = "34", default-features = false }
-frame-try-runtime = { version = "0.42", default-features = false }
+# Frame dependencies (crates.io latest stable versions)
+frame-benchmarking = { version = "43", default-features = false }
+frame-executive = { version = "43", default-features = false }
+frame-support = { version = "43", default-features = false }
+frame-system = { version = "43", default-features = false }
+frame-system-benchmarking = { version = "43", default-features = false }
+frame-system-rpc-runtime-api = { version = "39", default-features = false }
+frame-try-runtime = { version = "0.49", default-features = false }
 
-# Pallets (crates.io versions - stable)
-pallet-aura = { version = "35", default-features = false }
-pallet-assets = { version = "37", default-features = false }
-pallet-balances = { version = "37", default-features = false }
-pallet-grandpa = { version = "36", default-features = false }
-pallet-sudo = { version = "36", default-features = false }
-pallet-timestamp = { version = "35", default-features = false }
-pallet-transaction-payment = { version = "36", default-features = false }
-pallet-transaction-payment-rpc = "38"
-pallet-transaction-payment-rpc-runtime-api = { version = "36", default-features = false }
+# Pallets (crates.io latest stable versions)
+pallet-aura = { version = "42", default-features = false }
+pallet-assets = { version = "46", default-features = false }
+pallet-balances = { version = "44", default-features = false }
+pallet-grandpa = { version = "43", default-features = false }
+pallet-sudo = { version = "43", default-features = false }
+pallet-timestamp = { version = "42", default-features = false }
+pallet-transaction-payment = { version = "43", default-features = false }
+pallet-transaction-payment-rpc = "46"
+pallet-transaction-payment-rpc-runtime-api = { version = "43", default-features = false }
 
-# Service crates (crates.io versions - node dependencies)
-sc-cli = "0.44"
-sc-executor = "0.40"
-sc-service = "0.43"
-sc-telemetry = "22"
-sc-transaction-pool = "36"
-sc-transaction-pool-api = "36"
-sc-consensus-aura = "0.42"
-sc-consensus = "0.41"
-sc-consensus-grandpa = "0.27"
-sc-client-api = "36"
-sc-rpc-api = "0.41"
-sc-rpc = "37"
-sc-basic-authorship = "0.42"
-sc-offchain = "37"
-sc-network = "0.42"
-sc-network-sync = "0.41"
-substrate-frame-rpc-system = "36"
-substrate-wasm-builder = "24"
+# Service crates (crates.io latest stable versions - node dependencies)
+sc-cli = "0.55"
+sc-executor = "0.45"
+sc-service = "0.54"
+sc-telemetry = "30"
+sc-transaction-pool = "42"
+sc-transaction-pool-api = "42"
+sc-consensus-aura = "0.53"
+sc-consensus = "0.47"
+sc-consensus-grandpa = "0.38"
+sc-client-api = "42"
+sc-rpc-api = "0.52"
+sc-rpc = "48"
+sc-basic-authorship = "0.52"
+sc-offchain = "48"
+sc-network = "0.53"
+sc-network-sync = "0.52"
+substrate-frame-rpc-system = "47"
+substrate-wasm-builder = "29"
 substrate-build-script-utils = "11"
 
 # Custom pallets (local paths - keep as-is)
