@@ -1,4 +1,4 @@
-name: Build Standalone Node
+name: Build Chameleon Node (Template Migration)
 
 on:
   push:
@@ -10,6 +10,10 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+
+defaults:
+  run:
+    working-directory: template-migration
 
 jobs:
   check-pallets:
@@ -33,10 +37,10 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-standalone-check-${{ hashFiles('**/Cargo.toml') }}
+            template-migration/target/
+          key: ${{ runner.os }}-cargo-template-check-${{ hashFiles('template-migration/**/Cargo.toml') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-standalone-check-
+            ${{ runner.os }}-cargo-template-check-
       
       - name: Check MEV Pallet
         run: cargo check -p pallet-chameleon-mev
@@ -77,10 +81,10 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-standalone-runtime-${{ hashFiles('**/Cargo.toml') }}
+            template-migration/target/
+          key: ${{ runner.os }}-cargo-template-runtime-${{ hashFiles('template-migration/**/Cargo.toml') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-standalone-runtime-
+            ${{ runner.os }}-cargo-template-runtime-
       
       - name: Build Runtime
         run: cargo build -p chameleon-runtime --release
@@ -89,7 +93,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: runtime-wasm
-          path: target/release/wbuild/chameleon-runtime/
+          path: template-migration/target/release/wbuild/chameleon-runtime/
           retention-days: 7
 
   build-node:
@@ -119,10 +123,10 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-standalone-node-${{ hashFiles('**/Cargo.toml') }}
+            template-migration/target/
+          key: ${{ runner.os }}-cargo-template-node-${{ hashFiles('template-migration/**/Cargo.toml') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-standalone-node-
+            ${{ runner.os }}-cargo-template-node-
       
       - name: Build Node Binary
         run: cargo build -p chameleon-node --release
@@ -131,7 +135,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: chameleon-node-${{ github.sha }}
-          path: target/release/chameleon-node
+          path: template-migration/target/release/chameleon-node
           retention-days: 30
 
   create-release:
