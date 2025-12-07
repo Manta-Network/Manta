@@ -36,13 +36,15 @@ pub mod pallet {
         traits::tokens::fungibles::{Inspect, Mutate},
         weights::Weight,
         PalletId,
-        RuntimeDebug,
     };
     use frame_system::pallet_prelude::*;
     use sp_runtime::{
         traits::{AccountIdConversion, Saturating, Zero, CheckedAdd, CheckedSub, CheckedMul, CheckedDiv},
+        RuntimeDebug,
     };
     use sp_std::vec::Vec;
+    use codec::{Encode, Decode};
+    use scale_info::TypeInfo;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
     
