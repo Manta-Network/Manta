@@ -8,51 +8,51 @@ license = "GPL-3.0"
 
 [dependencies]
 # CLI
-clap = { version = "4.5", features = ["derive"] }
+clap = { version = "4.4", features = ["derive"] }
 futures = "0.3"
 
-# Substrate Client
-sc-cli = "0.55"
-sc-executor = "0.45"
-sc-service = "0.54"
-sc-telemetry = "30"
-sc-transaction-pool = "42"
-sc-transaction-pool-api = "42"
-sc-consensus-aura = "0.53"
-sc-consensus = "0.47"
-sc-consensus-grandpa = "0.38"
-sc-client-api = "42"
-sc-rpc-api = "0.52"
-sc-basic-authorship = "0.52"
-sc-offchain = "48"
-sc-network = "0.53"
-sc-network-sync = "0.52"
+# Substrate Client (v0.33-0.36 range - edition 2021)
+sc-cli = "0.36"
+sc-executor = "0.32"
+sc-service = "0.35"
+sc-telemetry = "15"
+sc-transaction-pool = "28"
+sc-transaction-pool-api = "28"
+sc-consensus-aura = "0.34"
+sc-consensus = "0.33"
+sc-consensus-grandpa = "0.19"
+sc-client-api = "28"
+sc-rpc-api = "0.33"
+sc-basic-authorship = "0.34"
+sc-offchain = "29"
+sc-network = "0.34"
+sc-network-sync = "0.33"
 
-# Substrate Primitives
-sp-runtime = "44"
-sp-io = "43"
-sp-core = "38"
-sp-session = "41"
-sp-consensus-aura = "0.45"
-sp-consensus-grandpa = "26"
-sp-inherents = "39"
-sp-timestamp = "39"
-sp-blockchain = "42"
-sp-block-builder = "39"
-sp-keyring = "44"
-sp-api = "39"
-sp-consensus = "0.45"
+# Substrate Primitives (v26-31 range - edition 2021)
+sp-runtime = "31"
+sp-io = "30"
+sp-core = "28"
+sp-session = "27"
+sp-consensus-aura = "0.32"
+sp-consensus-grandpa = "13"
+sp-inherents = "26"
+sp-timestamp = "26"
+sp-blockchain = "28"
+sp-block-builder = "26"
+sp-keyring = "31"
+sp-api = "26"
+sp-consensus = "0.32"
 
-# Frame
-frame-system = "43"
-frame-support = "43"
-pallet-transaction-payment = { version = "43", default-features = false }
+# Frame (v28 - edition 2021)
+frame-system = "28"
+frame-support = "28"
+pallet-transaction-payment = { version = "28", default-features = false }
 
 # RPC
-jsonrpsee = { version = "0.24", features = ["server"] }
-sc-rpc = "48"
-substrate-frame-rpc-system = "47"
-pallet-transaction-payment-rpc = "46"
+jsonrpsee = { version = "0.16", features = ["server"] }
+sc-rpc = "29"
+substrate-frame-rpc-system = "28"
+pallet-transaction-payment-rpc = "30"
 
 # Runtime
 chameleon-runtime = { path = "../runtime-standalone" }
