@@ -392,6 +392,7 @@ pub mod pallet {
                     pool.lp_asset_id,
                     &provider,
                     lp_tokens,
+                    frame_support::traits::tokens::Preservation::Expendable,
                     frame_support::traits::tokens::Precision::Exact,
                     frame_support::traits::tokens::Fortitude::Polite,
                 ).map_err(|_| Error::<T>::TransferFailed)?;
