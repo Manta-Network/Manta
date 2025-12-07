@@ -1,0 +1,64 @@
+[package]
+name = "chameleon-node"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+build = "build.rs"
+
+[dependencies]
+clap = { workspace = true }
+futures = { workspace = true }
+serde_json = { workspace = true }
+jsonrpsee = { workspace = true }
+
+# Substrate client
+sc-cli = { workspace = true }
+sc-executor = { workspace = true }
+sc-service = { workspace = true }
+sc-telemetry = { workspace = true }
+sc-transaction-pool = { workspace = true }
+sc-transaction-pool-api = { workspace = true }
+sc-consensus-aura = { workspace = true }
+sc-consensus = { workspace = true }
+sc-consensus-grandpa = { workspace = true }
+sc-client-api = { workspace = true }
+sc-rpc-api = { workspace = true }
+sc-rpc = { workspace = true }
+sc-basic-authorship = { workspace = true }
+sc-offchain = { workspace = true }
+sc-network = { workspace = true }
+sc-network-sync = { workspace = true }
+
+# Substrate primitives
+sp-core = { workspace = true, features = ["std"] }
+sp-runtime = { workspace = true, features = ["std"] }
+sp-io = { workspace = true, features = ["std"] }
+sp-timestamp = { workspace = true }
+sp-inherents = { workspace = true, features = ["std"] }
+sp-keyring = { workspace = true }
+sp-api = { workspace = true, features = ["std"] }
+sp-blockchain = { workspace = true }
+sp-block-builder = { workspace = true, features = ["std"] }
+sp-consensus-aura = { workspace = true, features = ["std"] }
+sp-consensus-grandpa = { workspace = true, features = ["std"] }
+sp-consensus = { workspace = true }
+
+# Frame
+frame-system = { workspace = true, features = ["std"] }
+
+# RPC
+substrate-frame-rpc-system = { workspace = true }
+pallet-transaction-payment-rpc = { workspace = true }
+
+# Runtime
+chameleon-runtime = { path = "../runtime" }
+
+[build-dependencies]
+substrate-build-script-utils = { workspace = true }
+
+[features]
+default = []
+runtime-benchmarks = ["chameleon-runtime/runtime-benchmarks"]
+try-runtime = ["chameleon-runtime/try-runtime"]
