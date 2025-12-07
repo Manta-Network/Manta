@@ -26,7 +26,6 @@ pallet-aura.workspace = true
 pallet-balances.workspace = true
 pallet-grandpa.workspace = true
 pallet-sudo.workspace = true
-pallet-template.workspace = true
 pallet-timestamp.workspace = true
 pallet-transaction-payment-rpc-runtime-api.workspace = true
 pallet-transaction-payment.workspace = true
