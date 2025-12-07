@@ -17,7 +17,7 @@ solochain-template-runtime = { path = "./runtime", default-features = false }
 clap = { version = "4.5" }
 frame-benchmarking-cli = { version = "=46.0.0", default-features = false }
 frame-metadata-hash-extension = { version = "=0.7.0", default-features = false }
-frame-system = { version = "=39.0.0", default-features = false }
+frame-system = { version = "=39.1.0", default-features = false }
 futures = { version = "0.3" }
 jsonrpsee = { version = "0.24" }
 pallet-transaction-payment = { version = "=39.0.0", default-features = false }
