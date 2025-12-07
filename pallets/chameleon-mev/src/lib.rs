@@ -59,7 +59,7 @@ pub mod pallet {
     use sp_core::H256;
     use sp_runtime::{traits::Saturating, RuntimeDebug};
     use sp_std::vec::Vec;
-    use codec::{Encode, Decode, MaxEncodedLen, DecodeWithMemTracking};
+    use codec::{Encode, Decode, MaxEncodedLen};
     use scale_info::TypeInfo;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
