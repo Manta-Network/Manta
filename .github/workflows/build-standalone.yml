@@ -50,12 +50,8 @@ jobs:
       - name: Check Template Pallet
         run: cargo check -p pallet-template
       
-      - name: Check Custom Pallets
-        run: |
-          cargo check -p pallet-chameleon-mev
-          cargo check -p pallet-chameleon-pdex
-          cargo check -p pallet-chameleon-bridge
-          cargo check -p pallet-chameleon-staking
+      - name: Check Runtime (includes custom pallets)
+        run: cargo check -p solochain-template-runtime
 
   build-runtime:
     name: Build Runtime
