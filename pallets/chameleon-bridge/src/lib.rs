@@ -78,7 +78,7 @@ pub mod pallet {
     }
 
     /// Bridgeable assets
-    #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq, MaxEncodedLen, Copy)]
+    #[derive(Clone, Encode, Decode, DecodeWithMemTracking, RuntimeDebug, TypeInfo, PartialEq, Eq, MaxEncodedLen, Copy)]
     pub enum BridgeableAsset {
         ETH,
         USDC,
