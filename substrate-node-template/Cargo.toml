@@ -73,12 +73,6 @@ sp-transaction-pool = { version = "36.0.0", default-features = false }
 sp-version = { version = "39.0.0", default-features = false }
 substrate-wasm-builder = { version = "26.0.1", default-features = false }
 
-# Chameleon custom pallets
-pallet-chameleon-mev = { path = "../pallets/chameleon-mev", default-features = false }
-pallet-chameleon-pdex = { path = "../pallets/chameleon-pdex", default-features = false }
-pallet-chameleon-bridge = { path = "../pallets/chameleon-bridge", default-features = false }
-pallet-chameleon-staking = { path = "../pallets/chameleon-staking", default-features = false }
-
 # Additional dependencies for custom pallets
 sha3 = { version = "0.10", default-features = false }
 sp-std = { version = "14.0.0", default-features = false }
