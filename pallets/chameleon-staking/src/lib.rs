@@ -41,7 +41,7 @@ pub mod pallet {
         Perbill,
         RuntimeDebug,
     };
-    use codec::{Encode, Decode};
+    use codec::{Encode, Decode, MaxEncodedLen};
     use scale_info::TypeInfo;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
