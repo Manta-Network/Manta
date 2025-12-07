@@ -71,7 +71,7 @@ pub mod pallet {
         type MaxDelegationsPerDelegator: Get<u32>;
     }
 
-    #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq, MaxEncodedLen)]
+    #[derive(Clone, Encode, Decode, DecodeWithMemTracking, RuntimeDebug, TypeInfo, PartialEq, Eq, MaxEncodedLen)]
     pub enum ValidatorStatus {
         Active,
         Waiting,
