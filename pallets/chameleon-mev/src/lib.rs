@@ -54,6 +54,7 @@ pub mod pallet {
         traits::Get,
         weights::Weight,
         Blake2_256, StorageHasher,
+        RuntimeDebug,
     };
     use frame_system::pallet_prelude::*;
     use sp_core::H256;
