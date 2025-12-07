@@ -34,6 +34,7 @@ pub mod pallet {
         pallet_prelude::*,
         traits::tokens::fungibles::{Inspect, Mutate},
         weights::Weight,
+        RuntimeDebug,
     };
     use frame_system::pallet_prelude::*;
     use sp_core::{H160, H256};
