@@ -4,8 +4,6 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod apis;
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarks;
 pub mod configs;
 
 extern crate alloc;
