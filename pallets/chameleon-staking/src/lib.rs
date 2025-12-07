@@ -34,13 +34,15 @@ pub mod pallet {
         pallet_prelude::*,
         traits::{Currency, LockIdentifier, LockableCurrency, WithdrawReasons},
         weights::Weight,
-        RuntimeDebug,
     };
     use frame_system::pallet_prelude::*;
     use sp_runtime::{
         traits::{Zero, Saturating, SaturatedConversion}, 
         Perbill,
+        RuntimeDebug,
     };
+    use codec::{Encode, Decode};
+    use scale_info::TypeInfo;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
     const STAKING_ID: LockIdentifier = *b"chmlstak";
