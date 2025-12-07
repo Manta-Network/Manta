@@ -3,11 +3,6 @@ name: Build Standalone Node
 on:
   push:
     branches: [ develop, main ]
-    paths:
-      - 'node-standalone/**'
-      - 'runtime-standalone/**'
-      - 'pallets/chameleon-*/**'
-      - 'Cargo.toml'
   pull_request:
     branches: [ develop, main ]
   workflow_dispatch:
