@@ -1,4 +1,4 @@
-name: Build Chameleon Node (Template Migration)
+name: Build Chameleon Node (Solochain Template)
 
 on:
   push:
@@ -13,52 +13,13 @@ env:
 
 defaults:
   run:
-    working-directory: template-migration
+    working-directory: substrate-node-template
 
 jobs:
-  check-pallets:
-    name: Check Custom Pallets
+  check-template:
+    name: Check Template Compiles
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-          targets: wasm32-unknown-unknown
-      
-      - name: Cache Cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            template-migration/target/
-          key: ${{ runner.os }}-cargo-template-check-${{ hashFiles('template-migration/**/Cargo.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-template-check-
-      
-      - name: Check MEV Pallet
-        run: cargo check -p pallet-chameleon-mev
-      
-      - name: Check pDEX Pallet
-        run: cargo check -p pallet-chameleon-pdex
-      
-      - name: Check Bridge Pallet
-        run: cargo check -p pallet-chameleon-bridge
-      
-      - name: Check Staking Pallet
-        run: cargo check -p pallet-chameleon-staking
-
-  build-runtime:
-    name: Build Runtime
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    needs: check-pallets
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       
@@ -81,19 +42,61 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            template-migration/target/
-          key: ${{ runner.os }}-cargo-template-runtime-${{ hashFiles('template-migration/**/Cargo.toml') }}
+            substrate-node-template/target/
+          key: ${{ runner.os }}-cargo-solochain-${{ hashFiles('substrate-node-template/**/Cargo.toml') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-template-runtime-
+            ${{ runner.os }}-cargo-solochain-
+      
+      - name: Check Template Pallet
+        run: cargo check -p pallet-template
+      
+      - name: Check Custom Pallets
+        run: |
+          cargo check -p pallet-chameleon-mev
+          cargo check -p pallet-chameleon-pdex
+          cargo check -p pallet-chameleon-bridge
+          cargo check -p pallet-chameleon-staking
+
+  build-runtime:
+    name: Build Runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: check-template
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+      
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler libclang-dev cmake
+      
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            substrate-node-template/target/
+          key: ${{ runner.os }}-cargo-solochain-runtime-${{ hashFiles('substrate-node-template/**/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-solochain-runtime-
       
       - name: Build Runtime
-        run: cargo build -p chameleon-runtime --release
+        run: cargo build -p solochain-template-runtime --release
       
       - name: Upload Runtime WASM
         uses: actions/upload-artifact@v4
         with:
           name: runtime-wasm
-          path: template-migration/target/release/wbuild/chameleon-runtime/
+          path: substrate-node-template/target/release/wbuild/solochain-template-runtime/
           retention-days: 7
 
   build-node:
@@ -123,19 +126,19 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            template-migration/target/
-          key: ${{ runner.os }}-cargo-template-node-${{ hashFiles('template-migration/**/Cargo.toml') }}
+            substrate-node-template/target/
+          key: ${{ runner.os }}-cargo-solochain-node-${{ hashFiles('substrate-node-template/**/Cargo.toml') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-template-node-
+            ${{ runner.os }}-cargo-solochain-node-
       
       - name: Build Node Binary
-        run: cargo build -p chameleon-node --release
+        run: cargo build -p solochain-template-node --release
       
       - name: Upload Node Binary
         uses: actions/upload-artifact@v4
         with:
           name: chameleon-node-${{ github.sha }}
-          path: template-migration/target/release/chameleon-node
+          path: substrate-node-template/target/release/solochain-template-node
           retention-days: 30
 
   create-release:
@@ -162,8 +165,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            release/chameleon-node
-            release/wasm/chameleon_runtime.compact.compressed.wasm
+            release/solochain-template-node
+            release/wasm/solochain_template_runtime.compact.compressed.wasm
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
         env:
