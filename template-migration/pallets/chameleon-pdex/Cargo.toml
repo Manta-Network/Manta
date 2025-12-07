@@ -41,19 +41,19 @@ std = [
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.6", default-features = false, features = ["derive"] }
-scale-info = { version = "2.11", default-features = false, features = ["derive"] }
-frame-benchmarking = { version = "31", default-features = false, optional = true }
-frame-support = { version = "31", default-features = false }
-frame-system = { version = "31", default-features = false }
-sp-runtime = { version = "34", default-features = false }
+scale-info = { version = "2.10", default-features = false, features = ["derive"] }
+frame-benchmarking = { version = "28", default-features = false, optional = true }
+frame-support = { version = "28", default-features = false }
+frame-system = { version = "28", default-features = false }
+sp-runtime = { version = "31", default-features = false }
 sp-std = { version = "14", default-features = false }
-sp-core = { version = "31", default-features = false }
-pallet-assets = { version = "32", default-features = false }
-pallet-balances = { version = "31", default-features = false }
+sp-core = { version = "28", default-features = false }
+pallet-assets = { version = "29", default-features = false }
+pallet-balances = { version = "28", default-features = false }
 
 [dev-dependencies]
-sp-core = { version = "31", features = ["std"] }
-sp-io = { version = "33", features = ["std"] }
-pallet-balances = { version = "31", features = ["std"] }
-pallet-timestamp = { version = "30", features = ["std"] }
-pallet-assets = { version = "32", features = ["std"] }
+sp-core = { version = "28", features = ["std"] }
+sp-io = { version = "30", features = ["std"] }
+pallet-balances = { version = "28", features = ["std"] }
+pallet-timestamp = { version = "27", features = ["std"] }
+pallet-assets = { version = "29", features = ["std"] }
