@@ -15,40 +15,40 @@ scale-info = { version = "2.11", default-features = false, features = ["derive"]
 log = { version = "0.4", default-features = false }
 
 # Substrate Primitives
-sp-api = { version = "34", default-features = false }
-sp-block-builder = { version = "34", default-features = false }
-sp-consensus-aura = { version = "0.40", default-features = false }
-sp-consensus-grandpa = { version = "21", default-features = false }
-sp-core = { version = "34", default-features = false }
-sp-inherents = { version = "34", default-features = false }
-sp-io = { version = "38", default-features = false }
-sp-offchain = { version = "34", default-features = false }
-sp-runtime = { version = "39", default-features = false }
-sp-session = { version = "35", default-features = false }
+sp-api = { version = "39", default-features = false }
+sp-block-builder = { version = "39", default-features = false }
+sp-consensus-aura = { version = "0.45", default-features = false }
+sp-consensus-grandpa = { version = "26", default-features = false }
+sp-core = { version = "38", default-features = false }
+sp-inherents = { version = "39", default-features = false }
+sp-io = { version = "43", default-features = false }
+sp-offchain = { version = "39", default-features = false }
+sp-runtime = { version = "44", default-features = false }
+sp-session = { version = "41", default-features = false }
 sp-std = { version = "14", default-features = false }
-sp-storage = { version = "21", default-features = false }
-sp-transaction-pool = { version = "34", default-features = false }
-sp-version = { version = "37", default-features = false }
-sp-genesis-builder = { version = "0.15", default-features = false }
+sp-storage = { version = "22", default-features = false }
+sp-transaction-pool = { version = "39", default-features = false }
+sp-version = { version = "42", default-features = false }
+sp-genesis-builder = { version = "0.20", default-features = false }
 
 # Frame
-frame-benchmarking = { version = "36", default-features = false, optional = true }
-frame-executive = { version = "36", default-features = false }
-frame-support = { version = "36", default-features = false }
-frame-system = { version = "36", default-features = false }
-frame-system-benchmarking = { version = "36", default-features = false, optional = true }
-frame-system-rpc-runtime-api = { version = "34", default-features = false }
-frame-try-runtime = { version = "0.42", default-features = false, optional = true }
+frame-benchmarking = { version = "43", default-features = false, optional = true }
+frame-executive = { version = "43", default-features = false }
+frame-support = { version = "43", default-features = false }
+frame-system = { version = "43", default-features = false }
+frame-system-benchmarking = { version = "43", default-features = false, optional = true }
+frame-system-rpc-runtime-api = { version = "39", default-features = false }
+frame-try-runtime = { version = "0.49", default-features = false, optional = true }
 
 # Standard Pallets
-pallet-aura = { version = "35", default-features = false }
-pallet-balances = { version = "37", default-features = false }
-pallet-grandpa = { version = "36", default-features = false }
-pallet-sudo = { version = "36", default-features = false }
-pallet-timestamp = { version = "35", default-features = false }
-pallet-transaction-payment = { version = "36", default-features = false }
-pallet-transaction-payment-rpc-runtime-api = { version = "36", default-features = false }
-pallet-assets = { version = "37", default-features = false }
+pallet-aura = { version = "42", default-features = false }
+pallet-balances = { version = "44", default-features = false }
+pallet-grandpa = { version = "43", default-features = false }
+pallet-sudo = { version = "43", default-features = false }
+pallet-timestamp = { version = "42", default-features = false }
+pallet-transaction-payment = { version = "43", default-features = false }
+pallet-transaction-payment-rpc-runtime-api = { version = "43", default-features = false }
+pallet-assets = { version = "46", default-features = false }
 
 # Chameleon Custom Pallets
 pallet-chameleon-mev = { path = "../pallets/chameleon-mev", default-features = false }
@@ -57,7 +57,7 @@ pallet-chameleon-bridge = { path = "../pallets/chameleon-bridge", default-featur
 pallet-chameleon-staking = { path = "../pallets/chameleon-staking", default-features = false }
 
 [build-dependencies]
-substrate-wasm-builder = { version = "24", optional = true }
+substrate-wasm-builder = { version = "29", optional = true }
 
 [features]
 default = ["std"]
