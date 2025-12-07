@@ -38,7 +38,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use sp_core::{H160, H256};
     use sp_runtime::{traits::{Zero, Saturating}, RuntimeDebug};
-    use codec::{Encode, Decode, MaxEncodedLen};
+    use codec::{Encode, Decode, MaxEncodedLen, DecodeWithMemTracking};
     use scale_info::TypeInfo;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
