@@ -1,8 +1,8 @@
 //! Runtime API implementations for the Chameleon solochain runtime.
 
 use crate::{
-    AccountId, Aura, Balance, Block, Executive, Grandpa, Nonce, Runtime, RuntimeCall,
-    RuntimeGenesisConfig, SessionKeys, System, TransactionPayment, VERSION,
+    AccountId, Aura, Balance, Block, Executive, Grandpa, Nonce, Runtime, SessionKeys,
+    System, TransactionPayment, VERSION,
 };
 use frame_support::weights::Weight;
 use sp_api::impl_runtime_apis;
@@ -15,31 +15,26 @@ use sp_runtime::{
 };
 use sp_version::RuntimeVersion;
 
-sp_api::decl_runtime_apis! {
-    // empty for now, custom APIs can be added here
-}
-
 /// Wasm binary unwrap helper.
 #[cfg(feature = "std")]
 pub fn wasm_binary_unwrap() -> &'static [u8] {
     crate::WASM_BINARY.expect(
-        "Development wasm binary is not available. This means the client is built with \
-         `SKIP_WASM_BUILD` flag and it is only usable for production chains.",
+        "Development wasm binary is not available.",
     )
 }
 
 pub const RUNTIME_API_VERSIONS: sp_version::ApisVec = sp_version::create_apis_vec!([
-    (sp_api::runtime_decl_for_core::ID, 4),
-    (sp_api::runtime_decl_for_metadata::ID, 2),
-    (sp_block_builder::runtime_decl_for_block_builder::ID, 6),
-    (sp_transaction_pool::runtime_api::runtime_decl_for_tagged_transaction_queue::ID, 3),
-    (sp_offchain::runtime_decl_for_offchain_worker_api::ID, 2),
-    (sp_session::runtime_decl_for_session_keys::ID, 1),
-    (sp_consensus_aura::runtime_decl_for_aura_api::ID, 1),
-    (sp_consensus_grandpa::runtime_decl_for_grandpa_api::ID, 3),
-    (frame_system_rpc_runtime_api::runtime_decl_for_account_nonce_api::ID, 1),
-    (pallet_transaction_payment_rpc_runtime_api::runtime_decl_for_transaction_payment_api::ID, 4),
-    (sp_genesis_builder::runtime_decl_for_genesis_builder::ID, 1),
+    (sp_api::runtime_decl_for_core::ID, sp_api::runtime_decl_for_core::VERSION),
+    (sp_api::runtime_decl_for_metadata::ID, sp_api::runtime_decl_for_metadata::VERSION),
+    (sp_block_builder::runtime_decl_for_block_builder::ID, sp_block_builder::runtime_decl_for_block_builder::VERSION),
+    (sp_transaction_pool::runtime_api::runtime_decl_for_tagged_transaction_queue::ID, sp_transaction_pool::runtime_api::runtime_decl_for_tagged_transaction_queue::VERSION),
+    (sp_offchain::runtime_decl_for_offchain_worker_api::ID, sp_offchain::runtime_decl_for_offchain_worker_api::VERSION),
+    (sp_session::runtime_decl_for_session_keys::ID, sp_session::runtime_decl_for_session_keys::VERSION),
+    (sp_consensus_aura::runtime_decl_for_aura_api::ID, sp_consensus_aura::runtime_decl_for_aura_api::VERSION),
+    (sp_consensus_grandpa::runtime_decl_for_grandpa_api::ID, sp_consensus_grandpa::runtime_decl_for_grandpa_api::VERSION),
+    (frame_system_rpc_runtime_api::runtime_decl_for_account_nonce_api::ID, frame_system_rpc_runtime_api::runtime_decl_for_account_nonce_api::VERSION),
+    (pallet_transaction_payment_rpc_runtime_api::runtime_decl_for_transaction_payment_api::ID, pallet_transaction_payment_rpc_runtime_api::runtime_decl_for_transaction_payment_api::VERSION),
+    (sp_genesis_builder::runtime_decl_for_genesis_builder::ID, sp_genesis_builder::runtime_decl_for_genesis_builder::VERSION),
 ]);
 
 impl_runtime_apis! {
@@ -200,51 +195,37 @@ impl_runtime_apis! {
             crate::genesis_config_presets::preset_names()
         }
     }
+}
 
-    #[cfg(feature = "try-runtime")]
-    impl frame_try_runtime::TryRuntime<Block> for Runtime {
-        fn on_runtime_upgrade(checks: frame_try_runtime::UpgradeCheckSelect) -> (Weight, Weight) {
-            let weight = Executive::try_runtime_upgrade(checks).unwrap();
-            (weight, RuntimeBlockWeights::get().max_block)
-        }
-
-        fn execute_block(
-            block: Block,
-            state_root_check: bool,
-            signature_check: bool,
-            select: frame_try_runtime::TryStateSelect,
-        ) -> Weight {
-            Executive::try_execute_block(block, state_root_check, signature_check, select).unwrap()
-        }
+#[cfg(feature = "runtime-benchmarks")]
+impl frame_benchmarking::Benchmark<Block> for Runtime {
+    fn benchmark_metadata(_extra: bool) -> (
+        alloc::vec::Vec<frame_benchmarking::BenchmarkList>,
+        alloc::vec::Vec<frame_support::traits::StorageInfo>,
+    ) {
+        (alloc::vec::Vec::new(), alloc::vec::Vec::new())
     }
 
-    #[cfg(feature = "runtime-benchmarks")]
-    impl frame_benchmarking::Benchmark<Block> for Runtime {
-        fn benchmark_metadata(extra: bool) -> (
-            alloc::vec::Vec<frame_benchmarking::BenchmarkList>,
-            alloc::vec::Vec<frame_support::traits::StorageInfo>,
-        ) {
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkList};
-            use frame_support::traits::StorageInfoTrait;
-            use crate::benchmarks::*;
+    fn dispatch_benchmark(
+        _config: frame_benchmarking::BenchmarkConfig,
+    ) -> Result<alloc::vec::Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
+        Ok(alloc::vec::Vec::new())
+    }
+}
 
-            let mut list = alloc::vec::Vec::<BenchmarkList>::new();
-            list_benchmarks!(list, extra);
+#[cfg(feature = "try-runtime")]
+impl frame_try_runtime::TryRuntime<Block> for Runtime {
+    fn on_runtime_upgrade(checks: frame_try_runtime::UpgradeCheckSelect) -> (Weight, Weight) {
+        let weight = Executive::try_runtime_upgrade(checks).unwrap();
+        (weight, crate::configs::RuntimeBlockWeights::get().max_block)
+    }
 
-            let storage_info = AllPalletsWithSystem::storage_info();
-            (list, storage_info)
-        }
-
-        fn dispatch_benchmark(
-            config: frame_benchmarking::BenchmarkConfig,
-        ) -> Result<alloc::vec::Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-            use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch};
-            use crate::benchmarks::*;
-
-            let params = (&config, &AllPalletsWithSystem);
-            let mut batches = alloc::vec::Vec::<BenchmarkBatch>::new();
-            add_benchmarks!(params, batches);
-            Ok(batches)
-        }
+    fn execute_block(
+        block: Block,
+        state_root_check: bool,
+        signature_check: bool,
+        select: frame_try_runtime::TryStateSelect,
+    ) -> Weight {
+        Executive::try_execute_block(block, state_root_check, signature_check, select).unwrap()
     }
 }
