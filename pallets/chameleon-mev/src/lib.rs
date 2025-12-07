@@ -54,12 +54,13 @@ pub mod pallet {
         traits::Get,
         weights::Weight,
         Blake2_256, StorageHasher,
-        RuntimeDebug,
     };
     use frame_system::pallet_prelude::*;
     use sp_core::H256;
-    use sp_runtime::traits::Saturating;
+    use sp_runtime::{traits::Saturating, RuntimeDebug};
     use sp_std::vec::Vec;
+    use codec::{Encode, Decode};
+    use scale_info::TypeInfo;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
