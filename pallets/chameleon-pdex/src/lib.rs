@@ -43,7 +43,7 @@ pub mod pallet {
         RuntimeDebug,
     };
     use sp_std::vec::Vec;
-    use codec::{Encode, Decode, MaxEncodedLen};
+    use codec::{Encode, Decode, MaxEncodedLen, DecodeWithMemTracking};
     use scale_info::TypeInfo;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
