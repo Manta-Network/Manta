@@ -42,8 +42,7 @@ pub mod pallet {
         traits::{AccountIdConversion, Saturating, Zero, CheckedAdd, CheckedSub, CheckedMul, CheckedDiv},
         RuntimeDebug,
     };
-    use sp_std::vec::Vec;
-    use codec::{Encode, Decode, MaxEncodedLen, DecodeWithMemTracking};
+    use codec::{Encode, Decode, MaxEncodedLen};
     use scale_info::TypeInfo;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
