@@ -1,0 +1,57 @@
+[package]
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = "pallet-asset-manager"
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+codec = { workspace = true }
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+log = { workspace = true }
+manta-primitives = { workspace = true }
+scale-info = { workspace = true }
+sp-arithmetic = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+xcm = { workspace = true }
+
+# 3rd party dependencies
+orml-traits = { workspace = true }
+
+[dev-dependencies]
+pallet-assets = { workspace = true, features = ["std"] }
+pallet-balances = { workspace = true, features = ["std"] }
+sp-core = { workspace = true, features = ["std"] }
+sp-io = { workspace = true, features = ["std"] }
+
+[features]
+default = ["std"]
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "manta-primitives/runtime-benchmarks",
+  "pallet-assets/runtime-benchmarks",
+]
+std = [
+  "codec/std",
+  "frame-support/std",
+  "frame-system/std",
+  "log/std",
+  "manta-primitives/std",
+  "orml-traits/std",
+  "scale-info/std",
+  "sp-runtime/std",
+  "sp-std/std",
+  "sp-arithmetic/std",
+  "xcm/std",
+]
+try-runtime = [
+  "frame-support/try-runtime",
+  "frame-system/try-runtime",
+]

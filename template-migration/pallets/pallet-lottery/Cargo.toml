@@ -1,0 +1,96 @@
+[package]
+authors.workspace = true
+description = 'Pallet implementing an APY-maximizing no-loss lottery'
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = 'pallet-lottery'
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+codec = { workspace = true }
+function_name = { workspace = true }
+jsonrpsee = { workspace = true, features = ["server", "macros"], optional = true }
+log = { workspace = true }
+scale-info = { workspace = true }
+serde = { workspace = true }
+
+# Substrate dependencies
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+orml-traits = { workspace = true }
+sp-api = { workspace = true }
+sp-arithmetic = { workspace = true }
+sp-blockchain = { workspace = true, optional = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+# Self dependencies
+manta-primitives = { workspace = true }
+pallet-farming = { workspace = true }
+pallet-parachain-staking = { workspace = true }
+runtime-common = { workspace = true }
+session-key-primitives = { workspace = true }
+
+# Benchmarking dependencies
+frame-benchmarking = { workspace = true, optional = true }
+rand = { workspace = true, optional = true }
+
+[dev-dependencies]
+calamari-runtime = { workspace = true, features = ["std"] }
+manta-collator-selection = { workspace = true, features = ["std"] }
+pallet-asset-manager = { workspace = true, features = ["std"] }
+pallet-assets = { workspace = true, features = ["std"] }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-preimage = { workspace = true, features = ["std"] }
+pallet-randomness = { workspace = true, features = ["std"] }
+pallet-scheduler = { workspace = true, features = ["std"] }
+pallet-transaction-payment = { workspace = true, features = ["std"] }
+rand = { workspace = true }
+similar-asserts = { workspace = true }
+sp-staking = { workspace = true, features = ["std"] }
+xcm = { workspace = true, features = ["std"] }
+
+[features]
+default = ["std"]
+# RPC Interface
+rpc = [
+  "jsonrpsee",
+  "sp-blockchain",
+]
+runtime-benchmarks = [
+  'frame-benchmarking/runtime-benchmarks',
+  'frame-support/runtime-benchmarks',
+  'frame-system/runtime-benchmarks',
+  'pallet-parachain-staking/runtime-benchmarks',
+  'rand/std_rng',
+]
+std = [
+  "log/std",
+  "manta-primitives/std",
+  "pallet-parachain-staking/std",
+  "pallet-randomness/std",
+  "session-key-primitives/std",
+  "sp-core/std",
+  "sp-std/std",
+  "sp-io/std",
+  "sp-runtime/std",
+  "sp-api/std",
+  "sp-arithmetic/std",
+  "frame-support/std",
+  "frame-system/std",
+  "serde/std",
+  "pallet-farming/std",
+  "orml-traits/std",
+  "runtime-common/std",
+  "codec/std",
+  "scale-info/std",
+  "sp-staking/std",
+]
+try-runtime = [
+  "frame-support/try-runtime",
+  "frame-system/try-runtime",
+]

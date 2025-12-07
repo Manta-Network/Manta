@@ -1,0 +1,52 @@
+[package]
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = "calamari-vesting"
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+codec = { workspace = true }
+scale-info = { workspace = true }
+
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-balances = { workspace = true, optional = true }
+pallet-timestamp = { workspace = true, optional = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+[dev-dependencies]
+chrono = { workspace = true }
+manta-primitives = { workspace = true, features = ["std"] }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-timestamp = { workspace = true, features = ["std"] }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+
+[features]
+default = ["std"]
+runtime-benchmarks = [
+  'frame-benchmarking/runtime-benchmarks',
+  'frame-support/runtime-benchmarks',
+  'frame-system/runtime-benchmarks',
+  'pallet-timestamp/runtime-benchmarks',
+  'pallet-balances/runtime-benchmarks',
+  'sp-runtime/runtime-benchmarks',
+  'manta-primitives/runtime-benchmarks',
+]
+std = [
+  "codec/std",
+  "frame-support/std",
+  "frame-system/std",
+  "scale-info/std",
+  "sp-runtime/std",
+  "sp-std/std",
+]
+try-runtime = [
+  'frame-support/try-runtime',
+  'frame-system/try-runtime',
+]

@@ -1,0 +1,139 @@
+[package]
+authors.workspace = true
+description = 'Pallet implementing zkSBT protocol.'
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = 'pallet-manta-sbt'
+readme = 'README.md'
+repository.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "precompute_coins"
+required-features = ["precompute-coins"]
+
+[features]
+# Default Features
+default = ["std"]
+
+# Runtime Benchmarks
+runtime-benchmarks = [
+  "frame-benchmarking",
+  "libsecp256k1/hmac",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "manta-primitives/runtime-benchmarks",
+  "pallet-assets/runtime-benchmarks",
+]
+
+try-runtime = [
+  "frame-support/try-runtime",
+  "frame-system/try-runtime",
+]
+
+# Standard Library
+std = [
+  "anyhow/std",
+  "sha3/std",
+  "libsecp256k1/std",
+  "frame-benchmarking/std",
+  "frame-support/std",
+  "frame-system/std",
+  "codec/std",
+  "scale-info/std",
+  "sp-runtime/std",
+  "sp-api/std",
+  "sp-std/std",
+  "sp-core/std",
+  "sp-io/std",
+  "manta-primitives/std",
+  "manta-accounting/std",
+  "manta-crypto/std",
+  "manta-util/std",
+  "manta-pay/std",
+  "manta-support/std",
+]
+
+# RPC Interface
+rpc = [
+  "jsonrpsee",
+  "serde",
+  "runtime",
+  "sp-api",
+  "sp-blockchain",
+  "manta-support/rpc",
+]
+
+# Serde Serialization
+serde = [
+  "manta-support/serde",
+]
+
+# Runtime API
+runtime = ["sp-api"]
+
+# Precompute Benchmark Transactions
+precompute-coins = [
+  "anyhow",
+  "indoc",
+  "manta-accounting/test",
+  "manta-pay/download",
+  "manta-pay/test",
+  "manta-pay/serde",
+  "manta-pay/groth16",
+  "manta-pay/bip32",
+  "manta-pay/arkworks",
+  "manta-util/std",
+  "num_cpus",
+  "rand_chacha",
+  "tempfile",
+]
+
+[dependencies]
+# utils
+anyhow = { workspace = true, optional = true }
+base64 = { workspace = true }
+indoc = { workspace = true, optional = true }
+libsecp256k1 = { workspace = true, optional = true }
+num_cpus = { workspace = true, optional = true }
+rand_chacha = { workspace = true, optional = true }
+sha3 = { workspace = true }
+tempfile = { workspace = true, optional = true }
+
+# substrate dependencies
+codec = { workspace = true }
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+scale-info = { workspace = true }
+sp-api = { workspace = true, optional = true }
+sp-blockchain = { workspace = true, optional = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+# JSON-RPC
+jsonrpsee = { workspace = true, features = ["server", "macros"], optional = true }
+
+# manta dependencies
+manta-accounting = { workspace = true }
+manta-crypto = { workspace = true }
+manta-pay = { workspace = true }
+manta-primitives = { workspace = true }
+manta-support = { workspace = true }
+manta-util = { workspace = true }
+
+[dev-dependencies]
+lazy_static = { workspace = true }
+manta-crypto = { workspace = true, features = ["getrandom"] }
+manta-pay = { workspace = true, features = ["groth16", "parameters", "scale", "download", "test"] }
+pallet-asset-manager = { workspace = true, features = ["std"] }
+pallet-assets = { workspace = true, features = ["std"] }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-manta-pay = { workspace = true, features = ["std"] }
+pallet-timestamp = { workspace = true, features = ["std"] }
+pallet-tx-pause = { workspace = true, features = ["std"] }
+tempfile = { workspace = true }
+xcm = { workspace = true, features = ["std"] }

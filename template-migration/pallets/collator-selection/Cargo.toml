@@ -1,0 +1,72 @@
+[package]
+authors.workspace = true
+description = 'Simple staking pallet with a fixed stake.'
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = 'manta-collator-selection'
+readme = 'README.md'
+repository.workspace = true
+version.workspace = true
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[dependencies]
+codec = { workspace = true }
+log = { workspace = true }
+rand = { workspace = true, optional = true }
+scale-info = { workspace = true }
+serde = { workspace = true, optional = true }
+
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+nimbus-primitives = { workspace = true }
+pallet-authorship = { workspace = true }
+pallet-session = { workspace = true }
+sp-arithmetic = { workspace = true }
+sp-runtime = { workspace = true }
+sp-staking = { workspace = true }
+sp-std = { workspace = true }
+
+[dev-dependencies]
+manta-primitives = { workspace = true, features = ["std"] }
+pallet-aura = { workspace = true, features = ["std"] }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-timestamp = { workspace = true, features = ["std"] }
+sp-consensus-aura = { workspace = true, features = ["std"] }
+sp-core = { workspace = true, features = ["std"] }
+sp-io = { workspace = true, features = ["std"] }
+sp-runtime = { workspace = true, features = ["std"] }
+sp-tracing = { workspace = true, features = ["std"] }
+
+[features]
+default = ['std']
+runtime-benchmarks = [
+  'frame-benchmarking/runtime-benchmarks',
+  'frame-support/runtime-benchmarks',
+  'frame-system/runtime-benchmarks',
+  'nimbus-primitives/runtime-benchmarks',
+  'rand/std_rng',
+]
+std = [
+  'codec/std',
+  'log/std',
+  'scale-info/std',
+  'sp-arithmetic/std',
+  'serde/std',
+  'sp-runtime/std',
+  'sp-staking/std',
+  'sp-std/std',
+  'frame-support/std',
+  'frame-system/std',
+  'nimbus-primitives/std',
+  'pallet-authorship/std',
+  'pallet-session/std',
+
+]
+try-runtime = [
+  'frame-support/try-runtime',
+  'frame-system/try-runtime',
+]

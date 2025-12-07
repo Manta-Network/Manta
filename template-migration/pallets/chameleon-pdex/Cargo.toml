@@ -1,0 +1,59 @@
+[package]
+name = "pallet-chameleon-pdex"
+version = "0.1.0"
+edition = "2021"
+description = "Pallet implementing privacy-preserving DEX with AMM pools for Chameleon Network."
+license = "GPL-3.0"
+readme = "README.md"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "doc_cfg"]
+
+[features]
+default = ["std"]
+
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "pallet-assets/runtime-benchmarks",
+]
+
+try-runtime = [
+  "frame-support/try-runtime",
+  "frame-system/try-runtime",
+  "pallet-assets/try-runtime",
+]
+
+std = [
+  "frame-benchmarking?/std",
+  "frame-support/std",
+  "frame-system/std",
+  "codec/std",
+  "scale-info/std",
+  "sp-runtime/std",
+  "sp-std/std",
+  "sp-core/std",
+  "pallet-assets/std",
+  "pallet-balances/std",
+]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.6", default-features = false, features = ["derive"] }
+scale-info = { version = "2.11", default-features = false, features = ["derive"] }
+frame-benchmarking = { version = "36", default-features = false, optional = true }
+frame-support = { version = "36", default-features = false }
+frame-system = { version = "36", default-features = false }
+sp-runtime = { version = "39", default-features = false }
+sp-std = { version = "14", default-features = false }
+sp-core = { version = "34", default-features = false }
+pallet-assets = { version = "37", default-features = false }
+pallet-balances = { version = "37", default-features = false }
+
+[dev-dependencies]
+sp-core = { version = "34", features = ["std"] }
+sp-io = { version = "38", features = ["std"] }
+pallet-balances = { version = "37", features = ["std"] }
+pallet-timestamp = { version = "35", features = ["std"] }
+pallet-assets = { version = "37", features = ["std"] }

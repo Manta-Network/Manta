@@ -1,0 +1,48 @@
+[package]
+name = "pallet-chameleon-bridge"
+version = "0.1.0"
+edition = "2021"
+description = "Ethereum bridge pallet for Chameleon Network."
+license = "GPL-3.0"
+readme = "README.md"
+
+[features]
+default = ["std"]
+
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+]
+
+try-runtime = [
+  "frame-support/try-runtime",
+  "frame-system/try-runtime",
+]
+
+std = [
+  "frame-benchmarking?/std",
+  "codec/std",
+  "frame-support/std",
+  "frame-system/std",
+  "scale-info/std",
+  "sp-runtime/std",
+  "sp-std/std",
+  "sp-core/std",
+]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.6", default-features = false, features = ["derive"] }
+scale-info = { version = "2.11", default-features = false, features = ["derive"] }
+frame-benchmarking = { version = "36", default-features = false, optional = true }
+frame-support = { version = "36", default-features = false }
+frame-system = { version = "36", default-features = false }
+sp-runtime = { version = "39", default-features = false }
+sp-std = { version = "14", default-features = false }
+sp-core = { version = "34", default-features = false }
+
+[dev-dependencies]
+sp-core = { version = "34", features = ["std"] }
+sp-io = { version = "38", features = ["std"] }
+pallet-balances = { version = "37", features = ["std"] }
+pallet-assets = { version = "37", features = ["std"] }
