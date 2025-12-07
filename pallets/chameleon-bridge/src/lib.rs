@@ -347,6 +347,7 @@ pub mod pallet {
                 wrapped_asset_id,
                 &who,
                 amount,
+                frame_support::traits::tokens::Preservation::Expendable,
                 frame_support::traits::tokens::Precision::Exact,
                 frame_support::traits::tokens::Fortitude::Polite,
             ).map_err(|_| Error::<T>::TokenOperationFailed)?;
