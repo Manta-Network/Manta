@@ -47,7 +47,7 @@ sp-keyring = { version = "42", default-features = false }
 sp-runtime = { version = "42", default-features = false }
 sp-timestamp = { version = "37", default-features = false }
 substrate-frame-rpc-system = { version = "44", default-features = false }
-substrate-build-script-utils = { version = "12", default-features = false }
+substrate-build-script-utils = { version = "11", default-features = false }
 codec = { version = "3.6", default-features = false, package = "parity-scale-codec" }
 frame-benchmarking = { version = "41", default-features = false }
 frame-executive = { version = "41", default-features = false }
