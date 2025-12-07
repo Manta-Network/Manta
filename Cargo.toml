@@ -18,66 +18,66 @@ repository = "https://github.com/chmldev/chameleon-network"
 version = "0.1.0"
 
 [workspace.dependencies]
-# Substrate primitives (crates.io latest stable versions)
-sp-api = { version = "39", default-features = false }
-sp-block-builder = { version = "39", default-features = false }
-sp-consensus-aura = { version = "0.45", default-features = false }
-sp-consensus-grandpa = { version = "26", default-features = false }
-sp-core = { version = "38", default-features = false }
-sp-inherents = { version = "39", default-features = false }
-sp-io = { version = "43", default-features = false }
-sp-offchain = { version = "39", default-features = false }
-sp-runtime = { version = "44", default-features = false }
-sp-session = { version = "41", default-features = false }
+# Substrate primitives (sp-*) - v28 family (edition 2021)
+sp-api = { version = "26", default-features = false }
+sp-block-builder = { version = "26", default-features = false }
+sp-consensus-aura = { version = "0.32", default-features = false }
+sp-consensus-grandpa = { version = "13", default-features = false }
+sp-core = { version = "28", default-features = false }
+sp-inherents = { version = "26", default-features = false }
+sp-io = { version = "30", default-features = false }
+sp-offchain = { version = "26", default-features = false }
+sp-runtime = { version = "31", default-features = false }
+sp-session = { version = "27", default-features = false }
 sp-std = { version = "14", default-features = false }
-sp-storage = { version = "22", default-features = false }
-sp-transaction-pool = { version = "39", default-features = false }
-sp-version = { version = "42", default-features = false }
-sp-genesis-builder = { version = "0.20", default-features = false }
-sp-blockchain = "42"
-sp-keyring = "44"
-sp-timestamp = "39"
-sp-consensus = "0.45"
+sp-storage = { version = "19", default-features = false }
+sp-transaction-pool = { version = "26", default-features = false }
+sp-version = { version = "29", default-features = false }
+sp-genesis-builder = { version = "0.7", default-features = false }
+sp-blockchain = "28"
+sp-keyring = "31"
+sp-timestamp = "26"
+sp-consensus = "0.32"
 
-# Frame dependencies (crates.io latest stable versions)
-frame-benchmarking = { version = "43", default-features = false }
-frame-executive = { version = "43", default-features = false }
-frame-support = { version = "43", default-features = false }
-frame-system = { version = "43", default-features = false }
-frame-system-benchmarking = { version = "43", default-features = false }
-frame-system-rpc-runtime-api = { version = "39", default-features = false }
-frame-try-runtime = { version = "0.49", default-features = false }
+# Frame dependencies - v28 family (edition 2021)
+frame-benchmarking = { version = "28", default-features = false }
+frame-executive = { version = "28", default-features = false }
+frame-support = { version = "28", default-features = false }
+frame-system = { version = "28", default-features = false }
+frame-system-benchmarking = { version = "28", default-features = false }
+frame-system-rpc-runtime-api = { version = "26", default-features = false }
+frame-try-runtime = { version = "0.34", default-features = false }
 
-# Pallets (crates.io latest stable versions)
-pallet-aura = { version = "42", default-features = false }
-pallet-assets = { version = "46", default-features = false }
-pallet-balances = { version = "44", default-features = false }
-pallet-grandpa = { version = "43", default-features = false }
-pallet-sudo = { version = "43", default-features = false }
-pallet-timestamp = { version = "42", default-features = false }
-pallet-transaction-payment = { version = "43", default-features = false }
-pallet-transaction-payment-rpc = "46"
-pallet-transaction-payment-rpc-runtime-api = { version = "43", default-features = false }
+# Pallets - v27-29 family (edition 2021)
+pallet-aura = { version = "27", default-features = false }
+pallet-assets = { version = "29", default-features = false }
+pallet-balances = { version = "28", default-features = false }
+pallet-grandpa = { version = "28", default-features = false }
+pallet-sudo = { version = "28", default-features = false }
+pallet-timestamp = { version = "27", default-features = false }
+pallet-transaction-payment = { version = "28", default-features = false }
+pallet-transaction-payment-rpc = "30"
+pallet-transaction-payment-rpc-runtime-api = { version = "28", default-features = false }
 
-# Service crates (crates.io latest stable versions - node dependencies)
-sc-cli = "0.55"
-sc-executor = "0.45"
-sc-service = "0.54"
-sc-telemetry = "30"
-sc-transaction-pool = "42"
-sc-transaction-pool-api = "42"
-sc-consensus-aura = "0.53"
-sc-consensus = "0.47"
-sc-consensus-grandpa = "0.38"
-sc-client-api = "42"
-sc-rpc-api = "0.52"
-sc-rpc = "48"
-sc-basic-authorship = "0.52"
-sc-offchain = "48"
-sc-network = "0.53"
-sc-network-sync = "0.52"
-substrate-frame-rpc-system = "47"
-substrate-wasm-builder = "29"
+# Service crates (sc-*) - v0.33-0.36 range (edition 2021)
+sc-cli = "0.36"
+sc-executor = "0.32"
+sc-service = "0.35"
+sc-telemetry = "15"
+sc-transaction-pool = "28"
+sc-transaction-pool-api = "28"
+sc-consensus-aura = "0.34"
+sc-consensus = "0.33"
+sc-consensus-grandpa = "0.19"
+sc-client-api = "28"
+sc-rpc-api = "0.33"
+sc-rpc = "29"
+sc-basic-authorship = "0.34"
+sc-offchain = "29"
+sc-network = "0.34"
+sc-network-sync = "0.33"
+substrate-frame-rpc-system = "28"
+substrate-wasm-builder = "17"
 substrate-build-script-utils = "11"
 
 # Custom pallets (local paths - keep as-is)
@@ -88,15 +88,15 @@ pallet-chameleon-staking = { path = "pallets/chameleon-staking", default-feature
 
 # External dependencies
 codec = { package = "parity-scale-codec", version = "3.6", default-features = false }
-scale-info = { version = "2.11", default-features = false, features = ["derive"] }
+scale-info = { version = "2.10", default-features = false, features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 hex-literal = "0.4"
 sha3 = { version = "0.10", default-features = false }
 log = { version = "0.4", default-features = false }
-clap = { version = "4.5", features = ["derive"] }
+clap = { version = "4.4", features = ["derive"] }
 futures = "0.3"
-jsonrpsee = { version = "0.24", features = ["server"] }
+jsonrpsee = { version = "0.16", features = ["server"] }
 
 [profile.release]
 panic = "unwind"
