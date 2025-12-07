@@ -35,16 +35,16 @@ std = [
 ]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.6", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.10", default-features = false, features = ["derive"] }
-frame-benchmarking = { version = "28", default-features = false, optional = true }
-frame-support = { version = "28", default-features = false }
-frame-system = { version = "28", default-features = false }
-sp-runtime = { version = "31", default-features = false }
-sp-std = { version = "14", default-features = false }
+frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0" }
+frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0" }
+frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0" }
+sp-runtime = { version = "24.0.0", default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0" }
+sp-std = { version = "8.0.0", default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0" }
 
 [dev-dependencies]
-sp-core = { version = "28", features = ["std"] }
-sp-io = { version = "30", features = ["std"] }
-pallet-balances = { version = "28", features = ["std"] }
-frame-system = { version = "28", features = ["std"] }
+sp-core = { version = "21.0.0", features = ["std"], git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0" }
+sp-io = { version = "23.0.0", features = ["std"], git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0" }
+pallet-balances = { version = "4.0.0-dev", features = ["std"], git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0" }
+frame-system = { version = "4.0.0-dev", features = ["std"], git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-v1.1.0" }
