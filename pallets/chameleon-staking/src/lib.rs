@@ -34,6 +34,7 @@ pub mod pallet {
         pallet_prelude::*,
         traits::{Currency, LockIdentifier, LockableCurrency, WithdrawReasons},
         weights::Weight,
+        RuntimeDebug,
     };
     use frame_system::pallet_prelude::*;
     use sp_runtime::{
