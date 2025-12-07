@@ -47,9 +47,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-solochain-
       
-      - name: Check Template Pallet
-        run: cargo check -p pallet-template
-      
       - name: Check Runtime (includes custom pallets)
         run: cargo check -p solochain-template-runtime
 
