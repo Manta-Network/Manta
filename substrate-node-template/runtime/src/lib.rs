@@ -45,6 +45,14 @@ pub mod opaque {
     pub type Hash = <BlakeTwo256 as HashT>::Output;
 }
 
+/// Runtime API module - re-exports needed by the node.
+pub mod apis {
+    use super::*;
+    
+    /// The type used for runtime API implementations.
+    pub type RuntimeApi = Runtime;
+}
+
 impl_opaque_keys! {
     pub struct SessionKeys {
         pub aura: Aura,
