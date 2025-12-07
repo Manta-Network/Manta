@@ -30,11 +30,11 @@ pallet-template.workspace = true
 pallet-timestamp.workspace = true
 pallet-transaction-payment-rpc-runtime-api.workspace = true
 pallet-transaction-payment.workspace = true
-# Chameleon custom pallets
-pallet-chameleon-mev.workspace = true
-pallet-chameleon-pdex.workspace = true
-pallet-chameleon-bridge.workspace = true
-pallet-chameleon-staking.workspace = true
+# Chameleon custom pallets (path dependencies, not workspace members)
+pallet-chameleon-mev = { path = "../../pallets/chameleon-mev", default-features = false }
+pallet-chameleon-pdex = { path = "../../pallets/chameleon-pdex", default-features = false }
+pallet-chameleon-bridge = { path = "../../pallets/chameleon-bridge", default-features = false }
+pallet-chameleon-staking = { path = "../../pallets/chameleon-staking", default-features = false }
 pallet-assets.workspace = true
 sha3.workspace = true
 sp-std.workspace = true
