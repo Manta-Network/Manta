@@ -73,8 +73,8 @@ substrate-wasm-builder = { version = "27", default-features = false }
 
 # Additional dependencies for custom pallets
 sha3 = { version = "0.10", default-features = false }
-sp-std = { version = "14.0.0", default-features = false }
-pallet-assets = { version = "41.0.0", default-features = false }
+sp-std = { version = "14", default-features = false }
+pallet-assets = { version = "42", default-features = false }
 
 [profile.release]
 opt-level = 3
