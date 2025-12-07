@@ -10,6 +10,10 @@ members = [
     "node",
     "pallets/template",
     "runtime",
+    "../pallets/chameleon-mev",
+    "../pallets/chameleon-pdex",
+    "../pallets/chameleon-bridge",
+    "../pallets/chameleon-staking",
 ]
 resolver = "2"
 
