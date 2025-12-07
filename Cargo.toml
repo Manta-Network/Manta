@@ -98,6 +98,10 @@ clap = { version = "4.5", features = ["derive"] }
 futures = "0.3"
 jsonrpsee = { version = "0.16", features = ["server"] }
 
+# Missing transitive dependencies for polkadot-sdk (sp-core -> bandersnatch_vrfs -> fflonk)
+fflonk = { git = "https://github.com/w3f/fflonk", branch = "master" }
+bandersnatch_vrfs = { git = "https://github.com/w3f/ring-vrf", rev = "e9782f9" }
+
 [profile.release]
 panic = "unwind"
 opt-level = 3
