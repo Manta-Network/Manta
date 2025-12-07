@@ -31,7 +31,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 const MAXIMUM_BLOCK_WEIGHT: frame_support::weights::Weight =
     frame_support::weights::Weight::from_parts(
         WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2),
-        polkadot_primitives::MAX_POV_SIZE as u64,
+        u64::MAX,
     );
 
 parameter_types! {
