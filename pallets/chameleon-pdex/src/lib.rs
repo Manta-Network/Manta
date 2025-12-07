@@ -36,6 +36,7 @@ pub mod pallet {
         traits::tokens::fungibles::{Inspect, Mutate},
         weights::Weight,
         PalletId,
+        RuntimeDebug,
     };
     use frame_system::pallet_prelude::*;
     use sp_runtime::{
