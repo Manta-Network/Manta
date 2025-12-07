@@ -83,7 +83,7 @@ pub mod pallet {
         fn default() -> Self { ValidatorStatus::Waiting }
     }
 
-    #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq, MaxEncodedLen)]
+    #[derive(Clone, Copy, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq, MaxEncodedLen)]
     pub enum SlashingOffense {
         ExtendedDowntime,
         DoubleSigning,
