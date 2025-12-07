@@ -44,7 +44,7 @@ sp-genesis-builder = { version = "=0.16.0", default-features = false }
 sp-inherents = { version = "=35.0.0", default-features = false }
 sp-io = { version = "=39.0.0", default-features = false }
 sp-keyring = { version = "=40.0.0", default-features = false }
-sp-runtime = { version = "=40.0.0", default-features = false }
+sp-runtime = { version = "=40.1.0", default-features = false }
 sp-timestamp = { version = "=35.0.0", default-features = false }
 substrate-frame-rpc-system = { version = "=42.0.0", default-features = false }
 substrate-build-script-utils = { version = "=11.0.0", default-features = false }
