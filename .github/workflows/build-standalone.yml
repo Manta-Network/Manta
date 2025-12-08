@@ -1,25 +1,18 @@
-name: Build Chameleon Node (Solochain Template)
+name: Build Substrate Template
 
 on:
   push:
     branches: [ develop, main ]
   pull_request:
-    branches: [ develop, main ]
-  workflow_dispatch:
-
-env:
-  CARGO_TERM_COLOR: always
-  RUST_BACKTRACE: 1
-
-defaults:
-  run:
-    working-directory: substrate-node-template
+    branches: [ develop ]
 
 jobs:
   check-template:
-    name: Check Template Compiles
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: template-final
+    
     steps:
       - uses: actions/checkout@v4
       
@@ -30,11 +23,9 @@ jobs:
           targets: wasm32-unknown-unknown
           components: rust-src
       
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y protobuf-compiler libclang-dev cmake
-      
+      - name: Install Protobuf
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler libclang-dev cmake
+        
       - name: Cache Cargo
         uses: actions/cache@v4
         with:
@@ -43,127 +34,19 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            substrate-node-template/target/
-          key: ${{ runner.os }}-cargo-solochain-${{ hashFiles('substrate-node-template/**/Cargo.toml') }}
+            template-final/target/
+          key: ${{ runner.os }}-cargo-template-${{ hashFiles('template-final/**/Cargo.toml') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-solochain-
-      
-      - name: Check Runtime (includes custom pallets)
-        run: cargo check -p solochain-template-runtime
-
-  build-runtime:
-    name: Build Runtime
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    needs: check-template
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-          targets: wasm32-unknown-unknown
-          components: rust-src
-      
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y protobuf-compiler libclang-dev cmake
-      
-      - name: Cache Cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            substrate-node-template/target/
-          key: ${{ runner.os }}-cargo-solochain-runtime-${{ hashFiles('substrate-node-template/**/Cargo.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-solochain-runtime-
-      
-      - name: Build Runtime
-        run: cargo build -p solochain-template-runtime --release
-      
-      - name: Upload Runtime WASM
+            ${{ runner.os }}-cargo-template-
+          
+      - name: Check Template Compiles
+        run: cargo check --release
+        
+      - name: Build Template
+        run: cargo build --release
+        
+      - name: Upload Binary
         uses: actions/upload-artifact@v4
         with:
-          name: runtime-wasm
-          path: substrate-node-template/target/release/wbuild/solochain-template-runtime/
-          retention-days: 7
-
-  build-node:
-    name: Build Node Binary
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    needs: build-runtime
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-          targets: wasm32-unknown-unknown
-          components: rust-src
-      
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y protobuf-compiler libclang-dev cmake
-      
-      - name: Cache Cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            substrate-node-template/target/
-          key: ${{ runner.os }}-cargo-solochain-node-${{ hashFiles('substrate-node-template/**/Cargo.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-solochain-node-
-      
-      - name: Build Node Binary
-        run: cargo build -p solochain-template-node --release
-      
-      - name: Upload Node Binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: chameleon-node-${{ github.sha }}
-          path: substrate-node-template/target/release/solochain-template-node
-          retention-days: 30
-
-  create-release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    needs: build-node
-    if: startsWith(github.ref, 'refs/tags/v')
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Download Node Binary
-        uses: actions/download-artifact@v4
-        with:
-          name: chameleon-node-${{ github.sha }}
-          path: ./release/
-      
-      - name: Download Runtime WASM
-        uses: actions/download-artifact@v4
-        with:
-          name: runtime-wasm
-          path: ./release/wasm/
-      
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            release/solochain-template-node
-            release/wasm/solochain_template_runtime.compact.compressed.wasm
-          draft: false
-          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: node-template
+          path: template-final/target/release/solochain-template-node
