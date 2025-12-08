@@ -82,3 +82,8 @@ codegen-units = 1
 inherits = "release"
 lto = true
 
+# Patch to fix sc-network-types::kad module issue
+# sc-network 0.49.x from crates.io has incompatible sc-network-types dependency
+[patch.crates-io]
+sc-network = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-stable2409" }
+sc-network-types = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-stable2409" }
