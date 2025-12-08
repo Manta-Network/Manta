@@ -1,0 +1,65 @@
+name: Release
+
+permissions:
+  contents: write
+  packages: write
+
+on:
+  release:
+    types: [released]
+
+jobs:
+  release-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # We've run into out-of-disk error when compiling Polkadot in the next step, so we free up some space this way.
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # 1.3.1
+        with:
+          android: true # This alone is a 12 GB save.
+          # We disable the rest because it caused some problems. (they're enabled by default)
+          # The Android removal is enough.
+          dotnet: false
+          haskell: false
+          large-packages: false
+          swap-storage: false
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+  
+  release-binaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust compilation prerequisites
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            protobuf-compiler
+          rustup target add wasm32-unknown-unknown
+          rustup component add rust-src
+
+      - name: Build the template
+        run: cargo build --locked --release
+        timeout-minutes: 90
+
+      - name: Upload the binaries
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target/release/solochain-template-node
+            target/release/wbuild/solochain-template-runtime/solochain_template_runtime.compact.compressed.wasm

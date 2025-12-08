@@ -1,0 +1,15 @@
+name: Install Ubuntu dependencies
+description: Installs dependencies required to compile the template in Ubuntu
+
+runs:
+  using: "composite"
+  steps:
+    - name: Rust compilation prerequisites (Ubuntu)
+      if: contains(matrix.os, 'ubuntu')
+      run: |
+        sudo apt update
+        sudo apt install -y \
+          protobuf-compiler
+        rustup target add wasm32-unknown-unknown
+        rustup component add rustfmt clippy rust-src
+      shell: bash

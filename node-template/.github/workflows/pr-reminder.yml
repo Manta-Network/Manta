@@ -1,0 +1,24 @@
+name: PR Reminder
+
+permissions:
+  pull-requests: write
+
+on:
+  pull_request:
+    types:
+      - opened
+
+jobs:
+  pr-reminder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment a reminder on a new PR
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Hello, this is an automatic reminder that any code changes should be made to [the source](https://github.com/paritytech/polkadot-sdk/tree/master/templates/solochain).'
+            })
