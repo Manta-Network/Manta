@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: template-final
+        working-directory: node-template
     
     steps:
       - name: Checkout code
@@ -34,8 +34,8 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            template-final/target/
-          key: ${{ runner.os }}-cargo-template-${{ hashFiles('template-final/**/Cargo.lock') }}
+            node-template/target/
+          key: ${{ runner.os }}-cargo-template-${{ hashFiles('node-template/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-template-
           
@@ -49,5 +49,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: chameleon-node
-          path: template-final/target/release/node-template
+          path: node-template/target/release/solochain-template-node
           retention-days: 7
