@@ -7,27 +7,27 @@ on:
     branches: [ develop ]
 
 jobs:
-  check-template:
+  build-template:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: template-final
     
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
       
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
-          targets: wasm32-unknown-unknown
-          components: rust-src
-      
-      - name: Install Protobuf
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler libclang-dev cmake
+          target: wasm32-unknown-unknown
+          
+      - name: Install Protobuf compiler
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
         
-      - name: Cache Cargo
-        uses: actions/cache@v4
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
@@ -35,18 +35,19 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             template-final/target/
-          key: ${{ runner.os }}-cargo-template-${{ hashFiles('template-final/**/Cargo.toml') }}
+          key: ${{ runner.os }}-cargo-template-${{ hashFiles('template-final/**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-template-
           
-      - name: Check Template Compiles
+      - name: Check template compiles
         run: cargo check --release
         
-      - name: Build Template
+      - name: Build node binary
         run: cargo build --release
         
-      - name: Upload Binary
-        uses: actions/upload-artifact@v4
+      - name: Upload node binary artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: node-template
-          path: template-final/target/release/solochain-template-node
+          name: chameleon-node
+          path: template-final/target/release/node-template
+          retention-days: 7
