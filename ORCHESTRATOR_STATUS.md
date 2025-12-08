@@ -3,7 +3,7 @@
 **Orchestrator:** AI Agent Coordinator  
 **Current Phase:** Week 5 - Contabo Build & Deployment  
 **Status:** ✅ Ready for Contabo build (Iteration 39 Complete)  
-**Target:** Public Testnet Launch (Week 11)  
+**Target:** Public Testnet Launch (Week 15)  
 **Last Updated:** December 8, 2025  
 **Next Milestone:** 5-validator devnet operational
 
@@ -28,6 +28,7 @@ After 39 iterations attempting to build Substrate via GitHub Actions, we've adop
 | Metric | Value |
 |--------|-------|
 | **Current Week** | 5 of 16 |
+| **Overall Progress** | ~31% |
 | **Timeline** | ✅ ON TRACK |
 | **Blockers** | None |
 | **Build Strategy** | Contabo server (local builds) |
@@ -108,31 +109,58 @@ After 39 iterations attempting to build Substrate via GitHub Actions, we've adop
 
 ---
 
-## 📅 TIMELINE
+## 📅 16-WEEK ROADMAP
 
-### Completed Phases
+### Phase 1: Foundation (Weeks 1-6)
 
-| Week | Phase | Status |
-|------|-------|--------|
-| 1 | Foundation (repo, tokenomics, pallets) | ✅ Complete |
-| 2 | Feature Implementation (MEV, pDEX, Bridge, Staking) | ✅ Complete |
-| 3 | Chain Spec & Infrastructure Planning | ✅ Complete |
-| 4-5 | Build Strategy Resolution (39 iterations) | ✅ Complete |
+| Week | Milestone | Status |
+|------|-----------|--------|
+| 1 | Repository fork, token constants, chain spec | ✅ Complete |
+| 2 | Genesis configuration, validator stake requirements | ✅ Complete |
+| 3 | Emission schedule, validator reward distribution | ✅ Complete |
+| 4 | Staking mechanism, slashing conditions | ✅ Complete |
+| 5 | **Local devnet deployment (5 validators)** | 🟡 In Progress |
+| 6 | zkSNARK integration, privacy transaction testing | ⏳ Pending |
 
-### Current & Upcoming
+**Phase 1 Deliverable:** Functional local devnet with privacy transactions and staking
 
-| Week | Phase | Status |
-|------|-------|--------|
-| 5 | Contabo Build & Devnet Launch | 🟡 In Progress |
-| 6 | Mobile Wallet RPC Integration | ⏳ Pending |
-| 7-10 | Feature Development & Testing | ⏳ Pending |
-| 11 | **Public Testnet Launch** | 🎯 Target |
+### Phase 2: Core Features (Weeks 7-10)
+
+| Week | Milestone | Status |
+|------|-----------|--------|
+| 7 | Mobile wallet MVP (React Native setup, seed management) | ⏳ Pending |
+| 8 | pDEX liquidity pools, basic swap functionality | ⏳ Pending |
+| 9 | MEV protection implementation, encrypted mempool testing | ⏳ Pending |
+| 10 | Ethereum bridge (testnet), wETH wrapping/unwrapping | ⏳ Pending |
+
+**Phase 2 Deliverable:** Mobile wallet beta + pDEX + ETH bridge on devnet
+
+### Phase 3: Testnet Preparation (Weeks 11-14)
+
+| Week | Milestone | Status |
+|------|-----------|--------|
+| 11 | Internal security audit, vulnerability fixes | ⏳ Pending |
+| 12 | Testnet infrastructure (30 genesis validators), block explorer | ⏳ Pending |
+| 13 | Mobile wallet beta program (100 users), bug fixes | ⏳ Pending |
+| 14 | Final testnet preparations, documentation and guides | ⏳ Pending |
+
+**Phase 3 Deliverable:** Ready for public testnet launch
+
+### Phase 4: Public Testnet (Weeks 15-16+)
+
+| Week | Milestone | Status |
+|------|-----------|--------|
+| 15 | **🚀 Public testnet launch**, community onboarding | 🎯 Target |
+| 16 | Stress testing, performance monitoring, issue resolution | ⏳ Pending |
+| 17+ | Bug bounty program (500K CHML), external security audits | ⏳ Pending |
+
+**Phase 4 Deliverable:** Battle-tested testnet ready for mainnet
 
 ### Timeline Analysis
-- **Original Buffer:** 7 weeks (Week 4 → Week 11)
+- **Original Buffer:** 10 weeks (Week 5 → Week 15)
 - **Used:** 2 weeks (build strategy resolution)
-- **Remaining:** 5 weeks
-- **Required:** 4 weeks
+- **Remaining:** 8 weeks
+- **Required:** ~6 weeks
 - **Status:** ✅ ON TRACK
 
 ---
@@ -172,7 +200,7 @@ Substrate's 500+ crate dependency graph exposes CI containerization limitations.
 
 ---
 
-## 🛠️ NEW BUILD WORKFLOW
+## 🛠️ BUILD WORKFLOW
 
 ### Development Cycle
 
@@ -222,18 +250,24 @@ bash /root/chameleon-network/scripts/deploy-to-do.sh
 - [ ] Verify 6-second block production
 
 ### Week 6
-- [ ] Begin mobile wallet RPC integration
-- [ ] Test wallet connection to devnet
-- [ ] Implement transaction signing
+- [ ] zkSNARK integration (from Manta)
+- [ ] Privacy transaction testing
+- [ ] Validate privacy guarantees
 
-### Weeks 7-10
-- [ ] Feature development per roadmap
-- [ ] Testing and optimization
-- [ ] Documentation
-- [ ] Security review
+### Week 7
+- [ ] Begin mobile wallet MVP
+- [ ] Wallet creation and seed management
+- [ ] Basic send/receive functionality
 
-### Week 11
-- [ ] **Public testnet launch** 🎯
+### Weeks 8-14
+- [ ] pDEX liquidity pools and swaps
+- [ ] MEV protection testing
+- [ ] Ethereum bridge implementation
+- [ ] Security audits and testing
+- [ ] Mobile wallet beta program
+
+### Week 15
+- [ ] **🚀 Public testnet launch**
 
 ---
 
@@ -244,6 +278,8 @@ bash /root/chameleon-network/scripts/deploy-to-do.sh
 | Contabo build fails | Low | Official template proven to work locally |
 | Deployment issues | Low | Scripts tested, rollback ready |
 | Validator sync problems | Low | 5 validators provide redundancy |
+| zkSNARK integration complexity | Medium | Reuse Manta's proven circuits |
+| Mobile wallet delays | Medium | Core devnet priority, wallet can follow |
 
 ---
 
@@ -265,6 +301,10 @@ bash /root/chameleon-network/scripts/deploy-to-do.sh
 │   ├── contabo-build.sh    # Build script for Contabo
 │   ├── deploy-to-do.sh     # Deploy to DigitalOcean
 │   └── BUILD_ON_CONTABO.md # Workflow documentation
+├── chameleon-docs/         # Project documentation
+│   ├── product_requirements.md
+│   ├── devnet_milestones.md
+│   └── tokenomics.md
 └── .github/workflows/      # Disabled (5 lightweight workflows remain)
 ```
 
@@ -279,25 +319,26 @@ bash /root/chameleon-network/scripts/deploy-to-do.sh
 - ✅ Build workflow established
 - ✅ 39 iterations of learning documented
 
-### Pending
-- ⏳ First successful Contabo build
-- ⏳ Devnet producing blocks
-- ⏳ Mobile wallet connected
-- ⏳ Public testnet launch (Week 11)
+### Phase 1 Success Criteria (Week 6)
+- ⏳ 5 validator nodes running for 72+ hours continuously
+- ⏳ 1,000+ test transactions processed successfully
+- ⏳ Privacy transactions working (zkSNARK proofs valid)
+- ⏳ Staking rewards distributed correctly
 
----
+### Phase 2 Success Criteria (Week 10)
+- ⏳ Mobile wallet creates/imports seeds successfully
+- ⏳ Users can send/receive CHML on mobile
+- ⏳ pDEX swaps execute with <5 second confirmation
+- ⏳ ETH bridge successfully transfers testnet ETH
 
-## 🦎 PHILOSOPHY
-
-> "The goal is not to never fail. The goal is to fail fast, learn, and adapt."
-
-39 iterations weren't wasted—they were systematic exploration that proved what works and what doesn't. The real failure would have been continuing indefinitely without recognizing the pattern.
-
-**We chose pragmatism.**
+### Testnet Success Criteria (Week 15)
+- ⏳ 1,000+ unique wallet addresses created
+- ⏳ 100+ community validators online
+- ⏳ 10,000+ transactions processed
+- ⏳ Network uptime >99.5%
 
 ---
 
 **Last Updated by:** Orchestrator Agent  
 **Update Date:** December 8, 2025  
-**Next Update:** After first successful Contabo build  
-**Status:** 🦎 Ready to ship this devnet.
+**Next Update:** After first successful Contabo build
