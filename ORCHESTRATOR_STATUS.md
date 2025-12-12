@@ -17,7 +17,8 @@ After 39 iterations attempting to build Substrate via GitHub Actions, we've adop
 - ✅ Build scripts created (`contabo-build.sh`, `deploy-to-do.sh`)
 - ✅ GitHub Actions workflows disabled (proven unreliable for Substrate)
 - ✅ Infrastructure ready (Contabo build server + 2 DigitalOcean droplets)
-- ⏳ Awaiting first Contabo build
+- ✅ **Binary built on Contabo** (solochain-template-node, 73MB, ~40 min build)
+- ✅ **RPC node deployed and operational** (http://64.23.233.36:9933)
 
 **New Workflow:** Emergent (edit code) → GitHub (version control) → Contabo (build) → DigitalOcean (deploy)
 
