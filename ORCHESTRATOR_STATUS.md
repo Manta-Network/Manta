@@ -244,30 +244,26 @@ bash /root/chameleon-network/scripts/deploy-to-do.sh
 
 ## 🎯 NEXT STEPS
 
-### Immediate (Today)
-- [ ] Push scripts to GitHub
-- [ ] SSH to Contabo
-- [ ] Run `bash scripts/contabo-build.sh`
-- [ ] Run `bash scripts/deploy-to-do.sh`
-- [ ] Start validators on DigitalOcean
-- [ ] Verify 6-second block production
-
-### Week 6
-- [ ] zkSNARK integration (from Manta)
-- [ ] Privacy transaction testing
-- [ ] Validate privacy guarantees
+### Immediate (Week 6)
+- [ ] Begin mobile wallet RPC integration
+- [ ] Connect wallet to `http://64.23.233.36:9933`
+- [ ] Test balance queries and transaction submission
+- [ ] Implement wallet creation and seed management
 
 ### Week 7
-- [ ] Begin mobile wallet MVP
-- [ ] Wallet creation and seed management
+- [ ] Complete mobile wallet MVP
 - [ ] Basic send/receive functionality
+- [ ] Transaction history display
 
-### Weeks 8-14
+### Weeks 8-10
 - [ ] pDEX liquidity pools and swaps
 - [ ] MEV protection testing
 - [ ] Ethereum bridge implementation
+
+### Weeks 11-14
 - [ ] Security audits and testing
 - [ ] Mobile wallet beta program
+- [ ] Full validator network deployment
 
 ### Week 15
 - [ ] **🚀 Public testnet launch**
