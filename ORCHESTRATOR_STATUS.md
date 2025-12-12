@@ -28,18 +28,20 @@ After 39 iterations attempting to build Substrate via GitHub Actions, we've adop
 
 | Metric | Value |
 |--------|-------|
-| **Current Week** | 5 of 16 |
-| **Overall Progress** | ~31% |
+| **Current Week** | 5 of 16 (Complete) |
+| **Overall Progress** | ~35% |
 | **Timeline** | ✅ ON TRACK |
 | **Blockers** | None |
 | **Build Strategy** | Contabo server (local builds) |
-| **Iterations Completed** | 39 (GitHub Actions era concluded) |
+| **Iterations Completed** | 40 (Build + Deploy successful) |
 
-**Immediate Focus:**
-1. SSH to Contabo and run `bash scripts/contabo-build.sh`
-2. Deploy binary to DigitalOcean droplets
-3. Start 5-validator devnet
-4. Verify 6-second block production
+**Week 5 Achievements:**
+- ✅ Binary built on Contabo using polkadot-sdk-solochain-template
+- ✅ Deployed to DigitalOcean via SCP (`/usr/local/bin/chameleon-node`)
+- ✅ RPC endpoint operational: `http://64.23.233.36:9933` (HTTP) / `ws://64.23.233.36:9944` (WS)
+- ✅ Producing blocks every 6 seconds
+
+**Decision:** Single RPC node sufficient for Week 6 mobile wallet integration. Full 5-validator network deferred (requires custom chain spec).
 
 ---
 
