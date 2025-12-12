@@ -122,8 +122,8 @@ After 39 iterations attempting to build Substrate via GitHub Actions, we've adop
 | 2 | Genesis configuration, validator stake requirements | ✅ Complete |
 | 3 | Emission schedule, validator reward distribution | ✅ Complete |
 | 4 | Staking mechanism, slashing conditions | ✅ Complete |
-| 5 | **Local devnet deployment (5 validators)** | 🟡 In Progress |
-| 6 | zkSNARK integration, privacy transaction testing | ⏳ Pending |
+| 5 | **Devnet deployment (RPC node operational)** | ✅ Complete |
+| 6 | Mobile wallet RPC integration | 🟡 Ready to Start |
 
 **Phase 1 Deliverable:** Functional local devnet with privacy transactions and staking
 
