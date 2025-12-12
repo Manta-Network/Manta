@@ -181,7 +181,8 @@ After exhaustive testing, we proved that **GitHub Actions cannot reliably build 
 | Git Dependencies | 1-13 | polkadot-sdk git branches | ❌ fflonk, bandersnatch errors |
 | Crates.io Versions | 14-37 | Published crate versions | ❌ edition2024, version conflicts |
 | Official Template | 38 | Parity's solochain-template | ❌ sc-network-types::kad error |
-| **Acceptance** | 39 | Pivot to Contabo builds | ✅ Success |
+| **Contabo Pivot** | 39 | Scripts for local builds | ✅ Strategy defined |
+| **Build + Deploy** | 40 | Contabo build, DO deploy | ✅ RPC operational |
 
 ### Root Cause
 
