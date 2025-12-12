@@ -54,10 +54,10 @@ After 39 iterations attempting to build Substrate via GitHub Actions, we've adop
 
 ### Deployment Targets (DigitalOcean)
 
-| Droplet | Location | IP Address | Role |
-|---------|----------|------------|------|
-| Droplet 1 | NYC3 | 104.131.167.75 | 3 validators (Alice, Bob, Charlie) |
-| Droplet 2 | SFO3 | 64.23.233.36 | 2 validators (Dave, Eve) + RPC node |
+| Droplet | Location | IP Address | Role | Status |
+|---------|----------|------------|------|--------|
+| Droplet 1 | NYC3 | 104.131.167.75 | Validators (future) | 🟡 Ready |
+| Droplet 2 | SFO3 | 64.23.233.36 | **RPC Node** | ✅ Operational |
 
 **Specs:** 2GB RAM, 1 vCPU, 50GB SSD each  
 **Cost:** $96/month total
