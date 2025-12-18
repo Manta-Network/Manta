@@ -126,7 +126,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
       const walletState = await walletService.importDevAccount(accountName);
       
       // Get the mnemonic for the dev account
-      const mnemonic = walletService.DEV_ACCOUNTS[accountName];
+      const mnemonic = DEV_ACCOUNTS[accountName];
       
       // Save to secure storage
       await storageService.saveEncryptedSeed(mnemonic);
