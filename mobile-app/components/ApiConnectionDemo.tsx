@@ -4,12 +4,12 @@
 
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Alert } from 'react-native';
-import { Button } from '@gluestack-ui/button';
-import { Input, InputField } from '@gluestack-ui/input';
-import { VStack } from '@gluestack-ui/vstack';
-import { HStack } from '@gluestack-ui/hstack';
-import { Card } from '@gluestack-ui/card';
-import { Spinner } from '@gluestack-ui/spinner';
+import { Button } from '@/components/ui/button';
+import { Input, InputField } from '@/components/ui/input';
+import { VStack } from '@/components/ui/vstack';
+import { HStack } from '@/components/ui/hstack';
+import { Card } from '@/components/ui/card';
+import { Spinner } from '@/components/ui/spinner';
 import { useApi } from '../hooks/useApi';
 import { useBalance } from '../hooks/useBalance';
 import { NetworkBadge, NetworkBadgeFull } from './NetworkBadge';
