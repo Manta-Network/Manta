@@ -130,8 +130,8 @@ class TransactionService {
             let errorMessage = 'Transaction failed';
             if (errorEvent) {
               const [dispatchError] = errorEvent.event.data;
-              if (dispatchError.isModule) {
-                const decoded = api.registry.findMetaError(dispatchError.asModule);
+              if ((dispatchError as any).isModule) {
+                const decoded = api.registry.findMetaError((dispatchError as any).asModule);
                 errorMessage = `${decoded.section}.${decoded.name}: ${decoded.docs.join(' ')}`;
               }
             }
