@@ -199,7 +199,8 @@ class ChainService {
 
     let unsubscribe: (() => void) | null = null;
 
-    api.query.system.account(address, ({ data: balance }) => {
+    api.query.system.account(address, (account: any) => {
+      const balance = account.data;
       const free = balance.free.toString();
       const reserved = balance.reserved.toString();
       const frozen = balance.frozen.toString();
