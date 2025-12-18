@@ -314,6 +314,18 @@ bash /root/chameleon-network/scripts/deploy-to-do.sh
 │   ├── chameleon-pdex/
 │   ├── chameleon-bridge/
 │   └── chameleon-staking/
+├── mobile-app/             # React Native mobile wallet (Week 6)
+│   ├── app/                # Expo Router screens
+│   │   ├── (tabs)/         # Tab navigation (wallet, connect, etc.)
+│   │   ├── send.tsx        # Send CHML screen
+│   │   ├── receive.tsx     # Receive/QR code screen
+│   │   ├── create-wallet.tsx
+│   │   └── import-wallet.tsx
+│   ├── services/           # API, chain, wallet, transaction services
+│   ├── hooks/              # useApi, useBalance React hooks
+│   ├── components/         # NetworkBadge, QRCode, TransactionStatus
+│   ├── context/            # WalletContext for global state
+│   └── config/             # Network configuration
 ├── scripts/
 │   ├── contabo-build.sh    # Build script for Contabo
 │   ├── deploy-to-do.sh     # Deploy to DigitalOcean
