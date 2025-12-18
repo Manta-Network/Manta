@@ -114,7 +114,7 @@ class ChainService {
         ext => ext.method.section === 'timestamp' && ext.method.method === 'set'
       );
       if (timestampExtrinsic) {
-        timestamp = timestampExtrinsic.method.args[0].toNumber();
+        timestamp = (timestampExtrinsic.method.args[0] as any).toNumber();
       }
     } catch (error) {
       console.warn('Could not get block timestamp:', error);
