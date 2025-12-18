@@ -263,16 +263,15 @@ bash /root/chameleon-network/scripts/deploy-to-do.sh
 
 ## 🎯 NEXT STEPS
 
-### Immediate (Week 6)
-- [ ] Begin mobile wallet RPC integration
-- [ ] Connect wallet to `http://64.23.233.36:9933`
-- [ ] Test balance queries and transaction submission
-- [ ] Implement wallet creation and seed management
+### Immediate (Week 6 Completion)
+- [ ] User testing of mobile wallet on device/simulator
+- [ ] Bug fixes and polish based on testing feedback
+- [ ] Final validation of send/receive with dev accounts
 
 ### Week 7
-- [ ] Complete mobile wallet MVP
-- [ ] Basic send/receive functionality
+- [ ] Complete mobile wallet MVP release
 - [ ] Transaction history display
+- [ ] Additional error handling and edge cases
 
 ### Weeks 8-10
 - [ ] pDEX liquidity pools and swaps
