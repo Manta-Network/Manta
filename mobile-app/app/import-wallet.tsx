@@ -194,7 +194,7 @@ const ImportWalletScreen = () => {
           <View className="bg-[#1B1B1B] rounded-xl p-4 mb-8">
             <Text className="text-[#CDCDE0] text-sm mb-2">Wallet Address Preview:</Text>
             <Text className="text-white font-mono text-base">
-              {formatAddress(addressPreview)}
+              {formatAddressForPreview(addressPreview)}
             </Text>
           </View>
         )}
