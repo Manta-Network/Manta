@@ -241,15 +241,21 @@ class ChainService {
 
     let unsubscribe: (() => void) | null = null;
 
-    api.rpc.chain.subscribeNewHeads((header) => {
-      callback({
-        number: header.number.toNumber(),
-        hash: header.hash.toString(),
-        parentHash: header.parentHash.toString(),
-      });
-    }).then((unsub) => {
-      unsubscribe = unsub;
-    }).catch(console.error);
+    // Use async/await for subscription
+    (async () => {
+      try {
+        const unsub = await api.rpc.chain.subscribeNewHeads((header: any) => {
+          callback({
+            number: header.number.toNumber(),
+            hash: header.hash.toString(),
+            parentHash: header.parentHash.toString(),
+          });
+        });
+        unsubscribe = unsub as any;
+      } catch (error) {
+        console.error('Error subscribing to blocks:', error);
+      }
+    })();
 
     return () => {
       if (unsubscribe) {
