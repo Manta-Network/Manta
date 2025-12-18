@@ -120,6 +120,14 @@ After 39 iterations attempting to build Substrate via GitHub Actions, we've adop
 - `scripts/deploy-to-do.sh` - Deploy to DigitalOcean
 - `scripts/BUILD_ON_CONTABO.md` - Complete workflow documentation
 
+### Mobile Wallet (Week 6)
+- **Codebase:** `/app/mobile-app/` (Expo SDK 52, TypeScript, Gluestack UI)
+- **RPC Services:** `services/api.ts`, `services/chain.ts`, `services/transaction.ts`
+- **Wallet Services:** `services/wallet.ts`, `services/storage.ts`
+- **React Hooks:** `useApi`, `useBalance` for real-time data
+- **Screens:** Wallet tab, Create/Import wallet, Send, Receive
+- **Components:** NetworkBadge (DEVNET indicator), QRCode, TransactionStatus
+
 ---
 
 ## 📅 16-WEEK ROADMAP
