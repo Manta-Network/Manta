@@ -19,7 +19,7 @@ import { useWallet } from '../../context/WalletContext';
 import { useBalance } from '../../hooks/useBalance';
 import { useApi } from '../../hooks/useApi';
 import { NetworkBadge } from '../../components/NetworkBadge';
-import { formatAddress } from '../../utils/address';
+import { truncateAddress } from '../../utils/address';
 
 const WalletScreen = () => {
   const router = useRouter();
