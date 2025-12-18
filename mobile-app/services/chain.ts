@@ -137,7 +137,8 @@ class ChainService {
       throw new Error('API not connected');
     }
 
-    const { data: balance } = await api.query.system.account(address);
+    const account = await api.query.system.account(address);
+    const balance = (account as any).data;
     
     const free = balance.free.toString();
     const reserved = balance.reserved.toString();
