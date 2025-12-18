@@ -119,18 +119,35 @@ className={`h-[2px] w-[40px] ${focused ? 'bg-[#23DE2B]' : 'bg-transparent'}`}
 
 
 
-        {/* More (Only opens Drawer, no content displayed) */}
+        {/* Wallet */}
         <Tabs.Screen
-          name="explore"
+          name="wallet"
           options={{
-            title: 'Explore',
+            title: 'Wallet',
             tabBarIcon: ({ color, focused }) => (
               <View className='flex-column items-center gap-0  w-100%'>
               <View
   className={`h-[2px] w-[40px] ${focused ? 'bg-[#23DE2B]' : 'bg-transparent'}`}
 />
-                <FontAwesome5 name="compass" paddingTop={3} size={26} color={color} />
-                <Text className={`${focused ? 'text-[#18bb59] block' : 'text-[#CDCDE0] hidden'} text-[11px] text-center font-poppins w-[100%] }`} numberOfLines={1}>Explore</Text>
+                <Ionicons name="wallet" paddingTop={3} size={26} color={color} />
+                <Text className={`${focused ? 'text-[#18bb59] block' : 'text-[#CDCDE0] hidden'} text-[11px] text-center font-poppins w-[100%] }`} numberOfLines={1}>Wallet</Text>
+              </View>
+            ),
+          }}
+        />
+
+        {/* More (Only opens Drawer, no content displayed) */}
+        <Tabs.Screen
+          name="explore"
+          options={{
+            title: 'More',
+            tabBarIcon: ({ color, focused }) => (
+              <View className='flex-column items-center gap-0  w-100%'>
+              <View
+  className={`h-[2px] w-[40px] ${focused ? 'bg-[#23DE2B]' : 'bg-transparent'}`}
+/>
+                <Ionicons name="ellipsis-horizontal" paddingTop={3} size={26} color={color} />
+                <Text className={`${focused ? 'text-[#18bb59] block' : 'text-[#CDCDE0] hidden'} text-[11px] text-center font-poppins w-[100%] }`} numberOfLines={1}>More</Text>
               </View>
             ),
           }}
