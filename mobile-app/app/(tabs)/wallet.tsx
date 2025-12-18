@@ -161,7 +161,7 @@ const WalletScreen = () => {
         <View className="flex-row gap-4 mb-8">
           <TouchableOpacity
             className="flex-1 bg-[#18BB59] rounded-xl py-4 px-6"
-            onPress={() => Alert.alert('Coming Soon', 'Send functionality will be available in Phase 3')}
+            onPress={() => router.push('/send')}
           >
             <Text className="text-white text-center text-lg font-semibold">
               Send
@@ -170,7 +170,7 @@ const WalletScreen = () => {
 
           <TouchableOpacity
             className="flex-1 border border-[#18BB59] rounded-xl py-4 px-6"
-            onPress={() => Alert.alert('Coming Soon', 'Receive functionality will be available in Phase 3')}
+            onPress={() => router.push('/receive')}
           >
             <Text className="text-[#18BB59] text-center text-lg font-semibold">
               Receive
