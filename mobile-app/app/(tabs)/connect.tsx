@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, TouchableOpacity, View, Text, Image } from 'react-native';
 import { Linking } from 'react-native';
 import CustomCard from '@/components/CustomCard';
