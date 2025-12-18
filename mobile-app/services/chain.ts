@@ -121,7 +121,7 @@ class ChainService {
     }
 
     return {
-      number: header.number.toNumber(),
+      number: (header.number as any).toNumber(),
       hash: hash.toString(),
       parentHash: header.parentHash.toString(),
       timestamp,
