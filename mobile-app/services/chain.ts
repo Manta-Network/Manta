@@ -199,22 +199,28 @@ class ChainService {
 
     let unsubscribe: (() => void) | null = null;
 
-    api.query.system.account(address, (account: any) => {
-      const balance = account.data;
-      const free = balance.free.toString();
-      const reserved = balance.reserved.toString();
-      const frozen = balance.frozen.toString();
-      const total = new BN(free).add(new BN(reserved)).toString();
+    // Use async/await for subscription
+    (async () => {
+      try {
+        const unsub = await api.query.system.account(address, (account: any) => {
+          const balance = account.data;
+          const free = balance.free.toString();
+          const reserved = balance.reserved.toString();
+          const frozen = balance.frozen.toString();
+          const total = new BN(free).add(new BN(reserved)).toString();
 
-      callback({
-        free,
-        reserved,
-        frozen,
-        total,
-      });
-    }).then((unsub) => {
-      unsubscribe = unsub;
-    }).catch(console.error);
+          callback({
+            free,
+            reserved,
+            frozen,
+            total,
+          });
+        });
+        unsubscribe = unsub as any;
+      } catch (error) {
+        console.error('Error subscribing to balance:', error);
+      }
+    })();
 
     // Return unsubscribe function
     return () => {
