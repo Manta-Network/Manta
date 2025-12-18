@@ -123,7 +123,7 @@ const WalletScreen = () => {
         <View className="mb-8">
           <View className="flex-row items-center justify-between bg-[#1B1B1B] rounded-xl p-4">
             <Text className="text-white text-base font-mono flex-1 mr-3">
-              {formatAddress(wallet!.address)}
+              {truncateAddress(wallet!.address)}
             </Text>
             <TouchableOpacity
               onPress={handleCopyAddress}
