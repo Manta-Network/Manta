@@ -3,7 +3,7 @@
  */
 
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
-import { walletService, type WalletState } from '../services/wallet';
+import { walletService, type WalletState, DEV_ACCOUNTS } from '../services/wallet';
 import { storageService } from '../services/storage';
 
 interface WalletContextType {
