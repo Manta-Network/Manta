@@ -87,9 +87,9 @@ class ChainService {
       name: name.toString(),
       version: version.toString(),
       properties: {
-        ss58Format: properties.ss58Format.unwrapOr(new BN(42)).toNumber(),
-        tokenDecimals: properties.tokenDecimals.unwrapOr([new BN(18)]).map(d => d.toNumber()),
-        tokenSymbol: properties.tokenSymbol.unwrapOr(['CHML']).map(s => s.toString()),
+        ss58Format: (properties as any).ss58Format?.unwrapOr(new BN(42))?.toNumber() || 42,
+        tokenDecimals: (properties as any).tokenDecimals?.unwrapOr([new BN(18)])?.map((d: any) => d.toNumber()) || [18],
+        tokenSymbol: (properties as any).tokenSymbol?.unwrapOr(['CHML'])?.map((s: any) => s.toString()) || ['CHML'],
       },
     };
   }
