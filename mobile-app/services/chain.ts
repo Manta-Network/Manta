@@ -62,9 +62,9 @@ class ChainService {
     const health = await api.rpc.system.health();
     
     return {
-      peers: health.peers.toNumber(),
-      isSyncing: health.isSyncing.isTrue,
-      shouldHavePeers: health.shouldHavePeers.isTrue,
+      peers: (health.peers as any).toNumber(),
+      isSyncing: (health.isSyncing as any).isTrue,
+      shouldHavePeers: (health.shouldHavePeers as any).isTrue,
     };
   }
 
