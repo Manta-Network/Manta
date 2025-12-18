@@ -67,6 +67,8 @@
     "expo-symbols": "~0.2.0",
     "expo-system-ui": "~4.0.6",
     "expo-web-browser": "~14.0.1",
+    "expo-secure-store": "~13.0.0",
+    "expo-clipboard": "~6.0.0",
     "nativewind": "^4.1.23",
     "react": "18.3.1",
     "react-dom": "18.3.1",
