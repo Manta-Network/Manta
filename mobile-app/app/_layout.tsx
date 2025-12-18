@@ -32,12 +32,18 @@ export default function RootLayout() {
   }
 
   return (
-    <GluestackUIProvider mode="dark"><ThemeProvider value={colorScheme === 'dark' ? DarkTheme :DarkTheme}>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false}} />
-              <Stack.Screen name="+not-found" />
-            </Stack>
-            <StatusBar style="auto" />
-          </ThemeProvider></GluestackUIProvider>
+    <GluestackUIProvider mode="dark">
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DarkTheme}>
+        <WalletProvider>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false}} />
+            <Stack.Screen name="create-wallet" options={{ headerShown: false}} />
+            <Stack.Screen name="import-wallet" options={{ headerShown: false}} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+          <StatusBar style="auto" />
+        </WalletProvider>
+      </ThemeProvider>
+    </GluestackUIProvider>
   );
 }
