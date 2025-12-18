@@ -1,11 +1,15 @@
 // Simple test to verify wallet functionality
-const { mnemonicGenerate, mnemonicValidate } = require('@polkadot/util-crypto');
+const { mnemonicGenerate, mnemonicValidate, cryptoWaitReady } = require('@polkadot/util-crypto');
 const { Keyring } = require('@polkadot/keyring');
 
 async function testWallet() {
   console.log('Testing wallet functionality...');
   
   try {
+    // Wait for crypto initialization
+    await cryptoWaitReady();
+    console.log('✅ Crypto initialized');
+    
     // Test mnemonic generation
     const mnemonic = mnemonicGenerate(12);
     console.log('✅ Generated mnemonic:', mnemonic);
