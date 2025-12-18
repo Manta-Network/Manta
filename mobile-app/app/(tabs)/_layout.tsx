@@ -6,6 +6,7 @@ import Entypo from '@expo/vector-icons/Entypo';
 import Fontisto from '@expo/vector-icons/Fontisto';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
+import { Ionicons } from '@expo/vector-icons';
 import DrawerComponent from '@/components/DrawerComponent';
 import { useRouter } from 'expo-router'; // Import useRouter from expo-router
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
