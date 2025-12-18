@@ -75,13 +75,22 @@ After 39 iterations attempting to build Substrate via GitHub Actions, we've adop
 | Agent | Focus Area | Status | Progress |
 |-------|------------|--------|----------|
 | 1. Tokenomics | CHML token, genesis config | ✅ COMPLETE | 100% |
-| 2. Mobile Wallet | React Native iOS/Android | ⏸️ STANDBY | 40% |
+| 2. Mobile Wallet | React Native iOS/Android | 🟡 IN PROGRESS | 85% |
 | 3. MEV Protection | Commit-reveal, fair ordering | ✅ COMPLETE | 100% |
 | 4. pDEX | AMM pools, private swaps | ✅ COMPLETE | 100% |
 | 5. Ethereum Bridge | Lock/mint mechanism | ✅ COMPLETE | 100% |
 | 6. Staking | Delegation, rewards | ✅ COMPLETE | 100% |
 
 **Legend:** ✅ Complete | 🟡 In Progress | ⏸️ Standby | 🔴 Blocked
+
+### Mobile Wallet Agent - Week 6 Deliverables
+
+| Phase | Scope | Status |
+|-------|-------|--------|
+| Phase 1 | RPC Connection (api.ts, chain.ts, hooks) | ✅ Complete |
+| Phase 2 | Wallet Management (create, import, storage) | ✅ Complete |
+| Phase 3 | Send/Receive (transactions, QR codes) | ✅ Complete |
+| Phase 4 | Testing & Polish | 🟡 Pending |
 
 ---
 
