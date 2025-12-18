@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "Chameleon",
+    "slug": "chameleon",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/CHAMELEON.png",
+    "scheme": "myapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/CHAMELEON.png",
+      "imageWidth": 400,
+      "resizeMode": "contain",
+      "backgroundColor": "#0C0E12"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#0C0E12"
+      },
+      "package": "chml.network",
+      "minSdkVersion": "29",
+      "compileSdkVersion": "29",
+      "permissions": [
+        "INTERNET",
+        "VIBRATE"
+      ],
+      "blockedPermissions": [
+        "READ_EXTERNAL_STORAGE",
+        "SYSTEM_ALERT_WINDOW",
+        "WRITE_EXTERNAL_STORAGE",
+        "DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/Logo.png"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "79dd9f08-ab7e-4945-b9c5-c7bd0e67b011"
+      }
+    },
+    "owner": "chameleonnetwork"
+  }
+}
