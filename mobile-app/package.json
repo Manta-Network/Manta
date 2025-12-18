@@ -17,6 +17,9 @@
   "dependencies": {
     "@expo/html-elements": "^0.4.2",
     "@expo/vector-icons": "^14.0.2",
+    "@polkadot/api": "^12.0.0",
+    "@polkadot/util": "^12.0.0",
+    "@polkadot/util-crypto": "^12.0.0",
     "@gluestack-ui/accordion": "^1.0.8",
     "@gluestack-ui/actionsheet": "^0.2.46",
     "@gluestack-ui/alert": "^0.1.16",
