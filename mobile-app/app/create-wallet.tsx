@@ -207,4 +207,196 @@ const CreateWalletScreen = () => {
   );
 };
 
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: THEME.spacing.md,
+    paddingVertical: THEME.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME.colors.border,
+  },
+  backButton: {
+    marginRight: THEME.spacing.md,
+    padding: THEME.spacing.xs,
+  },
+  headerTitle: {
+    fontSize: THEME.fontSize.xl,
+    fontWeight: THEME.fontWeight.bold,
+    color: THEME.colors.text,
+  },
+  content: {
+    flex: 1,
+    padding: THEME.spacing.md,
+  },
+  initialContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  initialContent: {
+    alignItems: 'center',
+    marginBottom: THEME.spacing.xl * 2,
+  },
+  iconContainer: {
+    backgroundColor: THEME.colors.primary,
+    borderRadius: THEME.borderRadius.full,
+    padding: THEME.spacing.lg,
+    marginBottom: THEME.spacing.lg,
+  },
+  title: {
+    fontSize: THEME.fontSize['2xl'],
+    fontWeight: THEME.fontWeight.bold,
+    color: THEME.colors.text,
+    marginBottom: THEME.spacing.md,
+    textAlign: 'center',
+  },
+  subtitle: {
+    color: THEME.colors.textSecondary,
+    textAlign: 'center',
+    fontSize: THEME.fontSize.base,
+    lineHeight: 24,
+  },
+  generateButton: {
+    backgroundColor: THEME.colors.primary,
+    borderRadius: THEME.borderRadius.medium,
+    paddingVertical: THEME.spacing.md,
+    paddingHorizontal: THEME.spacing.lg,
+  },
+  generateButtonText: {
+    color: THEME.colors.white,
+    textAlign: 'center',
+    fontSize: THEME.fontSize.lg,
+    fontWeight: THEME.fontWeight.semibold,
+  },
+  mnemonicSection: {
+    flex: 1,
+  },
+  warningBox: {
+    backgroundColor: THEME.colors.warningBg,
+    borderWidth: 1,
+    borderColor: THEME.colors.warning,
+    borderRadius: THEME.borderRadius.medium,
+    padding: THEME.spacing.md,
+    marginBottom: THEME.spacing.lg,
+  },
+  warningHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: THEME.spacing.xs,
+  },
+  warningTitle: {
+    color: THEME.colors.warning,
+    fontWeight: THEME.fontWeight.semibold,
+    marginLeft: THEME.spacing.xs,
+  },
+  warningText: {
+    color: THEME.colors.warning,
+    fontSize: THEME.fontSize.sm,
+    lineHeight: 18,
+  },
+  seedTitle: {
+    fontSize: THEME.fontSize.lg,
+    fontWeight: THEME.fontWeight.semibold,
+    color: THEME.colors.text,
+    marginBottom: THEME.spacing.md,
+  },
+  mnemonicContainer: {
+    backgroundColor: THEME.colors.white,
+    borderRadius: THEME.borderRadius.medium,
+    padding: THEME.spacing.md,
+    marginBottom: THEME.spacing.lg,
+    ...THEME.shadows.small,
+  },
+  mnemonicGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  wordContainer: {
+    width: '33.333%',
+    padding: THEME.spacing.xs,
+  },
+  wordCard: {
+    backgroundColor: THEME.colors.card,
+    borderRadius: THEME.borderRadius.small,
+    padding: THEME.spacing.sm,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    alignItems: 'center',
+  },
+  wordNumber: {
+    color: THEME.colors.textSecondary,
+    fontSize: THEME.fontSize.xs,
+    marginBottom: 2,
+  },
+  wordText: {
+    color: THEME.colors.text,
+    fontSize: THEME.fontSize.sm,
+    fontFamily: 'monospace',
+    textAlign: 'center',
+  },
+  copyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: THEME.colors.white,
+    borderRadius: THEME.borderRadius.medium,
+    paddingVertical: THEME.spacing.sm,
+    paddingHorizontal: THEME.spacing.md,
+    marginBottom: THEME.spacing.lg,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    ...THEME.shadows.small,
+  },
+  copyButtonText: {
+    color: THEME.colors.secondary,
+    fontWeight: THEME.fontWeight.semibold,
+    marginLeft: THEME.spacing.xs,
+  },
+  confirmationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: THEME.spacing.xl,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 2,
+    marginRight: THEME.spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: THEME.colors.primary,
+    borderColor: THEME.colors.primary,
+  },
+  checkboxUnchecked: {
+    borderColor: THEME.colors.textSecondary,
+  },
+  confirmationText: {
+    color: THEME.colors.textSecondary,
+    flex: 1,
+    fontSize: THEME.fontSize.sm,
+    lineHeight: 18,
+  },
+  createButton: {
+    borderRadius: THEME.borderRadius.medium,
+    paddingVertical: THEME.spacing.md,
+    paddingHorizontal: THEME.spacing.lg,
+  },
+  createButtonEnabled: {
+    backgroundColor: THEME.colors.primary,
+  },
+  createButtonDisabled: {
+    backgroundColor: THEME.colors.lightGrey,
+    opacity: 0.5,
+  },
+  createButtonText: {
+    color: THEME.colors.white,
+    textAlign: 'center',
+    fontSize: THEME.fontSize.lg,
+    fontWeight: THEME.fontWeight.semibold,
+  },
+});
+
 export default CreateWalletScreen;
