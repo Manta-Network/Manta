@@ -294,10 +294,10 @@ const SendScreen = () => {
 
   if (isSending) {
     return (
-      <View className="flex-1 bg-[#0C0E12] justify-center items-center">
-        <ActivityIndicator size="large" color="#18BB59" />
-        <Text className="text-white text-lg mt-4">Sending Transaction...</Text>
-        <Text className="text-[#CDCDE0] text-sm mt-2 text-center px-8">
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={THEME.colors.primary} />
+        <Text style={styles.loadingTitle}>Sending Transaction...</Text>
+        <Text style={styles.loadingSubtitle}>
           Please wait while your transaction is processed
         </Text>
       </View>
