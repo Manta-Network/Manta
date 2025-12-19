@@ -17,84 +17,40 @@ interface NetworkBadgeProps {
 
 export function NetworkBadge({ 
   size = 'medium', 
-  showConnectionStatus = true,
+  showConnectionStatus = false,
   style 
 }: NetworkBadgeProps) {
   const { isConnected, isConnecting, connectionState } = useApi();
 
-  const getSizeStyles = () => {
-    switch (size) {
-      case 'small':
-        return {
-          container: 'px-2 py-1',
-          text: 'text-xs',
-          dot: 'w-2 h-2',
-        };
-      case 'large':
-        return {
-          container: 'px-4 py-2',
-          text: 'text-base',
-          dot: 'w-3 h-3',
-        };
-      default: // medium
-        return {
-          container: 'px-3 py-1.5',
-          text: 'text-sm',
-          dot: 'w-2.5 h-2.5',
-        };
-    }
-  };
-
   const getConnectionColor = () => {
-    if (isConnecting) return 'bg-yellow-500';
-    if (isConnected) return 'bg-green-500';
-    return 'bg-red-500';
+    if (isConnecting) return THEME.colors.warning;
+    if (isConnected) return THEME.colors.success;
+    return THEME.colors.error;
   };
 
-  const getConnectionText = () => {
-    if (isConnecting) return 'Connecting...';
-    if (isConnected) return `Block #${connectionState.blockNumber || '---'}`;
-    return 'Disconnected';
-  };
+  const badgeStyle = [
+    styles.badge,
+    size === 'small' && styles.badgeSmall,
+    size === 'large' && styles.badgeLarge,
+    style,
+  ];
 
-  const sizeStyles = getSizeStyles();
+  const textStyle = [
+    styles.badgeText,
+    size === 'small' && styles.badgeTextSmall,
+    size === 'large' && styles.badgeTextLarge,
+  ];
 
   return (
-    <View 
-      className={`
-        flex-row items-center 
-        bg-gradient-to-r from-teal-600 to-teal-500
-        rounded-full 
-        ${sizeStyles.container}
-      `}
-      style={style}
-    >
-      {/* DEVNET Badge */}
-      <Text className={`font-bold text-white ${sizeStyles.text}`}>
+    <View style={badgeStyle}>
+      <Text style={textStyle}>
         {NETWORK_CONFIG.isTestnet ? 'DEVNET' : NETWORK_CONFIG.name}
       </Text>
       
-      {/* Connection Status */}
       {showConnectionStatus && (
         <>
-          <View className="mx-2 w-px h-4 bg-white/30" />
-          
-          <View className="flex-row items-center">
-            {/* Status Dot */}
-            <View 
-              className={`
-                ${sizeStyles.dot} 
-                rounded-full 
-                ${getConnectionColor()}
-                mr-1.5
-              `}
-            />
-            
-            {/* Status Text */}
-            <Text className={`text-white/90 ${sizeStyles.text}`}>
-              {getConnectionText()}
-            </Text>
-          </View>
+          <View style={styles.separator} />
+          <View style={[styles.statusDot, { backgroundColor: getConnectionColor() }]} />
         </>
       )}
     </View>
