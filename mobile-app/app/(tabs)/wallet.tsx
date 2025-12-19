@@ -145,7 +145,7 @@ const WalletScreen = () => {
             justifyContent: 'center', 
             gap: THEME.spacing.sm 
           }}>
-            {(['alice', 'bob', 'charlie', 'dave', 'eve'] as const).map((account) => (
+            {['alice', 'bob', 'charlie', 'dave', 'eve'].map((account) => (
               <TouchableOpacity
                 key={account}
                 style={{
