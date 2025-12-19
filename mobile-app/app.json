@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Chameleon",
-    "slug": "chameleon",
-    "version": "1.0.0",
+    "name": "Chameleon Wallet",
+    "slug": "chameleon-wallet",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/CHAMELEON.png",
-    "scheme": "myapp",
+    "scheme": "chameleon",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -15,16 +15,16 @@
       "backgroundColor": "#0C0E12"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "network.chml.wallet"
     },
     "android": {
+      "package": "network.chml.wallet",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
-        "backgroundColor": "#0C0E12"
+        "backgroundColor": "#22B958"
       },
-      "package": "chml.network",
-      "minSdkVersion": "29",
-      "compileSdkVersion": "29",
       "permissions": [
         "INTERNET",
         "VIBRATE"
@@ -32,8 +32,7 @@
       "blockedPermissions": [
         "READ_EXTERNAL_STORAGE",
         "SYSTEM_ALERT_WINDOW",
-        "WRITE_EXTERNAL_STORAGE",
-        "DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        "WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -42,7 +41,8 @@
       "favicon": "./assets/images/Logo.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
@@ -53,7 +53,12 @@
       },
       "eas": {
         "projectId": "79dd9f08-ab7e-4945-b9c5-c7bd0e67b011"
-      }
+      },
+      "rpcEndpoint": "ws://64.23.233.36:9944",
+      "rpcHttpEndpoint": "http://64.23.233.36:9933",
+      "networkName": "Chameleon Devnet",
+      "tokenSymbol": "CHML",
+      "tokenDecimals": 18
     },
     "owner": "chameleonnetwork"
   }
