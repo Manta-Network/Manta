@@ -1,5 +1,6 @@
 {
   "expo": {
+    "sdkVersion": "54.0.0",
     "name": "Chameleon Wallet",
     "slug": "chameleon-wallet-spronline",
     "version": "0.1.0",
