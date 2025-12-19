@@ -116,7 +116,7 @@ const CreateWalletScreen = () => {
                   Create Your Wallet
                 </Text>
                 <Text style={styles.subtitle}>
-                  We'll generate a secure 12-word seed phrase{"\n"}
+                  We&apos;ll generate a secure 12-word seed phrase{"\n"}
                   that you can use to recover your wallet.
                 </Text>
               </View>
