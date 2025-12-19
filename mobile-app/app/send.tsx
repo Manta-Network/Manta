@@ -425,8 +425,135 @@ const SendScreen = () => {
 
       {renderConfirmationModal()}
       {renderTransactionResult()}
-    </ScrollView>
+    </ScreenContainer>
   );
 };
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: THEME.spacing.md,
+    paddingVertical: THEME.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME.colors.border,
+  },
+  backButton: {
+    marginRight: THEME.spacing.md,
+    padding: THEME.spacing.xs,
+  },
+  headerTitle: {
+    fontSize: THEME.fontSize.xl,
+    fontWeight: THEME.fontWeight.bold,
+    color: THEME.colors.text,
+  },
+  content: {
+    flex: 1,
+    padding: THEME.spacing.md,
+  },
+  inputSection: {
+    marginBottom: THEME.spacing.lg,
+  },
+  inputLabel: {
+    fontSize: THEME.fontSize.base,
+    fontWeight: THEME.fontWeight.semibold,
+    color: THEME.colors.text,
+    marginBottom: THEME.spacing.sm,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  textInputContainer: {
+    backgroundColor: THEME.colors.white,
+    borderRadius: THEME.borderRadius.medium,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    padding: THEME.spacing.md,
+    ...THEME.shadows.small,
+  },
+  textInput: {
+    fontSize: THEME.fontSize.base,
+    color: THEME.colors.text,
+    minHeight: 20,
+  },
+  iconButton: {
+    backgroundColor: THEME.colors.white,
+    borderRadius: THEME.borderRadius.medium,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    padding: THEME.spacing.md,
+    ...THEME.shadows.small,
+  },
+  maxButton: {
+    backgroundColor: THEME.colors.primary,
+    borderRadius: THEME.borderRadius.medium,
+    paddingVertical: THEME.spacing.md,
+    paddingHorizontal: THEME.spacing.lg,
+  },
+  maxButtonDisabled: {
+    backgroundColor: THEME.colors.lightGrey,
+  },
+  maxButtonText: {
+    color: THEME.colors.white,
+    fontWeight: THEME.fontWeight.semibold,
+    fontSize: THEME.fontSize.sm,
+  },
+  errorText: {
+    color: THEME.colors.error,
+    fontSize: THEME.fontSize.sm,
+    marginTop: THEME.spacing.xs,
+  },
+  availableText: {
+    color: THEME.colors.textSecondary,
+    fontSize: THEME.fontSize.sm,
+    marginTop: THEME.spacing.xs,
+  },
+  feeContainer: {
+    backgroundColor: THEME.colors.white,
+    borderRadius: THEME.borderRadius.medium,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    padding: THEME.spacing.md,
+    ...THEME.shadows.small,
+  },
+  feeEstimating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  feeEstimatingText: {
+    color: THEME.colors.textSecondary,
+    marginLeft: THEME.spacing.sm,
+    fontSize: THEME.fontSize.sm,
+  },
+  feeAmount: {
+    color: THEME.colors.text,
+    fontSize: THEME.fontSize.base,
+    fontWeight: THEME.fontWeight.medium,
+  },
+  feePlaceholder: {
+    color: THEME.colors.textMuted,
+    fontSize: THEME.fontSize.base,
+  },
+  reviewButton: {
+    backgroundColor: THEME.colors.primary,
+    borderRadius: THEME.borderRadius.medium,
+    paddingVertical: THEME.spacing.md,
+    paddingHorizontal: THEME.spacing.lg,
+    marginTop: THEME.spacing.lg,
+  },
+  reviewButtonDisabled: {
+    backgroundColor: THEME.colors.lightGrey,
+  },
+  reviewButtonText: {
+    color: THEME.colors.white,
+    textAlign: 'center',
+    fontSize: THEME.fontSize.lg,
+    fontWeight: THEME.fontWeight.semibold,
+  },
+  reviewButtonTextDisabled: {
+    color: THEME.colors.textMuted,
+  },
+});
 
 export default SendScreen;
