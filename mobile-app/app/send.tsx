@@ -318,39 +318,40 @@ const SendScreen = () => {
           <Text style={styles.headerTitle}>Send CHML</Text>
         </View>
 
-        {/* Recipient Input */}
-        <View className="mb-6">
-          <Text className="text-white text-base font-semibold mb-3">To</Text>
-          <View className="flex-row items-center">
-            <View className="flex-1 bg-[#1B1B1B] rounded-xl p-4 mr-3">
-              <TextInput
-                className="text-white text-base"
-                placeholder="Enter recipient address..."
-                placeholderTextColor="#666"
-                value={recipient}
-                onChangeText={setRecipient}
-                multiline
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+        <View style={styles.content}>
+          {/* Recipient Input */}
+          <View style={styles.inputSection}>
+            <Text style={styles.inputLabel}>To</Text>
+            <View style={styles.inputRow}>
+              <View style={[styles.textInputContainer, { flex: 1, marginRight: THEME.spacing.sm }]}>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Enter recipient address..."
+                  placeholderTextColor={THEME.colors.textMuted}
+                  value={recipient}
+                  onChangeText={setRecipient}
+                  multiline
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+              <TouchableOpacity
+                style={[styles.iconButton, { marginRight: THEME.spacing.xs }]}
+                onPress={handlePasteAddress}
+              >
+                <Ionicons name="clipboard-outline" size={20} color={THEME.colors.textSecondary} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={handleScanQR}
+              >
+                <Ionicons name="qr-code-outline" size={20} color={THEME.colors.textSecondary} />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              className="bg-[#1B1B1B] rounded-xl p-4 mr-2"
-              onPress={handlePasteAddress}
-            >
-              <Ionicons name="clipboard-outline" size={20} color="#CDCDE0" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="bg-[#1B1B1B] rounded-xl p-4"
-              onPress={handleScanQR}
-            >
-              <Ionicons name="qr-code-outline" size={20} color="#CDCDE0" />
-            </TouchableOpacity>
+            {recipient.length > 0 && !isValidAddress && (
+              <Text style={styles.errorText}>Invalid address format</Text>
+            )}
           </View>
-          {recipient.length > 0 && !isValidAddress && (
-            <Text className="text-[#FF4444] text-sm mt-2">Invalid address format</Text>
-          )}
-        </View>
 
         {/* Amount Input */}
         <View className="mb-6">
