@@ -122,42 +122,42 @@ const ReceiveScreen = () => {
               </View>
             </TouchableOpacity>
             
-            <TouchableOpacity
-              className="flex-1 border border-[#18BB59] rounded-xl py-4 px-6"
-              onPress={handleShareAddress}
-            >
-              <View className="flex-row items-center justify-center">
-                <Ionicons name="share-outline" size={20} color="#18BB59" />
-                <Text className="text-[#18BB59] font-semibold ml-2">Share</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Warning Section */}
-        <View className="bg-[#2A1B1B] border border-[#FF4444] rounded-xl p-4 mb-6">
-          <View className="flex-row items-start">
-            <Ionicons name="warning" size={20} color="#FF4444" />
-            <View className="flex-1 ml-3">
-              <Text className="text-[#FF4444] font-semibold mb-2">
-                ⚠️ DEVNET ADDRESS
-              </Text>
-              <Text className="text-[#CDCDE0] text-sm leading-5">
-                This is a development network address. Only send test CHML tokens to this address.
-              </Text>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.shareButton]}
+                onPress={handleShareAddress}
+              >
+                <View style={styles.buttonContent}>
+                  <Ionicons name="share-outline" size={20} color={THEME.colors.primary} />
+                  <Text style={styles.shareButtonText}>Share</Text>
+                </View>
+              </TouchableOpacity>
             </View>
           </View>
-        </View>
 
-        {/* Tips Section */}
-        <View className="bg-[#1B1B1B] rounded-xl p-4">
-          <Text className="text-white font-semibold mb-3">💡 Tips</Text>
-          
-          <View className="space-y-3">
-            <View className="flex-row items-start">
-              <Text className="text-[#13E1BC] mr-2">•</Text>
-              <Text className="text-[#CDCDE0] text-sm flex-1">
-                Only send CHML tokens to this address
+          {/* Warning Section */}
+          <View style={styles.warningSection}>
+            <View style={styles.warningContent}>
+              <Ionicons name="warning" size={20} color={THEME.colors.error} />
+              <View style={styles.warningTextContainer}>
+                <Text style={styles.warningTitle}>
+                  ⚠️ DEVNET ADDRESS
+                </Text>
+                <Text style={styles.warningDescription}>
+                  This is a development network address. Only send test CHML tokens to this address.
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Tips Section */}
+          <View style={styles.tipsSection}>
+            <Text style={styles.tipsTitle}>💡 Tips</Text>
+            
+            <View style={styles.tipsList}>
+              <View style={styles.tipItem}>
+                <Text style={styles.tipBullet}>•</Text>
+                <Text style={styles.tipText}>
+                  Only send CHML tokens to this address
               </Text>
             </View>
             
