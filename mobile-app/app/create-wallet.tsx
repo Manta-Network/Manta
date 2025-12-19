@@ -91,33 +91,34 @@ const CreateWalletScreen = () => {
   };
 
   return (
-    <ScrollView className="flex-1 bg-[#0C0E12]" contentContainerStyle={{ flexGrow: 1 }}>
-      <SafeAreaView className="flex-1 px-6">
+    <ScreenContainer scrollable showGradient={false}>
+      <SafeAreaView style={{ flex: 1 }}>
         {/* Header */}
-        <View className="flex-row items-center mb-8">
+        <View style={styles.header}>
           <TouchableOpacity
             onPress={() => router.back()}
-            className="mr-4 p-2"
+            style={styles.backButton}
           >
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            <Ionicons name="arrow-back" size={24} color={THEME.colors.text} />
           </TouchableOpacity>
-          <Text className="text-white text-xl font-bold">Create New Wallet</Text>
+          <Text style={styles.headerTitle}>Create New Wallet</Text>
         </View>
 
-        {!isGenerated ? (
-          /* Initial State */
-          <View className="flex-1 justify-center">
-            <View className="items-center mb-12">
-              <View className="bg-[#18BB59] rounded-full p-6 mb-6">
-                <Ionicons name="wallet" size={48} color="#FFFFFF" />
-              </View>
-              <Text className="text-white text-2xl font-bold mb-4 text-center">
-                Create Your Wallet
-              </Text>
-              <Text className="text-[#CDCDE0] text-center text-base leading-6">
-                We'll generate a secure 12-word seed phrase{"\n"}
-                that you can use to recover your wallet.
-              </Text>
+        <View style={styles.content}>
+          {!isGenerated ? (
+            /* Initial State */
+            <View style={styles.initialContainer}>
+              <View style={styles.initialContent}>
+                <View style={styles.iconContainer}>
+                  <Ionicons name="wallet" size={48} color={THEME.colors.white} />
+                </View>
+                <Text style={styles.title}>
+                  Create Your Wallet
+                </Text>
+                <Text style={styles.subtitle}>
+                  We'll generate a secure 12-word seed phrase{"\n"}
+                  that you can use to recover your wallet.
+                </Text>
             </View>
 
             <TouchableOpacity
