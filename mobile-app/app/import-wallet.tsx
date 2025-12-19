@@ -53,7 +53,7 @@ const ImportWalletScreen = () => {
     }
   };
 
-  const handleDevAccountSelect = async (accountName: keyof typeof DEV_ACCOUNTS) => {
+  const handleDevAccountSelect = async (accountName) => {
     setSelectedDevAccount(accountName);
     const devMnemonic = DEV_ACCOUNTS[accountName];
     setMnemonic(devMnemonic);
