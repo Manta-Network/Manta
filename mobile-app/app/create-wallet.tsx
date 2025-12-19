@@ -71,15 +71,15 @@ const CreateWalletScreen = () => {
   const renderMnemonicWords = () => {
     const words = mnemonic.split(' ');
     return (
-      <View className="bg-[#1B1B1B] rounded-xl p-4 mb-6">
-        <View className="flex-row flex-wrap">
+      <View style={styles.mnemonicContainer}>
+        <View style={styles.mnemonicGrid}>
           {words.map((word, index) => (
-            <View key={index} className="w-1/3 p-2">
-              <View className="bg-[#0C0E12] rounded-lg p-3 border border-[#333]">
-                <Text className="text-[#CDCDE0] text-xs text-center mb-1">
+            <View key={index} style={styles.wordContainer}>
+              <View style={styles.wordCard}>
+                <Text style={styles.wordNumber}>
                   {index + 1}
                 </Text>
-                <Text className="text-white text-center font-mono text-sm">
+                <Text style={styles.wordText}>
                   {word}
                 </Text>
               </View>
