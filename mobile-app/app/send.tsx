@@ -39,7 +39,7 @@ const SendScreen = () => {
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [isValidAddress, setIsValidAddress] = useState(false);
-  const [feeEstimate, setFeeEstimate] = useState<FeeEstimate | null>(null);
+  const [feeEstimate, setFeeEstimate] = useState(null);
   const [isEstimatingFee, setIsEstimatingFee] = useState(false);
   
   // Transaction state
