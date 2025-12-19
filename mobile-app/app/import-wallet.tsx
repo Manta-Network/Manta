@@ -25,7 +25,7 @@ const ImportWalletScreen = () => {
   const router = useRouter();
   const { importWallet, importDevAccount, isLoading } = useWallet();
   const [mnemonic, setMnemonic] = useState('');
-  const [selectedDevAccount, setSelectedDevAccount] = useState<keyof typeof DEV_ACCOUNTS | null>(null);
+  const [selectedDevAccount, setSelectedDevAccount] = useState(null);
   const [addressPreview, setAddressPreview] = useState<string>('');
   const [isValidMnemonic, setIsValidMnemonic] = useState(false);
 
