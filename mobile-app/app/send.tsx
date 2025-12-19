@@ -112,7 +112,7 @@ const SendScreen = () => {
     }
   };
 
-  const validateTransaction = (): string | null => {
+  const validateTransaction = () => {
     if (!wallet?.address) return 'No wallet connected';
     if (!recipient) return 'Please enter recipient address';
     if (!isValidAddress) return 'Invalid recipient address';
