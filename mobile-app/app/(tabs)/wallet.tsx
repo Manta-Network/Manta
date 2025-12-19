@@ -175,87 +175,126 @@ const WalletScreen = () => {
   );
 
   const renderWalletState = () => (
-    <ScrollView className="flex-1 bg-[#0C0E12]" contentContainerStyle={{ flexGrow: 1 }}>
-      <SafeAreaView className="flex-1 px-6">
-        {/* Network Badge */}
-        <View className="mb-6">
-          <NetworkBadge />
-        </View>
+    <ScreenContainer scrollable showGradient>
+      {/* Main Header */}
+      <MainHeader 
+        onNotificationPress={() => Alert.alert('Notifications', 'Coming soon!')}
+      />
 
-        {/* Wallet Address */}
-        <View className="mb-8">
-          <View className="flex-row items-center justify-between bg-[#1B1B1B] rounded-xl p-4">
-            <Text className="text-white text-base font-mono flex-1 mr-3">
-              {truncateAddress(wallet!.address)}
-            </Text>
-            <TouchableOpacity
-              onPress={handleCopyAddress}
-              className="p-2"
-            >
-              <Ionicons name="copy-outline" size={20} color="#CDCDE0" />
-            </TouchableOpacity>
-          </View>
-        </View>
+      {/* Account Card */}
+      <AccountCard
+        balance={balanceLoading ? '...' : formattedFreeBalance.split(' ')[0] || '0'}
+        currency="USD"
+        growthPercentage="+3.75%"
+        isPositiveGrowth={true}
+      />
 
-        {/* Balance Display */}
-        <View className="items-center mb-12">
-          {balanceLoading ? (
-            <ActivityIndicator size="large" color="#18BB59" />
-          ) : balanceError ? (
-            <View className="items-center">
-              <Text className="text-[#FF4444] text-lg mb-2">Connection Error</Text>
-              <Text className="text-[#CDCDE0] text-sm text-center">
-                {balanceError}
-              </Text>
-            </View>
-          ) : (
-            <View className="items-center">
-              <Text className="text-white text-4xl font-bold mb-2">
-                {formattedFreeBalance.split(' ')[0]}
-              </Text>
-              <Text className="text-[#CDCDE0] text-xl">
-                {formattedFreeBalance.split(' ')[1] || 'CHML'}
-              </Text>
-            </View>
-          )}
-        </View>
+      {/* Action Grid */}
+      <ActionGrid 
+        onActionPress={(actionId) => {
+          console.log('Action pressed:', actionId);
+        }}
+      />
 
-        {/* Action Buttons */}
-        <View className="flex-row gap-4 mb-8">
-          <TouchableOpacity
-            className="flex-1 bg-[#18BB59] rounded-xl py-4 px-6"
-            onPress={() => router.push('/send')}
-          >
-            <Text className="text-white text-center text-lg font-semibold">
-              Send
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="flex-1 border border-[#18BB59] rounded-xl py-4 px-6"
-            onPress={() => router.push('/receive')}
-          >
-            <Text className="text-[#18BB59] text-center text-lg font-semibold">
-              Receive
+      {/* Recent Activity Section */}
+      <View style={{ 
+        marginHorizontal: THEME.spacing.md, 
+        marginTop: THEME.spacing.lg 
+      }}>
+        <View style={{ 
+          flexDirection: 'row', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: THEME.spacing.md 
+        }}>
+          <Text style={{
+            fontSize: THEME.fontSize.lg,
+            fontWeight: THEME.fontWeight.semibold,
+            color: THEME.colors.text,
+          }}>
+            Recent Activity
+          </Text>
+          <TouchableOpacity>
+            <Text style={{
+              fontSize: THEME.fontSize.sm,
+              color: THEME.colors.secondary,
+              fontWeight: THEME.fontWeight.medium,
+            }}>
+              View all →
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Recent Activity */}
-        <View className="flex-1">
-          <Text className="text-white text-lg font-semibold mb-4">Recent Activity</Text>
-          <View className="bg-[#1B1B1B] rounded-xl p-6 items-center">
-            <Ionicons name="time-outline" size={48} color="#CDCDE0" />
-            <Text className="text-[#CDCDE0] text-base mt-4">
-              No transactions yet
+        {/* Activity Cards or Empty State */}
+        {balanceError ? (
+          <View style={{
+            backgroundColor: THEME.colors.white,
+            borderRadius: THEME.borderRadius.medium,
+            padding: THEME.spacing.lg,
+            alignItems: 'center',
+            ...THEME.shadows.small,
+          }}>
+            <Ionicons name="warning-outline" size={48} color={THEME.colors.error} />
+            <Text style={{
+              color: THEME.colors.error,
+              fontSize: THEME.fontSize.base,
+              fontWeight: THEME.fontWeight.medium,
+              marginTop: THEME.spacing.sm,
+            }}>
+              Connection Error
             </Text>
-            <Text className="text-[#666] text-sm mt-2 text-center">
-              Your transaction history will appear here
+            <Text style={{
+              color: THEME.colors.textSecondary,
+              fontSize: THEME.fontSize.sm,
+              textAlign: 'center',
+              marginTop: THEME.spacing.xs,
+            }}>
+              {balanceError}
             </Text>
           </View>
-        </View>
-      </SafeAreaView>
-    </ScrollView>
+        ) : (
+          <>
+            {/* Sample Activity Cards */}
+            <ActivityCard
+              type="deposit"
+              transactionId="6671a2b3c4d5e6f7890123456789abcd"
+              amount="12,000.00"
+              status="success"
+              date="2 hours ago"
+            />
+            <ActivityCard
+              type="withdrawal"
+              transactionId="6672b3c4d5e6f7890123456789abcdef"
+              amount="1,000.00"
+              status="pending"
+              date="1 day ago"
+            />
+            
+            {/* Empty State for More Transactions */}
+            <View style={{
+              backgroundColor: THEME.colors.white,
+              borderRadius: THEME.borderRadius.medium,
+              padding: THEME.spacing.lg,
+              alignItems: 'center',
+              marginTop: THEME.spacing.sm,
+              ...THEME.shadows.small,
+            }}>
+              <Ionicons name="time-outline" size={32} color={THEME.colors.textMuted} />
+              <Text style={{
+                color: THEME.colors.textSecondary,
+                fontSize: THEME.fontSize.sm,
+                marginTop: THEME.spacing.sm,
+              }}>
+                More transactions will appear here
+              </Text>
+            </View>
+          </>
+        )}
+      </View>
+
+      {/* Bottom Spacing */}
+      <View style={{ height: THEME.spacing.xl }} />
+    </ScreenContainer>
   );
 
   if (walletLoading) {
