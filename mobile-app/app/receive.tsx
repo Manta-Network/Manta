@@ -161,41 +161,231 @@ const ReceiveScreen = () => {
               </Text>
             </View>
             
-            <View className="flex-row items-start">
-              <Text className="text-[#13E1BC] mr-2">•</Text>
-              <Text className="text-[#CDCDE0] text-sm flex-1">
-                Double-check the address before sharing
-              </Text>
-            </View>
-            
-            <View className="flex-row items-start">
-              <Text className="text-[#13E1BC] mr-2">•</Text>
-              <Text className="text-[#CDCDE0] text-sm flex-1">
-                Transactions on devnet are for testing only
-              </Text>
-            </View>
-            
-            <View className="flex-row items-start">
-              <Text className="text-[#13E1BC] mr-2">•</Text>
-              <Text className="text-[#CDCDE0] text-sm flex-1">
-                Your address is public and safe to share
-              </Text>
+              <View style={styles.tipItem}>
+                <Text style={styles.tipBullet}>•</Text>
+                <Text style={styles.tipText}>
+                  Double-check the address before sharing
+                </Text>
+              </View>
+              
+              <View style={styles.tipItem}>
+                <Text style={styles.tipBullet}>•</Text>
+                <Text style={styles.tipText}>
+                  Transactions on devnet are for testing only
+                </Text>
+              </View>
+              
+              <View style={styles.tipItem}>
+                <Text style={styles.tipBullet}>•</Text>
+                <Text style={styles.tipText}>
+                  Your address is public and safe to share
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* Spacer */}
-        <View className="flex-1" />
-
-        {/* Additional Info */}
-        <View className="items-center py-4">
-          <Text className="text-[#666] text-xs text-center">
-            Powered by Chameleon Network
-          </Text>
+          {/* Additional Info */}
+          <View style={styles.footerInfo}>
+            <Text style={styles.footerText}>
+              Powered by Chameleon Network
+            </Text>
+          </View>
         </View>
       </SafeAreaView>
-    </ScrollView>
+    </ScreenContainer>
   );
 };
+
+const styles = StyleSheet.create({
+  noWalletContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: THEME.spacing.lg,
+  },
+  noWalletTitle: {
+    fontSize: THEME.fontSize.xl,
+    fontWeight: THEME.fontWeight.bold,
+    color: THEME.colors.text,
+    marginTop: THEME.spacing.md,
+    marginBottom: THEME.spacing.sm,
+  },
+  noWalletSubtitle: {
+    color: THEME.colors.textSecondary,
+    textAlign: 'center',
+    fontSize: THEME.fontSize.base,
+  },
+  goBackButton: {
+    backgroundColor: THEME.colors.primary,
+    borderRadius: THEME.borderRadius.medium,
+    paddingVertical: THEME.spacing.sm,
+    paddingHorizontal: THEME.spacing.lg,
+    marginTop: THEME.spacing.lg,
+  },
+  goBackButtonText: {
+    color: THEME.colors.white,
+    fontWeight: THEME.fontWeight.semibold,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: THEME.spacing.md,
+    paddingVertical: THEME.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME.colors.border,
+  },
+  backButton: {
+    marginRight: THEME.spacing.md,
+    padding: THEME.spacing.xs,
+  },
+  headerTitle: {
+    fontSize: THEME.fontSize.xl,
+    fontWeight: THEME.fontWeight.bold,
+    color: THEME.colors.text,
+  },
+  content: {
+    flex: 1,
+    padding: THEME.spacing.md,
+  },
+  qrSection: {
+    alignItems: 'center',
+    marginBottom: THEME.spacing.xl,
+  },
+  qrContainer: {
+    backgroundColor: THEME.colors.white,
+    padding: THEME.spacing.md,
+    borderRadius: THEME.borderRadius.large,
+    marginBottom: THEME.spacing.md,
+    ...THEME.shadows.medium,
+  },
+  qrDescription: {
+    color: THEME.colors.textSecondary,
+    fontSize: THEME.fontSize.sm,
+    textAlign: 'center',
+  },
+  addressSection: {
+    marginBottom: THEME.spacing.lg,
+  },
+  addressTitle: {
+    fontSize: THEME.fontSize.lg,
+    fontWeight: THEME.fontWeight.semibold,
+    color: THEME.colors.text,
+    textAlign: 'center',
+    marginBottom: THEME.spacing.md,
+  },
+  addressContainer: {
+    backgroundColor: THEME.colors.white,
+    borderRadius: THEME.borderRadius.medium,
+    padding: THEME.spacing.md,
+    marginBottom: THEME.spacing.md,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    ...THEME.shadows.small,
+  },
+  addressText: {
+    color: THEME.colors.text,
+    fontSize: THEME.fontSize.sm,
+    textAlign: 'center',
+    lineHeight: 20,
+    fontFamily: 'monospace',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: THEME.spacing.md,
+  },
+  actionButton: {
+    flex: 1,
+    borderRadius: THEME.borderRadius.medium,
+    paddingVertical: THEME.spacing.md,
+    paddingHorizontal: THEME.spacing.lg,
+  },
+  copyButton: {
+    backgroundColor: THEME.colors.primary,
+  },
+  shareButton: {
+    borderWidth: 2,
+    borderColor: THEME.colors.primary,
+    backgroundColor: 'transparent',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  copyButtonText: {
+    color: THEME.colors.white,
+    fontWeight: THEME.fontWeight.semibold,
+    marginLeft: THEME.spacing.xs,
+  },
+  shareButtonText: {
+    color: THEME.colors.primary,
+    fontWeight: THEME.fontWeight.semibold,
+    marginLeft: THEME.spacing.xs,
+  },
+  warningSection: {
+    backgroundColor: THEME.colors.errorBg,
+    borderWidth: 1,
+    borderColor: THEME.colors.error,
+    borderRadius: THEME.borderRadius.medium,
+    padding: THEME.spacing.md,
+    marginBottom: THEME.spacing.md,
+  },
+  warningContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  warningTextContainer: {
+    flex: 1,
+    marginLeft: THEME.spacing.sm,
+  },
+  warningTitle: {
+    color: THEME.colors.error,
+    fontWeight: THEME.fontWeight.semibold,
+    marginBottom: THEME.spacing.xs,
+  },
+  warningDescription: {
+    color: THEME.colors.textSecondary,
+    fontSize: THEME.fontSize.sm,
+    lineHeight: 18,
+  },
+  tipsSection: {
+    backgroundColor: THEME.colors.white,
+    borderRadius: THEME.borderRadius.medium,
+    padding: THEME.spacing.md,
+    ...THEME.shadows.small,
+  },
+  tipsTitle: {
+    color: THEME.colors.text,
+    fontWeight: THEME.fontWeight.semibold,
+    marginBottom: THEME.spacing.sm,
+  },
+  tipsList: {
+    gap: THEME.spacing.sm,
+  },
+  tipItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  tipBullet: {
+    color: THEME.colors.primary,
+    marginRight: THEME.spacing.xs,
+    fontSize: THEME.fontSize.sm,
+  },
+  tipText: {
+    color: THEME.colors.textSecondary,
+    fontSize: THEME.fontSize.sm,
+    flex: 1,
+    lineHeight: 18,
+  },
+  footerInfo: {
+    alignItems: 'center',
+    paddingVertical: THEME.spacing.md,
+  },
+  footerText: {
+    color: THEME.colors.textMuted,
+    fontSize: THEME.fontSize.xs,
+    textAlign: 'center',
+  },
+});
 
 export default ReceiveScreen;
