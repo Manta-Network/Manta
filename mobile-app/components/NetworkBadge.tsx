@@ -1,11 +1,13 @@
 /**
  * DEVNET indicator component with connection status
+ * Updated for new light theme design
  */
 
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useApi } from '../hooks/useApi';
 import { NETWORK_CONFIG } from '../config/network';
+import { THEME } from '../constants/theme';
 
 interface NetworkBadgeProps {
   size?: 'small' | 'medium' | 'large';
