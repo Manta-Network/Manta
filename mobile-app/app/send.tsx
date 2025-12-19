@@ -282,7 +282,7 @@ const SendScreen = () => {
         animationType="slide"
         onRequestClose={handleCloseResult}
       >
-        <View className="flex-1 bg-black/50 justify-center">
+        <View style={styles.modalOverlay}>
           <TransactionStatus
             result={transactionResult}
             onClose={handleCloseResult}
