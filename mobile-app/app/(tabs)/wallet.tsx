@@ -1,5 +1,6 @@
 /**
  * Main Wallet screen for Chameleon Network
+ * Updated with new light theme design system
  */
 
 import React, { useEffect } from 'react';
@@ -11,15 +12,20 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { useWallet } from '../../context/WalletContext';
 import { useBalance } from '../../hooks/useBalance';
 import { useApi } from '../../hooks/useApi';
+import { ScreenContainer } from '../../components/ScreenContainer';
+import { MainHeader } from '../../components/MainHeader';
+import { AccountCard } from '../../components/AccountCard';
+import { ActionGrid } from '../../components/ActionGrid';
+import { ActivityCard } from '../../components/ActivityCard';
 import { NetworkBadge } from '../../components/NetworkBadge';
 import { truncateAddress } from '../../utils/address';
+import { THEME } from '../../constants/theme';
 
 const WalletScreen = () => {
   const router = useRouter();
