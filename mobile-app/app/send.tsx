@@ -45,7 +45,7 @@ const SendScreen = () => {
   // Transaction state
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [transactionResult, setTransactionResult] = useState<TransactionResult | null>(null);
+  const [transactionResult, setTransactionResult] = useState(null);
   const [showResult, setShowResult] = useState(false);
 
   // Validate recipient address
