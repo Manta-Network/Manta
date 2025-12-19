@@ -205,63 +205,63 @@ const SendScreen = () => {
         animationType="slide"
         onRequestClose={() => setShowConfirmation(false)}
       >
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-[#0C0E12] rounded-t-3xl p-6">
-            <Text className="text-white text-xl font-bold text-center mb-6">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
               Confirm Transaction
             </Text>
             
             {/* Amount */}
-            <View className="mb-6">
-              <Text className="text-[#CDCDE0] text-sm mb-2">Sending</Text>
-              <Text className="text-white text-3xl font-bold">
+            <View style={styles.modalSection}>
+              <Text style={styles.modalLabel}>Sending</Text>
+              <Text style={styles.modalAmountLarge}>
                 {amount} CHML
               </Text>
             </View>
             
             {/* Recipient */}
-            <View className="mb-6">
-              <Text className="text-[#CDCDE0] text-sm mb-2">To</Text>
-              <Text className="text-white font-mono text-base">
+            <View style={styles.modalSection}>
+              <Text style={styles.modalLabel}>To</Text>
+              <Text style={styles.modalAddress}>
                 {truncateAddress(recipient)}
               </Text>
             </View>
             
             {/* Fee */}
-            <View className="mb-6">
-              <Text className="text-[#CDCDE0] text-sm mb-2">Network Fee</Text>
-              <Text className="text-white text-base">
+            <View style={styles.modalSection}>
+              <Text style={styles.modalLabel}>Network Fee</Text>
+              <Text style={styles.modalAmount}>
                 {feeEstimate.formatted}
               </Text>
             </View>
             
             {/* Divider */}
-            <View className="border-t border-[#333] my-4" />
+            <View style={styles.modalDivider} />
             
             {/* Total */}
-            <View className="mb-8">
-              <Text className="text-[#CDCDE0] text-sm mb-2">Total</Text>
-              <Text className="text-white text-xl font-bold">
+            <View style={styles.modalSectionLarge}>
+              <Text style={styles.modalLabel}>Total</Text>
+              <Text style={styles.modalAmountLarge}>
                 {chainService.formatBalance(totalBN.toString())}
               </Text>
             </View>
             
             {/* Buttons */}
-            <View className="gap-4">
+            <View style={styles.modalButtons}>
               <TouchableOpacity
-                className="bg-[#18BB59] rounded-xl py-4 px-6"
+                style={styles.confirmButton}
                 onPress={handleConfirmSend}
               >
-                <Text className="text-white text-center text-lg font-semibold">
+                <Text style={styles.confirmButtonText}>
                   Confirm & Send
                 </Text>
               </TouchableOpacity>
               
               <TouchableOpacity
-                className="py-4 px-6"
+                style={styles.cancelButton}
                 onPress={() => setShowConfirmation(false)}
               >
-                <Text className="text-[#CDCDE0] text-center text-lg">
+                <Text style={styles.cancelButtonText}>
                   Cancel
                 </Text>
               </TouchableOpacity>
