@@ -554,6 +554,98 @@ const styles = StyleSheet.create({
   reviewButtonTextDisabled: {
     color: THEME.colors.textMuted,
   },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: THEME.colors.background,
+    borderTopLeftRadius: THEME.borderRadius.large,
+    borderTopRightRadius: THEME.borderRadius.large,
+    padding: THEME.spacing.lg,
+  },
+  modalTitle: {
+    color: THEME.colors.text,
+    fontSize: THEME.fontSize.xl,
+    fontWeight: THEME.fontWeight.bold,
+    textAlign: 'center',
+    marginBottom: THEME.spacing.lg,
+  },
+  modalSection: {
+    marginBottom: THEME.spacing.lg,
+  },
+  modalSectionLarge: {
+    marginBottom: THEME.spacing.xl,
+  },
+  modalLabel: {
+    color: THEME.colors.textSecondary,
+    fontSize: THEME.fontSize.sm,
+    marginBottom: THEME.spacing.xs,
+  },
+  modalAmount: {
+    color: THEME.colors.text,
+    fontSize: THEME.fontSize.base,
+  },
+  modalAmountLarge: {
+    color: THEME.colors.text,
+    fontSize: THEME.fontSize['3xl'],
+    fontWeight: THEME.fontWeight.bold,
+  },
+  modalAddress: {
+    color: THEME.colors.text,
+    fontFamily: 'monospace',
+    fontSize: THEME.fontSize.base,
+  },
+  modalDivider: {
+    borderTopWidth: 1,
+    borderTopColor: THEME.colors.border,
+    marginVertical: THEME.spacing.md,
+  },
+  modalButtons: {
+    gap: THEME.spacing.md,
+  },
+  confirmButton: {
+    backgroundColor: THEME.colors.primary,
+    borderRadius: THEME.borderRadius.medium,
+    paddingVertical: THEME.spacing.md,
+    paddingHorizontal: THEME.spacing.lg,
+  },
+  confirmButtonText: {
+    color: THEME.colors.white,
+    textAlign: 'center',
+    fontSize: THEME.fontSize.lg,
+    fontWeight: THEME.fontWeight.semibold,
+  },
+  cancelButton: {
+    paddingVertical: THEME.spacing.md,
+    paddingHorizontal: THEME.spacing.lg,
+  },
+  cancelButtonText: {
+    color: THEME.colors.textSecondary,
+    textAlign: 'center',
+    fontSize: THEME.fontSize.lg,
+  },
+  // Loading styles
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: THEME.colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingTitle: {
+    color: THEME.colors.text,
+    fontSize: THEME.fontSize.lg,
+    marginTop: THEME.spacing.md,
+  },
+  loadingSubtitle: {
+    color: THEME.colors.textSecondary,
+    fontSize: THEME.fontSize.sm,
+    marginTop: THEME.spacing.sm,
+    textAlign: 'center',
+    paddingHorizontal: THEME.spacing.xl,
+  },
 });
 
 export default SendScreen;
