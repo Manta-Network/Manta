@@ -20,7 +20,6 @@ module.exports = {
     },
     android: {
       package: "network.chml.wallet",
-      versionCode: 1,
       adaptiveIcon: {
         foregroundImage: "./assets/images/icon.png",
         backgroundColor: "#22B958"
