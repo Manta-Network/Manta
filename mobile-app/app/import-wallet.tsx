@@ -29,7 +29,7 @@ const ImportWalletScreen = () => {
   const [addressPreview, setAddressPreview] = useState('');
   const [isValidMnemonic, setIsValidMnemonic] = useState(false);
 
-  const validateAndPreviewMnemonic = async (text: string) => {
+  const validateAndPreviewMnemonic = async (text) => {
     setMnemonic(text);
     
     if (!text.trim()) {
