@@ -120,7 +120,7 @@ const ImportWalletScreen = () => {
             Quick Import (Dev Accounts)
           </Text>
           <View style={styles.devAccountsGrid}>
-            {(Object.keys(DEV_ACCOUNTS) as Array<keyof typeof DEV_ACCOUNTS>).map((account) => (
+            {Object.keys(DEV_ACCOUNTS).map((account) => (
               <TouchableOpacity
                 key={account}
                 style={[
