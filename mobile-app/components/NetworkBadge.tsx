@@ -57,6 +57,47 @@ export function NetworkBadge({
   );
 }
 
+const styles = StyleSheet.create({
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: THEME.colors.primary,
+    paddingHorizontal: THEME.spacing.sm,
+    paddingVertical: THEME.spacing.xs,
+    borderRadius: THEME.borderRadius.full,
+  },
+  badgeSmall: {
+    paddingHorizontal: THEME.spacing.xs,
+    paddingVertical: 2,
+  },
+  badgeLarge: {
+    paddingHorizontal: THEME.spacing.md,
+    paddingVertical: THEME.spacing.sm,
+  },
+  badgeText: {
+    fontSize: THEME.fontSize.xs,
+    fontWeight: THEME.fontWeight.bold,
+    color: THEME.colors.white,
+  },
+  badgeTextSmall: {
+    fontSize: 10,
+  },
+  badgeTextLarge: {
+    fontSize: THEME.fontSize.sm,
+  },
+  separator: {
+    width: 1,
+    height: 12,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    marginHorizontal: THEME.spacing.xs,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+});
+
 /**
  * Compact version for headers
  */
@@ -65,36 +106,6 @@ export function NetworkBadgeCompact() {
     <NetworkBadge 
       size="small" 
       showConnectionStatus={false}
-      style={{ alignSelf: 'flex-start' }}
     />
-  );
-}
-
-/**
- * Full version with connection details
- */
-export function NetworkBadgeFull() {
-  const { connectionState, error } = useApi();
-  
-  return (
-    <View className="bg-gray-900/50 rounded-lg p-3 m-2">
-      <NetworkBadge size="medium" showConnectionStatus={true} />
-      
-      {/* Additional Network Info */}
-      <View className="mt-2 space-y-1">
-        <Text className="text-xs text-gray-400">
-          Network: {NETWORK_CONFIG.name}
-        </Text>
-        <Text className="text-xs text-gray-400">
-          Token: {NETWORK_CONFIG.tokenSymbol} ({NETWORK_CONFIG.tokenDecimals} decimals)
-        </Text>
-        
-        {error && (
-          <Text className="text-xs text-red-400">
-            Error: {error}
-          </Text>
-        )}
-      </View>
-    </View>
   );
 }
