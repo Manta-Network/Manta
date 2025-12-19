@@ -58,63 +58,120 @@ const WalletScreen = () => {
   };
 
   const renderNoWalletState = () => (
-    <ScrollView className="flex-1 bg-[#0C0E12]" contentContainerStyle={{ flexGrow: 1 }}>
-      <SafeAreaView className="flex-1 px-6">
+    <ScreenContainer scrollable showGradient>
+      <View style={{ padding: THEME.spacing.lg }}>
         {/* Network Badge */}
-        <View className="mb-8">
+        <View style={{ alignItems: 'flex-end', marginBottom: THEME.spacing.lg }}>
           <NetworkBadge />
         </View>
 
         {/* Header */}
-        <View className="items-center mb-12">
-          <Text className="text-6xl mb-4">🦎</Text>
-          <Text className="text-white text-2xl font-bold mb-2">Chameleon Wallet</Text>
-          <Text className="text-[#CDCDE0] text-center text-base leading-6">
+        <View style={{ alignItems: 'center', marginBottom: THEME.spacing.xl * 2 }}>
+          <Text style={{ fontSize: 64, marginBottom: THEME.spacing.md }}>🦎</Text>
+          <Text style={{ 
+            fontSize: THEME.fontSize['2xl'], 
+            fontWeight: THEME.fontWeight.bold, 
+            color: THEME.colors.text,
+            marginBottom: THEME.spacing.sm 
+          }}>
+            Chameleon Wallet
+          </Text>
+          <Text style={{ 
+            color: THEME.colors.textSecondary, 
+            textAlign: 'center', 
+            fontSize: THEME.fontSize.base,
+            lineHeight: 24
+          }}>
             Create a new wallet or{"\n"}import an existing one
           </Text>
         </View>
 
         {/* Main Actions */}
-        <View className="mb-8">
+        <View style={{ marginBottom: THEME.spacing.xl }}>
           <TouchableOpacity
-            className="bg-[#18BB59] rounded-xl py-4 px-6 mb-4"
+            style={{
+              backgroundColor: THEME.colors.primary,
+              borderRadius: THEME.borderRadius.medium,
+              paddingVertical: THEME.spacing.md,
+              paddingHorizontal: THEME.spacing.lg,
+              marginBottom: THEME.spacing.md,
+            }}
             onPress={() => router.push('/create-wallet')}
           >
-            <Text className="text-white text-center text-lg font-semibold">
+            <Text style={{
+              color: THEME.colors.white,
+              textAlign: 'center',
+              fontSize: THEME.fontSize.lg,
+              fontWeight: THEME.fontWeight.semibold,
+            }}>
               Create New Wallet
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            className="border border-[#18BB59] rounded-xl py-4 px-6"
+            style={{
+              borderWidth: 2,
+              borderColor: THEME.colors.primary,
+              borderRadius: THEME.borderRadius.medium,
+              paddingVertical: THEME.spacing.md,
+              paddingHorizontal: THEME.spacing.lg,
+            }}
             onPress={() => router.push('/import-wallet')}
           >
-            <Text className="text-[#18BB59] text-center text-lg font-semibold">
+            <Text style={{
+              color: THEME.colors.primary,
+              textAlign: 'center',
+              fontSize: THEME.fontSize.lg,
+              fontWeight: THEME.fontWeight.semibold,
+            }}>
               Import Wallet
             </Text>
           </TouchableOpacity>
         </View>
 
         {/* Dev Accounts Section */}
-        <View className="items-center">
-          <Text className="text-[#CDCDE0] text-sm mb-4">── Or use dev account ──</Text>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ 
+            color: THEME.colors.textSecondary, 
+            fontSize: THEME.fontSize.sm, 
+            marginBottom: THEME.spacing.md 
+          }}>
+            ── Or use dev account ──
+          </Text>
           
-          <View className="flex-row flex-wrap justify-center gap-3">
+          <View style={{ 
+            flexDirection: 'row', 
+            flexWrap: 'wrap', 
+            justifyContent: 'center', 
+            gap: THEME.spacing.sm 
+          }}>
             {(['alice', 'bob', 'charlie', 'dave', 'eve'] as const).map((account) => (
               <TouchableOpacity
                 key={account}
-                className="bg-[#1B1B1B] rounded-lg py-2 px-4 border border-[#333]"
+                style={{
+                  backgroundColor: THEME.colors.card,
+                  borderRadius: THEME.borderRadius.small,
+                  paddingVertical: THEME.spacing.sm,
+                  paddingHorizontal: THEME.spacing.md,
+                  borderWidth: 1,
+                  borderColor: THEME.colors.border,
+                }}
                 onPress={() => handleDevAccountImport(account)}
               >
-                <Text className="text-[#13E1BC] text-sm font-medium capitalize">
+                <Text style={{
+                  color: THEME.colors.secondary,
+                  fontSize: THEME.fontSize.sm,
+                  fontWeight: THEME.fontWeight.medium,
+                  textTransform: 'capitalize',
+                }}>
                   {account}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
-      </SafeAreaView>
-    </ScrollView>
+      </View>
+    </ScreenContainer>
   );
 
   const renderWalletState = () => (
