@@ -46,6 +46,9 @@ module.exports = {
       router: {
         origin: false
       },
+      eas: {
+        projectId: "df137d68-ff1c-4b64-9267-857b1a904023"
+      },
       rpcEndpoint: "ws://64.23.233.36:9944",
       rpcHttpEndpoint: "http://64.23.233.36:9933",
       networkName: "Chameleon Devnet",
