@@ -13,8 +13,7 @@
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease"
-      },
-      "channel": "preview"
+      }
     },
     "production": {
       "autoIncrement": true,
