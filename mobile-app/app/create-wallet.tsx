@@ -175,35 +175,35 @@ const CreateWalletScreen = () => {
                 >
                   {isConfirmed && (
                     <Ionicons name="checkmark" size={16} color={THEME.colors.white} />
-                )}
-              </View>
-              <Text className="text-[#CDCDE0] flex-1 text-sm">
-                I have written down my seed phrase and understand that I cannot recover my wallet without it.
-              </Text>
-            </TouchableOpacity>
-
-            {/* Create Button */}
-            <TouchableOpacity
-              className={`rounded-xl py-4 px-6 ${
-                isConfirmed && !isLoading
-                  ? 'bg-[#18BB59]'
-                  : 'bg-[#333] opacity-50'
-              }`}
-              onPress={handleCreateWallet}
-              disabled={!isConfirmed || isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text className="text-white text-center text-lg font-semibold">
-                  Create Wallet
+                  )}
+                </View>
+                <Text style={styles.confirmationText}>
+                  I have written down my seed phrase and understand that I cannot recover my wallet without it.
                 </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
+              </TouchableOpacity>
+
+              {/* Create Button */}
+              <TouchableOpacity
+                style={[
+                  styles.createButton,
+                  isConfirmed && !isLoading ? styles.createButtonEnabled : styles.createButtonDisabled
+                ]}
+                onPress={handleCreateWallet}
+                disabled={!isConfirmed || isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color={THEME.colors.white} />
+                ) : (
+                  <Text style={styles.createButtonText}>
+                    Create Wallet
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       </SafeAreaView>
-    </ScrollView>
+    </ScreenContainer>
   );
 };
 
