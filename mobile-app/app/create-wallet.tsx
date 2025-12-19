@@ -25,7 +25,7 @@ import { THEME } from '../constants/theme';
 const CreateWalletScreen = () => {
   const router = useRouter();
   const { createWallet, isLoading } = useWallet();
-  const [mnemonic, setMnemonic] = useState<string>('');
+  const [mnemonic, setMnemonic] = useState('');
   const [isGenerated, setIsGenerated] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
 
