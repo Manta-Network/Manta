@@ -1,0 +1,32 @@
+# EAS Build Ignore File
+# Don't upload native folders - let EAS generate them fresh
+
+# Native project folders (should not exist in managed workflow)
+android/
+ios/
+
+# Build artifacts
+dist/
+web-build/
+
+# Development files not needed for build
+.expo/
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Test files
+__tests__/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Documentation
+*.md
+!README.md
+
+# IDE
+.vscode/
+.idea/

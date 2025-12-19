@@ -1,0 +1,56 @@
+module.exports = {
+  expo: {
+    name: "Chameleon Wallet",
+    slug: "chameleon-wallet-spronline",
+    version: "0.1.0",
+    orientation: "portrait",
+    icon: "./assets/images/CHAMELEON.png",
+    scheme: "chameleon",
+    userInterfaceStyle: "automatic",
+    newArchEnabled: false,
+    splash: {
+      image: "./assets/images/CHAMELEON.png",
+      imageWidth: 400,
+      resizeMode: "contain",
+      backgroundColor: "#0C0E12"
+    },
+    ios: {
+      supportsTablet: true,
+      bundleIdentifier: "network.chml.wallet"
+    },
+    android: {
+      package: "network.chml.wallet",
+      versionCode: 1,
+      adaptiveIcon: {
+        foregroundImage: "./assets/images/icon.png",
+        backgroundColor: "#22B958"
+      },
+      permissions: [
+        "INTERNET",
+        "VIBRATE"
+      ]
+    },
+    web: {
+      bundler: "metro",
+      output: "static",
+      favicon: "./assets/images/Logo.png"
+    },
+    plugins: [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    experiments: {
+      typedRoutes: true
+    },
+    extra: {
+      router: {
+        origin: false
+      },
+      rpcEndpoint: "ws://64.23.233.36:9944",
+      rpcHttpEndpoint: "http://64.23.233.36:9933",
+      networkName: "Chameleon Devnet",
+      tokenSymbol: "CHML",
+      tokenDecimals: 18
+    }
+  }
+};
