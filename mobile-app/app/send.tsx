@@ -305,17 +305,17 @@ const SendScreen = () => {
   }
 
   return (
-    <ScrollView className="flex-1 bg-[#0C0E12]" contentContainerStyle={{ flexGrow: 1 }}>
-      <SafeAreaView className="flex-1 px-6">
+    <ScreenContainer scrollable showGradient={false}>
+      <SafeAreaView style={{ flex: 1 }}>
         {/* Header */}
-        <View className="flex-row items-center mb-8">
+        <View style={styles.header}>
           <TouchableOpacity
             onPress={() => router.back()}
-            className="mr-4"
+            style={styles.backButton}
           >
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            <Ionicons name="arrow-back" size={24} color={THEME.colors.text} />
           </TouchableOpacity>
-          <Text className="text-white text-xl font-bold">Send CHML</Text>
+          <Text style={styles.headerTitle}>Send CHML</Text>
         </View>
 
         {/* Recipient Input */}
