@@ -27,7 +27,8 @@
       },
       "permissions": [
         "INTERNET"
-      ]
+      ],
+      "kotlinVersion": "2.0.20"
     },
     "web": {
       "bundler": "metro",
