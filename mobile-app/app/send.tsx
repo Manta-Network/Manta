@@ -353,32 +353,35 @@ const SendScreen = () => {
             )}
           </View>
 
-        {/* Amount Input */}
-        <View className="mb-6">
-          <Text className="text-white text-base font-semibold mb-3">Amount</Text>
-          <View className="flex-row items-center">
-            <View className="flex-1 bg-[#1B1B1B] rounded-xl p-4 mr-3">
-              <TextInput
-                className="text-white text-lg"
-                placeholder="0.00"
-                placeholderTextColor="#666"
-                value={amount}
-                onChangeText={setAmount}
-                keyboardType="decimal-pad"
-              />
+          {/* Amount Input */}
+          <View style={styles.inputSection}>
+            <Text style={styles.inputLabel}>Amount</Text>
+            <View style={styles.inputRow}>
+              <View style={[styles.textInputContainer, { flex: 1, marginRight: THEME.spacing.sm }]}>
+                <TextInput
+                  style={[styles.textInput, { fontSize: THEME.fontSize.lg }]}
+                  placeholder="0.00"
+                  placeholderTextColor={THEME.colors.textMuted}
+                  value={amount}
+                  onChangeText={setAmount}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+              <TouchableOpacity
+                style={[
+                  styles.maxButton,
+                  (!balance || !feeEstimate) && styles.maxButtonDisabled
+                ]}
+                onPress={handleMaxAmount}
+                disabled={!balance || !feeEstimate}
+              >
+                <Text style={styles.maxButtonText}>MAX</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              className="bg-[#18BB59] rounded-xl py-4 px-6"
-              onPress={handleMaxAmount}
-              disabled={!balance || !feeEstimate}
-            >
-              <Text className="text-white font-semibold">MAX</Text>
-            </TouchableOpacity>
+            <Text style={styles.availableText}>
+              Available: {formattedFreeBalance}
+            </Text>
           </View>
-          <Text className="text-[#CDCDE0] text-sm mt-2">
-            Available: {formattedFreeBalance}
-          </Text>
-        </View>
 
         {/* Fee Estimate */}
         <View className="mb-8">
