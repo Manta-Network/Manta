@@ -7,7 +7,7 @@
     "icon": "./assets/images/CHAMELEON.png",
     "scheme": "chameleon",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/images/CHAMELEON.png",
       "imageWidth": 400,
