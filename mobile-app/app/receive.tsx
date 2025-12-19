@@ -29,19 +29,21 @@ const ReceiveScreen = () => {
 
   if (!wallet?.address) {
     return (
-      <View className="flex-1 bg-[#0C0E12] justify-center items-center px-6">
-        <Ionicons name="wallet-outline" size={64} color="#666" />
-        <Text className="text-white text-xl font-bold mt-4 mb-2">No Wallet Found</Text>
-        <Text className="text-[#CDCDE0] text-center">
-          Please create or import a wallet first
-        </Text>
-        <TouchableOpacity
-          className="bg-[#18BB59] rounded-xl py-3 px-6 mt-6"
-          onPress={() => router.back()}
-        >
-          <Text className="text-white font-semibold">Go Back</Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenContainer showGradient={false}>
+        <View style={styles.noWalletContainer}>
+          <Ionicons name="wallet-outline" size={64} color={THEME.colors.textMuted} />
+          <Text style={styles.noWalletTitle}>No Wallet Found</Text>
+          <Text style={styles.noWalletSubtitle}>
+            Please create or import a wallet first
+          </Text>
+          <TouchableOpacity
+            style={styles.goBackButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.goBackButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </ScreenContainer>
     );
   }
 
