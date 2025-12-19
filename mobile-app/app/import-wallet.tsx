@@ -26,7 +26,7 @@ const ImportWalletScreen = () => {
   const { importWallet, importDevAccount, isLoading } = useWallet();
   const [mnemonic, setMnemonic] = useState('');
   const [selectedDevAccount, setSelectedDevAccount] = useState(null);
-  const [addressPreview, setAddressPreview] = useState<string>('');
+  const [addressPreview, setAddressPreview] = useState('');
   const [isValidMnemonic, setIsValidMnemonic] = useState(false);
 
   const validateAndPreviewMnemonic = async (text: string) => {
