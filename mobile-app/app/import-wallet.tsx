@@ -11,12 +11,15 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useWallet } from '../context/WalletContext';
 import { walletService, DEV_ACCOUNTS } from '../services/wallet';
+import { ScreenContainer } from '../components/ScreenContainer';
+import { THEME } from '../constants/theme';
 
 const ImportWalletScreen = () => {
   const router = useRouter();
