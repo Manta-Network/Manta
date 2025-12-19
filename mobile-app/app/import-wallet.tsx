@@ -234,4 +234,168 @@ const ImportWalletScreen = () => {
   );
 };
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingHorizontal: THEME.spacing.lg,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: THEME.spacing.xl,
+    paddingVertical: THEME.spacing.sm,
+  },
+  backButton: {
+    marginRight: THEME.spacing.md,
+    padding: THEME.spacing.xs,
+  },
+  headerTitle: {
+    fontSize: THEME.fontSize.xl,
+    fontWeight: THEME.fontWeight.bold,
+    color: THEME.colors.text,
+  },
+  section: {
+    marginBottom: THEME.spacing.xl,
+  },
+  sectionTitle: {
+    fontSize: THEME.fontSize.lg,
+    fontWeight: THEME.fontWeight.semibold,
+    color: THEME.colors.text,
+    marginBottom: THEME.spacing.md,
+  },
+  devAccountsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: THEME.spacing.sm,
+    marginBottom: THEME.spacing.md,
+  },
+  devAccountButton: {
+    borderRadius: THEME.borderRadius.small,
+    paddingVertical: THEME.spacing.sm,
+    paddingHorizontal: THEME.spacing.md,
+    borderWidth: 1,
+  },
+  devAccountButtonDefault: {
+    backgroundColor: THEME.colors.card,
+    borderColor: THEME.colors.border,
+  },
+  devAccountButtonSelected: {
+    backgroundColor: THEME.colors.primary,
+    borderColor: THEME.colors.primary,
+  },
+  devAccountButtonText: {
+    fontWeight: THEME.fontWeight.medium,
+    textTransform: 'capitalize',
+  },
+  devAccountButtonTextDefault: {
+    color: THEME.colors.secondary,
+  },
+  devAccountButtonTextSelected: {
+    color: THEME.colors.white,
+  },
+  devAccountsNote: {
+    color: THEME.colors.textSecondary,
+    fontSize: THEME.fontSize.sm,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: THEME.spacing.xl,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: THEME.colors.border,
+  },
+  dividerText: {
+    color: THEME.colors.textSecondary,
+    fontSize: THEME.fontSize.sm,
+    marginHorizontal: THEME.spacing.md,
+  },
+  inputContainer: {
+    backgroundColor: THEME.colors.white,
+    borderRadius: THEME.borderRadius.medium,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    padding: THEME.spacing.md,
+    ...THEME.shadows.small,
+  },
+  textInput: {
+    color: THEME.colors.text,
+    fontSize: THEME.fontSize.base,
+    fontFamily: 'monospace',
+    minHeight: 120,
+    textAlignVertical: 'top',
+  },
+  validationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: THEME.spacing.sm,
+  },
+  validationText: {
+    marginLeft: THEME.spacing.sm,
+    fontSize: THEME.fontSize.sm,
+  },
+  previewContainer: {
+    backgroundColor: THEME.colors.white,
+    borderRadius: THEME.borderRadius.medium,
+    padding: THEME.spacing.md,
+    marginBottom: THEME.spacing.xl,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    ...THEME.shadows.small,
+  },
+  previewLabel: {
+    color: THEME.colors.textSecondary,
+    fontSize: THEME.fontSize.sm,
+    marginBottom: THEME.spacing.xs,
+  },
+  previewAddress: {
+    color: THEME.colors.text,
+    fontFamily: 'monospace',
+    fontSize: THEME.fontSize.base,
+  },
+  importButton: {
+    borderRadius: THEME.borderRadius.medium,
+    paddingVertical: THEME.spacing.md,
+    paddingHorizontal: THEME.spacing.lg,
+    marginBottom: THEME.spacing.lg,
+  },
+  importButtonEnabled: {
+    backgroundColor: THEME.colors.primary,
+  },
+  importButtonDisabled: {
+    backgroundColor: THEME.colors.lightGrey,
+    opacity: 0.5,
+  },
+  importButtonText: {
+    color: THEME.colors.white,
+    textAlign: 'center',
+    fontSize: THEME.fontSize.lg,
+    fontWeight: THEME.fontWeight.semibold,
+  },
+  securityNote: {
+    backgroundColor: THEME.colors.warningBg,
+    borderWidth: 1,
+    borderColor: THEME.colors.warning,
+    borderRadius: THEME.borderRadius.medium,
+    padding: THEME.spacing.md,
+  },
+  securityNoteHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: THEME.spacing.xs,
+  },
+  securityNoteTitle: {
+    color: THEME.colors.warning,
+    fontWeight: THEME.fontWeight.semibold,
+    marginLeft: THEME.spacing.sm,
+  },
+  securityNoteText: {
+    color: THEME.colors.warning,
+    fontSize: THEME.fontSize.sm,
+    lineHeight: 20,
+  },
+});
+
 export default ImportWalletScreen;
