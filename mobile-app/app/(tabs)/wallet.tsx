@@ -299,10 +299,22 @@ const WalletScreen = () => {
 
   if (walletLoading) {
     return (
-      <View className="flex-1 bg-[#0C0E12] justify-center items-center">
-        <ActivityIndicator size="large" color="#18BB59" />
-        <Text className="text-white text-lg mt-4">Loading wallet...</Text>
-      </View>
+      <ScreenContainer showGradient>
+        <View style={{ 
+          flex: 1, 
+          justifyContent: 'center', 
+          alignItems: 'center' 
+        }}>
+          <ActivityIndicator size="large" color={THEME.colors.primary} />
+          <Text style={{
+            color: THEME.colors.text,
+            fontSize: THEME.fontSize.lg,
+            marginTop: THEME.spacing.md,
+          }}>
+            Loading wallet...
+          </Text>
+        </View>
+      </ScreenContainer>
     );
   }
 
