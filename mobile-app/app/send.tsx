@@ -1,5 +1,6 @@
 /**
  * Send CHML screen for Chameleon Network
+ * Updated with new light theme design
  */
 
 import React, { useState, useEffect } from 'react';
@@ -12,6 +13,7 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -24,7 +26,9 @@ import { transactionService, type TransactionResult, type FeeEstimate } from '..
 import { chainService } from '../services/chain';
 import { walletService } from '../services/wallet';
 import { TransactionStatus } from '../components/TransactionStatus';
+import { ScreenContainer } from '../components/ScreenContainer';
 import { truncateAddress } from '../utils/address';
+import { THEME } from '../constants/theme';
 
 const SendScreen = () => {
   const router = useRouter();
