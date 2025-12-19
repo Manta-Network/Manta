@@ -1,5 +1,6 @@
 /**
  * Receive CHML screen for Chameleon Network
+ * Updated with new light theme design
  */
 
 import React from 'react';
@@ -10,6 +11,7 @@ import {
   ScrollView,
   Alert,
   Share,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -17,7 +19,9 @@ import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { useWallet } from '../context/WalletContext';
 import { QRCode } from '../components/QRCode';
+import { ScreenContainer } from '../components/ScreenContainer';
 import { truncateAddress } from '../utils/address';
+import { THEME } from '../constants/theme';
 
 const ReceiveScreen = () => {
   const router = useRouter();
