@@ -383,41 +383,44 @@ const SendScreen = () => {
             </Text>
           </View>
 
-        {/* Fee Estimate */}
-        <View className="mb-8">
-          <Text className="text-white text-base font-semibold mb-3">Network Fee</Text>
-          <View className="bg-[#1B1B1B] rounded-xl p-4">
-            {isEstimatingFee ? (
-              <View className="flex-row items-center">
-                <ActivityIndicator size="small" color="#13E1BC" />
-                <Text className="text-[#CDCDE0] ml-2">Estimating fee...</Text>
-              </View>
-            ) : feeEstimate ? (
-              <Text className="text-white text-base">
-                ~{feeEstimate.formatted}
-              </Text>
-            ) : (
-              <Text className="text-[#666] text-base">
-                Enter amount to estimate fee
-              </Text>
-            )}
+          {/* Fee Estimate */}
+          <View style={styles.inputSection}>
+            <Text style={styles.inputLabel}>Network Fee</Text>
+            <View style={styles.feeContainer}>
+              {isEstimatingFee ? (
+                <View style={styles.feeEstimating}>
+                  <ActivityIndicator size="small" color={THEME.colors.primary} />
+                  <Text style={styles.feeEstimatingText}>Estimating fee...</Text>
+                </View>
+              ) : feeEstimate ? (
+                <Text style={styles.feeAmount}>
+                  ~{feeEstimate.formatted}
+                </Text>
+              ) : (
+                <Text style={styles.feePlaceholder}>
+                  Enter amount to estimate fee
+                </Text>
+              )}
+            </View>
           </View>
-        </View>
 
-        {/* Review Button */}
-        <TouchableOpacity
-          className={`rounded-xl py-4 px-6 ${
-            validateTransaction() ? 'bg-[#333]' : 'bg-[#18BB59]'
-          }`}
-          onPress={handleReview}
-          disabled={!!validateTransaction()}
-        >
-          <Text className={`text-center text-lg font-semibold ${
-            validateTransaction() ? 'text-[#666]' : 'text-white'
-          }`}>
-            Review Send
-          </Text>
-        </TouchableOpacity>
+          {/* Review Button */}
+          <TouchableOpacity
+            style={[
+              styles.reviewButton,
+              validateTransaction() && styles.reviewButtonDisabled
+            ]}
+            onPress={handleReview}
+            disabled={!!validateTransaction()}
+          >
+            <Text style={[
+              styles.reviewButtonText,
+              validateTransaction() && styles.reviewButtonTextDisabled
+            ]}>
+              Review Send
+            </Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
 
       {renderConfirmationModal()}
