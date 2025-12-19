@@ -22,7 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BN } from '@polkadot/util';
 import { useWallet } from '../context/WalletContext';
 import { useBalance } from '../hooks/useBalance';
-import { transactionService, type TransactionResult, type FeeEstimate } from '../services/transaction';
+import { transactionService } from '../services/transaction';
 import { chainService } from '../services/chain';
 import { walletService } from '../services/wallet';
 import { TransactionStatus } from '../components/TransactionStatus';
