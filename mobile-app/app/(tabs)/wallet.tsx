@@ -49,7 +49,7 @@ const WalletScreen = () => {
     }
   };
 
-  const handleDevAccountImport = async (accountName: 'alice' | 'bob' | 'charlie' | 'dave' | 'eve') => {
+  const handleDevAccountImport = async (accountName) => {
     try {
       await importDevAccount(accountName);
     } catch (error) {
