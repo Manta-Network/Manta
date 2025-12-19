@@ -39,13 +39,13 @@ const SendScreen = () => {
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [isValidAddress, setIsValidAddress] = useState(false);
-  const [feeEstimate, setFeeEstimate] = useState(null);
+  const [feeEstimate, setFeeEstimate] = useState<any>(null);
   const [isEstimatingFee, setIsEstimatingFee] = useState(false);
   
   // Transaction state
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [transactionResult, setTransactionResult] = useState(null);
+  const [transactionResult, setTransactionResult] = useState<any>(null);
   const [showResult, setShowResult] = useState(false);
 
   // Validate recipient address
