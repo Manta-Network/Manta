@@ -68,56 +68,57 @@ const ReceiveScreen = () => {
   };
 
   return (
-    <ScrollView className="flex-1 bg-[#0C0E12]" contentContainerStyle={{ flexGrow: 1 }}>
-      <SafeAreaView className="flex-1 px-6">
+    <ScreenContainer scrollable showGradient={false}>
+      <SafeAreaView style={{ flex: 1 }}>
         {/* Header */}
-        <View className="flex-row items-center mb-8">
+        <View style={styles.header}>
           <TouchableOpacity
             onPress={() => router.back()}
-            className="mr-4"
+            style={styles.backButton}
           >
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            <Ionicons name="arrow-back" size={24} color={THEME.colors.text} />
           </TouchableOpacity>
-          <Text className="text-white text-xl font-bold">Receive CHML</Text>
+          <Text style={styles.headerTitle}>Receive CHML</Text>
         </View>
 
-        {/* QR Code Section */}
-        <View className="items-center mb-8">
-          <View className="mb-6">
-            <QRCode
-              value={wallet.address}
-              size={240}
-              backgroundColor="#FFFFFF"
-              color="#18BB59"
-            />
-          </View>
-          
-          <Text className="text-[#CDCDE0] text-sm mb-2 text-center">
-            Scan this QR code to get my address
-          </Text>
-        </View>
-
-        {/* Address Section */}
-        <View className="mb-8">
-          <Text className="text-white text-lg font-semibold mb-4 text-center">
-            Your CHML Address
-          </Text>
-          
-          <View className="bg-[#1B1B1B] rounded-xl p-4 mb-4">
-            <Text className="text-white font-mono text-sm text-center leading-6">
-              {wallet.address}
+        <View style={styles.content}>
+          {/* QR Code Section */}
+          <View style={styles.qrSection}>
+            <View style={styles.qrContainer}>
+              <QRCode
+                value={wallet.address}
+                size={200}
+                backgroundColor={THEME.colors.white}
+                color={THEME.colors.primary}
+              />
+            </View>
+            
+            <Text style={styles.qrDescription}>
+              Scan this QR code to get my address
             </Text>
           </View>
-          
-          {/* Action Buttons */}
-          <View className="flex-row gap-4">
-            <TouchableOpacity
-              className="flex-1 bg-[#18BB59] rounded-xl py-4 px-6"
-              onPress={handleCopyAddress}
-            >
-              <View className="flex-row items-center justify-center">
-                <Ionicons name="copy-outline" size={20} color="#FFFFFF" />
-                <Text className="text-white font-semibold ml-2">Copy</Text>
+
+          {/* Address Section */}
+          <View style={styles.addressSection}>
+            <Text style={styles.addressTitle}>
+              Your CHML Address
+            </Text>
+            
+            <View style={styles.addressContainer}>
+              <Text style={styles.addressText}>
+                {wallet.address}
+              </Text>
+            </View>
+            
+            {/* Action Buttons */}
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.copyButton]}
+                onPress={handleCopyAddress}
+              >
+                <View style={styles.buttonContent}>
+                  <Ionicons name="copy-outline" size={20} color={THEME.colors.white} />
+                  <Text style={styles.copyButtonText}>Copy</Text>
               </View>
             </TouchableOpacity>
             
