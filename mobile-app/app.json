@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Chameleon Wallet",
-    "slug": "chameleon-wallet",
+    "slug": "chameleon-wallet-spronline",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/CHAMELEON.png",
@@ -51,15 +51,11 @@
       "router": {
         "origin": false
       },
-      "eas": {
-        "projectId": "79dd9f08-ab7e-4945-b9c5-c7bd0e67b011"
-      },
       "rpcEndpoint": "ws://64.23.233.36:9944",
       "rpcHttpEndpoint": "http://64.23.233.36:9933",
       "networkName": "Chameleon Devnet",
       "tokenSymbol": "CHML",
       "tokenDecimals": 18
-    },
-    "owner": "chameleonnetwork"
+    }
   }
 }
