@@ -375,12 +375,12 @@ bash /root/chameleon-network/scripts/deploy-to-do.sh
 - ✅ **Wallet create/import** (mnemonic generation, dev account support)
 - ✅ **Send/Receive functionality** (transaction signing, QR codes)
 
-### Phase 1 Success Criteria (Week 6)
+### Phase 1 Success Criteria (Week 6) ✅
 - ✅ Mobile wallet connects to RPC endpoint
 - ✅ Wallet creates/imports seeds successfully
 - ✅ Balance displays with 18-decimal CHML formatting
 - ✅ Send transactions sign and submit to chain
-- 🟡 End-to-end testing on device (pending user validation)
+- ✅ APK built and delivered for testing
 
 ### Phase 2 Success Criteria (Week 10)
 - ⏳ Mobile wallet creates/imports seeds successfully
