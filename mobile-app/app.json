@@ -17,7 +17,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "network.chml.wallet"
+      "bundleIdentifier": "network.chml.wallet",
+      "newArchEnabled": true
     },
     "android": {
       "package": "network.chml.wallet",
@@ -27,7 +28,8 @@
       },
       "permissions": [
         "INTERNET"
-      ]
+      ],
+      "newArchEnabled": true
     },
     "web": {
       "bundler": "metro",
