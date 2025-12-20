@@ -33,9 +33,9 @@ export default function HomeScreen() {
       <Text className="text-white text-5xl font-styled font-poppins " >Welcome to</Text>
 
       {/* Image */}
-      <Image source={require("/assets/images/Logo.png")} className="w-[200px] h-[200px]" />
+      <Image source={require("../../assets/images/Logo.png")} className="w-[200px] h-[200px]" />
       {/* <Svg height="200" width="200">
-        <Image source={require("/assets/images/logo.svg")}className='w-[200px] h-[200px]'/>
+        <Image source={require("../../assets/images/logo.svg")}className='w-[200px] h-[200px]'/>
       </Svg> */}
 
 <Box className="items-center">
