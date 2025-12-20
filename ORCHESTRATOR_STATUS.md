@@ -285,15 +285,15 @@ bash /root/chameleon-network/scripts/deploy-to-do.sh
 
 ## 🎯 NEXT STEPS
 
-### Immediate (Week 6 Completion)
-- [ ] User testing of mobile wallet on device/simulator
-- [ ] Bug fixes and polish based on testing feedback
-- [ ] Final validation of send/receive with dev accounts
+### Immediate (Week 7 Kickoff)
+- [ ] Community testing of APK on Android devices
+- [ ] Gather feedback from initial testers
+- [ ] Begin custom pallet integration planning
 
 ### Week 7
-- [ ] Complete mobile wallet MVP release
+- [ ] Custom pallet integration with mobile wallet
 - [ ] Transaction history display
-- [ ] Additional error handling and edge cases
+- [ ] Enhanced error handling and edge cases
 
 ### Weeks 8-10
 - [ ] pDEX liquidity pools and swaps
