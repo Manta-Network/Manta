@@ -125,7 +125,7 @@ const Updates = () => {
 
               {/* Right side: Image */}
               <Image
-                source={require('/assets/images/Logo_black.png')} // Using dynamic image source from the input array
+                source={require('../../assets/images/Logo_black.png')} // Using dynamic image source from the input array
                 className="w-32 h-32 rounded-full"
               />
             </View>
