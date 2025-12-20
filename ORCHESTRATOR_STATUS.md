@@ -140,13 +140,15 @@ After 39 iterations attempting to build Substrate via GitHub Actions, we've adop
 - `scripts/deploy-to-do.sh` - Deploy to DigitalOcean
 - `scripts/BUILD_ON_CONTABO.md` - Complete workflow documentation
 
-### Mobile Wallet (Week 6)
-- **Codebase:** `/app/mobile-app/` (Expo SDK 52, TypeScript, Gluestack UI)
+### Mobile Wallet (Week 6) ✅
+- **Codebase:** `/app/mobile-app/` (Expo SDK 54, TypeScript, Custom UI)
 - **RPC Services:** `services/api.ts`, `services/chain.ts`, `services/transaction.ts`
 - **Wallet Services:** `services/wallet.ts`, `services/storage.ts`
 - **React Hooks:** `useApi`, `useBalance` for real-time data
 - **Screens:** Wallet tab, Create/Import wallet, Send, Receive
 - **Components:** NetworkBadge (DEVNET indicator), QRCode, TransactionStatus
+- **RPC Endpoint:** `ws://64.23.233.36:9944`
+- **APK:** [Download](https://expo.dev/accounts/spronline/projects/chameleon-wallet-spronline/builds/bf2111d9-6fa1-4e92-8034-b56c8baad685)
 
 ---
 
